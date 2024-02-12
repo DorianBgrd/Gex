@@ -1,0 +1,616 @@
+#ifndef GEX_NODE
+#define GEX_NODE
+
+#include "api.h"
+#include "boost/python.hpp"
+#include "NodeAttributeData.h"
+#include "Attribute.h"
+#include <map>
+#include <vector>
+#include <string>
+
+#include "rapidjson/document.h"
+
+
+namespace Gex
+{
+    class Attribute;
+    class PythonNode;
+	class DefaultNodeBuilder;
+	class CompoundNodeBuilder;
+	class CompoundNode;
+	class NodeFactory;
+	class NodeBuilder;
+	class NodeEvaluationContext;
+    class GraphContext;
+	class NodeAttributeData;
+	class EvaluationContext;
+    class PythonWrapperBuilder;
+
+	class GEX_API Node
+	{
+	protected:
+        friend PythonNode;
+        friend CompoundNode;
+        friend Attribute;
+		friend NodeFactory;
+        friend NodeBuilder;
+		friend DefaultNodeBuilder;
+		friend CompoundNodeBuilder;
+		friend NodeEvaluationContext;
+		friend NodeAttributeData;
+        friend EvaluationContext;
+
+        bool initializing;
+
+        /**
+         * Starts node initialization.
+         */
+        void StartInitialization();
+
+        /**
+         * Ends node initialization.
+         */
+        void EndInitialization();
+
+	protected:
+		std::string nodeName;
+		std::string valuePath;
+        std::string typeName;
+        std::string pluginName;
+		std::map<std::string, Attribute*> attributes;
+
+        std::vector<std::string> resources;
+
+        Node* parent;
+        Attribute* previous;
+        Attribute* next;
+
+        size_t computeHash;
+	public:
+        /**
+         * Returns node's type name.
+         * @return std::string type.
+         */
+		virtual std::string Type() const;
+
+        /**
+         * Returns node plugin name, if it
+         * comes from a custom plugin.
+         * @return std::string: plugin name.
+         */
+        virtual std::string Plugin() const;
+
+        /**
+         * Returns node's description.
+         * @return std::string description.
+         */
+        virtual std::string Description() const;
+
+        /**
+         * Returns node's identifier.
+         * @return std::string identifier.
+         */
+        std::string Name() const;
+
+        /**
+         * Returns whether node is in its initialization
+         * phase.
+         * @return bool: is initializing.
+         */
+        bool IsInitializing() const;
+
+    protected:
+        /**
+         * Sets node type name.
+         * @param typeName: name.
+         */
+        void SetType(std::string typeName);
+
+        /**
+         * Sets node plugin name.
+         * @param pluginName: plugin name.
+         */
+        void SetPlugin(std::string pluginName);
+
+    public:
+        /**
+         * Sets node identifier.
+         * @param std::string p: node identifier.
+         */
+		virtual void SetName(std::string p);
+
+    protected:
+		// Adds attribute to node.
+        /**
+         * Registers attribute.
+         * @param Attribute attr: attribute.
+         * @return bool success.
+         */
+		bool AddAttribute(Attribute* attr);
+
+        /**
+         * Default constructor.
+         */
+		Node(Node* parent=nullptr);
+
+        void SetParent(Node* parent);
+
+        /**
+         * Creates builtins attributes :
+         * Self, Previous, Next.
+         */
+        void CreateBuiltinsAttributes();
+
+        /**
+         * Initializes node.
+         */
+         void Initialize();
+
+        /**
+         * Creates node default attributes.
+         * Should be overriden in node types.
+         */
+        virtual void InitAttributes();
+
+        /**
+         * Member function called when an attribute changes.
+         * @param Attribute attribute: attribute that changed.
+         */
+        virtual void AttributeChanged(Attribute* attribute, AttributeChange change);
+
+	public:
+		// Destructor.
+		~Node();
+
+        Node* Parent();
+
+		bool operator ==(const Node& other)
+		{
+			return (other.nodeName == nodeName);
+		}
+
+		bool operator ==(const Node* other)
+		{
+			return (other->nodeName == nodeName);
+		}
+
+	public:
+
+         /**
+          * Returns whether node is editable.
+          * @return bool can be edited.
+          */
+         virtual bool IsEditable() const;
+
+         /**
+          * Sets node editable.
+          * @param bool editable: set editable state.
+          * @return bool editable.
+          */
+         virtual bool SetEditable(bool editable);
+
+         virtual bool IsCompound() const;
+
+    protected:
+
+        /**
+         * Builds hash from node's attribute.
+         * @return size_t hash.
+         */
+        virtual size_t BuildHash(bool followCnx=false) const;
+
+        void SetComputeHash(size_t hash);
+
+    public:
+        /**
+         * Returns last compute hash.
+         * @return size_t hash.
+         */
+        size_t ComputeHash() const;
+
+        /**
+         * Returns whether node is dirty and need re-computation.
+         * @return bool: is dirty.
+         */
+        virtual bool IsDirty() const;
+
+    protected:
+        std::any InitValueFromHash(size_t hash, Feedback* success=nullptr);
+
+    public:
+
+        /**
+         * Creates new attribute.
+         * @tparam T type: attribute value type.
+         * @param std::string name: attribute name.
+         * @param AttrValueType valueType: value type.
+         * @param AttrType type: attribute type.
+         * @param Attribute* parent: parent attribute.
+         * @return Attribute* created attribute.
+         */
+		template<class T>
+		Attribute* CreateAttribute(std::string name, AttrValueType valueType = AttrValueType::Single,
+			AttrType type = AttrType::Static, Attribute* parent=nullptr)
+		{
+            Feedback status;
+            std::any initValue = InitValueFromHash(typeid(T).hash_code(),
+                                                   &status);
+            if (!status)
+            {
+                return nullptr;
+            }
+
+			auto* attribute = new Attribute(std::move(name), initValue,
+                                            valueType, type, !IsInitializing(),
+                                            this, parent);
+			
+			bool success = false;
+			if (parent == nullptr)
+			{
+				success = AddAttribute(attribute);
+			}
+			else
+			{
+				success = parent->AddChildAttribute(attribute);
+			}
+
+            if (!success)
+			{
+				delete attribute;
+                return nullptr;
+			}
+
+			return attribute;
+		}
+
+
+		Attribute* CreateAttributeFromValue(std::string name, std::any v, AttrValueType valueType = AttrValueType::Single,
+                                            AttrType type = AttrType::Static, Attribute* parent = nullptr);
+
+
+        Attribute* CreateAttribute(const std::string& name, AttrType type = AttrType::Static,
+                                   bool multi=false, Attribute* parent = nullptr);
+
+		/**
+		 * Returns whether attribute with name exists.
+		 * @returns bool exists.
+		 */
+		bool HasAttribute(std::string name);
+
+        /**
+         * Gets Attribute pointer from name,
+		 * Returns nullptr if not found.
+         * @param std::string name: attribute name.
+         * @return Attribute* attribute.
+         */
+		Attribute* GetAttribute(std::string name);
+
+        /**
+         * Returns python object for attribute.
+         * @param std::string name: attribute name.
+         * @return boost::python::object object.
+         */
+		boost::python::object PythonGetAttribute(std::string name);
+		
+        /**
+         * Returns all attributes pointers.
+         * @return std::vector<Attribute*> attributes.
+         */
+        std::vector<Attribute*> GetAttributes() const;
+
+        /**
+         * Returns all attributes pointers, including
+         * sub and child attributes.
+         * Warning : sub attributes may be removed or
+         * changed, be careful while using those
+         * pointers
+         * @return std::vector<Attribute*> attributes.
+         */
+        std::vector<Attribute*> GetAllAttributes() const;
+
+        /**
+         * Returns all attributes pointers.
+         * @return sstd::vector<Attribute*> attributes.
+         */
+        boost::python::list Python_GetAttributes();
+
+        /**
+         * Returns all user defined attributes pointers.
+         * @return std::vector<Attribute*> attributes.
+         */
+		std::vector<Attribute*> ExtraAttributes();
+
+        /**
+         * Returns input node pointers, if materialized.
+         * @return std::vector<Node**> nodes.
+         */
+		std::vector<Node*> UpstreamNodes();
+
+        /**
+         *
+         */
+        boost::python::list Python_UpstreamNodes();
+
+        /**
+         * Returns Output node pointers, if materialized.
+         * @return std::vector<Node**> nodes.
+         */
+		std::vector<Node*> DownstreamNodes();
+
+		/**
+		 * Serializes node to file.
+		 */
+		virtual void Serialize(rapidjson::Value& dict,
+                               rapidjson::Document& json) const;
+
+        virtual void Deserialize(rapidjson::Value& dict);
+	public:
+		/**
+		 * Updates node from disk.
+		 * @return bool success.
+		 */
+		bool Update();
+
+    protected:
+        /**
+         * Performs factory reset on all attributes.
+         */
+        void FactoryReset();
+
+        /**
+         * Pulls node upstream attributes.
+         * @return bool success.
+         */
+        bool PullAttributes();
+
+    public:
+
+		/**
+		 * Pulls sources.
+		 * When pulling, node "chain" will be recursed
+		 * to find all dynamic nodes, and will compute
+		 * them.
+		 * It will pull all static node values.
+		 * @return bool success.
+		 */
+		bool Pull();
+
+    protected:
+        /**
+         * Creates an evaluation context.
+         * @return NodeAttributeData evaluation context.
+         */
+        NodeAttributeData createEvalContext();
+    public:
+        /**
+         * Computes node.
+         * @return bool success.
+         */
+        virtual bool Compute(GraphContext &context);
+
+    protected:
+        /**
+         * Computation function.
+         * This function should be overrided to provide new
+         * node types calculations.
+         * @param context Node context.
+         * @return bool success.
+         */
+        virtual bool Evaluate(NodeAttributeData &context,
+                              GraphContext &graphContext);
+
+    public:
+
+		template<class T>
+		static T* ConvertTo(Node* node)
+		{
+			return dynamic_cast<T*>(node);
+		}
+	};
+
+
+	class GEX_API CompoundNode : public Node
+	{
+	private:
+		friend CompoundNodeBuilder;
+        friend NodeAttributeData;
+
+	protected:
+		std::vector<Node*> innerNodes;
+
+        using Node::Node;
+
+	public:
+		std::string Description() const override
+        {
+            return "Base compound node";
+        }
+
+        bool IsCompound() const override;
+
+        template <typename T>
+        Attribute* CreateInternalAttribute(std::string name, AttrValueType valueType = AttrValueType::Single,
+                                           AttrType type = AttrType::Static, Attribute* parent=nullptr)
+        {
+            Attribute* attribute = CreateAttribute<T>(name, valueType, type, parent);
+            if (!attribute)
+            {
+                return attribute;
+            }
+
+            attribute->SetInternal(true);
+            return attribute;
+        }
+
+
+        Attribute* CreateInternalAttribute(std::string name, std::any v, AttrValueType valueType = AttrValueType::Single,
+                                           AttrType type = AttrType::Static, Attribute* parent = nullptr);
+
+
+        Attribute* CreateInternalAttribute(const std::string& name, AttrType type = AttrType::Static,
+                                           bool multi=false, Attribute* parent = nullptr);
+
+
+        Attribute* CreateInternalAttribute(std::string name, boost::python::object type, AttrType attributeType);
+
+
+        Attribute* CreateInternalAttribute(std::string name, boost::python::object type, AttrType attributeType,
+                                           AttrValueType valueType);
+
+
+        Attribute* CreateInternalAttribute(std::string name, boost::python::object type, AttrType attributeType,
+                                           AttrValueType valueType, Attribute* parent);
+
+        std::vector<Node*> InternalNodes() const;
+
+        std::vector<std::string> InternalNodeNames() const;
+
+        /**
+         * Creates a new internal node.
+         * @param type: type name.
+         * @param name: node name.
+         * @return node pointer.
+         */
+        virtual Node* CreateInternalNode(std::string type, std::string name=std::string());
+
+        /**
+         * Adds node pointer as internal node.
+         * @param node: node pointer.
+         * @return success.
+         */
+        virtual bool AddInternalNode(Node* node);
+
+        /**
+         * Removes internal node.
+         * @param node: node to remove.
+         * @return success.
+         */
+        virtual bool RemoveInternalNode(Node* node);
+
+        /**
+         * Removes internal node using its name.
+         * @param node: nod name.
+         * @return success.
+         */
+        virtual bool RemoveInternalNode(const std::string& node);
+
+        /**
+         * Returns node pointer with name if it exists.
+         * @param node: node name.
+         * @return node pointer.
+         */
+        virtual Node* GetInternalNode(const std::string& node) const;
+
+        /**
+         * Returns whether specified node pointer is an internal
+         * node.
+         * @param node: node pointer.
+         * @return is internal node.
+         */
+        virtual bool IsInternalNode(Node* node) const;
+
+        /**
+         * Returns whether specified node name is an internal node.
+         * @param node: node name.
+         * @return is internal node.
+         */
+        virtual bool IsInternalNode(const std::string& node) const;
+
+        /**
+         * Returns top level internal attributes.
+         * @return std::vector<Attribute*> internal attributes.
+         */
+        std::vector<Attribute*> InternalAttributes() const;
+
+        /**
+         * Returns all internal attributes, including child / indices
+         * attributes.
+         * @return std::vector<Attribute*> internal attributes.
+         */
+        std::vector<Attribute*> AllInternalAttributes() const;
+
+    protected:
+
+        /**
+         * Function launched by the Compute() function, just
+         * before the Evaluate() function is called.
+         *
+         * @param ctx: Node evaluation context.
+         * @return bool: success.
+         */
+        virtual bool PreEvaluate(NodeAttributeData& ctx,
+                                 GraphContext &graphContext);
+
+        /**
+         * Evaluates compound node inner nodes, starting from
+         * outputs to recurse upstream nodes.
+         * Note : A node added to a compound but not conntected
+         * to any other nodes, and not connected to inner outputs
+         * will not be evaluated.
+         *
+         * @param ctx: node evaluation context.
+         * @return bool: success.
+         */
+		bool Evaluate(NodeAttributeData &ctx,
+                      GraphContext &graphContext)
+                      override;
+
+        /**
+         * Function launched by the Compute() function, just
+         * after the Evaluate() function is called.
+         *
+         * @param ctx node evaluation context.
+         * @return bool: success.
+         */
+        virtual bool PostEvaluate(NodeAttributeData& ctx,
+                                  GraphContext &graphContext);
+
+        void PullInternalOutputs();
+
+    public:
+        /**
+         * Launches compound computing.
+         * @return bool: success.
+         */
+        bool Compute(GraphContext &context) override;
+
+        /**
+         * Serializes node values.
+         * @param dict
+         * @param json
+         */
+		void Serialize(rapidjson::Value& dict,
+                       rapidjson::Document& json)
+                       const override;
+
+        /**
+         * Deserializes node values.
+         * @param dict
+         */
+        void Deserialize(rapidjson::Value& dict) override;
+
+    public:
+        /**
+         * Creates a compound node from specified node
+         * if conversion is possible.
+         * This is the equivalent of doing a dynamic_cast.
+         * The function returns nullptr if conversion could
+         * not be made.
+         * @param node: node pointer.
+         * @return CompoundNode pointer.
+         */
+        static CompoundNode* FromNode(Node* node);
+
+        /**
+         * Checks whether node is a compound node. This function
+         * uses the FromNode function, checking the result.
+         * @param node: node pointer.
+         * @return bool is compound node.
+         */
+        static bool IsCompound(Node* node);
+	};
+
+}
+
+#endif // GEX_NODE
