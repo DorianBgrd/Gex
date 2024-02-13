@@ -446,8 +446,13 @@ void Gex::Node::Serialize(rapidjson::Value& dict, rapidjson::Document& json) con
 
     dict.AddMember(rapidjson::StringRef(ATTRIBUTES_K),
                    attrValues, json.GetAllocator());
-    dict.AddMember(rapidjson::StringRef(CUSTOM_ATTRIBUTES_K),
-                   customAttrs, json.GetAllocator());
+
+    if (customAttrs.MemberCount())
+    {
+        dict.AddMember(rapidjson::StringRef(CUSTOM_ATTRIBUTES_K),
+                       customAttrs, json.GetAllocator());
+    }
+
 }
 
 

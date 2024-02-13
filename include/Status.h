@@ -7,7 +7,7 @@
 
 namespace Gex
 {
-    enum class GEX_API Status
+    enum class Status
     {
         None,
         Success,
@@ -26,6 +26,12 @@ namespace Gex
         operator bool() const
         {
             return (status == Status::Success);
+        }
+
+        void Set(Status st, const std::string& msg)
+        {
+            status = st;
+            message = msg;
         }
     };
 }

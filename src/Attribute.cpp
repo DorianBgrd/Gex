@@ -1211,8 +1211,10 @@ void Gex::Attribute::Serialize(rapidjson::Value& value, rapidjson::Document& doc
                 rapidjson::Value& resultArrayValue = rapidjson::Value().SetArray();
                 handler->SerializeValue(GetAnyValue(), resultArrayValue, doc);
 
-                value.AddMember(rapidjson::StringRef(Config::GetConfig().attributeValueKey.c_str()),
-                                      resultArrayValue, doc.GetAllocator());
+                rapidjson::Value& attributeValueKey = rapidjson::Value().SetString(
+                        Config::GetConfig().attributeValueKey.c_str(),
+                        doc.GetAllocator());
+                value.AddMember(attributeValueKey, resultArrayValue, doc.GetAllocator());
             }
         }
     }
@@ -1233,7 +1235,10 @@ void Gex::Attribute::Serialize(rapidjson::Value& value, rapidjson::Document& doc
             multiValue.AddMember(index.Move(), subValue, doc.GetAllocator());
         }
 
-        value.AddMember(rapidjson::StringRef(Config::GetConfig().attributeMultiValueKey.c_str()), multiValue, doc.GetAllocator());
+        rapidjson::Value& multiValueKey = rapidjson::Value().SetString(
+                Config::GetConfig().attributeMultiValueKey.c_str(),
+                doc.GetAllocator());
+        value.AddMember(multiValueKey, multiValue, doc.GetAllocator());
     }
 
 	if (HasChildAttributes())
@@ -1248,8 +1253,10 @@ void Gex::Attribute::Serialize(rapidjson::Value& value, rapidjson::Document& doc
 	}
 
     rapidjson::Value& internal = rapidjson::Value().SetBool(isInternal);
-    value.AddMember(rapidjson::StringRef(Config::GetConfig().attributeInternalKey.c_str()),
-                    internal, doc.GetAllocator());
+    rapidjson::Value& internalKey = rapidjson::Value().SetString(
+            Config::GetConfig().attributeInternalKey.c_str(),
+            doc.GetAllocator());
+    value.AddMember(internalKey, internal, doc.GetAllocator());
 }
 
 

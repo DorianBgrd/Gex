@@ -1,14 +1,12 @@
-#ifndef GEX_PYTHON_STATUS_H
-#define GEX_PYTHON_STATUS_H
-
-#include "api.h"
+#ifndef GEX_PYTHON_IO_H
+#define GEX_PYTHON_IO_H
 
 
 namespace Gex
 {
     namespace Python
     {
-        struct GEX_PYTHON_API Feedback_Wrap
+        struct IO
         {
         private:
             static bool pythonRegistered;
@@ -19,6 +17,4 @@ namespace Gex
 }
 
 
-
-
-#endif //GEX_PYTHON_STATUS_H
+#endif //GEX_PYTHON_IO_H

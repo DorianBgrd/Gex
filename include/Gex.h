@@ -11,5 +11,6 @@
 #include "NodeFactory.h"
 #include "PluginLoader.h"
 #include "Status.h"
+#include "io.h"
 
 #endif //GEX_GEX_H

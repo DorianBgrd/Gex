@@ -17,7 +17,12 @@ add_library(
         src/Graph.cpp
         src/Node.cpp
         src/import.cpp
-        include/PluginLoader.h src/PluginLoader.cpp)
+        include/PluginLoader.h
+        src/PluginLoader.cpp
+        include/io.h
+        src/io.cpp
+        include/status.h
+        src/status.cpp)
 
 
 target_include_directories(

@@ -30,7 +30,10 @@ add_library(
         include/Config.h
         include/Status.h
         src/Config.cpp
-        test/main.cpp include/Gex.h)
+        test/main.cpp
+        include/Gex.h
+        include/io.h
+        src/io.cpp)
 
 
 target_include_directories(
