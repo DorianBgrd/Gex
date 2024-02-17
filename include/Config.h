@@ -1,17 +1,18 @@
 #ifndef GEX_CONFIG_H
 #define GEX_CONFIG_H
 
+#include "api.h"
 #include <string>
 
 namespace Gex
 {
-    struct Config
+    struct GEX_API Config
     {
     private:
         static Config globalConfig;
 
     public:
-        std::string attributeSeparator = "/";
+        std::string attributeSeparator = ".";
         std::string attributeSerializedTypeKey = "SerializedAttributeType";
         std::string attributeTypeKey = "AttributeType";
         std::string attributeValueTypeKey = "AttributeValueType";
@@ -20,10 +21,11 @@ namespace Gex
         std::string attributeMultiValueKey = "MultiValues";
         std::string attributeChildrenKey = "ChildAttributes";
 
-        static Config GetConfig()
-        {
-            return globalConfig;
-        };
+        std::string nodeTypeKey = "Type";
+        std::string nodeAttributesKey = "Attributes";
+        std::string nodeCustomAttributesKey = "CustomAttributes";
+
+        static Config GetConfig();
     };
 
 }

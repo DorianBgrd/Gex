@@ -1,10 +1,8 @@
 #include "include/NodeFactory.h"
+#include "include/Config.h"
 #include "rapidjson/document.h"
 
 #include <boost/python.hpp>
-
-
-
 
 
 std::string Gex::NodeBuilder::Plugin() const
@@ -72,9 +70,6 @@ Gex::Node* Gex::CompoundNodeBuilder::CreateNode() const
 }
 
 
-#define TYPE_K "TYPE"
-
-
 Gex::NodeFactory* Gex::NodeFactory::factory = nullptr;
 
 
@@ -129,12 +124,12 @@ Gex::NodeBuilder* Gex::NodeFactory::GetBuilder(const std::string& type) const
 
 Gex::Node* Gex::NodeFactory::LoadNode(std::string name, rapidjson::Value& dict) const
 {
-    if (!dict.HasMember(TYPE_K))
+    if (!dict.HasMember(Config::GetConfig().nodeTypeKey.c_str()))
     {
         return nullptr;
     }
 
-    std::string nodeType = dict[TYPE_K].GetString();
+    std::string nodeType = dict[Config::GetConfig().nodeTypeKey.c_str()].GetString();
 
     NodeBuilder* builder = GetBuilder(nodeType);
 	if (builder == nullptr)
@@ -162,7 +157,9 @@ bool Gex::NodeFactory::SaveNode(Node* node, rapidjson::Value& dict, rapidjson::D
 
     rapidjson::Value& typeValue = rapidjson::Value(rapidjson::kStringType)
             .SetString(rapidjson::StringRef(typename_.c_str()), json.GetAllocator());
-    dict.AddMember(rapidjson::StringRef(TYPE_K), typeValue, json.GetAllocator());
+    rapidjson::Value& typeKey = rapidjson::Value().SetString(Config::GetConfig().nodeTypeKey.c_str(),
+                                                             json.GetAllocator());
+    dict.AddMember(typeKey, typeValue, json.GetAllocator());
     builder->SerializeNode(node, dict, json);
     return true;
 }

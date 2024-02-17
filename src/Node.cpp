@@ -409,23 +409,6 @@ std::vector<Gex::Node*> Gex::Node::DownstreamNodes()
 }
 
 
-//boost::python::list Gex::Node::Python_InputIdentifiers()
-//{
-//    return PythonUtils::VectorToPythonList<std::string>(InputIdentifiers());
-//}
-
-
-//boost::python::list Gex::Node::Python_OutputIdentifiers()
-//{
-//    return PythonUtils::VectorToPythonList<std::string>(OutputIdentifiers());
-//}
-
-
-#define TYPE_K "TYPE"
-#define ATTRIBUTES_K "ATTRIBUTES"
-#define CUSTOM_ATTRIBUTES_K "CUSTOM_ATTRIBUTES"
-
-
 void Gex::Node::Serialize(rapidjson::Value& dict, rapidjson::Document& json) const
 {
     rapidjson::Value& attrValues = rapidjson::Value(rapidjson::kObjectType).SetObject();
@@ -444,13 +427,16 @@ void Gex::Node::Serialize(rapidjson::Value& dict, rapidjson::Document& json) con
                              attrValue, json.GetAllocator());
     }
 
-    dict.AddMember(rapidjson::StringRef(ATTRIBUTES_K),
-                   attrValues, json.GetAllocator());
+    rapidjson::Value& attrKey = rapidjson::Value().SetString(Config::GetConfig().nodeAttributesKey.c_str(),
+                                                             json.GetAllocator());
+    dict.AddMember(attrKey, attrValues, json.GetAllocator());
 
     if (customAttrs.MemberCount())
     {
-        dict.AddMember(rapidjson::StringRef(CUSTOM_ATTRIBUTES_K),
-                       customAttrs, json.GetAllocator());
+        rapidjson::Value& cstmAttrKey = rapidjson::Value().SetString(
+                Config::GetConfig().nodeCustomAttributesKey.c_str(),
+                json.GetAllocator());
+        dict.AddMember(cstmAttrKey.Move(), customAttrs, json.GetAllocator());
     }
 
 }
@@ -458,9 +444,9 @@ void Gex::Node::Serialize(rapidjson::Value& dict, rapidjson::Document& json) con
 
 void Gex::Node::Deserialize(rapidjson::Value& dict)
 {
-    if (dict.HasMember(CUSTOM_ATTRIBUTES_K))
+    if (dict.HasMember(Config::GetConfig().nodeCustomAttributesKey.c_str()))
     {
-        rapidjson::Value& custAttrs = dict[CUSTOM_ATTRIBUTES_K];
+        rapidjson::Value& custAttrs = dict[Config::GetConfig().nodeCustomAttributesKey.c_str()];
         for (auto itr = custAttrs.MemberBegin(); itr != custAttrs.MemberEnd(); ++itr)
         {
             Attribute* cust = Attribute::DeserializeAttribute(itr->name.GetString(), itr->value.GetObject(),
@@ -469,9 +455,9 @@ void Gex::Node::Deserialize(rapidjson::Value& dict)
         }
     }
 
-    if (dict.HasMember(ATTRIBUTES_K))
+    if (dict.HasMember(Config::GetConfig().nodeAttributesKey.c_str()))
     {
-        rapidjson::Value& attrValues = dict[ATTRIBUTES_K];
+        rapidjson::Value& attrValues = dict[Config::GetConfig().nodeAttributesKey.c_str()];
         for (auto itr = attrValues.MemberBegin(); itr != attrValues.MemberEnd(); ++itr)
         {
             std::string name = itr->name.GetString();

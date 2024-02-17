@@ -28,9 +28,8 @@ add_library(
         src/NodeFactory.cpp
         src/PluginLoader.cpp
         include/Config.h
-        include/Status.h
         src/Config.cpp
-        test/main.cpp
+        include/Status.h
         include/Gex.h
         include/io.h
         src/io.cpp)
@@ -87,5 +86,25 @@ add_subdirectory(test)
 
 add_dependencies(
         Test
+        Gex
+)
+
+
+add_subdirectory(
+        cli
+)
+
+
+add_dependencies(
+        Gex-cli
+        Gex
+)
+
+
+add_subdirectory(ui)
+
+
+add_dependencies(
+        Gex_ui
         Gex
 )

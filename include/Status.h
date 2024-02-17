@@ -23,6 +23,8 @@ namespace Gex
         Status status = Status::None;
         std::string message;
 
+        virtual ~Feedback() = default;
+
         operator bool() const
         {
             return (status == Status::Success);

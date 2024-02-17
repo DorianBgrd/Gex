@@ -26,10 +26,8 @@ namespace Gex
         friend NodeEvaluator;
         std::vector<std::string> resources;
 
-    protected:
-        GraphContext();
-
     public:
+        GraphContext();
 
         void RegisterResource(std::string resource);
 
