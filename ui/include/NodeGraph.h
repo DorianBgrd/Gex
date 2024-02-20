@@ -233,10 +233,8 @@ namespace Gex
             AttributeVisibilityMode attrVisMode;
 
         public:
-            NodeItem(Gex::Node* node,
-                     QGraphicsItem* parent=nullptr);
-
-            ~NodeItem();
+            explicit
+            NodeItem(Gex::Node* node, QGraphicsItem* parent=nullptr);
 
             void TitleChanged();
 
@@ -385,8 +383,6 @@ namespace Gex
         public:
             NodeGraphScene(QObject *parent=nullptr);
 
-            ~NodeGraphScene();
-
             void mousePressEvent(QGraphicsSceneMouseEvent* mouseEvent) override;
 
             void mouseMoveEvent(QGraphicsSceneMouseEvent* mouseEvent) override;
@@ -533,11 +529,10 @@ namespace Gex
         class AttributeEditor;
 
 
-        class GEX_UI_API GraphWidget: public QDialog
+        class GEX_UI_API GraphWidget: public QWidget
         {
             Q_OBJECT
 
-            Gex::AutomationGraph* automation;
             Gex::Graph* graph;
             NodeGraphScene* scene = nullptr;
             NodeGraphView* view = nullptr;
@@ -549,7 +544,7 @@ namespace Gex
             GraphWidget(Gex::Graph* graph,
                         QWidget* parent=nullptr);
 
-            ~GraphWidget();
+            ~GraphWidget() override;
 
             void Initialize();
 
@@ -581,6 +576,8 @@ namespace Gex
             void AutoLayoutNodes();
 
             void ShowMessage(Gex::Ui::UiFeedback feedback);
+
+            Q_SIGNAL void GraphEvaluated(const Gex::GraphContext context);
         };
     }
 }

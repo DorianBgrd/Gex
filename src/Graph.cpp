@@ -15,7 +15,13 @@
 
 Gex::GraphContext::GraphContext()
 {
+    profiler = std::make_shared<Profiler>();
+}
 
+
+Gex::GraphContext::GraphContext(const GraphContext& other)
+{
+    profiler = other.profiler;
 }
 
 
@@ -30,6 +36,11 @@ std::vector<std::string> Gex::GraphContext::Resources() const
     return resources;
 }
 
+
+Gex::ProfilerPtr Gex::GraphContext::GetProfiler() const
+{
+    return profiler;
+}
 
 
 
@@ -95,6 +106,7 @@ struct FindMatchingNode
     }
 };
 
+
 FindMatchingNode CreateMatch(std::string name)
 {
     FindMatchingNode matcher;
@@ -117,10 +129,26 @@ bool Gex::Graph::RemoveNode(std::string nodename)
 }
 
 
-Gex::Node* Gex::Graph::FindNode(std::string node)
+#include "include/Config.h"
+
+
+Gex::Node* Gex::Graph::FindNode(std::string path) const
 {
+    std::string n;
+    std::string sp;
+    size_t pos = path.find(Config::GetConfig().nodePathSeparator);
+    if (pos == std::string::npos)
+    {
+        n = path;
+    }
+    else
+    {
+        n = path.substr(0, pos - 1);
+        sp = path.substr(pos + 1, std::string::npos);
+    }
+
     FindMatchingNode match;
-    match.match = node;
+    match.match = n;
 
     auto index = std::find_if(nodes.begin(), nodes.end(), match);
     if (index == nodes.end())
@@ -128,7 +156,35 @@ Gex::Node* Gex::Graph::FindNode(std::string node)
         return nullptr;
     }
 
-    return *index;
+    Node* result = *index;
+    if (sp.empty())
+        return result;
+
+    if (!result->IsCompound())
+        return nullptr;
+
+    return Node::ConvertTo<CompoundNode>(result)->GetInternalNode(sp);
+}
+
+
+Gex::Attribute* Gex::Graph::FindAttribute(std::string attr) const
+{
+    size_t pos  = attr.find(Config::GetConfig().attributeSeparator.c_str());
+    if (pos == std::string::npos)
+    {
+        return nullptr;
+    }
+
+    std::string nodePath = attr.substr(0, pos - 1);
+    std::string attrPath = attr.substr(pos + 1, std::string::npos);
+
+    auto* node = FindNode(nodePath);
+    if (!node)
+    {
+        return nullptr;
+    }
+
+    return node->GetAttribute(attrPath);
 }
 
 
@@ -345,7 +401,8 @@ Gex::Feedback Gex::Graph::CheckLoadStatus(rapidjson::Value& dict)
 
 
 bool Gex::Graph::Compute(GraphContext& context, std::function<void(Node*)> nodeStarted,
-                                     std::function<void(Node*, bool)> nodeDone) const
+                         std::function<void(Node*, bool)> nodeDone,
+                         std::function<void(const GraphContext& context)> evalDone) const
 {
     std::vector<Gex::Node *> evalNodes;
     for (auto* n: nodes) {
@@ -353,7 +410,8 @@ bool Gex::Graph::Compute(GraphContext& context, std::function<void(Node*)> nodeS
     }
 
     std::function<void(const GraphContext&)> finalize =
-            [this](const GraphContext& context) -> void { this->FinalizeEvaluation(context); };
+            [this, evalDone](const GraphContext& context) -> void {
+        this->FinalizeEvaluation(context); evalDone(context); };
 
 
     auto evaluator = std::make_shared<NodeEvaluator>(evalNodes, context, false,

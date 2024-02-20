@@ -503,6 +503,10 @@ void Gex::Ui::BaseGraphView::keyPressEvent(QKeyEvent* event)
         dragMode = true;
         SetMainCursor(Qt::OpenHandCursor);
     }
+    else
+    {
+        QGraphicsView::keyPressEvent(event);
+    }
 }
 
 void Gex::Ui::BaseGraphView::keyReleaseEvent(QKeyEvent* event)

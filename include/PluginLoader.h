@@ -68,6 +68,8 @@ namespace Gex
 
         static bool PluginLoaded(std::string plugin);
 
+        static std::vector<std::string> LoadedPlugins();
+
 //        static PluginLoader* LoadPythonPlugin(std::string name, Feedback* status=nullptr);
     };
 }

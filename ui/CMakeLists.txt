@@ -36,7 +36,11 @@ add_library(
         include/NodeGraph.h
         src/NodeGraph.cpp
         include/UiStatus.h
-        src/UiStatus.cpp)
+        src/UiStatus.cpp
+        include/ProfileViewer.h
+        src/ProfileViewer.cpp
+        include/GraphView.h
+        src/GraphView.cpp include/PluginLoader.h)
 
 add_compile_definitions(Gex_ui PRIVATE GEX_UI_API_EXPORT)
 

@@ -32,7 +32,9 @@ add_library(
         include/Status.h
         include/Gex.h
         include/io.h
-        src/io.cpp)
+        src/io.cpp
+        include/Profiler.h
+        src/Profiler.cpp)
 
 
 target_include_directories(

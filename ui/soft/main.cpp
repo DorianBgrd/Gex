@@ -4,6 +4,8 @@
 
 #include <QObject>
 #include <QWidget>
+#include <QFile>
+#include <QDir>
 #include "ui/soft/include/MainWindow.h"
 
 #include "ArgParse/ArgParse.h"
@@ -33,6 +35,24 @@ int main(int argc, char** argv)
     }
 
     Gex::Editor::MainWindow mainWindow(graph);
+
+    QFile styleFile("ui/stylesheet.css");
+    styleFile.open(QFile::ReadOnly);
+    QString style = styleFile.readAll();
+
+    QString pluginsDirectory = "plugins";
+    // Iter file directories.
+    QDir pluginsDir(pluginsDirectory);
+
+    Gex::PluginLoader::AddSearchPath(pluginsDir.absolutePath().toStdString());
+
+    QStringList filters = {"*.dll"}; // {"*.dll", "*.py"};
+    for (auto plugin : pluginsDir.entryList(filters))
+    {
+        Gex::PluginLoader::LoadPlugin(plugin.toStdString());
+    }
+
+    app.setStyleSheet(style);
 
     mainWindow.show();
 

@@ -6,5 +6,7 @@
 #include "BaseGraph.h"
 #include "NodeGraph.h"
 #include "commands.h"
+#include "ProfileViewer.h"
+#include "GraphView.h"
 
 #endif //GEX_UI_H

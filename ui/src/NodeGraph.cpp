@@ -738,8 +738,8 @@ Gex::Ui::NodeItem::NodeItem(Gex::Node* node_,
     title->setFont(QFont("sans", 13));
     title->setDefaultTextColor(QColor("white"));
     title->setPlainText(node_->Name().c_str());
-    title->setTextInteractionFlags(Qt::TextEditable);
-    title->update();
+    title->setTextInteractionFlags(Qt::TextEditorInteraction);
+//    title->update();
 
     QTextDocument* doc = title->document();
 
@@ -759,12 +759,6 @@ Gex::Ui::NodeItem::NodeItem(Gex::Node* node_,
     CreateAttributes();
 
     PlaceAttributes();
-}
-
-
-Gex::Ui::NodeItem::~NodeItem()
-{
-
 }
 
 
@@ -1497,12 +1491,6 @@ Gex::Ui::NodeGraphScene::NodeGraphScene(QObject* parent): QGraphicsScene(parent)
 }
 
 
-Gex::Ui::NodeGraphScene::~NodeGraphScene()
-{
-
-}
-
-
 void Gex::Ui::NodeGraphScene::mousePressEvent(QGraphicsSceneMouseEvent* mouseEvent)
 {
     QGraphicsScene::mousePressEvent(mouseEvent);
@@ -1972,7 +1960,7 @@ QMenu* Gex::Ui::NodeGraphView::GetMenu()
 
 void Gex::Ui::NodeGraphView::keyPressEvent(QKeyEvent* event)
 {
-    if (event->key() == Qt::Key_Backspace || event->key() == Qt::Key_Delete)
+    if (event->key() == Qt::Key_Delete)
     {
         auto* scene_ = dynamic_cast<NodeGraphScene*>(scene());
         if (scene_)
@@ -2489,7 +2477,7 @@ void Gex::Ui::ContextsWidget::RemoveContexts(unsigned int number)
 
 
 Gex::Ui::GraphWidget::GraphWidget(Gex::Graph* graph_,
-                                  QWidget* parent): QDialog(parent)
+                                  QWidget* parent): QWidget(parent)
 {
     graph = graph_;
 
@@ -2498,9 +2486,11 @@ Gex::Ui::GraphWidget::GraphWidget(Gex::Graph* graph_,
     setWindowFlag(Qt::WindowMinimizeButtonHint, true);
 
     QGridLayout* mainLayout = new QGridLayout();
+    mainLayout->setContentsMargins(0, 0, 0, 0);
     setLayout(mainLayout);
 
     QSplitter* splitter = new QSplitter(this);
+    splitter->setContentsMargins(0, 0, 0, 0);
     splitter->setOrientation(Qt::Horizontal);
     mainLayout->addWidget(splitter);
 
@@ -2675,6 +2665,12 @@ void LocallyThreadedRunGraph(Gex::Ui::GraphWidget* widget)
 }
 
 
+void EmitContext(Gex::Ui::GraphWidget* this_, const Gex::GraphContext& ctx)
+{
+    Q_EMIT this_->GraphEvaluated(ctx);
+}
+
+
 void Gex::Ui::GraphWidget::RunGraph()
 {
 
@@ -2686,8 +2682,12 @@ void Gex::Ui::GraphWidget::RunGraph()
                    [this](Gex::Node* node)
                    {this->scene->NodeEvaluationStarted(node);},
                    [this](Gex::Node* node, bool success)
-                   {if (success) this->scene->NodeEvaluationDone(node, success);}
+                   {if (success) this->scene->NodeEvaluationDone(node, success);},
+                   [this](const Gex::GraphContext& ctx)
+                   {EmitContext(this, ctx);}
                    );
+
+
 }
 
 

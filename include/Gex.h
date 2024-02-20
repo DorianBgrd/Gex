@@ -12,5 +12,6 @@
 #include "PluginLoader.h"
 #include "Status.h"
 #include "io.h"
+#include "Profiler.h"
 
 #endif //GEX_GEX_H

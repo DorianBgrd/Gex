@@ -12,12 +12,15 @@
 #include "rapidjson/document.h"
 
 #include "Status.h"
+#include "Profiler.h"
+#include "Tsys/include/tsys.h"
 
 
 namespace Gex
 {
 
     class Node;
+    class Attribute;
     class NodeEvaluator;
 
 
@@ -25,19 +28,25 @@ namespace Gex
     {
         friend NodeEvaluator;
         std::vector<std::string> resources;
+        ProfilerPtr profiler;
 
     public:
         GraphContext();
 
+        GraphContext(const GraphContext& other);
+
         void RegisterResource(std::string resource);
 
         std::vector<std::string> Resources() const;
+
+        ProfilerPtr GetProfiler() const;
     };
 
 
     class GEX_API Graph
     {
         std::vector<Node*> nodes;
+        std::vector<Attribute*> inputs;
 
     public:
 
@@ -49,7 +58,9 @@ namespace Gex
 
         bool RemoveNode(std::string node);
 
-        Node* FindNode(std::string node);
+        Node* FindNode(std::string node) const;
+
+        Attribute* FindAttribute(std::string attr) const;
 
         bool Serialize(rapidjson::Value& dict, rapidjson::Document& json) const;
 
@@ -58,7 +69,8 @@ namespace Gex
         static Feedback CheckLoadStatus(rapidjson::Value& dict);
 
         bool Compute(GraphContext& context, std::function<void(Node*)> nodeStarted=nullptr,
-                     std::function<void(Node*, bool)> nodeDone=nullptr) const;
+                     std::function<void(Node*, bool)> nodeDone=nullptr,
+                     std::function<void(const GraphContext& context)> evalDone=nullptr) const;
 
         void FinalizeEvaluation(const GraphContext& context) const;
 

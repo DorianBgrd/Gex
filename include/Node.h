@@ -93,6 +93,9 @@ namespace Gex
          */
         std::string Name() const;
 
+
+        std::string Path() const;
+
         /**
          * Returns whether node is in its initialization
          * phase.

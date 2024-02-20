@@ -11,12 +11,14 @@ namespace Gex::Editor
     {
         Q_OBJECT
 
-        Gex::Ui::GraphWidget* graphWidget;
+        Gex::Ui::GraphView* graphView;
 
     public:
         MainWindow(Gex::Graph* graph, QWidget* parent=nullptr);
 
         void ShowMessage(Gex::Feedback feedback);
+
+        void LoadPlugin();
     };
 }
 

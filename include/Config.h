@@ -12,6 +12,8 @@ namespace Gex
         static Config globalConfig;
 
     public:
+        std::string nodePathSeparator = "/";
+
         std::string attributeSeparator = ".";
         std::string attributeSerializedTypeKey = "SerializedAttributeType";
         std::string attributeTypeKey = "AttributeType";

@@ -57,6 +57,18 @@ std::string Gex::Node::Name() const
 }
 
 
+std::string Gex::Node::Path() const
+{
+    std::string path;
+    if (parent)
+    {
+        path = parent->Path();
+    }
+
+    return (path + Config::GetConfig().nodePathSeparator + nodeName);
+}
+
+
 bool Gex::Node::IsEditable() const
 {
     return true;
@@ -552,13 +564,15 @@ Gex::NodeAttributeData Gex::Node::createEvalContext()
 
 bool Gex::Node::Compute(GraphContext &context)
 {
-    Pull();
+    auto profiler = context.GetProfiler();
+
+    PROFILE(this, profiler, PullNode,
+            Pull())
+
     NodeAttributeData evalContext = createEvalContext();
-    bool success = Evaluate(evalContext, context);
-    if (success)
-    {
-        computeHash = BuildHash();
-    }
+
+    PROFILE(this, profiler, ComputeNode,
+            bool success = Evaluate(evalContext, context))
 
     return success;
 }
@@ -636,17 +650,44 @@ bool Gex::CompoundNode::RemoveInternalNode(Node *node)
 }
 
 
+struct MatchingNode
+{
+    std::string match;
+
+    bool operator()(Gex::Node* node) const
+    {
+        return(node->Name() == match);
+    }
+};
+
+
 Gex::Node* Gex::CompoundNode::GetInternalNode(const std::string& node) const
 {
-    for (Node* nodePtr : innerNodes)
+
+    size_t pos = node.find(Config::GetConfig().nodePathSeparator);
+    std::string n = node;
+    std::string sn;
+    if (pos != std::string::npos)
     {
-        if (nodePtr->Name() == node)
-        {
-            return nodePtr;
-        }
+        n = node.substr(0, pos - 1);
+        sn = node.substr(pos + 1, std::string::npos);
     }
 
-    return nullptr;
+    MatchingNode search;
+    search.match = n;
+
+    auto result = std::find_if(innerNodes.begin(), innerNodes.end(), search);
+
+    if (result == innerNodes.end())
+        return nullptr;
+
+    if (sn.empty())
+        return *result;
+
+    if (!(*result)->IsCompound())
+        return nullptr;
+
+    return ConvertTo<CompoundNode>(*result)->GetInternalNode(sn);
 }
 
 

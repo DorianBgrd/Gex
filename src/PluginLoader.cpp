@@ -163,6 +163,12 @@ bool Gex::PluginLoader::PluginLoaded(std::string plugin)
 }
 
 
+std::vector<std::string> Gex::PluginLoader::LoadedPlugins()
+{
+    return loadedPlugins;
+}
+
+
 #define PLUGIN_LOAD_FAILED(MESSAGE) \
 if (status)                         \
 {                                   \

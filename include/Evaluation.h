@@ -43,9 +43,10 @@ namespace Gex
         bool stop = false;
         std::function<void(Node*)> nodeStart=nullptr;
         std::function<void(Node*, bool)> nodeEnd=nullptr;
+        unsigned int index;
 
     public:
-        EvaluatorThread(NodeEvaluator* evaluator,
+        EvaluatorThread(NodeEvaluator* evaluator, unsigned int index,
                         std::function<void(Node*)> onNodeStart=nullptr,
                         std::function<void(Node*, bool)> onNodeEnd=nullptr);
 
@@ -97,7 +98,7 @@ namespace Gex
 
     public:
         NodeEvaluator(std::vector<Node*> nodes,
-                      GraphContext context,
+                      GraphContext& context,
                       bool detached=false,
                       std::function<void(Node*)> onNodeStart=nullptr,
                       std::function<void(Node*, bool)> onNodeEnd=nullptr,

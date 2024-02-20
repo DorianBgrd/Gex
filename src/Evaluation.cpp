@@ -4,10 +4,11 @@
 #include <mutex>
 
 
-Gex::EvaluatorThread::EvaluatorThread(Gex::NodeEvaluator* eval,
-                                                  std::function<void(Node*)> onNodeStart,
-                                                  std::function<void(Node*, bool)> onNodeEnd)
+Gex::EvaluatorThread::EvaluatorThread(Gex::NodeEvaluator* eval, unsigned int index_,
+                                      std::function<void(Node*)> onNodeStart,
+                                      std::function<void(Node*, bool)> onNodeEnd)
 {
+    index = index_;
     _evaluator = eval;
     nodeStart = onNodeStart;
     nodeEnd = onNodeEnd;
@@ -36,6 +37,8 @@ bool Gex::EvaluatorThread::ComputeNode()
     {
         std::this_thread::yield();
     }
+
+    _evaluator->Context().GetProfiler()->SetNodeThread(node->node, index);
 
     if (nodeStart)
     {
@@ -126,7 +129,7 @@ typedef std::unordered_map<Gex::Node*, Gex::ScheduledNode*> ScheduledNodesDict;
 
 
 Gex::ScheduledNode* _GetScheduledNode(Gex::Node* node,
-                                              ScheduledNodesDict& scheduledNodes)
+                                      ScheduledNodesDict& scheduledNodes)
 {
     Gex::ScheduledNode* scheduledNode;
     try
@@ -145,8 +148,8 @@ Gex::ScheduledNode* _GetScheduledNode(Gex::Node* node,
 
 
 std::vector<Gex::ScheduledNode*> _GetScheduledNodes(std::vector<Gex::Node*> nodes,
-                                                                ScheduledNodesDict& scheduledNodes,
-                                                                std::vector<Gex::Node*> graphNodes)
+                                                    ScheduledNodesDict& scheduledNodes,
+                                                    std::vector<Gex::Node*> graphNodes)
 {
     std::vector<Gex::ScheduledNode*> results;
     std::vector<Gex::Node*> acceptedNodes;
@@ -300,10 +303,10 @@ std::vector<Gex::ScheduledNode*> Gex::ScheduleNodes(std::vector<Gex::Node*> node
 
 
 
-Gex::NodeEvaluator::NodeEvaluator(std::vector<Node*> nodes_, GraphContext ctx, bool detached,
-                                              std::function<void(Node*)> onNodeStarted,
-                                              std::function<void(Node*, bool)> onNodeDone,
-                                              std::function<void(const GraphContext&)> postEvaluation)
+Gex::NodeEvaluator::NodeEvaluator(std::vector<Node*> nodes_, GraphContext& ctx, bool detached,
+                                  std::function<void(Node*)> onNodeStarted,
+                                  std::function<void(Node*, bool)> onNodeDone,
+                                  std::function<void(const GraphContext&)> postEvaluation)
 {
     context = ctx;
     postEval = postEvaluation;
@@ -315,9 +318,11 @@ Gex::NodeEvaluator::NodeEvaluator(std::vector<Node*> nodes_, GraphContext ctx, b
 
     status = NodeEvaluator::EvaluationStatus::Running;
     std::vector<std::thread> stdthreads;
+
+    context.GetProfiler()->Start();
     for (unsigned int i = 0; i < numberOfThreads; i++)
     {
-        auto* nodeThread = new EvaluatorThread(this, evalStart, evalEnd);
+        auto* nodeThread = new EvaluatorThread(this, i, evalStart, evalEnd);
 
         threads.push_back(nodeThread);
 
@@ -363,6 +368,8 @@ void Gex::NodeEvaluator::End()
     }
 
     status = EvaluationStatus::Done;
+
+    context.GetProfiler()->Stop();
 }
 
 
@@ -384,6 +391,8 @@ void Gex::NodeEvaluator::Terminate()
     }
 
     status = EvaluationStatus::Failed;
+
+    context.GetProfiler()->Stop();
 }
 
 
@@ -395,6 +404,8 @@ void Gex::NodeEvaluator::Stop()
     }
 
     status = EvaluationStatus::Canceled;
+
+    context.GetProfiler()->Stop();
 }
 
 
