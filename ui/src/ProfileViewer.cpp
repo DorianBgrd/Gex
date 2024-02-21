@@ -2,6 +2,10 @@
 
 #include <QGraphicsLineItem>
 #include <QGraphicsRectItem>
+#include <QVBoxLayout>
+#include <QHBoxLayout>
+#include <QSpinBox>
+#include <QLabel>
 
 
 inline double Duration(std::chrono::nanoseconds s)
@@ -18,35 +22,38 @@ Gex::Ui::ProfileStepItem::ProfileStepItem(Gex::ProfilerPtr p, Gex::Step s, QGrap
     auto* textItem = new QGraphicsTextItem(this);
     textItem->setPlainText(step->Name().c_str());
 
-    setBrush(QBrush(QColor("#FFFFFF")));
+    setBrush(QBrush(QColor("#15915B")));
 }
 
 
-Gex::Ui::ProfileWidget::ProfileWidget(QWidget* parent): QGraphicsView(parent)
+Gex::Ui::ProfileWidget::ProfileWidget(QWidget* parent):
+        BaseGraphView(new QGraphicsScene(), parent)
 {
-    auto* scene = new QGraphicsScene(this);
-    setScene(scene);
+    setInteractive(true);
 }
+
 
 void Gex::Ui::ProfileWidget::ViewProfiler(ProfilerPtr p)
 {
     profiler = p;
-    unsigned int thnb = profiler->NumberOfThreads();
 
     size_t duration = p->Duration().count();
-    double ratio = rect().height() / rect().width();
 
-    setSceneRect(0, 0, duration, ratio * duration);
+    setSceneRect(0, 0, duration, duration);
+    fitInView(0, 0, duration, duration);
 
-    qreal h = sceneRect().height() / thnb;
+    size_t height = duration / profiler->NumberOfThreads();
+
     for (const auto& step : profiler->GetSteps())
     {
         auto* item = new ProfileStepItem(profiler, step);
 
-        int incr = profiler->NodeThread(step->Node()->Path());
+        unsigned int incr = profiler->NodeThread(step->Node()->Path());
+
         size_t x = (step->StartTime() - profiler->StartTime()).count();
-        size_t y = incr * h;
+        size_t y = incr * height;
         size_t w = (step->EndTime() - step->StartTime()).count();
+        size_t h = height;
 
         item->setRect(0, 0, w, h);
         item->setPos(x, y);
@@ -55,7 +62,29 @@ void Gex::Ui::ProfileWidget::ViewProfiler(ProfilerPtr p)
 }
 
 
-void Gex::Ui::ProfileWidget::FromContext(const Gex::GraphContext context)
+
+Gex::Ui::ProfileView::ProfileView(QWidget* parent): QWidget(parent)
 {
-    ViewProfiler(context.GetProfiler());
+    auto* layout = new QVBoxLayout();
+    layout->setContentsMargins(0, 0, 0, 0);
+    setLayout(layout);
+
+    profWidget = new ProfileWidget(this);
+    layout->addWidget(profWidget);
 }
+
+
+void Gex::Ui::ProfileView::SetZoom(int zoom)
+{
+    double scale = (zoom / 100.0);
+
+    profWidget->scale(scale, scale);
+}
+
+
+void Gex::Ui::ProfileView::FromContext(const Gex::GraphContext& context)
+{
+    profWidget->ViewProfiler(context.GetProfiler());
+}
+
+

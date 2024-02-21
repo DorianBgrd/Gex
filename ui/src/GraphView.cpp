@@ -19,11 +19,11 @@ Gex::Ui::GraphView::GraphView(Gex::Graph* graph_, QWidget* parent): QWidget(pare
     graphView = new GraphWidget(graph, this);
     tab->addTab(graphView, "Graph");
 
-    profileView = new ProfileWidget(this);
+    profileView = new ProfileView(this);
     tab->addTab(profileView, "Profiler");
 
     QObject::connect(graphView, &GraphWidget::GraphEvaluated,
-                     profileView, &ProfileWidget::FromContext);
+                     profileView, &ProfileView::FromContext);
 }
 
 
@@ -33,7 +33,7 @@ Gex::Ui::GraphWidget* Gex::Ui::GraphView::GetGraphWidget() const
 }
 
 
-Gex::Ui::ProfileWidget* Gex::Ui::GraphView::GetProfileWidget() const
+Gex::Ui::ProfileView* Gex::Ui::GraphView::GetProfileWidget() const
 {
     return profileView;
 }

@@ -17,7 +17,7 @@ namespace Gex::Ui
     private:
         Gex::Graph* graph;
         GraphWidget* graphView;
-        ProfileWidget* profileView;
+        ProfileView* profileView;
 
     public:
         GraphView(Gex::Graph* graph,
@@ -25,7 +25,7 @@ namespace Gex::Ui
 
         GraphWidget* GetGraphWidget() const;
 
-        ProfileWidget* GetProfileWidget() const;
+        ProfileView* GetProfileWidget() const;
     };
 }
 

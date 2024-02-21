@@ -10,6 +10,7 @@
 #include <QGraphicsRectItem>
 
 #include "include/Gex.h"
+#include "ui/include/BaseGraph.h"
 
 namespace Gex::Ui
 {
@@ -22,7 +23,7 @@ namespace Gex::Ui
                         QGraphicsItem* parent=nullptr);
     };
 
-    class GEX_UI_API ProfileWidget: public QGraphicsView
+    class GEX_UI_API ProfileWidget: public BaseGraphView
     {
         Q_OBJECT
     private:
@@ -32,8 +33,23 @@ namespace Gex::Ui
         ProfileWidget(QWidget* parent=nullptr);
 
         void ViewProfiler(ProfilerPtr p);
+    };
 
-        void FromContext(Gex::GraphContext context);
+
+    class GEX_UI_API ProfileView: public QWidget
+    {
+        Q_OBJECT
+    private:
+        ProfilerPtr profiler;
+        ProfileWidget* profWidget;
+
+    public:
+        ProfileView(QWidget* parent=nullptr);
+
+        void FromContext(const Gex::GraphContext& context);
+
+    protected:
+        void SetZoom(int zoom);
     };
 }
 
