@@ -322,7 +322,12 @@ void Gex::Ui::BaseGraphView::mousePressEvent(QMouseEvent* event)
     {
         setCursor(Qt::ClosedHandCursor);
         dragPos = event->pos();
-        sceneDragPos = mapToScene(rect().center()).toPoint();
+        sceneDragPos = mapToScene(rect()).boundingRect().center();
+
+        QRectF sceneR = mapToScene(rect()).boundingRect();
+        scaleX = sceneR.width() / rect().width();
+        scaleY = sceneR.height() / rect().height();
+
         SetPressCursor(Qt::ClosedHandCursor);
     }
     else
@@ -351,8 +356,13 @@ void Gex::Ui::BaseGraphView::mouseMoveEvent(QMouseEvent* event)
     }
     else if (pressed && dragMode)
     {
-        QPoint delta = event->pos() - dragPos;
-        centerOn(sceneDragPos - delta);
+        QPointF delta = event->pos() - dragPos;
+
+        delta = {delta.x() * scaleX,
+                 delta.y() * scaleY};
+
+        QPointF move = sceneDragPos - delta;
+        centerOn(move.x(),move.y());
     }
     else
     {

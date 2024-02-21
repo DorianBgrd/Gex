@@ -84,8 +84,10 @@ namespace Gex::Ui
         bool dragMode = false;
         QPoint zoomingPos;
         QPoint dragPos;
-        QPoint sceneDragPos;
+        QPointF sceneDragPos;
         QRectF sceneDragRect;
+        qreal scaleX = 1;
+        qreal scaleY = 1;
 
         QCursor mainCursor;
         QCursor pressCursor;
