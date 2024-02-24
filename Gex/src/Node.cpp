@@ -1,10 +1,10 @@
-#include "include/Node.h"
-#include "include/Attribute.h"
-#include "include/NodeFactory.h"
+#include "Gex/include/Node.h"
+#include "Gex/include/Attribute.h"
+#include "Gex/include/NodeFactory.h"
 #include <boost/python/detail/wrap_python.hpp>
 #include <boost/python.hpp>
-#include "include/Evaluation.h"
-#include "include/Config.h"
+#include "Gex/include/Evaluation.h"
+#include "Gex/include/Config.h"
 
 #include "Tsys/include/tsys.h"
 #include "Tsys/include/defaultTypes.h"
@@ -562,24 +562,26 @@ Gex::NodeAttributeData Gex::Node::createEvalContext()
 }
 
 
-bool Gex::Node::Compute(GraphContext &context)
+bool Gex::Node::Compute(GraphContext &context,
+                        NodeProfiler& profiler)
 {
-    auto profiler = context.GetProfiler();
-
-    PROFILE(this, profiler, PullNode,
-            Pull())
+    auto pullp = profiler.StartEvent("Compute::Pull");
+    Pull();
+    profiler.StopEvent(pullp);
 
     NodeAttributeData evalContext = createEvalContext();
 
-    PROFILE(this, profiler, ComputeNode,
-            bool success = Evaluate(evalContext, context))
+    auto evalp = profiler.StartEvent("Compute::Evaluate");
+    bool success = Evaluate(evalContext, context, profiler);
+    profiler.StopEvent(evalp);
 
     return success;
 }
 
 
 bool Gex::Node::Evaluate(NodeAttributeData &context,
-                                     GraphContext &graphContext)
+                         GraphContext &graphContext,
+                         NodeProfiler& profiler)
 {
     return true;
 }
@@ -987,9 +989,10 @@ void Gex::CompoundNode::Deserialize(rapidjson::Value& dict)
 
 
 bool Gex::CompoundNode::Evaluate(NodeAttributeData &ctx,
-                                             GraphContext &graphCtx)
+                                 GraphContext &graphCtx,
+                                 NodeProfiler& profiler)
 {
-    NodeEvaluator evaluator(innerNodes, graphCtx, false);
+    NodeEvaluator evaluator(innerNodes, graphCtx, profiler.GetProfiler(), false);
 
 	bool success = (evaluator.Status() == NodeEvaluator::EvaluationStatus::Done);
 
@@ -1000,14 +1003,16 @@ bool Gex::CompoundNode::Evaluate(NodeAttributeData &ctx,
 
 
 bool Gex::CompoundNode::PreEvaluate(NodeAttributeData &ctx,
-                                                GraphContext &graphContext)
+                                    GraphContext &graphContext,
+                                    NodeProfiler& profiler)
 {
     return true;
 }
 
 
 bool Gex::CompoundNode::PostEvaluate(NodeAttributeData &ctx,
-                                                 GraphContext &graphContext)
+                                     GraphContext &graphContext,
+                                     NodeProfiler& profiler)
 {
     return true;
 }
@@ -1025,21 +1030,22 @@ void Gex::CompoundNode::PullInternalOutputs()
 }
 
 
-bool Gex::CompoundNode::Compute(GraphContext &context)
+bool Gex::CompoundNode::Compute(GraphContext &context,
+                                NodeProfiler& profiler)
 {
     Pull();
     NodeAttributeData evalContext = createEvalContext();
-    if (!PreEvaluate(evalContext, context))
+    if (!PreEvaluate(evalContext, context, profiler))
     {
         return false;
     }
 
-    if (!Evaluate(evalContext, context))
+    if (!Evaluate(evalContext, context, profiler))
     {
         return false;
     }
 
-    return PostEvaluate(evalContext, context);
+    return PostEvaluate(evalContext, context, profiler);
 }
 
 

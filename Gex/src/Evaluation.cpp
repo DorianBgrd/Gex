@@ -1,5 +1,5 @@
-#include "include/Evaluation.h"
-#include "include/Node.h"
+#include "Gex/include/Evaluation.h"
+#include "Gex/include/Node.h"
 #include <thread>
 #include <mutex>
 
@@ -33,23 +33,31 @@ bool Gex::EvaluatorThread::AcquireNode()
 
 bool Gex::EvaluatorThread::ComputeNode()
 {
+    auto wn = _evaluator->profiler->StartEvent("Thread " + std::to_string(index),
+                                               "Waiting previous nodes");
     while (!node->ShouldBeEvaluated())
     {
         std::this_thread::yield();
     }
+    _evaluator->profiler->StopEvent(wn);
 
-    _evaluator->Context().GetProfiler()->SetNodeThread(node->node, index);
+    auto nodeProfiler = NodeProfiler(_evaluator->GetProfiler(), node->node, index);
 
     if (nodeStart)
     {
         nodeStart(node->node);
     }
 
-    bool result = node->Compute(_evaluator->Context());
+    bool result = node->Compute(_evaluator->Context(), nodeProfiler);
 
     if (nodeEnd)
     {
+        auto ne = _evaluator->profiler->StartEvent("Thread " + std::to_string(index),
+                                                  "NodeEnd");
+
         nodeEnd(node->node, result);
+
+        _evaluator->profiler->StopEvent(ne);
     }
 
     return result;
@@ -63,11 +71,14 @@ void Gex::EvaluatorThread::Loop()
 {
     while(!_evaluator->Done() && !stop)
     {
+        auto an = _evaluator->profiler->StartEvent("Thread " + std::to_string(index),
+                                                              "AcquireNode");
         nodeEvaluatorLock.lock();
 
         bool acquired = AcquireNode();
 
         nodeEvaluatorLock.unlock();
+        _evaluator->profiler->StopEvent(an);
 
         if (!acquired)
         {
@@ -303,7 +314,8 @@ std::vector<Gex::ScheduledNode*> Gex::ScheduleNodes(std::vector<Gex::Node*> node
 
 
 
-Gex::NodeEvaluator::NodeEvaluator(std::vector<Node*> nodes_, GraphContext& ctx, bool detached,
+Gex::NodeEvaluator::NodeEvaluator(std::vector<Node*> nodes_, GraphContext& ctx,
+                                  Profiler profiler_, bool detached,
                                   std::function<void(Node*)> onNodeStarted,
                                   std::function<void(Node*, bool)> onNodeDone,
                                   std::function<void(const GraphContext&)> postEvaluation)
@@ -313,13 +325,17 @@ Gex::NodeEvaluator::NodeEvaluator(std::vector<Node*> nodes_, GraphContext& ctx, 
     evalStart = onNodeStarted;
     evalEnd = onNodeDone;
     runningThreads = 0;
-    schelNodes = ScheduleNodes(nodes_);
     numberOfThreads = 1;
+    profiler = profiler_;
 
     status = NodeEvaluator::EvaluationStatus::Running;
     std::vector<std::thread> stdthreads;
 
-    context.GetProfiler()->Start();
+    unsigned int schedule = profiler->StartEvent("Prepare", "Schedule");
+    schelNodes = ScheduleNodes(nodes_);
+    profiler->StopEvent(schedule);
+
+    unsigned int threadStart = profiler->StartEvent("Prepare", "Starting threads");
     for (unsigned int i = 0; i < numberOfThreads; i++)
     {
         auto* nodeThread = new EvaluatorThread(this, i, evalStart, evalEnd);
@@ -331,6 +347,7 @@ Gex::NodeEvaluator::NodeEvaluator(std::vector<Node*> nodes_, GraphContext& ctx, 
 
         runningThreads +=1;
     }
+    profiler->StopEvent(threadStart);
 
     if(!detached)
     {
@@ -360,6 +377,12 @@ Gex::GraphContext & Gex::NodeEvaluator::Context()
 }
 
 
+Gex::Profiler Gex::NodeEvaluator::GetProfiler()
+{
+    return profiler;
+}
+
+
 void Gex::NodeEvaluator::End()
 {
     if (postEval)
@@ -368,8 +391,7 @@ void Gex::NodeEvaluator::End()
     }
 
     status = EvaluationStatus::Done;
-
-    context.GetProfiler()->Stop();
+    profiler->Stop();
 }
 
 
@@ -392,7 +414,7 @@ void Gex::NodeEvaluator::Terminate()
 
     status = EvaluationStatus::Failed;
 
-    context.GetProfiler()->Stop();
+    profiler->Stop();
 }
 
 
@@ -405,7 +427,7 @@ void Gex::NodeEvaluator::Stop()
 
     status = EvaluationStatus::Canceled;
 
-    context.GetProfiler()->Stop();
+    profiler->Stop();
 }
 
 
@@ -440,9 +462,10 @@ bool Gex::ScheduledNode::ShouldBeEvaluated() const
     return true;
 }
 
-bool Gex::ScheduledNode::Compute(Gex::GraphContext &context)
+bool Gex::ScheduledNode::Compute(Gex::GraphContext &context,
+                                 Gex::NodeProfiler& profiler)
 {
-    bool result = node->Compute(context);
+    bool result = node->Compute(context, profiler);
     evaluated = true;
     return result;
 }

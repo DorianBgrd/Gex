@@ -1,4 +1,4 @@
-#include "include/Gex.h"
+#include "Gex/include/Gex.h"
 #include "ui/include/ui.h"
 #include <QApplication>
 

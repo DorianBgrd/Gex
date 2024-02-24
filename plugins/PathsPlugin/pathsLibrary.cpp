@@ -1,5 +1,5 @@
 #include <filesystem>
-#include "include/Gex.h"
+#include "Gex/include/Gex.h"
 
 #include "../export.h"
 
@@ -26,7 +26,8 @@ namespace Paths
         }
 
         bool Evaluate(Gex::NodeAttributeData &ctx,
-                      Gex::GraphContext &) override
+                      Gex::GraphContext &,
+                      Gex::NodeProfiler& profiler) override
         {
             std::filesystem::path path1(ctx.GetAttribute("Path1").GetValue<std::string>());
             auto resPath = path1.append(ctx.GetAttribute("Path2").GetValue<std::string>());
@@ -56,7 +57,8 @@ namespace Paths
         }
 
         bool Evaluate(Gex::NodeAttributeData &ctx,
-                      Gex::GraphContext &) override
+                      Gex::GraphContext &,
+                      Gex::NodeProfiler& profiler) override
         {
             std::filesystem::path path(ctx.GetAttribute("Path").GetValue<std::string>());
 
@@ -87,7 +89,8 @@ namespace Paths
         }
 
         bool Evaluate(Gex::NodeAttributeData &ctx,
-                      Gex::GraphContext &) override
+                      Gex::GraphContext &,
+                      Gex::NodeProfiler& profiler) override
         {
             std::filesystem::path path(ctx.GetAttribute("Path").GetValue<std::string>());
 
@@ -123,7 +126,8 @@ namespace Paths
         }
 
         bool Evaluate(Gex::NodeAttributeData &ctx,
-                      Gex::GraphContext &) override
+                      Gex::GraphContext &,
+                      Gex::NodeProfiler& profiler) override
         {
             std::filesystem::path path(ctx.GetAttribute("Path").GetValue<std::string>());
 

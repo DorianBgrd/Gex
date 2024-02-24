@@ -4,7 +4,7 @@
 
 #include <iostream>
 
-#include "include/Gex.h"
+#include "Gex/include/Gex.h"
 
 #include "../export.h"
 
@@ -113,7 +113,8 @@ namespace MathNodes
        }
 
         bool Evaluate(Gex::NodeAttributeData &ctx,
-                      Gex::GraphContext &graph) override
+                      Gex::GraphContext &graph,
+                      Gex::NodeProfiler& profiler) override
         {
             auto input1 = ctx.GetAttribute("Input1").GetValue<int>();
             auto input2 = ctx.GetAttribute("Input2").GetValue<int>();
@@ -152,7 +153,8 @@ namespace MathNodes
         }
 
         bool Evaluate(Gex::NodeAttributeData &ctx,
-                      Gex::GraphContext &) override
+                      Gex::GraphContext &,
+                      Gex::NodeProfiler& profiler) override
         {
             auto input1 = ctx.GetAttribute("Input1").GetValue<float>();
             auto input2 = ctx.GetAttribute("Input2").GetValue<float>();
@@ -191,7 +193,8 @@ namespace MathNodes
         }
 
         bool Evaluate(Gex::NodeAttributeData &ctx,
-                      Gex::GraphContext &) override
+                      Gex::GraphContext &,
+                      Gex::NodeProfiler& profiler) override
         {
             auto input1 = ctx.GetAttribute("Input1").GetValue<double>();
             auto input2 = ctx.GetAttribute("Input2").GetValue<double>();
@@ -222,7 +225,8 @@ namespace MathNodes
         }
 
         bool Evaluate(Gex::NodeAttributeData &ctx,
-                      Gex::GraphContext &) override
+                      Gex::GraphContext &,
+                      Gex::NodeProfiler& profiler) override
         {
             int value = ctx.GetAttribute("Input").GetValue<int>();
             ctx.GetAttribute("Output").SetValue<int>(value);

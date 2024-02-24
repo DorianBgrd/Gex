@@ -1,6 +1,6 @@
 #include "python/include/io.h"
-#include "include/io.h"
-#include "include/graph.h"
+#include "Gex/include/io.h"
+#include "Gex/include/graph.h"
 #include "boost/python.hpp"
 
 

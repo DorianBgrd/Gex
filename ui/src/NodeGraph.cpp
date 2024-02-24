@@ -1,4 +1,4 @@
-#include "include/Config.h"
+#include "Gex/include/Config.h"
 #include "ui/include/NodeGraph.h"
 
 #include "UiTsys/include/uitsys.h"
@@ -21,7 +21,7 @@
 #include <QThread>
 #include <QStyleOptionGraphicsItem>
 
-#include "include/Evaluation.h"
+#include "Gex/include/Evaluation.h"
 
 Gex::Ui::PlugItem::PlugItem(AttributeItem* attribute,
                                       bool input): QGraphicsEllipseItem(attribute)
@@ -2480,6 +2480,7 @@ Gex::Ui::GraphWidget::GraphWidget(Gex::Graph* graph_,
                                   QWidget* parent): QWidget(parent)
 {
     graph = graph_;
+    profiler = MakeProfiler();
 
     setWindowFlag(Qt::Window, true);
     setWindowFlag(Qt::WindowMaximizeButtonHint, true);
@@ -2659,15 +2660,21 @@ void Gex::Ui::GraphWidget::EnableInteraction()
 }
 
 
+Gex::Profiler Gex::Ui::GraphWidget::GetProfiler() const
+{
+    return profiler;
+}
+
+
 void LocallyThreadedRunGraph(Gex::Ui::GraphWidget* widget)
 {
     widget->RunGraph();
 }
 
 
-void EmitContext(Gex::Ui::GraphWidget* this_, const Gex::GraphContext& ctx)
+void EmitProfiler(Gex::Ui::GraphWidget* this_, const Gex::GraphContext& ctx)
 {
-    Q_EMIT this_->GraphEvaluated(ctx);
+    Q_EMIT this_->GraphEvaluated(this_->GetProfiler());
 }
 
 
@@ -2678,16 +2685,14 @@ void Gex::Ui::GraphWidget::RunGraph()
 
     Gex::GraphContext evaluationContext;
 
-    graph->Compute(evaluationContext,
+    graph->Compute(evaluationContext, profiler,
                    [this](Gex::Node* node)
                    {this->scene->NodeEvaluationStarted(node);},
                    [this](Gex::Node* node, bool success)
                    {if (success) this->scene->NodeEvaluationDone(node, success);},
                    [this](const Gex::GraphContext& ctx)
-                   {EmitContext(this, ctx);}
+                   {EmitProfiler(this, ctx);}
                    );
-
-
 }
 
 

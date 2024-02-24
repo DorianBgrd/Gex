@@ -1,8 +1,5 @@
-//
-// Created by Dorian on 8/12/2022.
-//
-#include "include/Node.h"
-#include "include/NodeAttributeData.h"
+#include "Gex/include/Node.h"
+#include "Gex/include/NodeAttributeData.h"
 
 
 Gex::NodeAttributeData::NodeAttributeData(Node* n)

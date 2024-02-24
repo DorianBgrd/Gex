@@ -1,7 +1,7 @@
-#include "include/Node.h"
+#include "Gex/include/Node.h"
 #include "python/include/Node.h"
-#include "include/Attribute.h"
-#include "include/Graph.h"
+#include "Gex/include/Attribute.h"
+#include "Gex/include/Graph.h"
 
 #include "Tsys/include/tsys.h"
 
@@ -208,7 +208,8 @@ void Gex::Python::Node_Wrap::InitAttributes()
 
 
 bool Gex::Python::Node_Wrap::Evaluate(NodeAttributeData &evalCtx,
-                                      GraphContext &graphCtx)
+                                      GraphContext &graphCtx,
+                                      NodeProfiler& profiler)
 {
     if (boost::python::override func = boost::python::wrapper<Gex::Node>::get_override("Evaluate"))
     {
@@ -226,7 +227,7 @@ bool Gex::Python::Node_Wrap::Evaluate(NodeAttributeData &evalCtx,
 
     }
 
-    return Node::Evaluate(evalCtx, graphCtx);
+    return Node::Evaluate(evalCtx, graphCtx, profiler);
 }
 
 

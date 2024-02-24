@@ -2,7 +2,7 @@
 #define GEX_GRAPH_H
 
 #include "api.h"
-#include "include/Graph.h"
+#include "Gex/include/Graph.h"
 
 
 namespace Gex

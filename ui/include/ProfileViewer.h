@@ -8,31 +8,45 @@
 #include <QWidget>
 #include <QGraphicsView>
 #include <QGraphicsRectItem>
+#include <QSplitter>
+#include <QTreeWidget>
 
-#include "include/Gex.h"
+#include "Gex/include/Gex.h"
 #include "ui/include/BaseGraph.h"
 
 namespace Gex::Ui
 {
-    class GEX_UI_API ProfileStepItem: public QGraphicsRectItem
+    class GEX_UI_API ProfileEventItem: public QGraphicsRectItem
     {
-        Gex::Step step;
-        Gex::ProfilerPtr profiler;
+        Gex::Event step;
+        Gex::Profiler profiler;
     public:
-        ProfileStepItem(Gex::ProfilerPtr profiler, Gex::Step step,
-                        QGraphicsItem* parent=nullptr);
+        ProfileEventItem(Gex::Profiler profiler, Gex::Event step,
+                         QGraphicsItem* parent=nullptr);
     };
 
     class GEX_UI_API ProfileWidget: public BaseGraphView
     {
         Q_OBJECT
     private:
-        ProfilerPtr profiler;
+        Gex::Profiler profiler;
 
     public:
         ProfileWidget(QWidget* parent=nullptr);
 
-        void ViewProfiler(ProfilerPtr p);
+        void ViewProfiler(Gex::Profiler p);
+    };
+
+
+    class GEX_UI_API ProfileTable: public QTreeWidget
+    {
+        Q_OBJECT
+    public:
+        ProfileTable(QWidget* parent=nullptr);
+
+        void ViewProfiler(Gex::Profiler p);
+
+        QTreeWidgetItem* CreateItem() const;
     };
 
 
@@ -40,13 +54,14 @@ namespace Gex::Ui
     {
         Q_OBJECT
     private:
-        ProfilerPtr profiler;
+        Gex::Profiler profiler;
         ProfileWidget* profWidget;
+        ProfileTable* profTable;
 
     public:
         ProfileView(QWidget* parent=nullptr);
 
-        void FromContext(const Gex::GraphContext& context);
+        void FromContext(const Gex::Profiler& profiler);
 
     protected:
         void SetZoom(int zoom);

@@ -1,5 +1,5 @@
-#include "include/NodeFactory.h"
-#include "include/Config.h"
+#include "Gex/include/NodeFactory.h"
+#include "Gex/include/Config.h"
 #include "rapidjson/document.h"
 
 #include <boost/python.hpp>

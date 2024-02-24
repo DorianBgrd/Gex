@@ -1,10 +1,10 @@
-#include "include/PluginLoader.h"
+#include "Gex/include/PluginLoader.h"
 #include <windows.h>
 #include <libloaderapi.h>
 #include <filesystem>
 
 #include "boost/python.hpp"
-#include "include/NodeFactory.h"
+#include "Gex/include/NodeFactory.h"
 
 #include <fstream>
 

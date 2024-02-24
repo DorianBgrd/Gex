@@ -297,6 +297,11 @@ QListView{
 QTreeView{
     color: #FFFFFF;
     border: none;
+    background-color: black;
+}
+QHeaderView::section
+{
+    background-color: darkgray;
 }
 
 

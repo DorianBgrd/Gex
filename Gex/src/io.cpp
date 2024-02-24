@@ -1,4 +1,4 @@
-#include "include/io.h"
+#include "Gex/include/io.h"
 
 #include <fstream>
 #include <filesystem>
@@ -6,7 +6,7 @@
 #include "rapidjson/document.h"
 #include "rapidjson/filewritestream.h"
 #include "rapidjson/writer.h"
-#include "rapidjson/prettyWriter.h"
+#include "rapidjson/prettywriter.h"
 
 Gex::Feedback Gex::SaveGraph(Gex::Graph *graph, const std::string& filepath)
 {

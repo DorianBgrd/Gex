@@ -1,5 +1,5 @@
 #include "python/include/Attribute.h"
-#include "include/Node.h"
+#include "Gex/include/Node.h"
 #include "Tsys/include/tsys.h"
 
 bool Gex::Python::Attribute_Wrap::registered = false;

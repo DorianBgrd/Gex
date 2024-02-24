@@ -2,7 +2,7 @@
 #define NODELIBRARY2COMPLETE_ITER_H
 
 
-#include "include/Gex.h"
+#include "Gex/include/Gex.h"
 
 #include "../export.h"
 
@@ -40,7 +40,8 @@ namespace iter
         }
 
         bool Evaluate(Gex::NodeAttributeData &context,
-                      Gex::GraphContext &graphCtx) override
+                      Gex::GraphContext &graphCtx,
+                      Gex::NodeProfiler& profiler) override
         {
             std::vector<unsigned int> indices = GetAttribute("input")->ValidIndices();
 
@@ -58,7 +59,7 @@ namespace iter
 
                 context.GetAttribute("in").SetValue<TSys::AnyValue>(indexvalue);
 
-                bool success_ = Gex::CompoundNode::Evaluate(context, graphCtx);
+                bool success_ = Gex::CompoundNode::Evaluate(context, graphCtx, profiler);
                 if (!success_)
                 {
                     continue;

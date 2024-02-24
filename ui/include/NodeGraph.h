@@ -3,7 +3,7 @@
 
 #include "api.h"
 #include "BaseGraph.h"
-#include "include/Gex.h"
+#include "Gex/include/Gex.h"
 
 #include <QObject>
 #include <QVector>
@@ -534,6 +534,7 @@ namespace Gex
             Q_OBJECT
 
             Gex::Graph* graph;
+            Gex::Profiler profiler;
             NodeGraphScene* scene = nullptr;
             NodeGraphView* view = nullptr;
             AttributeEditor* editor = nullptr;
@@ -569,6 +570,8 @@ namespace Gex
 
             void EnableInteraction();
 
+            Gex::Profiler GetProfiler() const;
+
             void RunGraph();
 
             void InteractiveRun();
@@ -577,7 +580,7 @@ namespace Gex
 
             void ShowMessage(Gex::Ui::UiFeedback feedback);
 
-            Q_SIGNAL void GraphEvaluated(const Gex::GraphContext context);
+            Q_SIGNAL void GraphEvaluated(const Gex::Profiler profiler);
         };
     }
 }

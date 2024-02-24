@@ -1,5 +1,5 @@
 #include "python/include/Graph.h"
-#include "include/Node.h"
+#include "Gex/include/Node.h"
 #include "boost/python.hpp"
 
 

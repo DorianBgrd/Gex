@@ -20,21 +20,21 @@ message("TSYS_LIBRARY_DIR : ${TSYS_LIBRARY_DIR}")
 add_library(
         Gex
         SHARED
-        src/Attribute.cpp
-        src/Evaluation.cpp
-        src/Graph.cpp
-        src/Node.cpp
-        src/NodeAttributeData.cpp
-        src/NodeFactory.cpp
-        src/PluginLoader.cpp
-        include/Config.h
-        src/Config.cpp
-        include/Status.h
-        include/Gex.h
-        include/io.h
-        src/io.cpp
-        include/Profiler.h
-        src/Profiler.cpp)
+        Gex/src/Attribute.cpp
+        Gex/src/Evaluation.cpp
+        Gex/src/Graph.cpp
+        Gex/src/Node.cpp
+        Gex/src/NodeAttributeData.cpp
+        Gex/src/NodeFactory.cpp
+        Gex/src/PluginLoader.cpp
+        Gex/include/Config.h
+        Gex/src/Config.cpp
+        Gex/include/Status.h
+        Gex/include/Gex.h
+        Gex/include/io.h
+        Gex/src/io.cpp
+        Gex/include/Profiler.h
+        Gex/src/Profiler.cpp)
 
 
 target_include_directories(

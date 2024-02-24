@@ -2,6 +2,7 @@
 
 #include <QGraphicsLineItem>
 #include <QGraphicsRectItem>
+#include <QGraphicsTextItem>
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QSpinBox>
@@ -14,13 +15,15 @@ inline double Duration(std::chrono::nanoseconds s)
 }
 
 
-Gex::Ui::ProfileStepItem::ProfileStepItem(Gex::ProfilerPtr p, Gex::Step s, QGraphicsItem* parent): QGraphicsRectItem(parent)
+Gex::Ui::ProfileEventItem::ProfileEventItem(Gex::Profiler p, Gex::Event s,
+                                            QGraphicsItem* parent):
+                                            QGraphicsRectItem(parent)
 {
     profiler = p;
     step = s;
 
     auto* textItem = new QGraphicsTextItem(this);
-    textItem->setPlainText(step->Name().c_str());
+    textItem->setPlainText(step.name.c_str());
 
     setBrush(QBrush(QColor("#15915B")));
 }
@@ -33,34 +36,118 @@ Gex::Ui::ProfileWidget::ProfileWidget(QWidget* parent):
 }
 
 
-void Gex::Ui::ProfileWidget::ViewProfiler(ProfilerPtr p)
+void Gex::Ui::ProfileWidget::ViewProfiler(Gex::Profiler p)
 {
     profiler = p;
+
+    Gex::Profile prof = p->Result();
 
     size_t duration = p->Duration().count();
 
     setSceneRect(0, 0, duration, duration);
-    fitInView(0, 0, duration, duration);
 
-    size_t height = duration / profiler->NumberOfThreads();
+    size_t height = duration / prof.size();
 
-    for (const auto& step : profiler->GetSteps())
+    unsigned int y = 0;
+    for (const auto& events : prof)
     {
-        auto* item = new ProfileStepItem(profiler, step);
+        auto category = events.first;
 
-        unsigned int incr = profiler->NodeThread(step->Node()->Path());
+        for (const auto& event : events.second)
+        {
+            auto* item = new ProfileEventItem(profiler, event);
 
-        size_t x = (step->StartTime() - profiler->StartTime()).count();
-        size_t y = incr * height;
-        size_t w = (step->EndTime() - step->StartTime()).count();
-        size_t h = height;
+            size_t x = (event.StartTime() - profiler->StartTime()).count();
+            size_t w = event.Duration().count();
+            size_t h = height;
 
-        item->setRect(0, 0, w, h);
-        item->setPos(x, y);
-        scene()->addItem(item);
+            item->setRect(0, 0, w, h);
+            item->setPos(x, y);
+            scene()->addItem(item);
+        }
+
+        setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
+        setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
+
+        y += height;
     }
+
+    fitInView(0, 0, duration, duration, Qt::IgnoreAspectRatio);
+
+//    for (const auto& step : profiler->GetSteps())
+//    {
+//        auto* item = new ProfileStepItem(profiler, step);
+//
+//        unsigned int incr = profiler->NodeThread(step->Node()->Path());
+//
+//        size_t x = (step->StartTime() - profiler->StartTime()).count();
+//        size_t y = incr * height;
+//        size_t w = (step->EndTime() - step->StartTime()).count();
+//        size_t h = height;
+//
+//        item->setRect(0, 0, w, h);
+//        item->setPos(x, y);
+//        scene()->addItem(item);
+//    }
 }
 
+
+
+Gex::Ui::ProfileTable::ProfileTable(QWidget* parent): QTreeWidget(parent)
+{
+    headerItem()->setText(0, "Name");
+    headerItem()->setText(1, "Duration");
+    headerItem()->setText(2, "Start");
+    headerItem()->setText(3, "End");
+}
+
+
+QTreeWidgetItem* Gex::Ui::ProfileTable::CreateItem() const
+{
+    auto* item = new QTreeWidgetItem();
+    item->setTextAlignment(0, Qt::AlignLeft);
+    item->setTextAlignment(1, Qt::AlignRight);
+    item->setTextAlignment(2, Qt::AlignRight);
+    item->setTextAlignment(3, Qt::AlignRight);
+    return item;
+}
+
+
+void Gex::Ui::ProfileTable::ViewProfiler(Gex::Profiler p)
+{
+    clear();
+
+    Gex::Profile prof = p->Result();
+
+    auto* global = CreateItem();
+    global->setText(0, "Global");
+    addTopLevelItem(global);
+
+    auto* graph = CreateItem();
+    graph->setText(0, "Graph::Compute");
+    graph->setText(1, std::to_string(p->Duration().count()).c_str());
+    graph->setText(2, "0");
+    graph->setText(3, std::to_string((p->EndTime() - p->StartTime()).count()).c_str());
+    global->addChild(graph);
+
+    for(auto events : prof)
+    {
+        auto* catItem = CreateItem();
+        catItem->setText(0, events.first.c_str());
+        addTopLevelItem(catItem);
+
+        for (auto event : events.second)
+        {
+            auto* eventItem = CreateItem();
+            catItem->addChild(eventItem);
+
+            eventItem->setText(0, event.name.c_str());
+            eventItem->setText(1, std::to_string(event.Duration().count()).c_str());
+            eventItem->setText(2, std::to_string((event.StartTime() - p->StartTime()).count()).c_str());
+            eventItem->setText(3, std::to_string((event.EndTime() - p->StartTime()).count()).c_str());
+        }
+    }
+}
 
 
 Gex::Ui::ProfileView::ProfileView(QWidget* parent): QWidget(parent)
@@ -69,8 +156,14 @@ Gex::Ui::ProfileView::ProfileView(QWidget* parent): QWidget(parent)
     layout->setContentsMargins(0, 0, 0, 0);
     setLayout(layout);
 
+    auto* splitter = new QSplitter(this);
+    layout->addWidget(splitter);
+
     profWidget = new ProfileWidget(this);
-    layout->addWidget(profWidget);
+    splitter->addWidget(profWidget);
+
+    profTable = new ProfileTable(this);
+    splitter->addWidget(profTable);
 }
 
 
@@ -82,9 +175,10 @@ void Gex::Ui::ProfileView::SetZoom(int zoom)
 }
 
 
-void Gex::Ui::ProfileView::FromContext(const Gex::GraphContext& context)
+void Gex::Ui::ProfileView::FromContext(const Gex::Profiler& profiler)
 {
-    profWidget->ViewProfiler(context.GetProfiler());
+    profWidget->ViewProfiler(profiler);
+    profTable->ViewProfiler(profiler);
 }
 
 

@@ -2,7 +2,7 @@
 #define GEX_NODE_H
 
 #include "api.h"
-#include "include/Node.h"
+#include "Gex/include/Node.h"
 #include "boost/python.hpp"
 
 namespace  Gex
@@ -31,7 +31,8 @@ namespace  Gex
 
 
             bool Evaluate(NodeAttributeData &evalCtx,
-                          GraphContext &graphCtx)
+                          GraphContext &graphCtx,
+                          NodeProfiler&  profiler)
             override;
 
 

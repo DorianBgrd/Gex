@@ -5,7 +5,7 @@
 
 
 
-#include "include/Gex.h"
+#include "Gex/include/Gex.h"
 
 
 #include <string>
@@ -51,7 +51,8 @@ namespace StringNodes
         }
 
         bool Evaluate(Gex::NodeAttributeData &ctx,
-                      Gex::GraphContext &) override
+                      Gex::GraphContext &,
+                      Gex::NodeProfiler& profiler) override
         {
             std::string delimiter = ctx.GetAttribute("delimiter").GetValue<std::string>();
             std::vector<std::string> strings = ctx.GetAttribute("Strings").GetArrayValues<std::string>();
@@ -100,7 +101,8 @@ namespace StringNodes
         }
 
         bool Evaluate(Gex::NodeAttributeData &ctx,
-                      Gex::GraphContext &) override
+                      Gex::GraphContext &,
+                      Gex::NodeProfiler& profiler) override
         {
             std::string str = ctx.GetAttribute("String").GetValue<std::string>();
             std::string delimiter = ctx.GetAttribute("Delimiter").GetValue<std::string>();
@@ -183,7 +185,8 @@ namespace StringNodes
         }
 
         bool Evaluate(Gex::NodeAttributeData &ctx,
-                      Gex::GraphContext &) override
+                      Gex::GraphContext &,
+                      Gex::NodeProfiler& profiler) override
         {
             std::string str = ctx.GetAttribute("String").GetValue<std::string>();
 

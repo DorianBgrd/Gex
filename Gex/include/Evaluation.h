@@ -2,7 +2,7 @@
 #define NODELIBRARY2COMPLETE_EVALUATION_H
 
 #include "api.h"
-#include "graph.h"
+#include "Graph.h"
 
 #include <vector>
 #include <string>
@@ -27,7 +27,8 @@ namespace Gex
 
         bool ShouldBeEvaluated() const;
 
-        bool Compute(GraphContext &context);
+        bool Compute(GraphContext &context,
+                     NodeProfiler& profiler);
 
         bool Evaluated() const;
     };
@@ -86,6 +87,7 @@ namespace Gex
         std::vector<EvaluatorThread*> threads;
         std::vector<ScheduledNode*> schelNodes;
         GraphContext context;
+        Profiler profiler;
         int n = -1;
 
         EvaluationStatus status = EvaluationStatus::Preparing;
@@ -97,9 +99,8 @@ namespace Gex
         static void StartEvalThread(EvaluatorThread* thread);
 
     public:
-        NodeEvaluator(std::vector<Node*> nodes,
-                      GraphContext& context,
-                      bool detached=false,
+        NodeEvaluator(std::vector<Node*> nodes, GraphContext& context,
+                      Gex::Profiler profiler, bool detached=false,
                       std::function<void(Node*)> onNodeStart=nullptr,
                       std::function<void(Node*, bool)> onNodeEnd=nullptr,
                       std::function<void(const GraphContext&)> postEvaluation=nullptr);
@@ -107,6 +108,8 @@ namespace Gex
         ScheduledNode* NextNode();
 
         GraphContext& Context();
+
+        Profiler GetProfiler();
 
     protected:
         void ThreadsStopped();

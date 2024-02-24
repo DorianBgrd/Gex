@@ -28,7 +28,6 @@ namespace Gex
     {
         friend NodeEvaluator;
         std::vector<std::string> resources;
-        ProfilerPtr profiler;
 
     public:
         GraphContext();
@@ -38,8 +37,6 @@ namespace Gex
         void RegisterResource(std::string resource);
 
         std::vector<std::string> Resources() const;
-
-        ProfilerPtr GetProfiler() const;
     };
 
 
@@ -68,7 +65,8 @@ namespace Gex
 
         static Feedback CheckLoadStatus(rapidjson::Value& dict);
 
-        bool Compute(GraphContext& context, std::function<void(Node*)> nodeStarted=nullptr,
+        bool Compute(GraphContext& context, Profiler& profile,
+                     std::function<void(Node*)> nodeStarted=nullptr,
                      std::function<void(Node*, bool)> nodeDone=nullptr,
                      std::function<void(const GraphContext& context)> evalDone=nullptr) const;
 

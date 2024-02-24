@@ -1,7 +1,7 @@
 #ifndef GEX_PLUGINLOADER_H
 #define GEX_PLUGINLOADER_H
 
-#include "include/PluginLoader.h"
+#include "Gex/include/PluginLoader.h"
 
 
 namespace Gex

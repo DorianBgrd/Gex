@@ -1,5 +1,5 @@
 #include "ArgParse/ArgParse.h"
-#include "include/Gex.h"
+#include "Gex/include/Gex.h"
 
 #define EXECUTE "exec"
 

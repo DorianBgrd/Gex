@@ -3,7 +3,7 @@
 
 #include <iostream>
 
-#include "include/Gex.h"
+#include "Gex/include/Gex.h"
 
 #include "../export.h"
 
@@ -26,7 +26,8 @@ namespace Debug
         }
 
         bool Evaluate(Gex::NodeAttributeData &data,
-                      Gex::GraphContext &) override
+                      Gex::GraphContext &,
+                      Gex::NodeProfiler& profiler) override
         {
             std::cout << "[DEBUG][Print] : Evaluate" << std::endl;
             return true;
@@ -60,7 +61,8 @@ namespace Debug
         }
 
         bool Evaluate(Gex::NodeAttributeData &data,
-                      Gex::GraphContext &) override
+                      Gex::GraphContext &,
+                      Gex::NodeProfiler& profiler) override
         {
             int w = data.GetAttribute("WaitingTime").GetValue<int>();
             std::cout << "Starting waiting for " << std::to_string(w) << std::endl;

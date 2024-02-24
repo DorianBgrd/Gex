@@ -2,7 +2,7 @@
 #define NODELIBRARY2COMPLETE_ARRAYS_H
 
 #include "../export.h"
-#include "include/Gex.h"
+#include "Gex/include/Gex.h"
 #include "Tsys/include/tsys.h"
 #include "Tsys/include/defaultTypes.h"
 
@@ -18,7 +18,8 @@ namespace Arrays
         }
 
         bool Evaluate(Gex::EvaluationContext& ctx,
-                      const Gex::GraphContext&)
+                      const Gex::GraphContext&,
+                      Gex::NodeProfiler& profiler)
         {
             return true;
         }
@@ -42,7 +43,8 @@ namespace Arrays
         }
 
         bool Evaluate(Gex::NodeAttributeData &ctx,
-                      Gex::GraphContext &) override
+                      Gex::GraphContext &,
+                      Gex::NodeProfiler& profiler) override
         {
             ctx.GetAttribute("Result").ClearMultiIndices();
 
@@ -107,7 +109,8 @@ namespace Arrays
         }
 
         bool Evaluate(Gex::NodeAttributeData &ctx,
-                      Gex::GraphContext &) override
+                      Gex::GraphContext &,
+                      Gex::NodeProfiler& profiler) override
         {
             ctx.GetAttribute("Result").ClearMultiIndices();
 
@@ -167,7 +170,8 @@ namespace Arrays
         }
 
         bool Evaluate(Gex::NodeAttributeData &ctx,
-                      Gex::GraphContext &) override
+                      Gex::GraphContext &,
+                      Gex::NodeProfiler& profiler) override
         {
             ctx.GetAttribute("Result").ClearMultiIndices();
 
@@ -214,7 +218,8 @@ namespace Arrays
         }
 
         bool Evaluate(Gex::NodeAttributeData &ctx,
-                      Gex::GraphContext &) override
+                      Gex::GraphContext &,
+                      Gex::NodeProfiler& profiler) override
         {
             ctx.GetAttribute("Length").SetValue<int>((int)ctx.GetAttribute("InputArray").GetIndices().size());
             return true;
@@ -237,7 +242,8 @@ namespace Arrays
         }
 
         bool Evaluate(Gex::NodeAttributeData &ctx,
-                      Gex::GraphContext &) override
+                      Gex::GraphContext &,
+                      Gex::NodeProfiler& profiler) override
         {
             auto index = ctx.GetAttribute("Index").GetValue<int>();
 
@@ -267,7 +273,8 @@ namespace Arrays
         }
 
         bool Evaluate(Gex::NodeAttributeData &ctx,
-                      Gex::GraphContext &) override
+                      Gex::GraphContext &,
+                      Gex::NodeProfiler& profiler) override
         {
 
             Gex::Feedback status;
@@ -303,7 +310,8 @@ namespace Arrays
         }
 
         bool Evaluate(Gex::NodeAttributeData &ctx,
-                      Gex::GraphContext &) override
+                      Gex::GraphContext &,
+                      Gex::NodeProfiler& profiler) override
         {
 
             Gex::Feedback status;
@@ -352,7 +360,8 @@ namespace Arrays
         }
 
         bool Evaluate(Gex::NodeAttributeData &ctx,
-                      Gex::GraphContext &) override
+                      Gex::GraphContext &,
+                      Gex::NodeProfiler& profiler) override
         {
             auto list = ctx.GetAttribute("InputArray").GetArrayValues<TSys::AnyValue>();
 

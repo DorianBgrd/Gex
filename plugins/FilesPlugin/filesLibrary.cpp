@@ -8,7 +8,7 @@
 #endif //LIBRARY_FILES_H
 
 
-#include "include/Gex.h"
+#include "Gex/include/Gex.h"
 
 #include <filesystem>
 #include <fstream>
@@ -61,7 +61,8 @@ namespace FileNodes
         }
 
         bool Evaluate(Gex::NodeAttributeData &ctx,
-                      Gex::GraphContext &) override
+                      Gex::GraphContext &,
+                      Gex::NodeProfiler& profiler) override
         {
             auto directory = ctx.GetAttribute("Directory").GetValue<std::string>();
             auto filename = ctx.GetAttribute("Filename").GetValue<std::string>();
@@ -132,7 +133,8 @@ namespace FileNodes
         }
 
         bool Evaluate(Gex::NodeAttributeData &ctx,
-                      Gex::GraphContext &) override
+                      Gex::GraphContext &,
+                      Gex::NodeProfiler& profiler) override
         {
             auto cpath = ctx.GetAttribute("Path").GetValue<std::string>();
             auto force = ctx.GetAttribute("Force").GetValue<bool>();

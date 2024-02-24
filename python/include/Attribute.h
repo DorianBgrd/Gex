@@ -2,7 +2,7 @@
 #define GEX_ATTRIBUTE_H
 
 #include "api.h"
-#include "include/Attribute.h"
+#include "Gex/include/Attribute.h"
 #include "boost/python.hpp"
 
 namespace Gex::Python

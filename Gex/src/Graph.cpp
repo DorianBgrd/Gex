@@ -1,11 +1,12 @@
-#include "include/Graph.h"
+#include "Gex/include/Graph.h"
 #include <filesystem>
 
-#include "include/Attribute.h"
-#include "include/Node.h"
-#include "include/NodeFactory.h"
-#include "include/Evaluation.h"
-#include "include/PluginLoader.h"
+#include "Gex/include/Attribute.h"
+#include "Gex/include/Node.h"
+#include "Gex/include/NodeFactory.h"
+#include "Gex/include/Evaluation.h"
+#include "Gex/include/PluginLoader.h"
+#include "Gex/include/Config.h"
 
 #include <future>
 #include <memory>
@@ -15,13 +16,13 @@
 
 Gex::GraphContext::GraphContext()
 {
-    profiler = std::make_shared<Profiler>();
+
 }
 
 
 Gex::GraphContext::GraphContext(const GraphContext& other)
 {
-    profiler = other.profiler;
+
 }
 
 
@@ -35,13 +36,6 @@ std::vector<std::string> Gex::GraphContext::Resources() const
 {
     return resources;
 }
-
-
-Gex::ProfilerPtr Gex::GraphContext::GetProfiler() const
-{
-    return profiler;
-}
-
 
 
 
@@ -127,9 +121,6 @@ bool Gex::Graph::RemoveNode(std::string nodename)
     nodes.erase(idx);
     return true;
 }
-
-
-#include "include/Config.h"
 
 
 Gex::Node* Gex::Graph::FindNode(std::string path) const
@@ -400,22 +391,20 @@ Gex::Feedback Gex::Graph::CheckLoadStatus(rapidjson::Value& dict)
 
 
 
-bool Gex::Graph::Compute(GraphContext& context, std::function<void(Node*)> nodeStarted,
+bool Gex::Graph::Compute(GraphContext& context, Profiler& profiler,
+                         std::function<void(Node*)> nodeStarted,
                          std::function<void(Node*, bool)> nodeDone,
                          std::function<void(const GraphContext& context)> evalDone) const
 {
-    std::vector<Gex::Node *> evalNodes;
-    for (auto* n: nodes) {
-        evalNodes.push_back(n);
-    }
+    profiler->Start();
 
     std::function<void(const GraphContext&)> finalize =
             [this, evalDone](const GraphContext& context) -> void {
         this->FinalizeEvaluation(context); evalDone(context); };
 
 
-    auto evaluator = std::make_shared<NodeEvaluator>(evalNodes, context, false,
-                                                     nodeStarted, nodeDone, finalize);
+    auto evaluator = std::make_shared<NodeEvaluator>(nodes, context, profiler,
+                                                     false, nodeStarted, nodeDone, finalize);
 
     return (evaluator->Status() == NodeEvaluator::EvaluationStatus::Done);
 }

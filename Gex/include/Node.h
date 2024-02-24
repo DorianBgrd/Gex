@@ -5,6 +5,7 @@
 #include "boost/python.hpp"
 #include "NodeAttributeData.h"
 #include "Attribute.h"
+#include "Profiler.h"
 #include <map>
 #include <vector>
 #include <string>
@@ -390,7 +391,8 @@ namespace Gex
          * Computes node.
          * @return bool success.
          */
-        virtual bool Compute(GraphContext &context);
+        virtual bool Compute(GraphContext &context,
+                             NodeProfiler& profiler);
 
     protected:
         /**
@@ -401,7 +403,8 @@ namespace Gex
          * @return bool success.
          */
         virtual bool Evaluate(NodeAttributeData &context,
-                              GraphContext &graphContext);
+                              GraphContext &graphContext,
+                              NodeProfiler& profiler);
 
     public:
 
@@ -543,7 +546,8 @@ namespace Gex
          * @return bool: success.
          */
         virtual bool PreEvaluate(NodeAttributeData& ctx,
-                                 GraphContext &graphContext);
+                                 GraphContext &graphContext,
+                                 NodeProfiler& profiler);
 
         /**
          * Evaluates compound node inner nodes, starting from
@@ -556,7 +560,8 @@ namespace Gex
          * @return bool: success.
          */
 		bool Evaluate(NodeAttributeData &ctx,
-                      GraphContext &graphContext)
+                      GraphContext &graphContext,
+                      NodeProfiler& profiler)
                       override;
 
         /**
@@ -567,7 +572,8 @@ namespace Gex
          * @return bool: success.
          */
         virtual bool PostEvaluate(NodeAttributeData& ctx,
-                                  GraphContext &graphContext);
+                                  GraphContext &graphContext,
+                                  NodeProfiler& profiler);
 
         void PullInternalOutputs();
 
@@ -576,7 +582,8 @@ namespace Gex
          * Launches compound computing.
          * @return bool: success.
          */
-        bool Compute(GraphContext &context) override;
+        bool Compute(GraphContext &context,
+                     NodeProfiler& profiler) override;
 
         /**
          * Serializes node values.
