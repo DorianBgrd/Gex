@@ -27,7 +27,7 @@ Gex::Attribute::Attribute()
 
 
 Gex::Attribute::Attribute(std::string name, std::any v, AttrValueType valueType,
-			                      AttrType type, bool userDefined, Gex::Node* node, Attribute* parent)
+			              AttrType type, bool userDefined, Gex::Node* node, Attribute* parent)
 {
     isInternal = false;
     attributeNode = node;
@@ -35,7 +35,7 @@ Gex::Attribute::Attribute(std::string name, std::any v, AttrValueType valueType,
     if (parent == nullptr)
         attributeLongname = name;
     else
-        attributeLongname = parent->Longname() + "/" + name;
+        attributeLongname = parent->Longname() + Config::GetConfig().attributeSeparator + name;
 
     attributeAnyValue = v;
     parentAttribute = parent;
@@ -67,6 +67,37 @@ Gex::Attribute::Attribute(const std::string& name, size_t hash, AttrValueType va
                                     valueType, type, userDefined, node, parent)
 {
 
+}
+
+
+Gex::Attribute::Attribute(const std::string& name, AttrType type, bool multi,
+                          bool userDefined, Gex::Node* node, Attribute* parent)
+{
+    isInternal = false;
+    attributeNode = node;
+    attributeName = name;
+    if (parent == nullptr)
+        attributeLongname = name;
+    else
+        attributeLongname = parent->Longname() + Config::GetConfig().attributeSeparator + name;
+    attributeAnyValue = InitNoneValue();
+    parentAttribute = parent;
+
+    bool isInput = false;
+    bool isOutput = false;
+    TypeToArguments(type, isInput, isOutput);
+
+    attributeIsMulti = multi;
+    attributeIsHolder = true;
+    attributeIsUserDefined = userDefined;
+    if (multi)
+        attributeValueType = AttrValueType::MultiHolder;
+    else
+        attributeValueType = AttrValueType::Holder;
+
+    attributeType = type;
+
+    InitDefaultValue();
 }
 
 

@@ -37,3 +37,10 @@ Gex::Ui::ProfileView* Gex::Ui::GraphView::GetProfileWidget() const
 {
     return profileView;
 }
+
+
+void Gex::Ui::GraphView::SwitchGraph(Gex::Graph* graph_)
+{
+    graph = graph_;
+    graphView->SwitchGraph(graph);
+}

@@ -229,7 +229,6 @@ std::string Gex::Node::Description() const
 
 void Gex::Node::SetName(std::string p)
 {
-    valuePath = p;
     nodeName = p;
 }
 
@@ -491,18 +490,6 @@ void Gex::Node::FactoryReset()
     {
         attribute->FactoryReset();
     }
-}
-
-
-bool Gex::Node::Update()
-{
-	if (!std::filesystem::exists(valuePath))
-	{
-		return false;
-	}
-
-	// Deserialize(valuePath, this);
-	return true;
 }
 
 
@@ -992,7 +979,9 @@ bool Gex::CompoundNode::Evaluate(NodeAttributeData &ctx,
                                  GraphContext &graphCtx,
                                  NodeProfiler& profiler)
 {
-    NodeEvaluator evaluator(innerNodes, graphCtx, profiler.GetProfiler(), false);
+    NodeEvaluator evaluator(innerNodes, graphCtx,
+                            profiler.GetProfiler(),
+                            false, 1);
 
 	bool success = (evaluator.Status() == NodeEvaluator::EvaluationStatus::Done);
 

@@ -66,6 +66,7 @@ namespace Gex
         static Feedback CheckLoadStatus(rapidjson::Value& dict);
 
         bool Compute(GraphContext& context, Profiler& profile,
+                     unsigned int threads=1,
                      std::function<void(Node*)> nodeStarted=nullptr,
                      std::function<void(Node*, bool)> nodeDone=nullptr,
                      std::function<void(const GraphContext& context)> evalDone=nullptr) const;

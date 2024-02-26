@@ -79,6 +79,8 @@ namespace Gex
         Duration Duration() const;
 
         Profile Result() const;
+
+        void Reset();
     };
 
 

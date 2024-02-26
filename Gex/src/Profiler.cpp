@@ -1,6 +1,8 @@
 #include "Gex/include/Profiler.h"
 #include "Gex/include/Node.h"
 
+#include <mutex>
+
 
 void Gex::Event::Start()
 {
@@ -40,18 +42,28 @@ Gex::Time Gex::Event::EndTime() const
 }
 
 
+std::mutex profileMutex;
+
+
 unsigned int Gex::EvaluationProfiler::StartEvent(unsigned int thread,
                                                  const std::string& category,
                                                  const std::string& name)
 {
+    profileMutex.lock();
+
     Event event;
     event.category = category;
     event.name = name;
 
     event.Start();
 
-    unsigned int index = events.size();
+    unsigned int index = 0;
+    if (!events.empty())
+        index = events.size();
+
     events.push_back(event);
+
+    profileMutex.unlock();
     return index;
 }
 
@@ -120,6 +132,12 @@ Gex::Profile Gex::EvaluationProfiler::Result() const
     }
 
     return result;
+}
+
+
+void Gex::EvaluationProfiler::Reset()
+{
+    events.clear();
 }
 
 

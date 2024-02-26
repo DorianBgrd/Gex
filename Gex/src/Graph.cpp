@@ -48,12 +48,25 @@ Gex::Graph::~Graph()
 }
 
 
+void Validate(std::string& name)
+{
+    size_t p = std::string::npos;
+    std::string sep = Gex::Config::GetConfig().nodePathSeparator;
+    while ((p = name.find(sep)) != std::string::npos)
+    {
+        name.replace(p, 1, "_");
+    }
+}
+
+
 Gex::Node* Gex::Graph::CreateNode(std::string type, std::string name_)
 {
     if (name_.empty())
     {
         name_ = type;
     }
+
+    Validate(name_);
 
     std::string uniqueName = name_;
 
@@ -392,19 +405,26 @@ Gex::Feedback Gex::Graph::CheckLoadStatus(rapidjson::Value& dict)
 
 
 bool Gex::Graph::Compute(GraphContext& context, Profiler& profiler,
+                         unsigned int threads,
                          std::function<void(Node*)> nodeStarted,
                          std::function<void(Node*, bool)> nodeDone,
                          std::function<void(const GraphContext& context)> evalDone) const
 {
     profiler->Start();
 
+    auto lmbda = profiler->StartEvent("Global", "Make callback");
+
     std::function<void(const GraphContext&)> finalize =
             [this, evalDone](const GraphContext& context) -> void {
         this->FinalizeEvaluation(context); evalDone(context); };
 
+    profiler->StopEvent(lmbda);
 
-    auto evaluator = std::make_shared<NodeEvaluator>(nodes, context, profiler,
-                                                     false, nodeStarted, nodeDone, finalize);
+
+    auto evaluator = std::make_shared<NodeEvaluator>(
+            nodes, context, profiler,
+            false, threads, nodeStarted,
+            nodeDone, finalize);
 
     return (evaluator->Status() == NodeEvaluator::EvaluationStatus::Done);
 }

@@ -101,6 +101,7 @@ namespace Gex
     public:
         NodeEvaluator(std::vector<Node*> nodes, GraphContext& context,
                       Gex::Profiler profiler, bool detached=false,
+                      unsigned int threads=1,
                       std::function<void(Node*)> onNodeStart=nullptr,
                       std::function<void(Node*, bool)> onNodeEnd=nullptr,
                       std::function<void(const GraphContext&)> postEvaluation=nullptr);

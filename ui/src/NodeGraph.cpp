@@ -9,11 +9,13 @@
 
 #include <QGridLayout>
 #include <QSplitter>
+#include <QSpinBox>
 #include <QFontMetrics>
 #include <QGraphicsSceneMouseEvent>
 #include <QShortcut>
 #include <QMenu>
 #include <QAction>
+#include <QWidgetAction>
 #include <QPushButton>
 #include <QTextDocument>
 #include <QStyle>
@@ -2057,45 +2059,9 @@ void Gex::Ui::NodeGraphView::OnNodePlugClicked(NodePlugItem* plug)
 }
 
 
-void Gex::Ui::NodeGraphScene::StartMouseZooming()
-{
-    mouseZooming = true;
-}
-
-
-void Gex::Ui::NodeGraphScene::EndMouseZooming()
-{
-    mouseZooming = false;
-}
-
-
 void Gex::Ui::NodeGraphScene::Clear()
 {
     clear();
-
-// TODO : Fuite memoire : seems not.
-//    void QGraphicsScene::clear()
-//    Removes and deletes all items from the scene, but otherwise leaves
-//    the state of the scene unchanged.
-//
-//    for (auto* nodeItem : nodeItems.values())
-//    {
-//        delete nodeItem;
-//    }
-//    if (input)
-//    {
-//        removeItem(input);
-//        delete input;
-//        input = nullptr;
-//    }
-//
-//    if (output)
-//    {
-//        removeItem(output);
-//        delete output;
-//        output = nullptr;
-//    }
-
     nodeItems.clear();
     input = nullptr;
     output = nullptr;
@@ -2119,6 +2085,7 @@ void Gex::Ui::NodeGraphScene::SwitchGraphContext(NodeGraphContext* context)
     {
         NodeItem* item = new NodeItem(node);
         addItem(item);
+
         nodeItems[node] = item;
 
         if (graphContext->nodePositions.contains(node))
@@ -2475,6 +2442,11 @@ void Gex::Ui::ContextsWidget::RemoveContexts(unsigned int number)
 }
 
 
+void Gex::Ui::ContextsWidget::ClearContexts()
+{
+    RemoveContexts(contexts.size());
+}
+
 
 Gex::Ui::GraphWidget::GraphWidget(Gex::Graph* graph_,
                                   QWidget* parent): QWidget(parent)
@@ -2551,20 +2523,45 @@ Gex::Ui::GraphWidget::GraphWidget(Gex::Graph* graph_,
     QObject::connect(runButton, &QPushButton::clicked,
                      this, &GraphWidget::InteractiveRun);
 
+    QPushButton* settingsButton = toolbar->NewButton();
+    settingsButton->setIcon(Res::UiRes::GetRes()->GetQtAwesome()->icon(fa::fa_solid, fa::fa_cogs));
+
+    auto* optionMenu = new QMenu(settingsButton);
+
+    auto* threadsAction = new QWidgetAction(optionMenu);
+
+    auto* threadsWidget = new QWidget(optionMenu);
+    auto* threadsLayout = new QHBoxLayout();
+    threadsWidget->setLayout(threadsLayout);
+
+    auto* text = new QLabel(threadsWidget);
+    text->setText("Threads number");
+    threadsLayout->addWidget(text);
+
+    threadsSpinBox = new QSpinBox(threadsWidget);
+    threadsSpinBox->setMinimum(1);
+    threadsSpinBox->setMaximum(16);
+    threadsLayout->addWidget(threadsSpinBox);
+
+    threadsAction->setDefaultWidget(threadsWidget);
+
+    optionMenu->addAction(threadsAction);
+
+    settingsButton->setMenu(optionMenu);
+
     Initialize();
 }
 
 
 Gex::Ui::GraphWidget::~GraphWidget()
 {
-    for (auto* ctx : contexts)
-        delete ctx;
+    ClearContexts();
 }
 
 
 void Gex::Ui::GraphWidget::Initialize()
 {
-    NodeGraphContext* context = new NodeGraphContext();
+    auto* context = new NodeGraphContext();
     context->name = "Root";
     context->GetNodes = [this](){return this->graph->Nodes();};
     context->CreateNode = [this](std::string t, std::string n){return this->graph->CreateNode(t, n);};
@@ -2576,11 +2573,6 @@ void Gex::Ui::GraphWidget::Initialize()
     scene->SwitchGraphContext(context);
 }
 
-
-void Gex::Ui::GraphWidget::Save() const
-{
-
-}
 
 
 void Gex::Ui::GraphWidget::OnNodeSelected()
@@ -2603,7 +2595,7 @@ void Gex::Ui::GraphWidget::OnNodeSelected()
 
 void Gex::Ui::GraphWidget::RegisterContext(Gex::CompoundNode* compound)
 {
-    NodeGraphContext *context = new NodeGraphContext();
+    auto *context = new NodeGraphContext();
 
     context->name = compound->Name().c_str();
     context->compound = compound;
@@ -2629,6 +2621,25 @@ void Gex::Ui::GraphWidget::SwitchContext(unsigned int index)
     }
 
     scene->SwitchGraphContext(context);
+}
+
+
+void Gex::Ui::GraphWidget::ClearContexts()
+{
+    contextsWidget->ClearContexts();
+    for (auto* ctx : contexts)
+        delete ctx;
+    contexts.clear();
+}
+
+
+void Gex::Ui::GraphWidget::SwitchGraph(Gex::Graph* graph_)
+{
+    graph = graph_;
+
+    ClearContexts();
+
+    Initialize();
 }
 
 
@@ -2680,12 +2691,13 @@ void EmitProfiler(Gex::Ui::GraphWidget* this_, const Gex::GraphContext& ctx)
 
 void Gex::Ui::GraphWidget::RunGraph()
 {
+    profiler->Reset();
 
     scene->ClearNodeEvaluation();
 
     Gex::GraphContext evaluationContext;
 
-    graph->Compute(evaluationContext, profiler,
+    graph->Compute(evaluationContext, profiler, threadsSpinBox->value(),
                    [this](Gex::Node* node)
                    {this->scene->NodeEvaluationStarted(node);},
                    [this](Gex::Node* node, bool success)

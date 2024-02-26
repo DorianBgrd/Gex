@@ -66,9 +66,6 @@ void Gex::Ui::ProfileWidget::ViewProfiler(Gex::Profiler p)
             scene()->addItem(item);
         }
 
-        setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
-        setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
-
         y += height;
     }
 
@@ -96,9 +93,9 @@ void Gex::Ui::ProfileWidget::ViewProfiler(Gex::Profiler p)
 Gex::Ui::ProfileTable::ProfileTable(QWidget* parent): QTreeWidget(parent)
 {
     headerItem()->setText(0, "Name");
-    headerItem()->setText(1, "Duration");
-    headerItem()->setText(2, "Start");
-    headerItem()->setText(3, "End");
+    headerItem()->setText(1, "Duration (s)");
+    headerItem()->setText(2, "Start (s)");
+    headerItem()->setText(3, "End (s)");
 }
 
 
@@ -113,22 +110,26 @@ QTreeWidgetItem* Gex::Ui::ProfileTable::CreateItem() const
 }
 
 
+typedef double Seconds;
+
+Seconds ToSec(Gex::Duration duration)
+{
+    return duration.count() / 10e9;
+}
+
+
 void Gex::Ui::ProfileTable::ViewProfiler(Gex::Profiler p)
 {
     clear();
 
     Gex::Profile prof = p->Result();
 
-    auto* global = CreateItem();
-    global->setText(0, "Global");
-    addTopLevelItem(global);
-
     auto* graph = CreateItem();
     graph->setText(0, "Graph::Compute");
-    graph->setText(1, std::to_string(p->Duration().count()).c_str());
+    graph->setText(1, std::to_string(ToSec(p->Duration())).c_str());
     graph->setText(2, "0");
-    graph->setText(3, std::to_string((p->EndTime() - p->StartTime()).count()).c_str());
-    global->addChild(graph);
+    graph->setText(3, std::to_string(ToSec(p->EndTime() - p->StartTime())).c_str());
+    addTopLevelItem(graph);
 
     for(auto events : prof)
     {
@@ -142,9 +143,9 @@ void Gex::Ui::ProfileTable::ViewProfiler(Gex::Profiler p)
             catItem->addChild(eventItem);
 
             eventItem->setText(0, event.name.c_str());
-            eventItem->setText(1, std::to_string(event.Duration().count()).c_str());
-            eventItem->setText(2, std::to_string((event.StartTime() - p->StartTime()).count()).c_str());
-            eventItem->setText(3, std::to_string((event.EndTime() - p->StartTime()).count()).c_str());
+            eventItem->setText(1, std::to_string(ToSec(event.Duration())).c_str());
+            eventItem->setText(2, std::to_string(ToSec(event.StartTime() - p->StartTime())).c_str());
+            eventItem->setText(3, std::to_string(ToSec(event.EndTime() - p->StartTime())).c_str());
         }
     }
 }

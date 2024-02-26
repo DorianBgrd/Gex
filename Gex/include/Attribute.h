@@ -209,34 +209,7 @@ namespace Gex
          */
         explicit Attribute(const std::string& name, AttrType type = AttrType::Static, bool multi=false,
 			bool userDefined = false, Node* node = nullptr, 
-			Attribute* parent = nullptr)
-		{
-            isInternal = false;
-			attributeNode = node;
-			attributeName = name;
-			if (parent == nullptr)
-				attributeLongname = name;
-			else
-				attributeLongname = parent->Longname() + "/" + name;
-			attributeAnyValue = InitNoneValue();
-			parentAttribute = parent;
-
-			bool isInput = false;
-			bool isOutput = false;
-            TypeToArguments(type, isInput, isOutput);
-
-			attributeIsMulti = multi;
-			attributeIsHolder = true;
-			attributeIsUserDefined = userDefined;
-			if (multi)
-				attributeValueType = AttrValueType::MultiHolder;
-			else
-				attributeValueType = AttrValueType::Holder;
-
-			attributeType = type;
-
-            InitDefaultValue();
-		}
+			Attribute* parent = nullptr);
 
         /**
          * Sets current attribute default value.

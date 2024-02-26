@@ -9,6 +9,7 @@
 #include <QVector>
 #include <QWidget>
 #include <QCheckBox>
+#include <QSpinBox>
 #include <QDialog>
 #include <QGraphicsScene>
 #include <QGraphicsView>
@@ -405,10 +406,6 @@ namespace Gex
             void UpdateNodeAttribute(Gex::Node* node,
                                      QString attribute);
 
-            void StartMouseZooming();
-
-            void EndMouseZooming();
-
             void Clear();
 
             void SwitchGraphContext(NodeGraphContext* context);
@@ -523,6 +520,8 @@ namespace Gex
             Q_SIGNAL void ContextRequested(int index);
 
             void RemoveContexts(unsigned int number);
+
+            void ClearContexts();
         };
 
 
@@ -540,6 +539,7 @@ namespace Gex
             AttributeEditor* editor = nullptr;
             QList<NodeGraphContext*> contexts;
             ContextsWidget* contextsWidget;
+            QSpinBox* threadsSpinBox;
 
         public:
             GraphWidget(Gex::Graph* graph,
@@ -549,13 +549,16 @@ namespace Gex
 
             void Initialize();
 
-            void Save() const;
-
             void OnNodeSelected();
 
             void RegisterContext(Gex::CompoundNode* compound);
 
             void SwitchContext(unsigned int index);
+
+            void SwitchGraph(Gex::Graph* graph);
+
+        protected:
+            void ClearContexts();
 
         public:
 

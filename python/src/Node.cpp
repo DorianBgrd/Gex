@@ -329,7 +329,6 @@ void Gex::Python::Node_Wrap::RegisterPythonWrapper()
             .def("GetAttributes", boost::python::raw_function(&NW_Python_GetAttributes, 1))
             .def("GetAttribute", &Gex::Node::GetAttribute,
                  boost::python::return_internal_reference())
-            .def("Update", &Gex::Node::Update)
             .def("IsEditable", &Gex::Node::IsEditable)
             .def("IsDirty", &Gex::Node::IsDirty)
             .def("SetEditable", &Gex::Node::SetEditable)

@@ -56,7 +56,6 @@ namespace Gex
 
 	protected:
 		std::string nodeName;
-		std::string valuePath;
         std::string typeName;
         std::string pluginName;
 		std::map<std::string, Attribute*> attributes;
@@ -349,12 +348,6 @@ namespace Gex
                                rapidjson::Document& json) const;
 
         virtual void Deserialize(rapidjson::Value& dict);
-	public:
-		/**
-		 * Updates node from disk.
-		 * @return bool success.
-		 */
-		bool Update();
 
     protected:
         /**

@@ -33,15 +33,14 @@ bool Gex::EvaluatorThread::AcquireNode()
 
 bool Gex::EvaluatorThread::ComputeNode()
 {
-    auto wn = _evaluator->profiler->StartEvent("Thread " + std::to_string(index),
-                                               "Waiting previous nodes");
+    auto nodeProfiler = NodeProfiler(_evaluator->GetProfiler(), node->node, index);
+
+    auto wn = nodeProfiler.StartEvent("Waiting previous nodes");
     while (!node->ShouldBeEvaluated())
     {
         std::this_thread::yield();
     }
-    _evaluator->profiler->StopEvent(wn);
-
-    auto nodeProfiler = NodeProfiler(_evaluator->GetProfiler(), node->node, index);
+    nodeProfiler.StopEvent(wn);
 
     if (nodeStart)
     {
@@ -52,12 +51,11 @@ bool Gex::EvaluatorThread::ComputeNode()
 
     if (nodeEnd)
     {
-        auto ne = _evaluator->profiler->StartEvent("Thread " + std::to_string(index),
-                                                  "NodeEnd");
+        auto ne = nodeProfiler.StartEvent("NodeEnd");
 
         nodeEnd(node->node, result);
 
-        _evaluator->profiler->StopEvent(ne);
+        nodeProfiler.StopEvent(ne);
     }
 
     return result;
@@ -316,20 +314,24 @@ std::vector<Gex::ScheduledNode*> Gex::ScheduleNodes(std::vector<Gex::Node*> node
 
 Gex::NodeEvaluator::NodeEvaluator(std::vector<Node*> nodes_, GraphContext& ctx,
                                   Profiler profiler_, bool detached,
+                                  unsigned int threads_,
                                   std::function<void(Node*)> onNodeStarted,
                                   std::function<void(Node*, bool)> onNodeDone,
                                   std::function<void(const GraphContext&)> postEvaluation)
 {
+    profiler = profiler_;
+    unsigned int init = profiler->StartEvent("Prepare", "Init evaluator");
+
     context = ctx;
     postEval = postEvaluation;
     evalStart = onNodeStarted;
     evalEnd = onNodeDone;
     runningThreads = 0;
-    numberOfThreads = 1;
-    profiler = profiler_;
+    numberOfThreads = threads_;
 
     status = NodeEvaluator::EvaluationStatus::Running;
     std::vector<std::thread> stdthreads;
+    profiler->StopEvent(init);
 
     unsigned int schedule = profiler->StartEvent("Prepare", "Schedule");
     schelNodes = ScheduleNodes(nodes_);
@@ -338,12 +340,17 @@ Gex::NodeEvaluator::NodeEvaluator(std::vector<Node*> nodes_, GraphContext& ctx,
     unsigned int threadStart = profiler->StartEvent("Prepare", "Starting threads");
     for (unsigned int i = 0; i < numberOfThreads; i++)
     {
+        auto iniTh = profiler->StartEvent("Prepare", "Init Thread" + std::to_string(i));
         auto* nodeThread = new EvaluatorThread(this, i, evalStart, evalEnd);
+        profiler->StopEvent(iniTh);
 
         threads.push_back(nodeThread);
 
+        auto launTh = profiler->StartEvent("Prepare", "Launch Thread" + std::to_string(i));
         auto th = std::thread(NodeEvaluator::StartEvalThread, nodeThread);
         stdthreads.push_back(std::move(th));
+
+        profiler->StopEvent(launTh);
 
         runningThreads +=1;
     }

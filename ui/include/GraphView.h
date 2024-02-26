@@ -26,6 +26,8 @@ namespace Gex::Ui
         GraphWidget* GetGraphWidget() const;
 
         ProfileView* GetProfileWidget() const;
+
+        void SwitchGraph(Gex::Graph* graph);
     };
 }
 
