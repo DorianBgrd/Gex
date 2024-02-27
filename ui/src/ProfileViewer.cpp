@@ -21,11 +21,39 @@ Gex::Ui::ProfileEventItem::ProfileEventItem(Gex::Profiler p, Gex::Event s,
 {
     profiler = p;
     step = s;
+    color = "#15915B";
 
     auto* textItem = new QGraphicsTextItem(this);
     textItem->setPlainText(step.name.c_str());
 
-    setBrush(QBrush(QColor("#15915B")));
+    setBrush(color);
+
+    setFlag(QGraphicsItem::ItemIsSelectable, true);
+}
+
+
+const Gex::Event& Gex::Ui::ProfileEventItem::GetEvent() const
+{
+    return step;
+}
+
+
+QVariant Gex::Ui::ProfileEventItem::itemChange(QGraphicsItem::GraphicsItemChange change,
+                                               const QVariant &value)
+{
+    if (change == QGraphicsItem::GraphicsItemChange::ItemSelectedHasChanged)
+    {
+        if (value.toBool())
+        {
+            setBrush(color.lighter());
+        }
+        else
+        {
+            setBrush(color);
+        }
+    }
+
+    return QGraphicsItem::itemChange(change, value);
 }
 
 
@@ -33,12 +61,17 @@ Gex::Ui::ProfileWidget::ProfileWidget(QWidget* parent):
         BaseGraphView(new QGraphicsScene(), parent)
 {
     setInteractive(true);
+
+    QObject::connect(scene(), &QGraphicsScene::selectionChanged,
+                     this, &ProfileWidget::OnSelection);
 }
 
 
 void Gex::Ui::ProfileWidget::ViewProfiler(Gex::Profiler p)
 {
     profiler = p;
+
+    scene()->clear();
 
     Gex::Profile prof = p->Result();
 
@@ -89,6 +122,83 @@ void Gex::Ui::ProfileWidget::ViewProfiler(Gex::Profiler p)
 }
 
 
+void Gex::Ui::ProfileWidget::OnSelection()
+{
+    std::vector<Event> selected;
+    for (auto elem : scene()->selectedItems())
+    {
+        auto* eventItem = dynamic_cast<ProfileEventItem*>(elem);
+        if (!eventItem)
+        {
+            continue;
+        }
+
+        selected.push_back(eventItem->GetEvent());
+    }
+
+    Q_EMIT EventsSelected(selected);
+}
+
+
+void Gex::Ui::ProfileWidget::SelectEvents(std::vector<Event> events)
+{
+    blockSignals(true);
+    for (auto* item : scene()->items())
+    {
+        item->setSelected(false);
+    }
+
+    for (auto* item : scene()->items())
+    {
+        auto* eventItem = dynamic_cast<ProfileEventItem*>(item);
+        if (!eventItem)
+            continue;
+
+        if (std::find(events.begin(), events.end(), eventItem->GetEvent()) != events.end())
+        {
+            item->setSelected(true);
+        }
+        else
+        {
+            item->setSelected(false);
+        }
+    }
+    blockSignals(false);
+}
+
+
+typedef double Seconds;
+
+Seconds ToSec(Gex::Duration duration)
+{
+    return duration.count() / 10e9;
+}
+
+
+Gex::Ui::ProfileTreeItem::ProfileTreeItem(const Gex::Profiler& p,
+                                          Event e, QTreeWidget* parent):
+                                          QTreeWidgetItem(parent)
+{
+    event = e;
+    setTextAlignment(0, Qt::AlignLeft);
+    setTextAlignment(1, Qt::AlignRight);
+    setTextAlignment(2, Qt::AlignRight);
+    setTextAlignment(3, Qt::AlignRight);
+
+    setText(0, event.name.c_str());
+    setText(1, std::to_string(ToSec(event.Duration())).c_str());
+    setText(2, std::to_string(ToSec(event.StartTime() - p->StartTime())).c_str());
+    setText(3, std::to_string(ToSec(event.EndTime() - p->StartTime())).c_str());
+
+}
+
+
+Gex::Event Gex::Ui::ProfileTreeItem::GetEvent() const
+{
+    return event;
+}
+
+
 
 Gex::Ui::ProfileTable::ProfileTable(QWidget* parent): QTreeWidget(parent)
 {
@@ -96,6 +206,55 @@ Gex::Ui::ProfileTable::ProfileTable(QWidget* parent): QTreeWidget(parent)
     headerItem()->setText(1, "Duration (s)");
     headerItem()->setText(2, "Start (s)");
     headerItem()->setText(3, "End (s)");
+
+    QObject::connect(this, &QTreeWidget::itemSelectionChanged,
+                     this, &ProfileTable::OnSelection);
+}
+
+
+void Gex::Ui::ProfileTable::OnSelection()
+{
+    std::vector<Event> selection;
+    for (auto* item : selectedItems())
+    {
+        auto* eventItem = dynamic_cast<ProfileTreeItem*>(item);
+        if (!eventItem)
+        {
+            continue;
+        }
+
+        selection.push_back(eventItem->GetEvent());
+    }
+
+    Q_EMIT EventsSelected(selection);
+}
+
+
+void Gex::Ui::ProfileTable::SelectEvents(std::vector<Event> events)
+{
+    blockSignals(true);
+
+    clearSelection();
+
+    int count = topLevelItemCount();
+    for (unsigned int i = 0 ; i < count; i++)
+    {
+        auto* topItem = topLevelItem(i);
+        for (unsigned int u = 0; u < topItem->childCount(); u++)
+        {
+            auto* child = topItem->child(u);
+            auto* childEvent = dynamic_cast<ProfileTreeItem*>(child);
+            if (!childEvent)
+                continue;
+
+            if (std::find(events.begin(), events.end(), childEvent->GetEvent()) != events.end())
+            {
+                childEvent->setSelected(true);
+            }
+        }
+    }
+
+    blockSignals(false);
 }
 
 
@@ -109,13 +268,6 @@ QTreeWidgetItem* Gex::Ui::ProfileTable::CreateItem() const
     return item;
 }
 
-
-typedef double Seconds;
-
-Seconds ToSec(Gex::Duration duration)
-{
-    return duration.count() / 10e9;
-}
 
 
 void Gex::Ui::ProfileTable::ViewProfiler(Gex::Profiler p)
@@ -139,13 +291,9 @@ void Gex::Ui::ProfileTable::ViewProfiler(Gex::Profiler p)
 
         for (auto event : events.second)
         {
-            auto* eventItem = CreateItem();
+            auto* eventItem = new ProfileTreeItem(p, event);
             catItem->addChild(eventItem);
 
-            eventItem->setText(0, event.name.c_str());
-            eventItem->setText(1, std::to_string(ToSec(event.Duration())).c_str());
-            eventItem->setText(2, std::to_string(ToSec(event.StartTime() - p->StartTime())).c_str());
-            eventItem->setText(3, std::to_string(ToSec(event.EndTime() - p->StartTime())).c_str());
         }
     }
 }
@@ -165,6 +313,12 @@ Gex::Ui::ProfileView::ProfileView(QWidget* parent): QWidget(parent)
 
     profTable = new ProfileTable(this);
     splitter->addWidget(profTable);
+
+    QObject::connect(profWidget, &ProfileWidget::EventsSelected,
+                     profTable, &ProfileTable::SelectEvents);
+
+    QObject::connect(profTable, &ProfileTable::EventsSelected,
+                     profWidget, &ProfileWidget::SelectEvents);
 }
 
 

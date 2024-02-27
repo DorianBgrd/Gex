@@ -11,6 +11,8 @@
 #include <QSplitter>
 #include <QTreeWidget>
 
+#include <vector>
+
 #include "Gex/include/Gex.h"
 #include "ui/include/BaseGraph.h"
 
@@ -20,9 +22,15 @@ namespace Gex::Ui
     {
         Gex::Event step;
         Gex::Profiler profiler;
+        QColor color;
     public:
         ProfileEventItem(Gex::Profiler profiler, Gex::Event step,
                          QGraphicsItem* parent=nullptr);
+
+        const Event& GetEvent() const;
+
+        QVariant itemChange(QGraphicsItem::GraphicsItemChange change,
+                            const QVariant &value) override;
     };
 
     class GEX_UI_API ProfileWidget: public BaseGraphView
@@ -35,6 +43,26 @@ namespace Gex::Ui
         ProfileWidget(QWidget* parent=nullptr);
 
         void ViewProfiler(Gex::Profiler p);
+
+    protected:
+        void OnSelection();
+
+    public:
+
+        Q_SIGNAL void EventsSelected(std::vector<Event> event);
+
+        void SelectEvents(std::vector<Event> event);
+    };
+
+
+    class GEX_UI_API ProfileTreeItem: public QTreeWidgetItem
+    {
+        Event event;
+    public:
+        ProfileTreeItem(const Gex::Profiler& p,
+                        Event e, QTreeWidget* parent=nullptr);
+
+        Event GetEvent() const;
     };
 
 
@@ -47,6 +75,15 @@ namespace Gex::Ui
         void ViewProfiler(Gex::Profiler p);
 
         QTreeWidgetItem* CreateItem() const;
+
+    protected:
+        void OnSelection();
+
+    public:
+
+        Q_SIGNAL void EventsSelected(std::vector<Event> event);
+
+        void SelectEvents(std::vector<Event> event);
     };
 
 

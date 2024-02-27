@@ -44,6 +44,8 @@ namespace Gex::Ui
 
         QPushButton* NewButton();
 
+        void AddWidget(QWidget* widget);
+
         QFrame* AddSeparator();
 
         void resizeEvent(QResizeEvent* event) override;

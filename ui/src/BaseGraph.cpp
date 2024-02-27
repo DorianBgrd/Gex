@@ -99,6 +99,13 @@ QPushButton* Gex::Ui::Toolbar::NewButton()
 }
 
 
+void Gex::Ui::Toolbar::AddWidget(QWidget* widget)
+{
+    widget->setParent(this);
+    toolbarLayout->addWidget(widget);
+}
+
+
 QFrame* Gex::Ui::Toolbar::AddSeparator()
 {
     auto* sep = new QFrame(toolbar);

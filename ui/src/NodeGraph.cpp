@@ -2532,6 +2532,7 @@ Gex::Ui::GraphWidget::GraphWidget(Gex::Graph* graph_,
 
     auto* threadsWidget = new QWidget(optionMenu);
     auto* threadsLayout = new QHBoxLayout();
+    threadsLayout->setContentsMargins(2, 2, 2, 2);
     threadsWidget->setLayout(threadsLayout);
 
     auto* text = new QLabel(threadsWidget);
