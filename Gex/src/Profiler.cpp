@@ -42,6 +42,15 @@ Gex::Time Gex::Event::EndTime() const
 }
 
 
+bool Gex::Event::operator==(const Event& other) const
+{
+    return (category == other.category &&
+            name == other.name &&
+            start == other.start &&
+            end == other.end);
+}
+
+
 std::mutex profileMutex;
 
 

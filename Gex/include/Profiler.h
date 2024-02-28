@@ -39,6 +39,8 @@ namespace Gex
         Time StartTime() const;
 
         Time EndTime() const;
+
+        bool operator==(const Event& other) const;
     };
 
 
