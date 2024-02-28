@@ -77,7 +77,7 @@ void Gex::Ui::ProfileWidget::ViewProfiler(Gex::Profiler p)
 
     size_t duration = p->Duration().count();
 
-    setSceneRect(0, 0, duration, duration);
+    setSceneRect(0, 0, duration * 2, duration);
 
     size_t height = duration / prof.size();
 
@@ -90,8 +90,8 @@ void Gex::Ui::ProfileWidget::ViewProfiler(Gex::Profiler p)
         {
             auto* item = new ProfileEventItem(profiler, event);
 
-            size_t x = (event.StartTime() - profiler->StartTime()).count();
-            size_t w = event.Duration().count();
+            size_t x = (event.StartTime() - profiler->StartTime()).count() * 2;
+            size_t w = event.Duration().count() * 2;
             size_t h = height;
 
             item->setRect(0, 0, w, h);
@@ -102,7 +102,7 @@ void Gex::Ui::ProfileWidget::ViewProfiler(Gex::Profiler p)
         y += height;
     }
 
-    fitInView(0, 0, duration, duration, Qt::IgnoreAspectRatio);
+    fitInView(0, 0, duration, duration, Qt::KeepAspectRatio);
 
 //    for (const auto& step : profiler->GetSteps())
 //    {
@@ -207,6 +207,8 @@ Gex::Ui::ProfileTable::ProfileTable(QWidget* parent): QTreeWidget(parent)
     headerItem()->setText(2, "Start (s)");
     headerItem()->setText(3, "End (s)");
 
+    setSelectionMode(QTreeWidget::ExtendedSelection);
+
     QObject::connect(this, &QTreeWidget::itemSelectionChanged,
                      this, &ProfileTable::OnSelection);
 }
@@ -266,6 +268,21 @@ QTreeWidgetItem* Gex::Ui::ProfileTable::CreateItem() const
     item->setTextAlignment(2, Qt::AlignRight);
     item->setTextAlignment(3, Qt::AlignRight);
     return item;
+}
+
+
+void Gex::Ui::ProfileTable::keyReleaseEvent(QKeyEvent * event)
+{
+    if (event->key() == Qt::Key_F)
+    {
+        auto selection = selectedItems();
+        if (!selection.isEmpty())
+        {
+            scrollToItem(selection[0]);
+        }
+    }
+
+    QTreeWidget::keyReleaseEvent(event);
 }
 
 

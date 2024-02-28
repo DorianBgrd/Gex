@@ -76,6 +76,8 @@ namespace Gex::Ui
 
         QTreeWidgetItem* CreateItem() const;
 
+        void keyReleaseEvent(QKeyEvent * event) override;
+
     protected:
         void OnSelection();
 
