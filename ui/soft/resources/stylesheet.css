@@ -77,6 +77,11 @@ QPushButton:checked
 {
     background-color: #000000;
 }
+QPushButton::menu-indicator
+{
+    image: none;
+    width: 0px;
+}
 
 
 QTextEdit {
@@ -455,17 +460,17 @@ QPushButton#NodeGraphRunButton::pressed
 }
 
 
-QPushButton#ViewToolbarButton
+QWidget#ViewToolbarButton
 {
     background-color: transparent;
     border: none;
 }
-QPushButton#ViewToolbarButton::hover
+QWidget#ViewToolbarButton::hover
 {
     background-color: #3b3b3b;
     border-radius: 5px;
 }
-QPushButton#ViewToolbarButton::pressed
+QWidget#ViewToolbarButton::pressed
 {
     background-color: #000000;
     border-radius: 5px;
