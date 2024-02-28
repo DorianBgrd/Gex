@@ -93,7 +93,7 @@ namespace iter
 
             auto idx = indices.at(currentIndex);
             outputs.CreateIndex(idx);
-            outputs.SetIndexValue(idx, ctx.GetAttribute("out"));
+            outputs.SetIndexValue(idx, ctx.GetAttribute("out").GetValue<TSys::AnyValue>());
 
             if (currentIndex == (length - 1))
             {
