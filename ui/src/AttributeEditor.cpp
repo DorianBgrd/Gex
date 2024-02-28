@@ -370,9 +370,19 @@ void Gex::Ui::AttributeTab::Setup()
     separator->setFrameShape(QFrame::HLine);
     mainLayout->addWidget(separator);
 
+    QScrollArea* attributesArea = new QScrollArea(this);
+    attributesArea->setWidgetResizable(true);
+    attributesArea->setContentsMargins(0, 0, 0, 0);
+    mainLayout->addWidget(attributesArea);
+
+    QWidget* attributesWidget = new QWidget(attributesArea);
+    attributesWidget->setContentsMargins(0, 0, 0, 0);
+    attributesArea->setWidget(attributesWidget);
+
     widgetsLayout = new QVBoxLayout();
     widgetsLayout->setContentsMargins(0, 0, 0, 0);
-    mainLayout->addLayout(widgetsLayout);
+    widgetsLayout->setAlignment(Qt::AlignTop);
+    attributesWidget->setLayout(widgetsLayout);
 
     QPushButton* extraAttr = new QPushButton(this);
     extraAttr->setIcon(Res::UiRes::GetRes()->GetQtAwesome()->icon(fa::fa_solid, fa::fa_add));
