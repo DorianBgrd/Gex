@@ -39,7 +39,8 @@ namespace Gex
     };
 
 
-    std::vector<ScheduledNode*> GEX_API ScheduleNodes(std::vector<Node*> nodes);
+    std::vector<ScheduledNode*> GEX_API ScheduleNodes(std::vector<Node*> nodes,
+                                                      bool expandCompounds=true);
 
 
     class EvaluatorThread
