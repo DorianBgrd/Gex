@@ -245,7 +245,8 @@ void ResolveNodesLevels(SchelNode* node, SchelNodeDict& nodes, unsigned int leve
 }
 
 
-std::vector<Gex::ScheduledNode*> Gex::ScheduleNodes(std::vector<Gex::Node*> nodes)
+std::vector<Gex::ScheduledNode*> Gex::ScheduleNodes(std::vector<Gex::Node*> nodes,
+                                                    bool expandCompounds)
 {
     std::map<Gex::Node*, ScheduledNode*> schelNodes;
 
@@ -302,7 +303,7 @@ std::vector<Gex::ScheduledNode*> Gex::ScheduleNodes(std::vector<Gex::Node*> node
         for (auto p : iter->second)
         {
             auto* n = p;
-            if (n->node->IsCompound())
+            if (expandCompounds && n->node->IsCompound())
             {
                 auto cmpSchels = CompoundNode::FromNode(n->node)->ToScheduledNodes();
 
