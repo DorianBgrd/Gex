@@ -45,6 +45,17 @@ Gex::Node* Gex::Node::Parent()
 }
 
 
+bool Gex::Node::operator ==(const Node& other)
+{
+    return (other.nodeName == nodeName);
+}
+
+bool Gex::Node::operator ==(const Node* other)
+{
+    return (other->nodeName == nodeName);
+}
+
+
 bool Gex::Node::IsInitializing() const
 {
     return initializing;
@@ -574,7 +585,30 @@ bool Gex::Node::Evaluate(NodeAttributeData &context,
 }
 
 
+Gex::ScheduledNode* Gex::Node::ToScheduledNode()
+{
+    return new ScheduledNode(this);
+}
 
+
+bool Gex::CompoundPreScheduledNode::Evaluate(Gex::GraphContext &context,
+                                             Gex::NodeProfiler &profiler)
+{
+    auto* cmp = Gex::CompoundNode::FromNode(node);
+    cmp->Pull();
+
+    return cmp->PreCompute(context, profiler);
+}
+
+
+bool Gex::CompoundPostScheduledNode::Evaluate(Gex::GraphContext &context,
+                                             Gex::NodeProfiler &profiler)
+{
+    auto* cmp = Gex::CompoundNode::FromNode(node);
+    cmp->PullInternalOutputs();
+
+    return cmp->PostCompute(context, profiler);
+}
 
 
 bool Gex::CompoundNode::IsCompound() const
@@ -983,11 +1017,45 @@ bool Gex::CompoundNode::Evaluate(NodeAttributeData &ctx,
                             profiler.GetProfiler(),
                             false, 1);
 
+    evaluator.Run();
+
 	bool success = (evaluator.Status() == NodeEvaluator::EvaluationStatus::Done);
 
     PullInternalOutputs();
 
     return success;
+}
+
+
+std::vector<Gex::ScheduledNode*> Gex::CompoundNode::ToScheduledNodes()
+{
+    auto schelNodes = Gex::ScheduleNodes(innerNodes);
+
+    auto* preScheduleNode = new CompoundPreScheduledNode(this);
+    auto* postScheduleNode = new CompoundPostScheduledNode(this);
+
+    // For scheduled nodes, if any has the current compound as input,
+    // replace it with preScheduled. Use postScheduled if they have
+    // output.
+    for (auto* schel : schelNodes)
+    {
+        auto srcs = schel->node->UpstreamNodes();
+        if (std::find(srcs.begin(), srcs.end(), this) != srcs.end())
+        {
+            schel->previousNodes.push_back(preScheduleNode);
+        }
+
+        auto dsts = schel->node->DownstreamNodes();
+        if (std::find(dsts.begin(), dsts.end(), this) != dsts.end())
+        {
+            schel->futureNodes.push_back(postScheduleNode);
+        }
+    }
+
+    schelNodes.insert(schelNodes.begin(), preScheduleNode);
+    schelNodes.push_back(postScheduleNode);
+
+    return schelNodes;
 }
 
 
@@ -999,11 +1067,27 @@ bool Gex::CompoundNode::PreEvaluate(NodeAttributeData &ctx,
 }
 
 
+bool Gex::CompoundNode::PreCompute(GraphContext &context,
+                                   NodeProfiler& profiler)
+{
+    auto data = createEvalContext();
+    return PreEvaluate(data, context, profiler);
+}
+
+
 bool Gex::CompoundNode::PostEvaluate(NodeAttributeData &ctx,
                                      GraphContext &graphContext,
                                      NodeProfiler& profiler)
 {
     return true;
+}
+
+
+bool Gex::CompoundNode::PostCompute(GraphContext &context,
+                                   NodeProfiler& profiler)
+{
+    auto data = createEvalContext();
+    return PostEvaluate(data, context, profiler);
 }
 
 

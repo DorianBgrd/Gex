@@ -6,6 +6,7 @@
 #include "NodeAttributeData.h"
 #include "Attribute.h"
 #include "Profiler.h"
+#include "Evaluation.h"
 #include <map>
 #include <vector>
 #include <string>
@@ -27,6 +28,7 @@ namespace Gex
 	class NodeAttributeData;
 	class EvaluationContext;
     class PythonWrapperBuilder;
+    class ScheduledNode;
 
 	class GEX_API Node
 	{
@@ -41,6 +43,7 @@ namespace Gex
 		friend NodeEvaluationContext;
 		friend NodeAttributeData;
         friend EvaluationContext;
+        friend NodeEvaluator;
 
         bool initializing;
 
@@ -168,15 +171,9 @@ namespace Gex
 
         Node* Parent();
 
-		bool operator ==(const Node& other)
-		{
-			return (other.nodeName == nodeName);
-		}
+		bool operator ==(const Node& other);
 
-		bool operator ==(const Node* other)
-		{
-			return (other->nodeName == nodeName);
-		}
+		bool operator ==(const Node* other);
 
 	public:
 
@@ -379,6 +376,7 @@ namespace Gex
          * @return NodeAttributeData evaluation context.
          */
         NodeAttributeData createEvalContext();
+
     public:
         /**
          * Computes node.
@@ -400,6 +398,9 @@ namespace Gex
                               NodeProfiler& profiler);
 
     public:
+        ScheduledNode* ToScheduledNode();
+
+    public:
 
 		template<class T>
 		static T* ConvertTo(Node* node)
@@ -409,11 +410,34 @@ namespace Gex
 	};
 
 
+    class CompoundPreScheduledNode: public ScheduledNode
+    {
+        using ScheduledNode::ScheduledNode;
+
+        bool Evaluate(Gex::GraphContext &context,
+                      Gex::NodeProfiler &profiler)
+                      override;
+    };
+
+
+    class CompoundPostScheduledNode: public Gex::ScheduledNode
+    {
+        using ScheduledNode::ScheduledNode;
+
+        bool Evaluate(Gex::GraphContext &context,
+                      Gex::NodeProfiler &profiler)
+                      override;
+    };
+
+
 	class GEX_API CompoundNode : public Node
 	{
 	private:
 		friend CompoundNodeBuilder;
         friend NodeAttributeData;
+        friend CompoundPreScheduledNode;
+        friend CompoundPostScheduledNode;
+        friend NodeEvaluator;
 
 	protected:
 		std::vector<Node*> innerNodes;
@@ -542,6 +566,11 @@ namespace Gex
                                  GraphContext &graphContext,
                                  NodeProfiler& profiler);
 
+    public:
+        bool PreCompute(GraphContext &context,
+                        NodeProfiler& profiler);
+
+    protected:
         /**
          * Evaluates compound node inner nodes, starting from
          * outputs to recurse upstream nodes.
@@ -568,7 +597,16 @@ namespace Gex
                                   GraphContext &graphContext,
                                   NodeProfiler& profiler);
 
+    public:
+        bool PostCompute(GraphContext &context,
+                         NodeProfiler& profiler);
+
+    protected:
+
         void PullInternalOutputs();
+
+    public:
+        virtual std::vector<ScheduledNode*> ToScheduledNodes();
 
     public:
         /**

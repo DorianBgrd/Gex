@@ -2350,6 +2350,9 @@ void Gex::Ui::NodeGraphScene::AutoLayoutNodes(const QPointF& destination,
         QList<Gex::Ui::NodeItem*> items;
         for (auto node : levelNodes.second)
         {
+            if (!nodeItems.contains(node))
+                continue;
+
             items.push_back(nodeItems.value(node));
         }
 

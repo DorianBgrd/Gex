@@ -17,7 +17,7 @@ namespace Gex
     class AutomationGraph;
 
 
-    struct ScheduledNode
+    struct GEX_API ScheduledNode
     {
         Node* node;
         std::vector<ScheduledNode*> previousNodes;
@@ -25,7 +25,12 @@ namespace Gex
         bool evaluated = false;
         bool success = false;
 
+        ScheduledNode(Node* node);
+
         bool ShouldBeEvaluated() const;
+
+        virtual bool Evaluate(GraphContext &context,
+                              NodeProfiler& profiler);
 
         bool Compute(GraphContext &context,
                      NodeProfiler& profiler);
@@ -88,6 +93,7 @@ namespace Gex
         std::vector<ScheduledNode*> schelNodes;
         GraphContext context;
         Profiler profiler;
+        bool detached;
         int n = -1;
 
         EvaluationStatus status = EvaluationStatus::Preparing;
@@ -105,6 +111,10 @@ namespace Gex
                       std::function<void(Node*)> onNodeStart=nullptr,
                       std::function<void(Node*, bool)> onNodeEnd=nullptr,
                       std::function<void(const GraphContext&)> postEvaluation=nullptr);
+
+        ~NodeEvaluator();
+
+        void Run();
 
         ScheduledNode* NextNode();
 

@@ -147,8 +147,7 @@ Gex::ScheduledNode* _GetScheduledNode(Gex::Node* node,
     }
     catch (std::out_of_range&)
     {
-        scheduledNode = new Gex::ScheduledNode();
-        scheduledNode->node = node;
+        scheduledNode = new Gex::ScheduledNode(node);
         scheduledNodes[node] = scheduledNode;
     }
 
@@ -253,15 +252,12 @@ std::vector<Gex::ScheduledNode*> Gex::ScheduleNodes(std::vector<Gex::Node*> node
     std::vector<Gex::ScheduledNode*> roots;
     for (auto* node : nodes)
     {
-        auto* schel = new ScheduledNode();
-        schel->node = node;
-        schelNodes[node] = schel;
+        schelNodes[node] = node->ToScheduledNode();
     }
 
     for (auto sn: schelNodes)
     {
         auto sources = sn.first->UpstreamNodes();
-        auto destinations = sn.first->DownstreamNodes();
 
         if (sources.empty())
         {
@@ -270,12 +266,13 @@ std::vector<Gex::ScheduledNode*> Gex::ScheduleNodes(std::vector<Gex::Node*> node
 
         for (auto src : sources)
         {
-            if (schelNodes.find(src) == schelNodes.end())
+            auto indx = schelNodes.find(src);
+            if (indx == schelNodes.end())
             {
                 continue;
             }
 
-            auto* scheclSrc = schelNodes.at(src);
+            auto* scheclSrc = indx->second;
             sn.second->previousNodes.push_back(scheclSrc);
             scheclSrc->futureNodes.push_back(sn.second);
         }
@@ -298,13 +295,48 @@ std::vector<Gex::ScheduledNode*> Gex::ScheduleNodes(std::vector<Gex::Node*> node
         dict.at(p.second).push_back(p.first);
     }
 
+
     std::vector<Gex::ScheduledNode*> scheduledNodes;
-    for (auto npl : dict)
+    for (auto iter = dict.begin(); iter != dict.end(); iter++)
     {
-        for (auto np : npl.second)
+        for (auto p : iter->second)
         {
-            scheduledNodes.push_back(np);
+            auto* n = p;
+            if (n->node->IsCompound())
+            {
+                auto cmpSchels = CompoundNode::FromNode(n->node)->ToScheduledNodes();
+
+//            scheduledNodes.insert(iter, cmpSchels.begin(), cmpSchels.end());
+                scheduledNodes.insert(scheduledNodes.end(), cmpSchels.begin(), cmpSchels.end());
+
+                cmpSchels.front()->previousNodes = n->previousNodes;
+                for (auto src : n->previousNodes)
+                {
+                    auto srcindex = std::remove(src->previousNodes.begin(), src->previousNodes.end(), n);
+                    if (srcindex == n->previousNodes.end())
+                        continue;
+
+                    src->previousNodes.push_back(cmpSchels.front());
+                }
+
+                cmpSchels.back()->futureNodes = n->futureNodes;
+                for (auto src : n->futureNodes)
+                {
+                    auto dstindex = std::remove(src->futureNodes.begin(), src->futureNodes.end(), n);
+                    if (dstindex == src->futureNodes.end())
+                        continue;
+
+                    src->futureNodes.push_back(cmpSchels.back());
+                }
+
+                delete n;
+            }
+            else
+            {
+                scheduledNodes.push_back(n);
+            }
         }
+
     }
 
     return scheduledNodes;
@@ -312,8 +344,14 @@ std::vector<Gex::ScheduledNode*> Gex::ScheduleNodes(std::vector<Gex::Node*> node
 
 
 
+void StartThread(Gex::EvaluatorThread* th)
+{
+    return th->Start();
+}
+
+
 Gex::NodeEvaluator::NodeEvaluator(std::vector<Node*> nodes_, GraphContext& ctx,
-                                  Profiler profiler_, bool detached,
+                                  Profiler profiler_, bool detached_,
                                   unsigned int threads_,
                                   std::function<void(Node*)> onNodeStarted,
                                   std::function<void(Node*, bool)> onNodeDone,
@@ -322,6 +360,7 @@ Gex::NodeEvaluator::NodeEvaluator(std::vector<Node*> nodes_, GraphContext& ctx,
     profiler = profiler_;
     unsigned int init = profiler->StartEvent("Prepare", "Init evaluator");
 
+    detached = detached_;
     context = ctx;
     postEval = postEvaluation;
     evalStart = onNodeStarted;
@@ -330,39 +369,58 @@ Gex::NodeEvaluator::NodeEvaluator(std::vector<Node*> nodes_, GraphContext& ctx,
     numberOfThreads = threads_;
 
     status = NodeEvaluator::EvaluationStatus::Running;
-    std::vector<std::thread> stdthreads;
     profiler->StopEvent(init);
 
     unsigned int schedule = profiler->StartEvent("Prepare", "Schedule");
     schelNodes = ScheduleNodes(nodes_);
     profiler->StopEvent(schedule);
+}
 
-    unsigned int threadStart = profiler->StartEvent("Prepare", "Starting threads");
-    for (unsigned int i = 0; i < numberOfThreads; i++)
+
+void Gex::NodeEvaluator::Run()
+{
+    std::vector<std::thread> stdthreads;
+
+    if (numberOfThreads > 1 || detached)
     {
-        auto iniTh = profiler->StartEvent("Prepare", "Init Thread" + std::to_string(i));
-        auto* nodeThread = new EvaluatorThread(this, i, evalStart, evalEnd);
-        profiler->StopEvent(iniTh);
-
-        threads.push_back(nodeThread);
-
-        auto launTh = profiler->StartEvent("Prepare", "Launch Thread" + std::to_string(i));
-        auto th = std::thread(NodeEvaluator::StartEvalThread, nodeThread);
-        stdthreads.push_back(std::move(th));
-
-        profiler->StopEvent(launTh);
-
-        runningThreads +=1;
-    }
-    profiler->StopEvent(threadStart);
-
-    if(!detached)
-    {
-        for (unsigned int i = 0; i < stdthreads.size(); i++)
+        unsigned int threadStart = profiler->StartEvent("Prepare", "Starting threads");
+        for (unsigned int i = 0; i < numberOfThreads; i++)
         {
-            stdthreads.at(i).join();
+            auto* nodeThread = new EvaluatorThread(this, i, evalStart, evalEnd);
+
+            threads.push_back(nodeThread);
+
+            auto th = std::thread(&StartThread, nodeThread);
+            stdthreads.push_back(std::move(th));
+
+            runningThreads +=1;
+        }
+        profiler->StopEvent(threadStart);
+
+        if(!detached)
+        {
+            for (auto& stdthread : stdthreads)
+            {
+                stdthread.join();
+            }
         }
     }
+    else
+    {
+        EvaluatorThread th(this, 0, evalStart, evalEnd);
+        th.Start();
+    }
+}
+
+
+Gex::NodeEvaluator::~NodeEvaluator()
+{
+    for (auto* thread : threads)
+    {
+        delete thread;
+    }
+
+    threads.clear();
 }
 
 
@@ -456,6 +514,12 @@ Gex::NodeEvaluator::EvaluationStatus Gex::NodeEvaluator::Status() const
 }
 
 
+Gex::ScheduledNode::ScheduledNode(Node* node_)
+{
+    node = node_;
+}
+
+
 bool Gex::ScheduledNode::ShouldBeEvaluated() const
 {
     for (ScheduledNode* n : previousNodes)
@@ -469,10 +533,16 @@ bool Gex::ScheduledNode::ShouldBeEvaluated() const
     return true;
 }
 
+bool Gex::ScheduledNode::Evaluate(Gex::GraphContext &context,
+                                  Gex::NodeProfiler& profiler)
+{
+    return node->Compute(context, profiler);
+}
+
 bool Gex::ScheduledNode::Compute(Gex::GraphContext &context,
                                  Gex::NodeProfiler& profiler)
 {
-    bool result = node->Compute(context, profiler);
+    bool result = Evaluate(context, profiler);
     evaluated = true;
     return result;
 }

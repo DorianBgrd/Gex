@@ -11,8 +11,14 @@
 
 namespace iter
 {
+
     class Plugin_API Iterator : public Gex::CompoundNode
     {
+    private:
+        int currentIndex = -1;
+        unsigned int length = 0;
+        std::vector<unsigned int> indices;
+
     protected:
 
         void InitAttributes() override
@@ -39,43 +45,85 @@ namespace iter
                     Gex::AttrType::Output);
         }
 
-        bool Evaluate(Gex::NodeAttributeData &context,
-                      Gex::GraphContext &graphCtx,
-                      Gex::NodeProfiler& profiler) override
+
+        void Prepare(Gex::NodeAttributeData &ctx)
         {
-            std::vector<unsigned int> indices = GetAttribute("input")->ValidIndices();
-
-            bool success = true;
-
-            auto output = context.GetAttribute("output");
-            output.ClearMultiIndices();
-
-            for (unsigned int idx : indices)
-            {
-                context.GetAttribute("index").SetValue<int>((int)idx);
-
-                TSys::AnyValue indexvalue = context.GetAttribute("input")
-                        .GetIndexValue<TSys::AnyValue>(idx);
-
-                context.GetAttribute("in").SetValue<TSys::AnyValue>(indexvalue);
-
-                bool success_ = Gex::CompoundNode::Evaluate(context, graphCtx, profiler);
-                if (!success_)
-                {
-                    continue;
-                }
-
-                auto out = context.GetAttribute("out").GetValue<TSys::AnyValue>();
-
-                if (!output.HasIndex(idx))
-                    output.CreateIndex(idx);
-
-                output.SetIndexValue(idx, out);
-            }
-
-            return success;
+            ctx.GetAttribute("output").ClearMultiIndices();
+            indices = GetAttribute("input")->ValidIndices();
+            length = indices.size();
         }
 
+
+        bool PreEvaluate(Gex::NodeAttributeData &ctx,
+                         Gex::GraphContext &graphContext,
+                         Gex::NodeProfiler &profiler)
+                         override
+        {
+            if (currentIndex == -1)
+            {
+                Prepare(ctx);
+            }
+
+            currentIndex++;
+            auto idx = indices[currentIndex];
+
+            ctx.GetAttribute("index").SetValue<int>((int)idx);
+
+            auto indexvalue = ctx.GetAttribute("input")
+                    .GetIndexValue<TSys::AnyValue>(idx);
+
+            return ctx.GetAttribute("in").SetValue<TSys::AnyValue>(indexvalue);
+        }
+
+
+        void Finalize()
+        {
+            currentIndex = -1;
+            indices.clear();
+            length = 0;
+        }
+
+
+        bool PostEvaluate(Gex::NodeAttributeData &ctx,
+                         Gex::GraphContext &graphContext,
+                         Gex::NodeProfiler &profiler)
+                        override
+        {
+            auto outputs = ctx.GetAttribute("output");
+
+            auto idx = indices.at(currentIndex);
+            outputs.CreateIndex(idx);
+            outputs.SetIndexValue(idx, ctx.GetAttribute("out"));
+
+            if (currentIndex == (length - 1))
+            {
+                Finalize();
+            }
+
+            return true;
+        }
+
+        std::vector<Gex::ScheduledNode*> ToScheduledNodes() override
+        {
+            size_t length_ = GetAttribute("input")->ValidIndices().size();
+
+            std::vector<Gex::ScheduledNode*> result;
+
+            Gex::ScheduledNode* last = nullptr;
+            for (unsigned int i= 0; i < length_; i++)
+            {
+                auto schelNodes = Gex::CompoundNode::ToScheduledNodes();
+
+                if (last)
+                    schelNodes.at(0)->previousNodes.push_back(last);
+
+                result.insert(result.end(), schelNodes.begin(), schelNodes.end());
+
+                last = result.at(result.size() - 1);
+            }
+
+            return result;
+        }
     };
 
 

@@ -426,6 +426,8 @@ bool Gex::Graph::Compute(GraphContext& context, Profiler& profiler,
             false, threads, nodeStarted,
             nodeDone, finalize);
 
+    evaluator->Run();
+
     return (evaluator->Status() == NodeEvaluator::EvaluationStatus::Done);
 }
 
