@@ -740,7 +740,7 @@ Gex::Ui::NodeItem::NodeItem(Gex::Node* node_,
     title->setFont(QFont("sans", 13));
     title->setDefaultTextColor(QColor("white"));
     title->setPlainText(node_->Name().c_str());
-    title->setTextInteractionFlags(Qt::TextEditorInteraction);
+    title->setTextInteractionFlags(Qt::TextEditable);
 //    title->update();
 
     QTextDocument* doc = title->document();
@@ -1230,6 +1230,10 @@ void Gex::Ui::NodeItem::paint(QPainter *painter,
 {
     QRectF rect = boundingRect();
 
+    painter->save();
+
+    painter->setPen(Qt::NoPen);
+
     if (!isSelected() && !HasCustomBorderColor())
     {
         painter->setBrush(QBrush(QColor("#383838")));
@@ -1256,6 +1260,8 @@ void Gex::Ui::NodeItem::paint(QPainter *painter,
         painter->setBrush(QBrush(QColor("#383838")));
         painter->drawRoundedRect(inSet, 5, 5);
     }
+
+    painter->restore();
 }
 
 
@@ -2303,7 +2309,7 @@ void Gex::Ui::NodeGraphScene::AutoLayoutNodes(const QPointF& destination,
     for (auto* node : nodes)
         nodeVec.push_back(node);
 
-    auto schelNodes = Gex::ScheduleNodes(nodeVec);
+    auto schelNodes = Gex::ScheduleNodes(nodeVec, false);
 
     std::map<int, std::vector<Gex::Node*>> nodeLevels;
     for (auto schel : schelNodes)
@@ -2334,6 +2340,7 @@ void Gex::Ui::NodeGraphScene::AutoLayoutNodes(const QPointF& destination,
     // Clean Scheduled nodes.
     for (auto* schelnode : schelNodes)
         delete schelnode;
+
     schelNodes.clear();
 
     qreal len = nodeLevels.size();
@@ -2642,6 +2649,8 @@ void Gex::Ui::GraphWidget::SwitchGraph(Gex::Graph* graph_)
     graph = graph_;
 
     ClearContexts();
+
+    scene->Clear();
 
     Initialize();
 }
