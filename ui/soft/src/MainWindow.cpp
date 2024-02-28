@@ -25,6 +25,8 @@ Gex::Editor::MainWindow::MainWindow(Gex::Graph* graph_, std::string file,
     auto* fileMenu =  menu->addMenu("File");
 //    fileMenu->addAction(Res::UiRes::GetRes()->GetQtAwesome()->icon(fa::fa_solid, fa::fa_folder_open),
 //                        "Open", this, &MainWindow::New);
+    fileMenu->addAction(Res::UiRes::GetRes()->GetQtAwesome()->icon(fa::fa_solid, fa::fa_file),
+                        "New", this, &MainWindow::NewCallback);
 
     fileMenu->addAction(Res::UiRes::GetRes()->GetQtAwesome()->icon(fa::fa_solid, fa::fa_folder_open),
                         "Open", this, &MainWindow::OpenCallback);
@@ -44,6 +46,29 @@ Gex::Editor::MainWindow::MainWindow(Gex::Graph* graph_, std::string file,
 }
 
 
+Gex::Feedback Gex::Editor::MainWindow::New()
+{
+    Gex::Feedback feedback;
+
+    currentFile = "";
+
+    feedback.status = Gex::Status::Success;
+    feedback.message = "New file";
+
+    if (graph)
+    {
+        delete graph;
+    }
+
+    graph = new Gex::Graph();
+    graphView->SwitchGraph(graph);
+
+    ShowMessage(feedback);
+
+    return feedback;
+}
+
+
 Gex::Feedback Gex::Editor::MainWindow::Open(std::string file)
 {
     Gex::Feedback feedback;
@@ -54,6 +79,11 @@ Gex::Feedback Gex::Editor::MainWindow::Open(std::string file)
     {
         graph_ = new Gex::Graph();
         currentFile = "";
+    }
+
+    if (graph)
+    {
+        delete graph;
     }
 
     graph = graph_;
@@ -94,6 +124,12 @@ Gex::Feedback Gex::Editor::MainWindow::Save()
     }
 
     return SaveAs(currentFile);
+}
+
+
+void Gex::Editor::MainWindow::NewCallback()
+{
+    New();
 }
 
 

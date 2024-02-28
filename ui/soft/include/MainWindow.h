@@ -21,11 +21,15 @@ namespace Gex::Editor
         MainWindow(Gex::Graph* graph, std::string file="",
                    QWidget* parent=nullptr);
 
+        Gex::Feedback New();
+
         Gex::Feedback Open(std::string file);
 
         Gex::Feedback SaveAs(std::string file);
 
         Gex::Feedback Save();
+
+        void NewCallback();
 
         void OpenCallback();
 
