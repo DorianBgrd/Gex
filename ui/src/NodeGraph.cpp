@@ -202,7 +202,15 @@ void Gex::Ui::AttributeItem::SetTextIndent(qreal indent)
         indent = -1 * indent;
     }
 
-    text->setPos(text->pos().x() + indent, text->pos().y());
+    qreal x = text->pos().x() + indent;
+    text->setPos(x, text->pos().y());
+
+    qreal width = parentNode->boundingRect().width();
+
+    QFontMetrics metrics(text->font());
+    text->setPlainText(metrics.elidedText(
+            text->toPlainText(), Qt::ElideRight,
+            width - x - 7));
 
     if (multiButton)
     {
@@ -221,10 +229,11 @@ Gex::Ui::AttributeItem::AttributeItem(Gex::Attribute* attr,
 
 
 void Gex::Ui::AttributeItem::Initialize(Gex::Attribute* attr,
-                                                  AttributeItem* parent,
-                                                  NodeItem* node)
+                                        AttributeItem* parent,
+                                        NodeItem* node)
 {
-    setRect(QRect(0, 0, NODE_DEFAULT_WIDTH, ATTRIBUTE_HEIGHT));
+    setRect(QRect(0, 0, node->boundingRect().width(),
+                  ATTRIBUTE_HEIGHT));
     setPen(Qt::NoPen);
 
     collapsed = true;
@@ -249,10 +258,14 @@ void Gex::Ui::AttributeItem::Initialize(Gex::Attribute* attr,
 
     QFontMetrics metrics(text->font());
 
+    qreal nodeWidth = node->boundingRect().width();
     qreal width = metrics.boundingRect(attribute->Name().c_str()).width();
-    if (width > NODE_DEFAULT_WIDTH)
+
+    auto elideMode = Qt::ElideRight;
+    if (width > nodeWidth)
     {
-        // TODO : ellide text ?
+        text->setPlainText(metrics.elidedText(attribute->Name().c_str(),
+                                              elideMode, nodeWidth - 5));
     }
 
     text->setDefaultTextColor(QColor("white"));
@@ -261,12 +274,7 @@ void Gex::Ui::AttributeItem::Initialize(Gex::Attribute* attr,
 
     qreal textY = (ATTRIBUTE_HEIGHT - text->boundingRect().height()) / 2;
     width = text->boundingRect().width();
-//    qreal textY = 3;
-//    if (attribute->IsStatic())
-//    {
-//        text->setPos((NODE_DEFAULT_WIDTH - width) / 2, textY);
-//    }
-//    else
+
     if (attribute->IsInput() || attribute->IsStatic())
     {
         text->setPos(0, textY);
@@ -274,7 +282,7 @@ void Gex::Ui::AttributeItem::Initialize(Gex::Attribute* attr,
     }
     else
     {
-        text->setPos((NODE_DEFAULT_WIDTH - width), textY);
+        text->setPos((nodeWidth - width), textY);
         input->setVisible(false);
     }
 
@@ -297,9 +305,12 @@ void Gex::Ui::AttributeItem::Initialize(Gex::Attribute* attr,
             text->setPos(text->pos().x() - 14,
                          text->pos().y());
 
-            multiButton->setPos(NODE_DEFAULT_WIDTH - 4 - multiButton->boundingRect().width(),
+            multiButton->setPos(nodeWidth - 4 - multiButton->boundingRect().width(),
                                 (ATTRIBUTE_HEIGHT - multiButton->boundingRect().height())/2);
         }
+
+        text->setPlainText(metrics.elidedText(attribute->Name().c_str(),
+                                              Qt::ElideRight, nodeWidth - 14 - 7));
     }
 
     CreateAttributes();
@@ -463,7 +474,7 @@ void Gex::Ui::AttributeItem::InitializeLinks()
     std::unordered_map<Gex::Node*, NodeItem*> nodesItems;
     for (auto* item : items)
     {
-        NodeItem* nodeitem = dynamic_cast<NodeItem*>(item);
+        NodeItem* nodeitem = qgraphicsitem_cast<NodeItem*>(item);
         if (!nodeitem)
         {
             continue;
@@ -1506,7 +1517,7 @@ void Gex::Ui::NodeGraphScene::mousePressEvent(QGraphicsSceneMouseEvent* mouseEve
     QGraphicsItem* item = itemAt(mouseEvent->scenePos(), QTransform());
     if (item)
     {
-        PlugItem *plugItem = dynamic_cast<PlugItem *>(item);
+        PlugItem *plugItem = qgraphicsitem_cast<PlugItem *>(item);
         if (!previewLink && plugItem)
         {
             previewLink = new PreviewLinkItem(plugItem);
@@ -1538,7 +1549,7 @@ void Gex::Ui::NodeGraphScene::mouseMoveEvent(QGraphicsSceneMouseEvent* mouseEven
         QGraphicsItem* item = itemAt(mouseEvent->scenePos(), QTransform());
         if (item)
         {
-            PlugItem* plugItem = dynamic_cast<PlugItem*>(item);
+            PlugItem* plugItem = qgraphicsitem_cast<PlugItem*>(item);
             if (plugItem && (plugItem != previewLink->SourcePlug()))
             {
                 AttributeItem* destItem = plugItem->Attribute();
@@ -1605,22 +1616,6 @@ void Gex::Ui::NodeGraphScene::mouseMoveEvent(QGraphicsSceneMouseEvent* mouseEven
 
         previewLink->Draw(mouseEvent->scenePos());
     }
-
-// TODO : Generates a Stack Overflow since ZoomIn / ZoomOut launches another
-//  mouseMoveEvent on scene.
-//    if (mouseZooming && mouseZoomingClicked)
-//    {
-//        qreal delta = mouseEvent->screenPos().x() - mouseZoomingPos.x();
-//        NodeGraphView* view = dynamic_cast<NodeGraphView*>(views()[0]);
-//        if (view)
-//        {
-//            if (delta > 0)
-//                view->ZoomOut();
-//            else
-//                view->ZoomIn();
-//        }
-//        mouseZoomingPos = mouseEvent->screenPos();
-//    }
 }
 
 
@@ -1647,7 +1642,7 @@ void Gex::Ui::NodeGraphScene::mouseReleaseEvent(QGraphicsSceneMouseEvent* mouseE
     if (previewLink) {
         if (item)
         {
-            PlugItem *plugItem = dynamic_cast<PlugItem *>(item);
+            PlugItem *plugItem = qgraphicsitem_cast<PlugItem *>(item);
 
             if (plugItem && (plugItem != previewLink->SourcePlug()))
             {
@@ -1720,7 +1715,7 @@ void Gex::Ui::NodeGraphScene::mouseReleaseEvent(QGraphicsSceneMouseEvent* mouseE
                     }
                     if (!connected)
                     {
-                        unsigned int newIndex = NextMultiAttributeIndex(destItem->Attribute());
+                        unsigned int newIndex = Gex::Ui::NextMultiAttributeIndex(destItem->Attribute());
                         if (destItem->Attribute()->CreateIndex(newIndex))
                         {
                             auto *indexAttr = destItem->Attribute()->GetIndexAttribute(newIndex);
@@ -1747,7 +1742,7 @@ void Gex::Ui::NodeGraphScene::mouseReleaseEvent(QGraphicsSceneMouseEvent* mouseE
 
     else
     {
-        if (NodePlugItem* nodePlugItem = dynamic_cast<NodePlugItem*>(item))
+        if (NodePlugItem* nodePlugItem = qgraphicsitem_cast<NodePlugItem*>(item))
         {
             Q_EMIT NodePlugClicked(nodePlugItem);
         }
@@ -1789,13 +1784,13 @@ void Gex::Ui::NodeGraphScene::StartPlugLinking(PlugItem* source)
 
 void Gex::Ui::NodeGraphScene::OnItemDoubleClicked(QGraphicsItem* item)
 {
-    NodeItem* nodeItem = dynamic_cast<NodeItem*>(item);
+    NodeItem* nodeItem = qgraphicsitem_cast<NodeItem*>(item);
     if (!nodeItem)
     {
         auto* parent = item->parentItem();
         if (parent)
         {
-            nodeItem = dynamic_cast<NodeItem*>(parent);
+            nodeItem = qgraphicsitem_cast<NodeItem*>(parent);
             if (!nodeItem)
             {
                 return;
@@ -1803,7 +1798,7 @@ void Gex::Ui::NodeGraphScene::OnItemDoubleClicked(QGraphicsItem* item)
         }
     }
 
-    Gex::CompoundNode* node = dynamic_cast<Gex::CompoundNode*>(nodeItem->Node());
+    auto* node = Gex::CompoundNode::FromNode(nodeItem->Node());
     if (!node || nodeItem->IsShowingInternal())
     {
         return;
@@ -1839,7 +1834,7 @@ void Gex::Ui::NodeGraphScene::UpdateNodeAttribute(Gex::Node* node,
 }
 
 
-Gex::Ui::NodeGraphView::NodeGraphView(QGraphicsScene* scene, QWidget* parent):
+Gex::Ui::NodeGraphView::NodeGraphView(NodeGraphScene* scene, QWidget* parent):
     BaseGraphView(scene, parent, true)
 {
 
@@ -1854,6 +1849,18 @@ Gex::Ui::NodeGraphView::NodeGraphView(QGraphicsScene* scene, QWidget* parent):
     QShortcut* shortcut_3 = new QShortcut(QKeySequence("3"), this);
     QObject::connect(shortcut_3, &QShortcut::activated, this,
                      &NodeGraphView::SetSelectedNodesVisConnected);
+
+    QShortcut* shortcut_4 = new QShortcut(QKeySequence("Ctrl+D"), this);
+    QObject::connect(shortcut_4, &QShortcut::activated, scene,
+                     &NodeGraphScene::DuplicateSelectedNodesNoLinks);
+
+    QShortcut* shortcut_5 = new QShortcut(QKeySequence("Shift+D"), this);
+    QObject::connect(shortcut_5, &QShortcut::activated, scene,
+                     &NodeGraphScene::DuplicateSelectedNodesAndLinks);
+
+    QShortcut* shortcut_6 = new QShortcut(QKeySequence("Ctrl+Shift+X"), this);
+    QObject::connect(shortcut_6, &QShortcut::activated, scene,
+                     &NodeGraphScene::ConvertSelectedNodesToCompound);
 }
 
 
@@ -1861,7 +1868,7 @@ void Gex::Ui::NodeGraphView::SetSelectedNodesVis(NodeItem::AttributeVisibilityMo
 {
     for (QGraphicsItem* item : scene()->selectedItems())
     {
-        NodeItem* node = dynamic_cast<NodeItem*>(item);
+        NodeItem* node = qgraphicsitem_cast<NodeItem*>(item);
         if (!node)
         {
             continue;
@@ -1896,7 +1903,7 @@ QList<QGraphicsItem*> Gex::Ui::NodeGraphView::FilterSelectedItems(
     QList<QGraphicsItem*> nodes;
     for (auto item : items)
     {
-        if (dynamic_cast<Gex::Ui::NodeItem*>(item))
+        if (qgraphicsitem_cast<Gex::Ui::NodeItem*>(item))
         {
             nodes.append(item);
         }
@@ -2139,6 +2146,114 @@ void Gex::Ui::NodeGraphScene::DeleteNode(NodeItem* item)
 }
 
 
+QList<Gex::Ui::NodeItem*> Gex::Ui::NodeGraphScene::SelectedNodeItems() const
+{
+    auto items  = selectedItems();
+
+    QList<NodeItem*> nodes;
+    for (auto* item : items)
+    {
+        if (auto* node = qgraphicsitem_cast<NodeItem*>(item))
+        {
+            nodes.append(node);
+        }
+    }
+
+    return nodes;
+}
+
+
+std::vector<Gex::Node*>  Gex::Ui::NodeGraphScene::SelectedNodes() const
+{
+    auto items  = selectedItems();
+
+    std::vector<Gex::Node*> core;
+    for (auto* item : items)
+    {
+        if (auto* node = qgraphicsitem_cast<NodeItem*>(item))
+        {
+            core.push_back(node->Node());
+        }
+    }
+
+    return core;
+}
+
+
+void Gex::Ui::NodeGraphScene::DuplicateNodes(std::vector<Node*> nodes, bool copyLinks)
+{
+    std::vector<Gex::Node*> duplicateds = graphContext->graph->DuplicateNodes(nodes, copyLinks);
+
+    QList<NodeItem*> newItems;
+    for (auto* dupnode : duplicateds)
+    {
+        auto* nodeItem = new NodeItem(dupnode);
+        addItem(nodeItem);
+        nodeItems[dupnode] = nodeItem;
+
+        newItems.append(nodeItem);
+    }
+
+    for (auto* item : newItems)
+    {
+        item->InitializeLinks();
+    }
+
+    // Place new nodes.
+    for (unsigned int i = 0; i < nodes.size(); i++)
+    {
+        auto* src = nodeItems[nodes.at(i)];
+        auto* dst = nodeItems[duplicateds.at(i)];
+
+        dst->setPos(src->pos() + QPointF(10, 10));
+    }
+}
+
+
+void Gex::Ui::NodeGraphScene::DuplicateSelectedNodes(bool copyLinks)
+{
+    auto duplicate = SelectedNodes();
+    if (duplicate.empty())
+        return;
+
+    DuplicateNodes(duplicate, copyLinks);
+}
+
+void Gex::Ui::NodeGraphScene::DuplicateSelectedNodesNoLinks()
+{
+    DuplicateSelectedNodes(false);
+}
+
+
+void Gex::Ui::NodeGraphScene::DuplicateSelectedNodesAndLinks()
+{
+    DuplicateSelectedNodes(true);
+}
+
+
+void Gex::Ui::NodeGraphScene::ConvertSelectedNodesToCompound()
+{
+    auto extract = SelectedNodeItems();
+
+    std::vector<Gex::Node*> nodes;
+    for (auto n : extract)
+    {
+        nodes.push_back(n->Node());
+    }
+
+    auto* cmp = graphContext->graph->ToCompound(nodes);
+
+    for (auto* item : extract)
+    {
+        DeleteNode(item);
+    }
+
+    auto* cmpItem = new NodeItem(cmp);
+    addItem(cmpItem);
+    cmpItem->InitializeLinks();
+}
+
+
 void Gex::Ui::NodeGraphScene::DeleteLink(LinkItem* item)
 {
     AttributeItem* source = item->Source();
@@ -2156,11 +2271,11 @@ void Gex::Ui::NodeGraphScene::DeleteSelection()
     QList<QPointer<LinkItem>> deleteLinks;
     for (QGraphicsItem* item : selectedItems())
     {
-        if (NodeItem* nodeItem = dynamic_cast<NodeItem*>(item))
+        if (NodeItem* nodeItem = qgraphicsitem_cast<NodeItem*>(item))
         {
             deleteNodes.append(nodeItem);
         }
-        else if (LinkItem* linkItem = dynamic_cast<LinkItem*>(item))
+        else if (LinkItem* linkItem = qgraphicsitem_cast<LinkItem*>(item))
         {
             deleteLinks.append(linkItem);
         }
@@ -2573,6 +2688,7 @@ Gex::Ui::GraphWidget::~GraphWidget()
 void Gex::Ui::GraphWidget::Initialize()
 {
     auto* context = new NodeGraphContext();
+    context->graph = graph;
     context->name = "Root";
     context->GetNodes = [this](){return this->graph->Nodes();};
     context->CreateNode = [this](std::string t, std::string n){return this->graph->CreateNode(t, n);};
@@ -2593,7 +2709,7 @@ void Gex::Ui::GraphWidget::OnNodeSelected()
     std::vector<Gex::Node*> nodes;
     for (auto* item : items)
     {
-        auto* nodeItem = dynamic_cast<NodeItem*>(item);
+        auto* nodeItem = qgraphicsitem_cast<NodeItem*>(item);
         if (!nodeItem)
             continue;
 

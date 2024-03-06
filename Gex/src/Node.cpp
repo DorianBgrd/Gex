@@ -5,6 +5,7 @@
 #include <boost/python.hpp>
 #include "Gex/include/Evaluation.h"
 #include "Gex/include/Config.h"
+#include "Gex/include/utils.h"
 
 #include "Tsys/include/tsys.h"
 #include "Tsys/include/defaultTypes.h"
@@ -238,9 +239,9 @@ std::string Gex::Node::Description() const
 }
 
 
-void Gex::Node::SetName(std::string p)
+void Gex::Node::SetName(const std::string& p)
 {
-    nodeName = p;
+    nodeName = Gex::Utils::ValidateName(p);
 }
 
 
@@ -299,9 +300,9 @@ boost::python::object Gex::Node::PythonGetAttribute(std::string name)
 }
 
 
-std::vector<Gex::Attribute*> Gex::Node::ExtraAttributes()
+Gex::AttributeList Gex::Node::ExtraAttributes()
 {
-	std::vector<Attribute*> extraAttrs;
+	AttributeList extraAttrs;
 	for (std::pair<std::string, Attribute*> a : attributes)
 	{
 		if (!a.second->IsUserDefined())
@@ -316,9 +317,9 @@ std::vector<Gex::Attribute*> Gex::Node::ExtraAttributes()
 }
 
 
-std::vector<Gex::Attribute*> Gex::Node::GetAttributes() const
+Gex::AttributeList Gex::Node::GetAttributes() const
 {
-	std::vector<Attribute*> attrs;
+	AttributeList attrs;
 	for (std::pair<std::string, Attribute*> n : attributes)
 	{
 		attrs.push_back(n.second);
@@ -328,9 +329,9 @@ std::vector<Gex::Attribute*> Gex::Node::GetAttributes() const
 }
 
 
-std::vector<Gex::Attribute*> Gex::Node::GetAllAttributes() const
+Gex::AttributeList Gex::Node::GetAllAttributes() const
 {
-    std::vector<Attribute*> attrs;
+    AttributeList attrs;
     for (std::pair<std::string, Attribute*> n : attributes)
     {
         attrs.push_back(n.second);
@@ -345,12 +346,12 @@ std::vector<Gex::Attribute*> Gex::Node::GetAllAttributes() const
 }
 
 
-std::vector<Gex::Node*> Gex::Node::UpstreamNodes()
+Gex::NodeList Gex::Node::UpstreamNodes()
 {
-	std::vector<Node*> sources;
+	NodeList sources;
 	for (Attribute* a : GetAttributes())
 	{
-		std::vector<Gex::Attribute*> srcs = a->Sources();
+		Gex::AttributeList srcs = a->Sources();
         if (srcs.empty())
         {
             continue;
@@ -384,11 +385,11 @@ std::vector<Gex::Node*> Gex::Node::UpstreamNodes()
 // As recursion is considered a bad practice in C++, this function uses
 // a while loop. Still, filling a vector with nodes still feels like
 // increasing the stack.
-std::vector<Gex::Node*> IterUpstreamNodes(Gex::Node* node)
+Gex::NodeList IterUpstreamNodes(Gex::Node* node)
 {
-    std::vector<Gex::Node*> list;
+    Gex::NodeList list;
 
-    std::vector<Gex::Node*> analyse = node->UpstreamNodes();
+    Gex::NodeList analyse = node->UpstreamNodes();
 
     size_t i = 0;
     while (i < analyse.size())
@@ -410,9 +411,9 @@ std::vector<Gex::Node*> IterUpstreamNodes(Gex::Node* node)
 }
 
 
-std::vector<Gex::Node*> Gex::Node::DownstreamNodes()
+Gex::NodeList Gex::Node::DownstreamNodes()
 {
-	std::vector<Node*> destinations;
+	NodeList destinations;
 	for (Attribute* a : GetAttributes())
 	{
 		if (!a->HasDests())
@@ -420,7 +421,7 @@ std::vector<Gex::Node*> Gex::Node::DownstreamNodes()
 			continue;
 		}
 
-		std::vector<Attribute*> attrDests = a->Dests();
+		AttributeList attrDests = a->Dests();
 		for (Attribute* attrDest : attrDests)
 		{
 			destinations.push_back(attrDest->Node());
@@ -611,6 +612,17 @@ bool Gex::CompoundPostScheduledNode::Evaluate(Gex::GraphContext &context,
 }
 
 
+Gex::CompoundNode::~CompoundNode()
+{
+    for (auto* node : innerNodes)
+    {
+        delete node;
+    }
+
+    innerNodes.clear();
+}
+
+
 bool Gex::CompoundNode::IsCompound() const
 {
     return true;
@@ -714,6 +726,12 @@ Gex::Node* Gex::CompoundNode::GetInternalNode(const std::string& node) const
 }
 
 
+Gex::NodeList Gex::CompoundNode::GetInternalNodes() const
+{
+    return innerNodes;
+}
+
+
 bool Gex::CompoundNode::RemoveInternalNode(const std::string& node)
 {
     Node* nodePtr = GetInternalNode(node);
@@ -745,7 +763,7 @@ bool Gex::CompoundNode::IsInternalNode(const std::string& node) const
 }
 
 
-std::vector<Gex::Node*> Gex::CompoundNode::InternalNodes() const
+Gex::NodeList Gex::CompoundNode::InternalNodes() const
 {
     return innerNodes;
 }
@@ -795,9 +813,9 @@ Gex::Node* Gex::CompoundNode::CreateInternalNode(std::string type, std::string n
 }
 
 
-std::vector<Gex::Attribute*> Gex::CompoundNode::InternalAttributes() const
+Gex::AttributeList Gex::CompoundNode::InternalAttributes() const
 {
-    std::vector<Attribute*> internals;
+    AttributeList internals;
     for (auto attribute : attributes)
     {
         if (attribute.second->IsInternal())
@@ -808,9 +826,9 @@ std::vector<Gex::Attribute*> Gex::CompoundNode::InternalAttributes() const
 }
 
 
-std::vector<Gex::Attribute*> Gex::CompoundNode::AllInternalAttributes() const
+Gex::AttributeList Gex::CompoundNode::AllInternalAttributes() const
 {
-    std::vector<Attribute*> internals;
+    AttributeList internals;
     for (auto* attribute : GetAllAttributes())
     {
         if (attribute->IsInternal())
@@ -904,7 +922,7 @@ void Gex::CompoundNode::Serialize(rapidjson::Value& dict,
     rapidjson::Value& connections = rapidjson::Value(rapidjson::kArrayType).GetArray();
     for (auto node : innerNodes)
     {
-        std::vector<Attribute*> attributes = node->GetAllAttributes();
+        AttributeList attributes = node->GetAllAttributes();
         for (auto* attr : attributes)
         {
             _JsonPushAttributeConnection(this, connections, attr, json);
@@ -1027,7 +1045,7 @@ bool Gex::CompoundNode::Evaluate(NodeAttributeData &ctx,
 }
 
 
-std::vector<Gex::ScheduledNode*> Gex::CompoundNode::ToScheduledNodes()
+Gex::ScheduleNodeList Gex::CompoundNode::ToScheduledNodes()
 {
     auto schelNodes = Gex::ScheduleNodes(innerNodes);
 

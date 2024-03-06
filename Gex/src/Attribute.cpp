@@ -26,6 +26,18 @@ Gex::Attribute::Attribute()
 }
 
 
+Gex::AttrValueType Gex::Attribute::GetAttrValueType() const
+{
+    return attributeValueType;
+}
+
+
+Gex::AttrType Gex::Attribute::GetAttrType() const
+{
+    return attributeType;
+}
+
+
 Gex::Attribute::Attribute(std::string name, std::any v, AttrValueType valueType,
 			              AttrType type, bool userDefined, Gex::Node* node, Attribute* parent)
 {
@@ -148,7 +160,7 @@ Gex::Attribute* Gex::Attribute::Copy(std::string name, Gex::Node* node, Attribut
 }
 
 
-Gex::Attribute* Gex::Attribute::CopyHasChild(Attribute* ref)
+Gex::Attribute* Gex::Attribute::CopyAsChild(Attribute* ref)
 {
     Attribute* copied = ref->Copy(ref->Name(), ref->Node(), this);
     AddChildAttribute(copied);
@@ -623,7 +635,7 @@ bool Gex::Attribute::_CreateIndex(unsigned int index)
         std::vector<Attribute*> childs = GetChildAttributes();
         for (auto at : childs)
         {
-            idxAt->CopyHasChild(at);
+            idxAt->CopyAsChild(at);
         }
     }
 
@@ -861,6 +873,9 @@ bool Gex::Attribute::_ConnectDest(Attribute *attribute)
 std::vector<Gex::Attribute*> Gex::Attribute::_ValidateDests()
 {
     std::vector<Attribute*> results;
+
+    if (dests.empty())
+        return results;
 
     auto itr = dests.end();
     do

@@ -126,6 +126,10 @@ namespace Gex
          */
 		Attribute();
 
+        AttrValueType GetAttrValueType() const;
+
+        AttrType GetAttrType() const;
+
     protected:
         /**
          * Signal change to current holder node.
@@ -148,7 +152,7 @@ namespace Gex
          * @param Attribute* ref: attribute ptr to copy.
          * @return Attribute* resulting attribute.
          */
-        Attribute* CopyHasChild(Attribute* ref);
+        Attribute* CopyAsChild(Attribute* ref);
 
         /**
          * Initializes default value.
@@ -208,7 +212,7 @@ namespace Gex
          * @param Attribute* parent: attribute parent Attribute ptr.
          */
         explicit Attribute(const std::string& name, AttrType type = AttrType::Static, bool multi=false,
-			bool userDefined = false, Node* node = nullptr, 
+			bool userDefined = false, Node* node = nullptr,
 			Attribute* parent = nullptr);
 
         /**

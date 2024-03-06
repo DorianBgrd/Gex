@@ -2,6 +2,7 @@
 #define GEX_NODE
 
 #include "api.h"
+#include "defs.h"
 #include "boost/python.hpp"
 #include "NodeAttributeData.h"
 #include "Attribute.h"
@@ -16,26 +17,24 @@
 
 namespace Gex
 {
+    class Graph;
     class Attribute;
-    class PythonNode;
 	class DefaultNodeBuilder;
 	class CompoundNodeBuilder;
 	class CompoundNode;
 	class NodeFactory;
 	class NodeBuilder;
-	class NodeEvaluationContext;
     class GraphContext;
 	class NodeAttributeData;
 	class EvaluationContext;
-    class PythonWrapperBuilder;
     class ScheduledNode;
 
 	class GEX_API Node
 	{
 	protected:
-        friend PythonNode;
         friend CompoundNode;
         friend Attribute;
+        friend Graph;
 		friend NodeFactory;
         friend NodeBuilder;
 		friend DefaultNodeBuilder;
@@ -66,6 +65,7 @@ namespace Gex
         std::vector<std::string> resources;
 
         Node* parent;
+        Graph* graph;
         Attribute* previous;
         Attribute* next;
 
@@ -96,7 +96,10 @@ namespace Gex
          */
         std::string Name() const;
 
-
+        /**
+         * Returns node path.
+         * @return path.
+         */
         std::string Path() const;
 
         /**
@@ -124,7 +127,7 @@ namespace Gex
          * Sets node identifier.
          * @param std::string p: node identifier.
          */
-		virtual void SetName(std::string p);
+		virtual void SetName(const std::string& p);
 
     protected:
 		// Adds attribute to node.
@@ -167,7 +170,7 @@ namespace Gex
 
 	public:
 		// Destructor.
-		~Node();
+		virtual ~Node();
 
         Node* Parent();
 
@@ -190,6 +193,11 @@ namespace Gex
           */
          virtual bool SetEditable(bool editable);
 
+         /**
+          * Returns whether current node is a
+          * compound node.
+          * @return is compound.
+          */
          virtual bool IsCompound() const;
 
     protected:
@@ -297,7 +305,7 @@ namespace Gex
          * Returns all attributes pointers.
          * @return std::vector<Attribute*> attributes.
          */
-        std::vector<Attribute*> GetAttributes() const;
+        AttributeList GetAttributes() const;
 
         /**
          * Returns all attributes pointers, including
@@ -307,36 +315,25 @@ namespace Gex
          * pointers
          * @return std::vector<Attribute*> attributes.
          */
-        std::vector<Attribute*> GetAllAttributes() const;
-
-        /**
-         * Returns all attributes pointers.
-         * @return sstd::vector<Attribute*> attributes.
-         */
-        boost::python::list Python_GetAttributes();
+        AttributeList GetAllAttributes() const;
 
         /**
          * Returns all user defined attributes pointers.
          * @return std::vector<Attribute*> attributes.
          */
-		std::vector<Attribute*> ExtraAttributes();
+        AttributeList ExtraAttributes();
 
         /**
          * Returns input node pointers, if materialized.
          * @return std::vector<Node**> nodes.
          */
-		std::vector<Node*> UpstreamNodes();
-
-        /**
-         *
-         */
-        boost::python::list Python_UpstreamNodes();
+		NodeList UpstreamNodes();
 
         /**
          * Returns Output node pointers, if materialized.
          * @return std::vector<Node**> nodes.
          */
-		std::vector<Node*> DownstreamNodes();
+		NodeList DownstreamNodes();
 
 		/**
 		 * Serializes node to file.
@@ -440,11 +437,13 @@ namespace Gex
         friend NodeEvaluator;
 
 	protected:
-		std::vector<Node*> innerNodes;
+		NodeList innerNodes;
 
         using Node::Node;
 
 	public:
+        ~CompoundNode() override;
+
 		std::string Description() const override
         {
             return "Base compound node";
@@ -485,7 +484,7 @@ namespace Gex
         Attribute* CreateInternalAttribute(std::string name, boost::python::object type, AttrType attributeType,
                                            AttrValueType valueType, Attribute* parent);
 
-        std::vector<Node*> InternalNodes() const;
+        NodeList InternalNodes() const;
 
         std::vector<std::string> InternalNodeNames() const;
 
@@ -525,6 +524,8 @@ namespace Gex
          */
         virtual Node* GetInternalNode(const std::string& node) const;
 
+        NodeList GetInternalNodes() const;
+
         /**
          * Returns whether specified node pointer is an internal
          * node.
@@ -544,14 +545,14 @@ namespace Gex
          * Returns top level internal attributes.
          * @return std::vector<Attribute*> internal attributes.
          */
-        std::vector<Attribute*> InternalAttributes() const;
+        AttributeList InternalAttributes() const;
 
         /**
          * Returns all internal attributes, including child / indices
          * attributes.
          * @return std::vector<Attribute*> internal attributes.
          */
-        std::vector<Attribute*> AllInternalAttributes() const;
+        AttributeList AllInternalAttributes() const;
 
     protected:
 
@@ -606,7 +607,7 @@ namespace Gex
         void PullInternalOutputs();
 
     public:
-        virtual std::vector<ScheduledNode*> ToScheduledNodes();
+        virtual ScheduleNodeList ToScheduledNodes();
 
     public:
         /**

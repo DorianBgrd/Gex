@@ -6,6 +6,7 @@
 #define NODELIBRARY2COMPLETE_GRAPH_H
 
 #include "api.h"
+#include "defs.h"
 #include <vector>
 #include <set>
 #include <functional>
@@ -42,14 +43,26 @@ namespace Gex
 
     class GEX_API Graph
     {
-        std::vector<Node*> nodes;
-        std::vector<Attribute*> inputs;
+        NodeList nodes;
+        AttributeList inputs;
 
     public:
 
         ~Graph();
 
         Node* CreateNode(std::string type, std::string name=std::string());
+
+        bool AddNode(Node* node);
+
+    protected:
+        NodeList DuplicateNodes(NodeList sources,
+                                bool copyLinks, Node* parent);
+
+    public:
+        NodeList DuplicateNodes(NodeList sources,
+                                          bool copyLinks=false);
+
+        Gex::Node* ToCompound(NodeList sources);
 
         bool RemoveNode(Node* node);
 
@@ -73,7 +86,7 @@ namespace Gex
 
         void FinalizeEvaluation(const GraphContext& context) const;
 
-        std::vector<Node*> Nodes() const;
+        NodeList Nodes() const;
 
         std::vector<std::string> NodeNames() const;
     };

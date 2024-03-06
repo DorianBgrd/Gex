@@ -34,7 +34,10 @@ add_library(
         Gex/include/io.h
         Gex/src/io.cpp
         Gex/include/Profiler.h
-        Gex/src/Profiler.cpp)
+        Gex/src/Profiler.cpp
+        Gex/include/utils.h
+        Gex/src/utils.cpp
+        Gex/include/defs.h)
 
 
 target_include_directories(

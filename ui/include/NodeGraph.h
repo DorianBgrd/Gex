@@ -48,6 +48,15 @@ namespace Gex
             bool isInput;
 
         public:
+            enum {
+                Type = UserType + 1
+            };
+
+            int type() const override
+            {
+                return Type;
+            }
+
             PlugItem(AttributeItem* attribute,
                      bool input=true);
 
@@ -77,6 +86,15 @@ namespace Gex
             QColor pressedIconColor = "#AB6E0F";
 
         public:
+            enum {
+                Type = UserType + 2
+            };
+
+            int type() const override
+            {
+                return Type;
+            }
+
             MultiAttributeItem(AttributeItem* attribute);
 
             bool Collapsed() const;
@@ -122,6 +140,15 @@ namespace Gex
 
             bool collapsed;
         public:
+            enum {
+                Type = UserType + 3
+            };
+
+            int type() const override
+            {
+                return Type;
+            }
+
             AttributeItem(Gex::Attribute* attr,
                           AttributeItem* parent,
                           NodeItem* node=nullptr);
@@ -195,6 +222,15 @@ namespace Gex
             bool isInput;
 
         public:
+            enum {
+                Type = UserType + 4
+            };
+
+            int type() const override
+            {
+                return Type;
+            }
+
             NodePlugItem(NodeItem* node,
                          bool input=true);
 
@@ -219,6 +255,15 @@ namespace Gex
             bool userCustomBorderColor = false;
 
         public:
+            enum {
+                Type = UserType + 5
+            };
+
+            int type() const override
+            {
+                return Type;
+            }
+
             enum class AttributeVisibilityMode
             {
                 All,
@@ -304,6 +349,15 @@ namespace Gex
             bool sourceInternal = false;
             bool destInternal = false;
         public:
+            enum {
+                Type = UserType + 6
+            };
+
+            int type() const override
+            {
+                return Type;
+            }
+
             LinkItem(AttributeItem* source,
                      AttributeItem* dest);
 
@@ -331,6 +385,15 @@ namespace Gex
             PlugItem* anchorPlug;
 
         public:
+            enum {
+                Type = UserType + 7
+            };
+
+            int type() const override
+            {
+                return Type;
+            }
+
             enum class State
             {
                 Default,
@@ -353,6 +416,8 @@ namespace Gex
         struct NodeGraphContext
         {
             QString name;
+
+            Gex::Graph* graph;
 
             Gex::CompoundNode* compound = nullptr;
 
@@ -412,6 +477,20 @@ namespace Gex
 
             void DeleteNode(NodeItem* item);
 
+            void DuplicateNodes(std::vector<Gex::Node*> nodes, bool copyLinks);
+
+            QList<NodeItem*> SelectedNodeItems() const;
+
+            std::vector<Gex::Node*> SelectedNodes() const;
+
+            void DuplicateSelectedNodes(bool copyLinks);
+
+            void DuplicateSelectedNodesNoLinks();
+
+            void DuplicateSelectedNodesAndLinks();
+
+            void ConvertSelectedNodesToCompound();
+
             void DeleteLink(LinkItem* item);
 
             void DeleteSelection();
@@ -438,7 +517,7 @@ namespace Gex
         {
         public:
             explicit
-            NodeGraphView(QGraphicsScene* scene, QWidget* parent=nullptr);
+            NodeGraphView(NodeGraphScene* scene, QWidget* parent=nullptr);
 
         protected:
             struct ConnectCallback: public QObject

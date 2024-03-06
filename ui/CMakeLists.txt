@@ -40,7 +40,8 @@ add_library(
         include/ProfileViewer.h
         src/ProfileViewer.cpp
         include/GraphView.h
-        src/GraphView.cpp include/PluginLoader.h)
+        src/GraphView.cpp
+)
 
 add_compile_definitions(Gex_ui PRIVATE GEX_UI_API_EXPORT)
 
