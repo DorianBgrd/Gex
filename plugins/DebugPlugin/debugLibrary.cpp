@@ -9,6 +9,7 @@
 
 #include <chrono>
 #include <thread>
+#include "windows.h"
 
 namespace Debug
 {

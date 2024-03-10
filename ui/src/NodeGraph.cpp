@@ -165,6 +165,61 @@ void Gex::Ui::MultiAttributeItem::mouseReleaseEvent(QGraphicsSceneMouseEvent *ev
 }
 
 
+Gex::Ui::TitleDoc::TitleDoc(QObject* parent): QTextDocument(parent)
+{
+
+}
+
+
+void Gex::Ui::TitleDoc::Validate()
+{
+    Q_EMIT Validated(toPlainText());
+}
+
+
+Gex::Ui::NodeNameItem::NodeNameItem(QGraphicsItem* parent): QGraphicsTextItem(parent)
+{
+    doc = new TitleDoc(this);
+    setDocument(doc);
+}
+
+
+void Gex::Ui::NodeNameItem::focusInEvent(QFocusEvent *event)
+{
+    fallbackText = doc->toPlainText();
+
+    QGraphicsTextItem::focusInEvent(event);
+}
+
+
+void Gex::Ui::NodeNameItem::focusOutEvent(QFocusEvent *event)
+{
+    QGraphicsTextItem::focusOutEvent(event);
+
+    if (doc->toPlainText() != fallbackText)
+    {
+        doc->Validate();
+    }
+}
+
+
+void Gex::Ui::NodeNameItem::keyReleaseEvent(QKeyEvent *event)
+{
+    if (event->key() == Qt::Key_Enter)
+    {
+        doc->Validate();
+    }
+
+    QGraphicsTextItem::keyReleaseEvent(event);
+}
+
+
+Gex::Ui::TitleDoc* Gex::Ui::NodeNameItem::TitleDocument() const
+{
+    return doc;
+}
+
+
 Gex::Ui::AttributeItem::AttributeItem(Gex::Attribute* attr,
                                                 AttributeItem* parent,
                                                 NodeItem* node):
@@ -747,16 +802,16 @@ Gex::Ui::NodeItem::NodeItem(Gex::Node* node_,
     setFlags(QGraphicsItem::ItemIsMovable | QGraphicsItem::ItemIsSelectable |
              QGraphicsItem::ItemSendsGeometryChanges);
 
-    title = new QGraphicsTextItem(this);
+    title = new NodeNameItem(this);
     title->setFont(QFont("sans", 13));
     title->setDefaultTextColor(QColor("white"));
     title->setPlainText(node_->Name().c_str());
     title->setTextInteractionFlags(Qt::TextEditable);
 //    title->update();
 
-    QTextDocument* doc = title->document();
+    TitleDoc* doc = title->TitleDocument();
 
-    QObject::connect(doc, &QTextDocument::contentsChanged,
+    QObject::connect(doc, &TitleDoc::Validated,
                      this, &NodeItem::TitleChanged,
                      Qt::QueuedConnection);
 
@@ -775,9 +830,13 @@ Gex::Ui::NodeItem::NodeItem(Gex::Node* node_,
 }
 
 
-void Gex::Ui::NodeItem::TitleChanged()
+void Gex::Ui::NodeItem::TitleChanged(const QString& text)
 {
-    node->SetName(title->toPlainText().toStdString());
+    title->document()->blockSignals(true);
+
+    title->setPlainText(node->SetName(text.toStdString()).c_str());
+
+    title->document()->blockSignals(false);
 }
 
 
@@ -2573,10 +2632,15 @@ void Gex::Ui::ContextsWidget::ClearContexts()
 }
 
 
+QEvent::Type Gex::Ui::GraphWidget::scheduleEventType = QEvent::Type(QEvent::registerEventType());
+
+
 Gex::Ui::GraphWidget::GraphWidget(Gex::Graph* graph_,
                                   QWidget* parent): QWidget(parent)
 {
     graph = graph_;
+
+    graph->AddInvalidateCallback([this](){ this->InitIdlePrepare(); });
     profiler = MakeProfiler();
 
     setWindowFlag(Qt::Window, true);
@@ -2757,6 +2821,26 @@ void Gex::Ui::GraphWidget::ClearContexts()
     for (auto* ctx : contexts)
         delete ctx;
     contexts.clear();
+}
+
+
+void Gex::Ui::GraphWidget::InitIdlePrepare()
+{
+    QCoreApplication::postEvent(this, new QEvent(scheduleEventType),
+                                Qt::EventPriority::LowEventPriority - 1000);
+}
+
+
+// TODO : Mettre ca dans un thread en priority low plutot ?
+bool Gex::Ui::GraphWidget::event(QEvent *event)
+{
+    if (event->type() == scheduleEventType)
+    {
+        graph->Schedule();
+        return true;
+    }
+
+    return QWidget::event(event);
 }
 
 

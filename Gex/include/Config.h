@@ -27,6 +27,11 @@ namespace Gex
         std::string nodeAttributesKey = "Attributes";
         std::string nodeCustomAttributesKey = "CustomAttributes";
 
+        std::string graphNodesKey = "Nodes";
+        std::string graphConnectionsKey = "Connections";
+        std::string graphPluginsKey = "Plugins";
+        std::string graphNodeTypes = "NodeTypes";
+
         static Config GetConfig();
     };
 

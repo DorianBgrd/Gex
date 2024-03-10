@@ -12,36 +12,7 @@
 namespace Gex
 {
     class Node;
-    class Asset;
     class NodeEvaluator;
-    class AutomationGraph;
-
-
-    struct GEX_API ScheduledNode
-    {
-        Node* node;
-        std::vector<ScheduledNode*> previousNodes;
-        std::vector<ScheduledNode*> futureNodes;
-        bool evaluated = false;
-        bool success = false;
-
-        ScheduledNode(Node* node);
-
-        bool ShouldBeEvaluated() const;
-
-        virtual bool Evaluate(GraphContext &context,
-                              NodeProfiler& profiler);
-
-        bool Compute(GraphContext &context,
-                     NodeProfiler& profiler);
-
-        bool Evaluated() const;
-    };
-
-
-    std::vector<ScheduledNode*> GEX_API ScheduleNodes(std::vector<Node*> nodes,
-                                                      bool expandCompounds=true);
-
 
     class EvaluatorThread
     {
@@ -106,7 +77,7 @@ namespace Gex
         static void StartEvalThread(EvaluatorThread* thread);
 
     public:
-        NodeEvaluator(std::vector<Node*> nodes, GraphContext& context,
+        NodeEvaluator(ScheduleNodeList nodes, GraphContext& context,
                       Gex::Profiler profiler, bool detached=false,
                       unsigned int threads=1,
                       std::function<void(Node*)> onNodeStart=nullptr,

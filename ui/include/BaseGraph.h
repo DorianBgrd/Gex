@@ -4,6 +4,7 @@
 #include "api.h"
 
 #include <QObject>
+#include <QLabel>
 #include <QDialog>
 #include <QGraphicsScene>
 #include <QGraphicsView>
@@ -32,6 +33,7 @@ namespace Gex::Ui
         QVBoxLayout* toolbarLayout;
         QVariantAnimation* animation;
         bool visible;
+        bool hiding = false;
 
     protected:
 
@@ -56,6 +58,10 @@ namespace Gex::Ui
 
         bool IsVisible() const;
 
+        bool IsHiding() const;
+
+        void AnimationFinished();
+
 //        void enterEvent(QEnterEvent* event) override;
 //
 //        void leaveEvent(QEvent* event) override;
@@ -66,15 +72,21 @@ namespace Gex::Ui
         void UpdateVisible();
     };
 
-    class GEX_UI_API Message: public QDialog
+    class GEX_UI_API Message: public QFrame
     {
         UiFeedback f;
-        int duration;
-        int fadeDuration;
+        QVariantAnimation* animation;
+
+        QLabel* label;
 
     public:
-        Message(Gex::Ui::UiFeedback feedback, int duration,
-                int fadeDuration, QWidget* parent=nullptr);
+        Message(QWidget* parent=nullptr);
+
+        void SetFeedback(Gex::Ui::UiFeedback feedback);
+
+        void SetOpacity(QVariant opacity);
+
+        void Hide(int duration);
     };
 
     class GEX_UI_API BaseGraphView: public QGraphicsView
@@ -96,6 +108,8 @@ namespace Gex::Ui
         bool pressed = false;
 
         Toolbar* toolbar = nullptr;
+        Message* message = nullptr;
+        QTimer* messageTimer = nullptr;
 
         void SetMainCursor(QCursor c);
 
@@ -151,11 +165,11 @@ namespace Gex::Ui
 
         void resizeEvent(QResizeEvent* event) override;
 
-    private:
-        Message* current = nullptr;
-
     public:
-        void ShowMessage(Gex::Ui::UiFeedback feedback);
+        void ShowMessage(Gex::Ui::UiFeedback feedback,
+                         int duration=5000);
+
+        void HideMessage();
     };
 
 }

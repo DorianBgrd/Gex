@@ -111,6 +111,18 @@ bool Gex::Node::IsCompound() const
 }
 
 
+Gex::Graph* Gex::Node::Graph() const
+{
+    return graph;
+}
+
+
+void Gex::Node::SetGraph(Gex::Graph *graph_)
+{
+    graph = graph_;
+}
+
+
 size_t Gex::Node::BuildHash(bool followCnx) const
 {
     size_t hash = 0;
@@ -239,9 +251,20 @@ std::string Gex::Node::Description() const
 }
 
 
-void Gex::Node::SetName(const std::string& p)
+std::string Gex::Node::SetName(const std::string& p)
 {
-    nodeName = Gex::Utils::ValidateName(p);
+    std::string name = Gex::Utils::ValidateName(p);
+    if (parent)
+    {
+        name = parent->UniqueName(p);
+    }
+    else if (graph)
+    {
+        name = graph->UniqueName(name);
+    }
+
+    nodeName = Gex::Utils::ValidateName(name);
+    return nodeName;
 }
 
 
@@ -518,6 +541,12 @@ bool Gex::Node::PullAttributes()
 }
 
 
+std::string Gex::Node::UniqueName(const std::string& name) const
+{
+    return name;
+}
+
+
 bool Gex::Node::Pull()
 {
     return PullAttributes();
@@ -551,7 +580,11 @@ void Gex::Node::InitAttributes()
 
 void Gex::Node::AttributeChanged(Attribute* attribute, AttributeChange change)
 {
-
+    if (change == AttributeChange::Connected ||
+        change == AttributeChange::Disconnected)
+    {
+        graph->Invalidate();
+    }
 }
 
 
@@ -729,6 +762,12 @@ Gex::Node* Gex::CompoundNode::GetInternalNode(const std::string& node) const
 Gex::NodeList Gex::CompoundNode::GetInternalNodes() const
 {
     return innerNodes;
+}
+
+
+std::string Gex::CompoundNode::UniqueName(const std::string& name) const
+{
+    return Gex::Utils::UniqueName(name, innerNodes);
 }
 
 
@@ -1031,17 +1070,7 @@ bool Gex::CompoundNode::Evaluate(NodeAttributeData &ctx,
                                  GraphContext &graphCtx,
                                  NodeProfiler& profiler)
 {
-    NodeEvaluator evaluator(innerNodes, graphCtx,
-                            profiler.GetProfiler(),
-                            false, 1);
-
-    evaluator.Run();
-
-	bool success = (evaluator.Status() == NodeEvaluator::EvaluationStatus::Done);
-
-    PullInternalOutputs();
-
-    return success;
+    return true;
 }
 
 

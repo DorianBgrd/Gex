@@ -37,7 +37,7 @@ add_library(
         Gex/src/Profiler.cpp
         Gex/include/utils.h
         Gex/src/utils.cpp
-        Gex/include/defs.h)
+        Gex/include/defs.h Gex/include/Scheduling.h Gex/src/Scheduling.cpp)
 
 
 target_include_directories(

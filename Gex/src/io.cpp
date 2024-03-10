@@ -8,15 +8,11 @@
 #include "rapidjson/writer.h"
 #include "rapidjson/prettywriter.h"
 
-Gex::Feedback Gex::SaveGraph(Gex::Graph *graph, const std::string& filepath)
+
+void Gex::ExportToFile(const std::string& filepath,
+                       rapidjson::Document& json,
+                       Feedback* result)
 {
-    Feedback result;
-
-    rapidjson::Document json;
-    rapidjson::Value& dict = json.SetObject();
-
-    graph->Serialize(dict, json);
-
     rapidjson::StringBuffer buffer;
     rapidjson::Writer write(buffer);
     rapidjson::PrettyWriter<rapidjson::StringBuffer> writer(buffer);
@@ -29,9 +25,11 @@ Gex::Feedback Gex::SaveGraph(Gex::Graph *graph, const std::string& filepath)
     {
         if (!std::filesystem::create_directories(file.parent_path()))
         {
-            result.Set(Status::Failed, "Failed creating directory " + directory.string());
+            if (result)
+                result->Set(Status::Failed, "Failed creating directory " + directory.string());
         }
-        return result;
+
+        return;
     }
 
     std::ofstream stream;
@@ -40,12 +38,31 @@ Gex::Feedback Gex::SaveGraph(Gex::Graph *graph, const std::string& filepath)
     stream << buffer.GetString();
     stream.close();
 
+    result->Set(Gex::Status::Success, "");
+}
+
+
+Gex::Feedback Gex::SaveGraph(Gex::Graph *graph, const std::string& filepath)
+{
+    Feedback result;
+
+    rapidjson::Document json;
+    rapidjson::Value& dict = json.SetObject();
+
+    graph->Serialize(dict, json);
+
+    ExportToFile(filepath, json, &result);
+    if (!result)
+    {
+        return result;
+    }
+
     result.Set(Status::Success, "Successfully saved graph to " + filepath);
     return result;
 }
 
 
-Gex::Graph* Gex::LoadGraph(std::string filepath, Feedback* success)
+Gex::Graph* Gex::LoadGraph(const std::string& filepath, Feedback* success)
 {
     std::filesystem::path p(filepath);
     if (!std::filesystem::exists(p))
@@ -84,4 +101,30 @@ Gex::Graph* Gex::LoadGraph(std::string filepath, Feedback* success)
     if (success)
         success->Set(Status::Success, "Successfully loaded graph.");
     return graph;
+}
+
+
+Gex::Feedback Gex::ExportNodes(NodeList nodes, Graph* graph, const std::string& directory,
+                               const std::string& name, bool force)
+{
+    Node* compound = graph->ToCompound(nodes, true, false);
+
+    rapidjson::Document json;
+    rapidjson::Value& dict = json.SetObject();
+
+    compound->Serialize(dict, json);
+
+    Feedback success;
+
+    std::filesystem::path rpath = directory;
+    rpath.append(name + ".json");
+    if (!force && std::filesystem::exists(rpath))
+    {
+        success.Set(Gex::Status::Failed,
+                    "File already exist.");
+        return success;
+    }
+
+    Gex::ExportToFile(rpath.string(), json, &success);
+    return success;
 }

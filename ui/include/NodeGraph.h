@@ -117,6 +117,36 @@ namespace Gex
         class NodeGraphScene;
 
 
+        class GEX_UI_API TitleDoc: public QTextDocument
+        {
+            Q_OBJECT
+        public:
+            TitleDoc(QObject* parent=nullptr);
+
+            void Validate();
+
+            Q_SIGNAL
+            void Validated(const QString& text);
+        };
+
+
+        class GEX_UI_API NodeNameItem: public QGraphicsTextItem
+        {
+            TitleDoc* doc;
+            QString fallbackText;
+        public:
+            NodeNameItem(QGraphicsItem* parent=nullptr);
+
+            void focusInEvent(QFocusEvent *event) override;
+
+            void focusOutEvent(QFocusEvent *event) override;
+
+            void keyReleaseEvent(QKeyEvent *event) override;
+
+            TitleDoc* TitleDocument() const;
+        };
+
+
         class GEX_UI_API AttributeItem: public QGraphicsRectItem
         {
             friend LinkItem;
@@ -249,7 +279,7 @@ namespace Gex
             Gex::Node* node;
             NodePlugItem* sourcePlug;
             NodePlugItem* destPlug;
-            QGraphicsTextItem* title;
+            NodeNameItem* title;
             bool showInternal = false;
             QColor customBorderColor;
             bool userCustomBorderColor = false;
@@ -282,7 +312,7 @@ namespace Gex
             explicit
             NodeItem(Gex::Node* node, QGraphicsItem* parent=nullptr);
 
-            void TitleChanged();
+            void TitleChanged(const QString& text);
 
             Gex::Node* Node() const;
 
@@ -620,6 +650,8 @@ namespace Gex
             ContextsWidget* contextsWidget;
             QSpinBox* threadsSpinBox;
 
+            static QEvent::Type scheduleEventType;
+
         public:
             GraphWidget(Gex::Graph* graph,
                         QWidget* parent=nullptr);
@@ -640,6 +672,10 @@ namespace Gex
             void ClearContexts();
 
         public:
+
+            void InitIdlePrepare();
+
+            bool event(QEvent *event) override;
 
 //        void mouseReleaseEvent(QMouseEvent* event) override;
 

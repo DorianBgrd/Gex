@@ -5,9 +5,13 @@
 #include "Gex/include/Node.h"
 #include "Gex/include/NodeFactory.h"
 #include "Gex/include/Evaluation.h"
+#include "Gex/include/Scheduling.h"
 #include "Gex/include/PluginLoader.h"
 #include "Gex/include/Config.h"
 #include "Gex/include/utils.h"
+#include "Gex/include/io.h"
+
+#include "Gex/include/io.h"
 
 #include <future>
 #include <memory>
@@ -42,6 +46,11 @@ std::vector<std::string> Gex::GraphContext::Resources() const
 
 Gex::Graph::~Graph()
 {
+    for (auto* sn : scheduledNodes)
+        delete sn;
+
+    scheduledNodes.clear();
+
     for (auto n : nodes)
         delete n;
 
@@ -56,21 +65,12 @@ Gex::Node* Gex::Graph::CreateNode(std::string type, std::string name_)
         name_ = type;
     }
 
-    std::string uniqueName = Gex::Utils::ValidateName(name_);
-
-    int counter = 0;
-    std::vector<std::string> nodeNames = NodeNames();
-    while (std::find(nodeNames.begin(), nodeNames.end(), uniqueName) != nodeNames.end())
-    {
-        uniqueName = name_ + std::to_string(counter);
-        counter++;
-    }
+    std::string uniqueName = UniqueName(name_);
 
     auto* factory = NodeFactory::GetFactory();
     Node* node = factory->CreateNode(type, uniqueName);
 
-    if (node)
-        nodes.push_back(node);
+    AddNode(node);
 
     return node;
 }
@@ -83,7 +83,11 @@ bool Gex::Graph::AddNode(Node* node)
         return false;
     }
 
+    // Updates node name to make it unique.
+    node->SetName(UniqueName(node->Name()));
+
     nodes.push_back(node);
+    node->SetGraph(this);
     return true;
 }
 
@@ -215,6 +219,88 @@ Gex::Node* Duplicate(std::map<Gex::Node*, Gex::Node*>& res,
 }
 
 
+bool Gex::Graph::IsValid() const
+{
+    return valid;
+}
+
+
+void Gex::Graph::Invalidate()
+{
+    valid = false;
+
+    for (auto* node : scheduledNodes)
+    {
+        delete node;
+    }
+
+    scheduledNodes.clear();
+
+    if (!invalidateCallbacks.empty())
+    {
+        for (auto cb : invalidateCallbacks)
+        {
+            cb.second();
+        }
+    }
+}
+
+
+void Gex::Graph::Schedule()
+{
+    scheduledNodes = ScheduleNodes(nodes);
+
+    valid = true;
+}
+
+
+Gex::CallbackId Gex::Graph::AddInvalidateCallback(InvalidateCallback callback)
+{
+    invalidCbId++;
+    invalidateCallbacks[invalidCbId] = callback;
+
+    return invalidCbId;
+}
+
+
+void Gex::Graph::RemoveInvalidateCallback(CallbackId callback)
+{
+    if (invalidateCallbacks.find(callback) == invalidateCallbacks.end())
+        return;
+
+    invalidateCallbacks.erase(callback);
+}
+
+
+void Gex::Graph::ClearInvalidateCallbacks()
+{
+    invalidateCallbacks.clear();
+}
+
+
+Gex::CallbackId Gex::Graph::AddScheduleCallback(ScheduleCallback callback)
+{
+    scheduleCbId++;
+    scheduleCallbacks[scheduleCbId] = callback;
+
+    return invalidCbId;
+}
+
+void Gex::Graph::RemoveScheduleCallback(CallbackId callback)
+{
+    if (scheduleCallbacks.find(callback) == scheduleCallbacks.end())
+        return;
+
+    scheduleCallbacks.erase(callback);
+}
+
+
+void Gex::Graph::ClearScheduleCallbacks()
+{
+    scheduleCallbacks.clear();
+}
+
+
 Gex::NodeList Gex::Graph::DuplicateNodes(NodeList sources, bool copyLinks,
                                          Gex::Node* parent)
 {
@@ -268,30 +354,30 @@ Gex::NodeList Gex::Graph::DuplicateNodes(NodeList sources, bool copyLinks,
 }
 
 
+std::string Gex::Graph::UniqueName(const std::string& name) const
+{
+    return Gex::Utils::UniqueName(name, nodes);
+}
+
+
 Gex::NodeList Gex::Graph::DuplicateNodes(NodeList sources, bool copyLinks)
 {
     return DuplicateNodes(sources, copyLinks, nullptr);
 }
 
 
-Gex::Node* Gex::Graph::ToCompound(NodeList sources)
+Gex::Node* Gex::Graph::ToCompound(NodeList sources, bool duplicate,
+                                  bool keepExternalConnections)
 {
     auto* compound = new CompoundNode();
 
-    std::string name = "Compound";
+    compound->SetName("Compound");
 
-    if (FindNode(name))
+    NodeList extract = sources;
+    if (duplicate)
     {
-        for (int i = 0; i < 100000; i++)
-        {
-            name = "Compound" + std::to_string(i);
-            if (!FindNode(name))
-                break;
-        }
+        extract = DuplicateNodes(sources, true);
     }
-
-    compound->SetName(name);
-
 
     for (auto* node : sources) {
         compound->AddInternalNode(node);
@@ -330,8 +416,11 @@ Gex::Node* Gex::Graph::ToCompound(NodeList sources)
                 }
 
                 attribute->DisconnectSource(src);
-                proxy->ConnectSource(src);
                 attribute->ConnectSource(proxy);
+
+                if (keepExternalConnections)
+                    proxy->ConnectSource(src);
+
             }
 
             for (Attribute *dst: attribute->Dests())
@@ -368,7 +457,8 @@ Gex::Node* Gex::Graph::ToCompound(NodeList sources)
 
                 dst->DisconnectSource(attribute);
                 proxy->ConnectSource(attribute);
-                dst->ConnectSource(proxy);
+                if (keepExternalConnections)
+                    dst->ConnectSource(proxy);
             }
         }
     }
@@ -482,12 +572,6 @@ Gex::Attribute* Gex::Graph::FindAttribute(std::string attr) const
 }
 
 
-#define NODES_K "NODES"
-#define CONNECTIONS_K "CONNECTIONS"
-#define PLUGINS_K "PLUGINS"
-#define TYPES_K "REQUIRED_NODE_TYPES"
-
-
 bool Gex::Graph::Serialize(rapidjson::Value& dict, rapidjson::Document& json) const
 {
     rapidjson::Value& nodesdict = rapidjson::Value(rapidjson::kObjectType).GetObject();
@@ -565,16 +649,17 @@ bool Gex::Graph::Serialize(rapidjson::Value& dict, rapidjson::Document& json) co
                             json.GetAllocator());
     }
 
-    dict.AddMember(rapidjson::StringRef(NODES_K),
+    Config conf = Config::GetConfig();
+    dict.AddMember(rapidjson::StringRef(conf.graphNodesKey.c_str()),
                    nodesdict, json.GetAllocator());
 
-    dict.AddMember(rapidjson::StringRef(CONNECTIONS_K),
+    dict.AddMember(rapidjson::StringRef(conf.graphConnectionsKey.c_str()),
                    connections, json.GetAllocator());
 
-    dict.AddMember(rapidjson::StringRef(PLUGINS_K),
+    dict.AddMember(rapidjson::StringRef(conf.graphPluginsKey.c_str()),
                    pluginsValue, json.GetAllocator());
 
-    dict.AddMember(rapidjson::StringRef(TYPES_K),
+    dict.AddMember(rapidjson::StringRef(conf.graphNodeTypes.c_str()),
                    typesValue, json.GetAllocator());
 
     return true;
@@ -583,9 +668,11 @@ bool Gex::Graph::Serialize(rapidjson::Value& dict, rapidjson::Document& json) co
 
 bool Gex::Graph::Deserialize(rapidjson::Value& dict)
 {
-    if (dict.HasMember(NODES_K))
+    Config conf = Config::GetConfig();
+
+    if (dict.HasMember(conf.graphNodesKey.c_str()))
     {
-        rapidjson::Value& serializedNodes = dict[NODES_K];
+        rapidjson::Value& serializedNodes = dict[conf.graphNodesKey.c_str()];
         for (rapidjson::Value::MemberIterator itr = serializedNodes.MemberBegin();
              itr != serializedNodes.MemberEnd(); ++itr)
         {
@@ -598,9 +685,9 @@ bool Gex::Graph::Deserialize(rapidjson::Value& dict)
         }
     }
 
-    if (dict.HasMember(CONNECTIONS_K))
+    if (dict.HasMember(conf.graphConnectionsKey.c_str()))
     {
-        rapidjson::Value& serializedConnections = dict[CONNECTIONS_K];
+        rapidjson::Value& serializedConnections = dict[conf.graphConnectionsKey.c_str()];
         for(rapidjson::Value::ValueIterator cnsitr = serializedConnections.Begin();
             cnsitr != serializedConnections.End(); cnsitr++)
         {
@@ -639,10 +726,12 @@ Gex::Feedback Gex::Graph::CheckLoadStatus(rapidjson::Value& dict)
 {
     Feedback res;
 
+    Config conf = Config::GetConfig();
+
     std::set<std::string> missingTypes;
-    if (dict.HasMember(TYPES_K))
+    if (dict.HasMember(conf.graphNodeTypes.c_str()))
     {
-        rapidjson::Value& types = dict[TYPES_K];
+        rapidjson::Value& types = dict[conf.graphNodeTypes.c_str()];
         for (int i = 0; i < types.Size(); i++)
         {
             std::string typeName = types[i].GetString();
@@ -659,9 +748,9 @@ Gex::Feedback Gex::Graph::CheckLoadStatus(rapidjson::Value& dict)
     }
 
     std::set<std::string> missingPlugins;
-    if (dict.HasMember(PLUGINS_K))
+    if (dict.HasMember(conf.graphPluginsKey.c_str()))
     {
-        rapidjson::Value& plugins = dict[PLUGINS_K];
+        rapidjson::Value& plugins = dict[conf.graphPluginsKey.c_str()];
         for (int i = 0; i < plugins.Size(); i++)
         {
             std::string pluginName = plugins[i].GetString();
@@ -698,21 +787,28 @@ bool Gex::Graph::Compute(GraphContext& context, Profiler& profiler,
                          unsigned int threads,
                          std::function<void(Node*)> nodeStarted,
                          std::function<void(Node*, bool)> nodeDone,
-                         std::function<void(const GraphContext& context)> evalDone) const
+                         std::function<void(const GraphContext& context)> evalDone)
 {
+
     profiler->Start();
 
-    auto lmbda = profiler->StartEvent("Global", "Make callback");
+    auto lmbda = ProfilerScope(profiler, "Global", "Make callback");
 
     std::function<void(const GraphContext&)> finalize =
             [this, evalDone](const GraphContext& context) -> void {
         this->FinalizeEvaluation(context); evalDone(context); };
 
-    profiler->StopEvent(lmbda);
+    lmbda.Stop();
 
+    if (!IsValid())
+    {
+        auto schelScope = ProfilerScope(profiler, "Global", "Scheduling");
+
+        Schedule();
+    }
 
     auto evaluator = std::make_shared<NodeEvaluator>(
-            nodes, context, profiler,
+            ScheduleNodes(nodes, true), context, profiler,
             false, threads, nodeStarted,
             nodeDone, finalize);
 

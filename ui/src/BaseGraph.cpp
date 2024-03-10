@@ -10,34 +10,76 @@
 #define TOOLBAR_FRAME_WIDTH 30
 
 
-Gex::Ui::Message::Message(Gex::Ui::UiFeedback feedback, int duration_,
-                          int fadeDuration_, QWidget* parent): QDialog(parent)
+Gex::Ui::Message::Message(QWidget* parent): QFrame(parent)
 {
-    f = feedback;
-    duration = duration_;
-    fadeDuration = fadeDuration_;
+    setAutoFillBackground(true);
 
-    setWindowFlag(Qt::FramelessWindowHint);
+    animation = new QVariantAnimation(this);
+    animation->setStartValue(255);
+    animation->setEndValue(0);
 
-    std::string stylesheet = ( "QDialog {border-radius: 5px; background-color: " +
-            feedback.color.name().toStdString() + ";}");
+    QObject::connect(animation, &QVariantAnimation::valueChanged,
+                     this, &Message::SetOpacity);
 
     QVBoxLayout* layout = new QVBoxLayout();
+    layout->setContentsMargins(5, 5, 5, 5);
     setLayout(layout);
 
-    QLabel* label = new QLabel(this);
-    label->setText(feedback.message.c_str());
+    label = new QLabel(this);
     layout->addWidget(label);
 
-    label->setStyleSheet("QLabel { color: " + feedback.textColor.name() + ";}");
+    setWindowFlag(Qt::FramelessWindowHint);
+}
 
-    auto* timer = new QTimer(this);
-    auto* fadeTimer = new QTimer(this);
 
-    QObject::connect(timer, &QTimer::timeout,
-                     this, &QDialog::hide);
+std::string ColorToStr(QColor color, int alpha=255)
+{
+    return ("rgba(" + std::to_string(color.red()) + ", " +
+            std::to_string(color.green()) + ", " +
+            std::to_string(color.blue()) + ", " +
+            std::to_string(alpha) + ")");
+}
 
-    timer->start();
+
+void Gex::Ui::Message::SetFeedback(Gex::Ui::UiFeedback feedback)
+{
+    f = feedback;
+
+    std::string stylesheet_ = ("QFrame {border-radius: 5px; background-color: " +
+            ColorToStr(feedback.color) + ";}");
+    setStyleSheet(stylesheet_.c_str());
+
+    std::string labelStylesheet = ("QLabel {color: " +
+            ColorToStr(feedback.textColor) + ";}");
+    label->setStyleSheet(labelStylesheet.c_str());
+
+    label->setText(feedback.message.c_str());
+}
+
+
+void Gex::Ui::Message::SetOpacity(QVariant opacity)
+{
+    double o = opacity.toInt();
+
+    std::string stylesheet_ = ("QFrame {border-radius: 5px; background-color: " +
+                               ColorToStr(f.color, o) + ";}");
+    setStyleSheet(stylesheet_.c_str());
+
+    std::string labelStylesheet = ("QLabel {color: " +
+            ColorToStr(f.textColor, o) + ";}");
+    label->setStyleSheet(labelStylesheet.c_str());
+
+    if (o < 2)
+    {
+        setVisible(false);
+    }
+}
+
+
+void Gex::Ui::Message::Hide(int duration)
+{
+    animation->setDuration(duration);
+    animation->start();
 }
 
 
@@ -63,6 +105,8 @@ Gex::Ui::Toolbar::Toolbar(QWidget* parent): QFrame(parent)
 
     QObject::connect(animation, &QPropertyAnimation::valueChanged,
                      this, &Toolbar::SetPos);
+    QObject::connect(animation, &QVariantAnimation::finished,
+                     this, &Toolbar::AnimationFinished);
 
     setFixedWidth(TOOLBAR_BUTTON_SIZE.width() + 10);
 //    AdjustSize();
@@ -131,8 +175,9 @@ void Gex::Ui::Toolbar::SetPos(QVariant x)
 {
     auto r = geometry();
     int x_ = qvariant_cast<int>(x);
-    auto destRect = QRect(x_, r.y(), r.width(), r.height());
-    setGeometry(destRect);
+    auto destRect = QRect(x_, 0, r.width(), r.height());
+
+    toolbar->setGeometry(destRect);
 }
 
 
@@ -142,8 +187,24 @@ bool Gex::Ui::Toolbar::IsVisible() const
 }
 
 
+bool Gex::Ui::Toolbar::IsHiding() const
+{
+    return hiding;
+}
+
+
+void  Gex::Ui::Toolbar::AnimationFinished()
+{
+    if (hiding)
+        setVisible(false);
+}
+
+
 void Gex::Ui::Toolbar::Show(bool animate)
 {
+    hiding = false;
+
+    show();
     if (animate)
     {
         animation->setStartValue(QVariant(LeavePoint()));
@@ -155,13 +216,13 @@ void Gex::Ui::Toolbar::Show(bool animate)
         SetPos(QVariant(ViewPoint()));
     }
 
-
     visible = true;
 }
 
 
 void Gex::Ui::Toolbar::Hide(bool animate)
 {
+    hiding = true;
     if (animate)
     {
         animation->setStartValue(QVariant(ViewPoint()));
@@ -171,6 +232,7 @@ void Gex::Ui::Toolbar::Hide(bool animate)
     else
     {
         SetPos(QVariant(LeavePoint()));
+        hide();
     }
 
     visible = false;
@@ -224,20 +286,30 @@ Gex::Ui::BaseGraphView::BaseGraphView(QGraphicsScene* scene, QWidget* parent,
 
     setContextMenuPolicy(Qt::CustomContextMenu);
 
+    auto* layout = new QGridLayout();
+    layout->setAlignment(Qt::AlignLeft);
+    setLayout(layout);
+
 //    QObject::connect(this, &QGraphicsView::customContextMenuRequested,
 //                     this, &NodeGraphView::ShowCreateNodeMenu);
+    message = new Message(this);
+    auto policy = message->sizePolicy();
+    policy.setRetainSizeWhenHidden(true);
+    message->setSizePolicy(policy);
+    messageTimer = new QTimer(this);
+
+    QObject::connect(messageTimer, &QTimer::timeout,
+                     this, &BaseGraphView::HideMessage);
 
     if (usetoolbar)
     {
-        auto* layout = new QGridLayout();
-        setLayout(layout);
-
         toolbar = new Toolbar(this);
-        layout->addWidget(toolbar);
+        layout->addWidget(toolbar, 0, 0, 9, 1, Qt::AlignLeft | Qt::AlignVCenter);
 
         toolbar->Hide();
     }
 
+    layout->addWidget(message, 10, 0, 1, 1, Qt::AlignLeft | Qt::AlignBottom);
 }
 
 
@@ -419,14 +491,18 @@ void Gex::Ui::BaseGraphView::mouseReleaseEvent(QMouseEvent* event)
 
 void Gex::Ui::BaseGraphView::enterEvent(QEnterEvent* event)
 {
-    if (toolbar)
+    if (toolbar && !toolbar->IsVisible())
         toolbar->Show();
+
+    QGraphicsView::leaveEvent(event);
 }
 
 void Gex::Ui::BaseGraphView::leaveEvent(QEvent* event)
 {
-    if (toolbar)
+    if (toolbar && toolbar->IsVisible())
         toolbar->Hide();
+
+    QGraphicsView::leaveEvent(event);
 }
 
 
@@ -553,17 +629,27 @@ void Gex::Ui::BaseGraphView::resizeEvent(QResizeEvent* event)
 }
 
 
-void Gex::Ui::BaseGraphView::ShowMessage(Gex::Ui::UiFeedback feedback)
+void Gex::Ui::BaseGraphView::ShowMessage(Gex::Ui::UiFeedback feedback,
+                                         int duration)
 {
-    if (current)
-        current->deleteLater();
+    messageTimer->setInterval(duration);
+    messageTimer->start();
 
-    current = new Message(feedback, 10000, 500, this);
+    message->SetFeedback(feedback);
+    message->adjustSize();
 
-    QRect r = geometry();
-    QRect mr = current->geometry();
+    QRect r = rect();
+    QRect mr = message->geometry();
 
-    current->setGeometry(QRect(r.left() + 5, r.bottom() - current->height(),
-                               current->height(), current->width()));
-    current->show();
+    QRect geometry = QRect(5, r.height() - mr.height() - 5,
+                           mr.width(), mr.height());
+
+    message->setGeometry(geometry);
+    message->setVisible(true);
+}
+
+
+void Gex::Ui::BaseGraphView::HideMessage()
+{
+    message->Hide(2000);
 }

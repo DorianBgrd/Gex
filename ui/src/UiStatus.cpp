@@ -64,6 +64,6 @@ Gex::Ui::UiFeedback Gex::Ui::MakeFeedback(Gex::Feedback f)
     ResolveColor(f.status, back, text);
 
     UiFeedback uif;
-    uif.Set(f.status, f.message, back, text);
+    uif.Set(f.status, f.message, text, back);
     return uif;
 }

@@ -184,3 +184,43 @@ Gex::Profiler Gex::EvaluationNodeProfiler::GetProfiler() const
 {
     return profiler;
 }
+
+
+Gex::ProfilerScope::ProfilerScope(Profiler profiler_,
+                                  std::string category,
+                                  std::string name)
+{
+    event = profiler_->StartEvent(category, name);
+}
+
+
+Gex::ProfilerScope::~ProfilerScope()
+{
+    Stop();
+}
+
+
+void Gex::ProfilerScope::Stop()
+{
+    profiler->StopEvent(event);
+}
+
+
+Gex::NodeProfilerScope::NodeProfilerScope(NodeProfiler profiler_,
+                                          std::string name):
+                                          profiler(profiler_)
+{
+    event = profiler.StartEvent(name);
+}
+
+
+Gex::NodeProfilerScope::~NodeProfilerScope()
+{
+    Stop();
+}
+
+
+void Gex::NodeProfilerScope::Stop()
+{
+    profiler.StopEvent(event);
+}

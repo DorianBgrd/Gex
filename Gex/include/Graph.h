@@ -45,6 +45,13 @@ namespace Gex
     {
         NodeList nodes;
         AttributeList inputs;
+        ScheduleNodeList scheduledNodes;
+        bool valid = false;
+
+        CallbackId invalidCbId = 0;
+        CallbackId scheduleCbId = 0;
+        InvalidateCallbacks invalidateCallbacks;
+        ScheduleCallbacks scheduleCallbacks;
 
     public:
 
@@ -54,15 +61,41 @@ namespace Gex
 
         bool AddNode(Node* node);
 
+    public:
+        /**
+         * Evaluation modifiers.
+         */
+
+        bool IsValid() const;
+
+        void Invalidate();
+
+        void Schedule();
+
+        CallbackId AddInvalidateCallback(InvalidateCallback callback);
+
+        void RemoveInvalidateCallback(CallbackId callback);
+
+        void ClearInvalidateCallbacks();
+
+        CallbackId AddScheduleCallback(ScheduleCallback callback);
+
+        void RemoveScheduleCallback(CallbackId callback);
+
+        void ClearScheduleCallbacks();
+
     protected:
         NodeList DuplicateNodes(NodeList sources,
                                 bool copyLinks, Node* parent);
 
     public:
+        std::string UniqueName(const std::string& name) const;
+
         NodeList DuplicateNodes(NodeList sources,
                                           bool copyLinks=false);
 
-        Gex::Node* ToCompound(NodeList sources);
+        Gex::Node* ToCompound(NodeList sources, bool duplicate=false,
+                              bool keepExternalConnections=true);
 
         bool RemoveNode(Node* node);
 
@@ -82,7 +115,7 @@ namespace Gex
                      unsigned int threads=1,
                      std::function<void(Node*)> nodeStarted=nullptr,
                      std::function<void(Node*, bool)> nodeDone=nullptr,
-                     std::function<void(const GraphContext& context)> evalDone=nullptr) const;
+                     std::function<void(const GraphContext& context)> evalDone=nullptr);
 
         void FinalizeEvaluation(const GraphContext& context) const;
 

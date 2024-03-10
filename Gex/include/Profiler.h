@@ -2,6 +2,7 @@
 #define GEX_PROFILER_H
 
 #include "api.h"
+#include "defs.h"
 
 #include <chrono>
 #include <string>
@@ -105,12 +106,38 @@ namespace Gex
         Profiler GetProfiler() const;
     };
 
-    typedef EvaluationNodeProfiler NodeProfiler;
-
     inline Profiler MakeProfiler()
     {
         return std::make_shared<EvaluationProfiler>();
     }
+
+    class ProfilerScope
+    {
+        Profiler profiler;
+        unsigned int event = 0;
+    public:
+        ProfilerScope(Profiler profiler,
+                      std::string category,
+                      std::string name);
+
+        ~ProfilerScope();
+
+        void Stop();
+    };
+
+
+    class NodeProfilerScope
+    {
+        NodeProfiler profiler;
+        unsigned int event = 0;
+    public:
+        NodeProfilerScope(NodeProfiler profiler,
+                          std::string name);
+
+        ~NodeProfilerScope();
+
+        void Stop();
+    };
 
 }
 

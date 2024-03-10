@@ -8,6 +8,7 @@
 #include "Attribute.h"
 #include "Profiler.h"
 #include "Evaluation.h"
+#include "Scheduling.h"
 #include <map>
 #include <vector>
 #include <string>
@@ -64,10 +65,10 @@ namespace Gex
 
         std::vector<std::string> resources;
 
-        Node* parent;
-        Graph* graph;
-        Attribute* previous;
-        Attribute* next;
+        Node* parent = nullptr;
+        Graph* graph = nullptr;
+        Attribute* previous = nullptr;
+        Attribute* next = nullptr;
 
         size_t computeHash;
 	public:
@@ -127,7 +128,7 @@ namespace Gex
          * Sets node identifier.
          * @param std::string p: node identifier.
          */
-		virtual void SetName(const std::string& p);
+		std::string SetName(const std::string& p);
 
     protected:
 		// Adds attribute to node.
@@ -200,6 +201,8 @@ namespace Gex
           */
          virtual bool IsCompound() const;
 
+         Graph* Graph() const;
+
     protected:
 
         /**
@@ -209,6 +212,8 @@ namespace Gex
         virtual size_t BuildHash(bool followCnx=false) const;
 
         void SetComputeHash(size_t hash);
+
+        void SetGraph(Gex::Graph* graph);
 
     public:
         /**
@@ -354,6 +359,8 @@ namespace Gex
          * @return bool success.
          */
         bool PullAttributes();
+
+        virtual std::string UniqueName(const std::string& name) const;
 
     public:
 
@@ -525,6 +532,8 @@ namespace Gex
         virtual Node* GetInternalNode(const std::string& node) const;
 
         NodeList GetInternalNodes() const;
+
+        std::string UniqueName(const std::string& name) const override;
 
         /**
          * Returns whether specified node pointer is an internal
