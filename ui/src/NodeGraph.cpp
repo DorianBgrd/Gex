@@ -21,6 +21,7 @@
 #include <QStyle>
 #include <QApplication>
 #include <QThread>
+#include <QFiledialog>
 #include <QStyleOptionGraphicsItem>
 
 #include "Gex/include/Evaluation.h"
@@ -1896,6 +1897,7 @@ void Gex::Ui::NodeGraphScene::UpdateNodeAttribute(Gex::Node* node,
 Gex::Ui::NodeGraphView::NodeGraphView(NodeGraphScene* scene, QWidget* parent):
     BaseGraphView(scene, parent, true)
 {
+    graphScene = scene;
 
     QShortcut* shortcut_1 = new QShortcut(QKeySequence("1"), this);
     QObject::connect(shortcut_1, &QShortcut::activated, this,
@@ -1920,6 +1922,14 @@ Gex::Ui::NodeGraphView::NodeGraphView(NodeGraphScene* scene, QWidget* parent):
     QShortcut* shortcut_6 = new QShortcut(QKeySequence("Ctrl+Shift+X"), this);
     QObject::connect(shortcut_6, &QShortcut::activated, scene,
                      &NodeGraphScene::ConvertSelectedNodesToCompound);
+
+    QShortcut* shortcut_7 = new QShortcut(QKeySequence("Ctrl+E"), this);
+    QObject::connect(shortcut_7, &QShortcut::activated, this,
+                     &NodeGraphView::ExportSelectedNodes);
+
+    QShortcut* shortcut_8 = new QShortcut(QKeySequence("Ctrl+Shift+E"), this);
+    QObject::connect(shortcut_8, &QShortcut::activated, this,
+                     &NodeGraphView::ExportSelectedNodesAsCompound);
 }
 
 
@@ -1970,6 +1980,44 @@ QList<QGraphicsItem*> Gex::Ui::NodeGraphView::FilterSelectedItems(
 
     return nodes;
 }
+
+
+void Gex::Ui::NodeGraphView::ExportSelectedNodes()
+{
+    QString file = QFileDialog::getSaveFileName(nullptr, "Save",
+                                                QString(), "*.json",
+                                                nullptr);
+    if (file.isEmpty())
+        return;
+
+    auto success = Gex::ExportNodes(graphScene->CurrentContext()->graph,
+                                    graphScene->SelectedNodes(),
+                                    file.toStdString());
+
+    ShowMessage(Gex::Ui::MakeFeedback(success));
+}
+
+
+void Gex::Ui::NodeGraphView::ExportSelectedNodesAsCompound()
+{
+    QString file = QFileDialog::getSaveFileName(nullptr, "Save",
+                                                QString(), "*.json",
+                                                nullptr);
+    if (file.isEmpty())
+        return;
+
+    std::filesystem::path exf(file.toStdString());
+
+    auto directory = exf.parent_path().string();
+    auto file_ = exf.filename().string();
+
+    auto success = Gex::ExportAsCompound(graphScene->SelectedNodes(),
+                                         graphScene->CurrentContext()->graph,
+                                         directory, file_);
+
+    ShowMessage(Gex::Ui::MakeFeedback(success));
+}
+
 
 
 struct NodeCreator: public QObject
@@ -2236,6 +2284,12 @@ std::vector<Gex::Node*>  Gex::Ui::NodeGraphScene::SelectedNodes() const
     }
 
     return core;
+}
+
+
+Gex::Ui::NodeGraphContext* Gex::Ui::NodeGraphScene::CurrentContext() const
+{
+    return graphContext;
 }
 
 
@@ -2908,9 +2962,7 @@ void Gex::Ui::GraphWidget::RunGraph()
 
     scene->ClearNodeEvaluation();
 
-    Gex::GraphContext evaluationContext;
-
-    graph->Compute(evaluationContext, profiler, threadsSpinBox->value(),
+    graph->Compute(profiler, threadsSpinBox->value(),
                    [this](Gex::Node* node)
                    {this->scene->NodeEvaluationStarted(node);},
                    [this](Gex::Node* node, bool success)

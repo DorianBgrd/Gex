@@ -125,13 +125,13 @@ Gex::NodeEvaluator::NodeEvaluator(ScheduleNodeList nodes, GraphContext& ctx,
                                   unsigned int threads_,
                                   std::function<void(Node*)> onNodeStarted,
                                   std::function<void(Node*, bool)> onNodeDone,
-                                  std::function<void(const GraphContext&)> postEvaluation)
+                                  std::function<void(const GraphContext&)> postEvaluation):
+                                  context(ctx)
 {
     profiler = profiler_;
     unsigned int init = profiler->StartEvent("Prepare", "Init evaluator");
 
     detached = detached_;
-    context = ctx;
     postEval = postEvaluation;
     evalStart = onNodeStarted;
     evalEnd = onNodeDone;

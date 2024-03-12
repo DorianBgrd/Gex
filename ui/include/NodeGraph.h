@@ -513,6 +513,8 @@ namespace Gex
 
             std::vector<Gex::Node*> SelectedNodes() const;
 
+            NodeGraphContext* CurrentContext() const;
+
             void DuplicateSelectedNodes(bool copyLinks);
 
             void DuplicateSelectedNodesNoLinks();
@@ -545,6 +547,7 @@ namespace Gex
 
         class GEX_UI_API NodeGraphView: public BaseGraphView
         {
+            NodeGraphScene* graphScene;
         public:
             explicit
             NodeGraphView(NodeGraphScene* scene, QWidget* parent=nullptr);
@@ -571,6 +574,10 @@ namespace Gex
             QList<QGraphicsItem*> FilterSelectedItems(
                     const QList<QGraphicsItem*> items) const
             override;
+
+            void ExportSelectedNodes();
+
+            void ExportSelectedNodesAsCompound();
 
             QMenu* GetMenu() override;
 

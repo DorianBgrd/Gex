@@ -583,7 +583,10 @@ void Gex::Node::AttributeChanged(Attribute* attribute, AttributeChange change)
     if (change == AttributeChange::Connected ||
         change == AttributeChange::Disconnected)
     {
-        graph->Invalidate();
+        if (graph)
+        {
+            graph->Invalidate();
+        }
     }
 }
 
@@ -662,6 +665,15 @@ bool Gex::CompoundNode::IsCompound() const
 }
 
 
+void Gex::CompoundNode::SetGraph(Gex::Graph* graph)
+{
+    Node::SetGraph(graph);
+
+    for (auto* node : innerNodes)
+        node->SetGraph(graph);
+}
+
+
 Gex::Attribute* Gex::CompoundNode::CreateInternalAttribute(std::string name, std::any v,
                                                                            AttrValueType valueType, AttrType type,
                                                                            Attribute* parent)
@@ -678,8 +690,8 @@ Gex::Attribute* Gex::CompoundNode::CreateInternalAttribute(std::string name, std
 
 
 Gex::Attribute* Gex::CompoundNode::CreateInternalAttribute(const std::string& name,
-                                                                           AttrType type, bool multi,
-                                                                           Attribute* parent)
+                                                           AttrType type, bool multi,
+                                                           Attribute* parent)
 {
     Attribute* attribute = CreateAttribute(name, type, multi, parent);
     if (!attribute)
@@ -700,6 +712,7 @@ bool Gex::CompoundNode::AddInternalNode(Node *node)
 
     innerNodes.push_back(node);
     node->SetParent(this);
+    node->SetGraph(graph);
     return true;
 }
 

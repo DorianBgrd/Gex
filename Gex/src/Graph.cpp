@@ -19,15 +19,15 @@
 
 
 
-Gex::GraphContext::GraphContext()
+Gex::GraphContext::GraphContext(Graph* graph)
 {
-
+    properties = graph->Properties();
 }
 
 
 Gex::GraphContext::GraphContext(const GraphContext& other)
 {
-
+    properties = other.properties;
 }
 
 
@@ -43,6 +43,57 @@ std::vector<std::string> Gex::GraphContext::Resources() const
 }
 
 
+Gex::Property::Property(const std::any& value)
+{
+    propValue = value;
+}
+
+
+std::any Gex::Property::GetAnyValue() const
+{
+    return propValue;
+}
+
+
+bool Gex::Property::SetAnyValue(std::any value)
+{
+    auto* registry = TSys::TypeRegistry::GetRegistry();
+    auto* handler = registry->GetTypeHandle(value.type().hash_code());
+    if (!handler)
+    {
+        return false;
+    }
+
+    propValue = value;
+    return true;
+}
+
+
+
+
+Gex::ReadOnlyProperty::ReadOnlyProperty(Property* prop)
+{
+    property = SafePtr<Property>(prop);
+}
+
+
+Gex::ReadOnlyProperty::ReadOnlyProperty(const ReadOnlyProperty& other)
+{
+    property = other.property;
+}
+
+std::any Gex::ReadOnlyProperty::GetAnyValue() const
+{
+    if (property.valid())
+        return {};
+
+    return property->GetAnyValue();
+}
+
+
+
+
+
 
 Gex::Graph::~Graph()
 {
@@ -55,6 +106,11 @@ Gex::Graph::~Graph()
         delete n;
 
     nodes.clear();
+
+    for (const auto& p : properties)
+        delete p.second;
+
+    properties.clear();
 }
 
 
@@ -83,12 +139,63 @@ bool Gex::Graph::AddNode(Node* node)
         return false;
     }
 
+    nodes.push_back(node);
+    node->SetGraph(this);
+
     // Updates node name to make it unique.
     node->SetName(UniqueName(node->Name()));
 
-    nodes.push_back(node);
-    node->SetGraph(this);
     return true;
+}
+
+
+Gex::Property* Gex::Graph::AddProperty(const std::string& name,
+                                       const std::any& value)
+{
+    if (properties.count(name) > 0)
+    {
+        return properties.at(name);
+    }
+
+    auto* property = new Property(value);
+    properties[name] = property;
+
+    return property;
+}
+
+
+bool Gex::Graph::RemoveProperty(const std::string& name)
+{
+    if (properties.count(name) == 0)
+    {
+        return false;
+    }
+
+    auto* prop = properties.at(name);
+    delete prop;
+    properties.erase(name);
+    return true;
+}
+
+
+Gex::Property* Gex::Graph::GetProperty(const std::string& name) const
+{
+    if (properties.count(name) == 0)
+        return nullptr;
+
+    return properties.at(name);
+}
+
+
+Gex::ReadOnlyPropertyMap Gex::Graph::Properties() const
+{
+    ReadOnlyPropertyMap readOnlyProps;
+    for (const auto& pr : properties)
+    {
+        readOnlyProps[pr.first] = ReadOnlyProperty(pr.second);
+    }
+
+    return readOnlyProps;
 }
 
 
@@ -302,17 +409,22 @@ void Gex::Graph::ClearScheduleCallbacks()
 
 
 Gex::NodeList Gex::Graph::DuplicateNodes(NodeList sources, bool copyLinks,
-                                         Gex::Node* parent)
+                                         Gex::Node* parent, Graph* graph)
 {
     std::map<Gex::Node*, Gex::Node*> nmap;
+
+    if (!graph)
+        graph = this;
 
     Gex::NodeList result;
 
     for (auto* source : sources)
     {
-        Gex::Node* dup = Duplicate(nmap, this, source, "", parent);
+        Gex::Node* dup = Duplicate(nmap, graph, source, "", parent);
         result.push_back(dup);
     }
+
+    bool copyExternal = (graph == this);
 
     Gex::NodeList news_;
     if (copyLinks)
@@ -340,8 +452,8 @@ Gex::NodeList Gex::Graph::DuplicateNodes(NodeList sources, bool copyLinks,
 
                         destAttribute->ConnectSource(duplicatedAttr);
                     }
-                        // Else connect to original source.
-                    else
+                    // Else connect to original source.
+                    else if (copyExternal)
                     {
                         destAttribute->ConnectSource(atsource);
                     }
@@ -650,17 +762,25 @@ bool Gex::Graph::Serialize(rapidjson::Value& dict, rapidjson::Document& json) co
     }
 
     Config conf = Config::GetConfig();
-    dict.AddMember(rapidjson::StringRef(conf.graphNodesKey.c_str()),
-                   nodesdict, json.GetAllocator());
+    rapidjson::Value& graphNodesKey = rapidjson::Value().SetString(
+            conf.graphNodesKey.c_str(), json.GetAllocator());
+    dict.AddMember(graphNodesKey.Move(), nodesdict,
+                   json.GetAllocator());
 
-    dict.AddMember(rapidjson::StringRef(conf.graphConnectionsKey.c_str()),
-                   connections, json.GetAllocator());
+    rapidjson::Value& graphConnectionsKey = rapidjson::Value().SetString(
+            conf.graphConnectionsKey.c_str(), json.GetAllocator());
+    dict.AddMember(graphConnectionsKey.Move(),connections,
+                   json.GetAllocator());
 
-    dict.AddMember(rapidjson::StringRef(conf.graphPluginsKey.c_str()),
-                   pluginsValue, json.GetAllocator());
+    rapidjson::Value& graphPluginsKey = rapidjson::Value().SetString(
+            conf.graphPluginsKey.c_str(), json.GetAllocator());
+    dict.AddMember(graphPluginsKey.Move(), pluginsValue,
+                   json.GetAllocator());
 
-    dict.AddMember(rapidjson::StringRef(conf.graphNodeTypes.c_str()),
-                   typesValue, json.GetAllocator());
+    rapidjson::Value& graphNodeTypes = rapidjson::Value().SetString(
+            conf.graphNodeTypes.c_str(), json.GetAllocator());
+    dict.AddMember(graphNodeTypes.Move(), typesValue,
+                   json.GetAllocator());
 
     return true;
 }
@@ -682,6 +802,7 @@ bool Gex::Graph::Deserialize(rapidjson::Value& dict)
                     name, itr->value);
 
             nodes.push_back(node);
+            node->SetGraph(this);
         }
     }
 
@@ -783,12 +904,13 @@ Gex::Feedback Gex::Graph::CheckLoadStatus(rapidjson::Value& dict)
 
 
 
-bool Gex::Graph::Compute(GraphContext& context, Profiler& profiler,
+bool Gex::Graph::Compute(Profiler& profiler,
                          unsigned int threads,
-                         std::function<void(Node*)> nodeStarted,
-                         std::function<void(Node*, bool)> nodeDone,
-                         std::function<void(const GraphContext& context)> evalDone)
+                         NodeCallback nodeStarted,
+                         NodeResCallback nodeDone,
+                         GraphCtxCallback evalDone)
 {
+    GraphContext context(this);
 
     profiler->Start();
 

@@ -213,7 +213,7 @@ namespace Gex
 
         void SetComputeHash(size_t hash);
 
-        void SetGraph(Gex::Graph* graph);
+        virtual void SetGraph(Gex::Graph* graph);
 
     public:
         /**
@@ -457,6 +457,8 @@ namespace Gex
         }
 
         bool IsCompound() const override;
+
+        void SetGraph(Gex::Graph* graph) override;
 
         template <typename T>
         Attribute* CreateInternalAttribute(std::string name, AttrValueType valueType = AttrValueType::Single,

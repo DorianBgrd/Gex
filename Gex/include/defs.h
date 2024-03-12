@@ -11,8 +11,13 @@ namespace Gex
     class Node;
     class ScheduledNode;
     class EvaluationNodeProfiler;
+    class Property;
+    class GraphContext;
+    class ReadOnlyProperty;
 
     typedef std::vector<Attribute*> AttributeList;
+    typedef std::map<std::string, Property*> PropertyMap;
+    typedef std::map<std::string, ReadOnlyProperty> ReadOnlyPropertyMap;
     typedef std::vector<Node*> NodeList;
     typedef std::vector<ScheduledNode*> ScheduleNodeList;
 
@@ -22,6 +27,9 @@ namespace Gex
     typedef std::function<void()> ScheduleCallback;
     typedef std::map<unsigned int, InvalidateCallback> InvalidateCallbacks;
     typedef std::map<unsigned int, InvalidateCallback> ScheduleCallbacks;
+    typedef std::function<void(Node*)> NodeCallback;
+    typedef std::function<void(Node*, bool)> NodeResCallback;
+    typedef std::function<void(const GraphContext& context)> GraphCtxCallback;
     typedef unsigned int CallbackId;
 }
 

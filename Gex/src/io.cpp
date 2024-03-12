@@ -1,4 +1,5 @@
 #include "Gex/include/io.h"
+#include "Gex/include/NodeFactory.h"
 
 #include <fstream>
 #include <filesystem>
@@ -62,14 +63,15 @@ Gex::Feedback Gex::SaveGraph(Gex::Graph *graph, const std::string& filepath)
 }
 
 
-Gex::Graph* Gex::LoadGraph(const std::string& filepath, Feedback* success)
+bool LoadJsonFile(const std::string& filepath, rapidjson::Document& json,
+                  Gex::Feedback* success=nullptr)
 {
     std::filesystem::path p(filepath);
     if (!std::filesystem::exists(p))
     {
         if (success)
-            success->Set(Status::Failed, "File does not exist.");
-        return nullptr;
+            success->Set(Gex::Status::Failed, "File does not exist.");
+        return false;
     }
 
     std::ifstream filestream(p.string());
@@ -78,14 +80,23 @@ Gex::Graph* Gex::LoadGraph(const std::string& filepath, Feedback* success)
                         (std::istreambuf_iterator<char>()));
 
     filestream.close();
+    json.Parse(content.c_str());
 
-    rapidjson::Document doc;
-    doc.Parse(content.c_str());
-
-    if (!doc.IsObject())
+    if (!json.IsObject())
     {
         if (success)
-            success->Set(Status::Failed, "Failed deserializing graph.");
+            success->Set(Gex::Status::Failed, "Failed deserializing graph.");
+        return false;
+    }
+
+    return true;
+}
+
+Gex::Graph* Gex::LoadGraph(const std::string& filepath, Feedback* success)
+{
+    rapidjson::Document doc;
+    if (!LoadJsonFile(filepath, doc, success))
+    {
         return nullptr;
     }
 
@@ -104,8 +115,8 @@ Gex::Graph* Gex::LoadGraph(const std::string& filepath, Feedback* success)
 }
 
 
-Gex::Feedback Gex::ExportNodes(NodeList nodes, Graph* graph, const std::string& directory,
-                               const std::string& name, bool force)
+Gex::Feedback Gex::ExportAsCompound(NodeList nodes, Graph* graph, const std::string& directory,
+                                    const std::string& name, bool force)
 {
     Node* compound = graph->ToCompound(nodes, true, false);
 
@@ -125,6 +136,48 @@ Gex::Feedback Gex::ExportNodes(NodeList nodes, Graph* graph, const std::string& 
         return success;
     }
 
+    graph->RemoveNode(compound);
+
     Gex::ExportToFile(rpath.string(), json, &success);
     return success;
+}
+
+
+Gex::Feedback Gex::ExportNodes(Graph* graph, NodeList nodes,
+                               const std::string& filepath)
+{
+    auto* exportGraph = new Graph();
+
+    graph->DuplicateNodes(nodes, true, nullptr, exportGraph);
+
+    auto result = SaveGraph(exportGraph, filepath);
+
+    delete exportGraph;
+
+    return result;
+}
+
+
+Gex::NodeList Gex::ImportNodes(const std::string& filepath,
+                               Graph* destinationGraph,
+                               CompoundNode* destinationNode,
+                               Feedback* success)
+{
+    rapidjson::Document json;
+
+    auto* importGraph = LoadGraph(filepath);;
+
+    for (auto* node : importGraph->Nodes())
+    {
+        if (destinationGraph)
+            destinationGraph->AddNode(node);
+        else
+            destinationNode->AddInternalNode(node);
+    }
+
+    auto res = importGraph->Nodes();
+
+    delete importGraph;
+
+    return res;
 }
