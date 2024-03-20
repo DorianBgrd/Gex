@@ -12,12 +12,13 @@ namespace Gex
     class ScheduledNode;
     class EvaluationNodeProfiler;
     class Property;
+    class PropertyWrapper;
     class GraphContext;
     class ReadOnlyProperty;
 
     typedef std::vector<Attribute*> AttributeList;
     typedef std::map<std::string, Property*> PropertyMap;
-    typedef std::map<std::string, ReadOnlyProperty> ReadOnlyPropertyMap;
+    typedef std::map<std::string, PropertyWrapper> PropertyWrappers;
     typedef std::vector<Node*> NodeList;
     typedef std::vector<ScheduledNode*> ScheduleNodeList;
 
