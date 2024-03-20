@@ -324,13 +324,11 @@ void Gex::Python::Node_Wrap::RegisterPythonWrapper()
             .def("Name", &Gex::Node::Name)
             .def("Type", &Gex::Node::Type)
             .def("Description", &Gex::Node::Description)
-            .def("ComputeHash", &Gex::Node::ComputeHash)
             .def("CreateAttributeFromValue", boost::python::raw_function(&NW_Python_CreateAttribute, 3))
             .def("GetAttributes", boost::python::raw_function(&NW_Python_GetAttributes, 1))
             .def("GetAttribute", &Gex::Node::GetAttribute,
                  boost::python::return_internal_reference())
             .def("IsEditable", &Gex::Node::IsEditable)
-            .def("IsDirty", &Gex::Node::IsDirty)
             .def("SetEditable", &Gex::Node::SetEditable)
             .def("Compute", &Gex::Node::Compute)
             .def("UpstreamNodes", boost::python::raw_function(&NW_Python_UpstreamNodes, 1))
@@ -348,7 +346,7 @@ boost::python::object CN_Python_GetInternalNode(boost::python::tuple args, boost
     Gex::Python::CompoundNode_Wrap self = boost::python::extract<Gex::Python::CompoundNode_Wrap>(args[0]);
     std::string name = boost::python::extract<std::string>(args[1]);
 
-    return boost::python::object(boost::python::ptr(self.GetInternalNode(name)));
+    return boost::python::object(boost::python::ptr(self.GetNode(name)));
 }
 
 
@@ -380,17 +378,17 @@ void Gex::Python::CompoundNode_Wrap::RegisterPythonWrapper()
         return;
 
     bool (CompoundNode_Wrap::*_RemoveInternalNode)(const std::string&) =
-    &Gex::Python::CompoundNode_Wrap::RemoveInternalNode;
+    &Gex::Python::CompoundNode_Wrap::RemoveNode;
     bool (CompoundNode_Wrap::*_IsInternalNode)(const std::string&) =
-    &Gex::Python::CompoundNode_Wrap::RemoveInternalNode;
+    &Gex::Python::CompoundNode_Wrap::RemoveNode;
 
     boost::python::class_<Gex::Python::CompoundNode_Wrap, boost::python::bases<Gex::Node>,
             boost::noncopyable>("CompoundNode", boost::python::init())
-            .def("CreateInternalNode", &Gex::CompoundNode::CreateInternalNode,
+            .def("CreateNode", &Gex::CompoundNode::CreateNode,
                  boost::python::return_internal_reference())
-            .def("GetInternalNode", boost::python::raw_function(&CN_Python_GetInternalNode, 1))
-            .def("IsInternalNode", _IsInternalNode)
-            .def("RemoveInternalNode", _RemoveInternalNode)
+            .def("GetNode", boost::python::raw_function(&CN_Python_GetInternalNode, 1))
+            .def("HasNode", _IsInternalNode)
+            .def("RemoveNode", _RemoveInternalNode)
             .def("CreateInternalAttribute", boost::python::raw_function(&Gex_CompoundNode_CreateInternalAttribute, 3))
             .def("FromNode", boost::python::raw_function(&CN_Python_FromNode, 1))
             .staticmethod("FromNode")

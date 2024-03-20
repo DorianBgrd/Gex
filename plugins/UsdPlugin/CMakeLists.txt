@@ -5,9 +5,6 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 project(UsdPlugin CXX)
 
-# remove default flags provided with CMake for MSVC
-#set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
-
 set(CMAKE_CXX_FLAGS "/EHsc")
 
 add_definitions("/DQT_NO_KEYWORDS")

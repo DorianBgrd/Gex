@@ -40,7 +40,13 @@ namespace Gex
         Disconnected,
         ValueChanged,
         IndexAdded,
-        IndexRemoved
+        IndexRemoved,
+        ChildAttributeConnected,
+        ChildAttributeDisconnected,
+        ChildAttributeValueChanged,
+        ChildAttributeAdded,
+        ChildAttributeIndexAdded,
+        ChildAttributeIndexRemoved
     };
 
 	class Node;

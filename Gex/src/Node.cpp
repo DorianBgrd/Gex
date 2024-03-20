@@ -6,6 +6,7 @@
 #include "Gex/include/Evaluation.h"
 #include "Gex/include/Config.h"
 #include "Gex/include/utils.h"
+#include "Gex/include/PluginLoader.h"
 
 #include "Tsys/include/tsys.h"
 #include "Tsys/include/defaultTypes.h"
@@ -108,48 +109,6 @@ bool Gex::Node::SetEditable(bool editable)
 bool Gex::Node::IsCompound() const
 {
     return false;
-}
-
-
-Gex::Graph* Gex::Node::Graph() const
-{
-    return graph;
-}
-
-
-void Gex::Node::SetGraph(Gex::Graph *graph_)
-{
-    graph = graph_;
-}
-
-
-size_t Gex::Node::BuildHash(bool followCnx) const
-{
-    size_t hash = 0;
-    for (auto at : attributes)
-    {
-        boost::hash_combine(hash, at.second->ValueHash(followCnx));
-    }
-
-    return hash;
-}
-
-
-void Gex::Node::SetComputeHash(size_t hash)
-{
-    computeHash = hash;
-}
-
-
-size_t Gex::Node::ComputeHash() const
-{
-    return computeHash;
-}
-
-
-bool Gex::Node::IsDirty() const
-{
-    return (computeHash != BuildHash(/*followCnx=*/true));
 }
 
 
@@ -258,10 +217,6 @@ std::string Gex::Node::SetName(const std::string& p)
     if (parent)
     {
         name = parent->UniqueName(p);
-    }
-    else if (graph)
-    {
-        name = graph->UniqueName(name);
     }
 
     nodeName = Gex::Utils::ValidateName(name);
@@ -489,7 +444,7 @@ void Gex::Node::Serialize(rapidjson::Value& dict, rapidjson::Document& json) con
 }
 
 
-void Gex::Node::Deserialize(rapidjson::Value& dict)
+bool Gex::Node::Deserialize(rapidjson::Value& dict)
 {
     if (dict.HasMember(Config::GetConfig().nodeCustomAttributesKey.c_str()))
     {
@@ -517,6 +472,8 @@ void Gex::Node::Deserialize(rapidjson::Value& dict)
             attr->Deserialize(itr->value);
         }
     }
+
+    return true;
 }
 
 
@@ -581,13 +538,31 @@ void Gex::Node::InitAttributes()
 
 void Gex::Node::AttributeChanged(Attribute* attribute, AttributeChange change)
 {
-    if (change == AttributeChange::Connected ||
-        change == AttributeChange::Disconnected)
+    if (!parent)
     {
-        if (graph)
-        {
-            graph->Invalidate();
-        }
+        return;
+    }
+
+    switch (change)
+    {
+        case AttributeChange::Connected:
+            parent->AttributeChanged(attribute, AttributeChange::ChildAttributeConnected);
+            break;
+        case AttributeChange::Disconnected:
+            parent->AttributeChanged(attribute, AttributeChange::ChildAttributeDisconnected);
+            break;
+        case AttributeChange::ValueChanged:
+            parent->AttributeChanged(attribute, AttributeChange::ChildAttributeValueChanged);
+            break;
+        case AttributeChange::IndexAdded:
+            parent->AttributeChanged(attribute, AttributeChange::ChildAttributeIndexAdded);
+            break;
+        case AttributeChange::IndexRemoved:
+            parent->AttributeChanged(attribute, AttributeChange::ChildAttributeIndexRemoved);
+            break;
+        default:
+            parent->AttributeChanged(attribute, change);
+            break;
     }
 }
 
@@ -651,27 +626,18 @@ bool Gex::CompoundPostScheduledNode::Evaluate(Gex::GraphContext &context,
 
 Gex::CompoundNode::~CompoundNode()
 {
-    for (auto* node : innerNodes)
+    for (auto* node : nodes)
     {
         delete node;
     }
 
-    innerNodes.clear();
+    nodes.clear();
 }
 
 
 bool Gex::CompoundNode::IsCompound() const
 {
     return true;
-}
-
-
-void Gex::CompoundNode::SetGraph(Gex::Graph* graph)
-{
-    Node::SetGraph(graph);
-
-    for (auto* node : innerNodes)
-        node->SetGraph(graph);
 }
 
 
@@ -704,28 +670,29 @@ Gex::Attribute* Gex::CompoundNode::CreateInternalAttribute(const std::string& na
     return attribute;
 }
 
-bool Gex::CompoundNode::AddInternalNode(Node *node)
+bool Gex::CompoundNode::AddNode(Node *node)
 {
-    if (IsInternalNode(node))
+    if (HasNode(node))
     {
         return false;
     }
 
-    innerNodes.push_back(node);
+    nodes.push_back(node);
     node->SetParent(this);
-    node->SetGraph(graph);
+    node->SetName(node->Name());
+
     return true;
 }
 
 
-bool Gex::CompoundNode::RemoveInternalNode(Node *node)
+bool Gex::CompoundNode::RemoveNode(Node *node)
 {
-    if (!IsInternalNode(node))
+    if (!HasNode(node))
     {
         return false;
     }
 
-    innerNodes.erase(std::find(innerNodes.begin(), innerNodes.end(), node));
+    nodes.erase(std::find(nodes.begin(), nodes.end(), node));
 
     delete node;
     return true;
@@ -743,7 +710,7 @@ struct MatchingNode
 };
 
 
-Gex::Node* Gex::CompoundNode::GetInternalNode(const std::string& node) const
+Gex::Node* Gex::CompoundNode::GetNode(const std::string& node) const
 {
 
     size_t pos = node.find(Config::GetConfig().nodePathSeparator);
@@ -758,9 +725,9 @@ Gex::Node* Gex::CompoundNode::GetInternalNode(const std::string& node) const
     MatchingNode search;
     search.match = n;
 
-    auto result = std::find_if(innerNodes.begin(), innerNodes.end(), search);
+    auto result = std::find_if(nodes.begin(), nodes.end(), search);
 
-    if (result == innerNodes.end())
+    if (result == nodes.end())
         return nullptr;
 
     if (sn.empty())
@@ -769,63 +736,20 @@ Gex::Node* Gex::CompoundNode::GetInternalNode(const std::string& node) const
     if (!(*result)->IsCompound())
         return nullptr;
 
-    return ConvertTo<CompoundNode>(*result)->GetInternalNode(sn);
+    return ConvertTo<CompoundNode>(*result)->GetNode(sn);
 }
 
 
-Gex::NodeList Gex::CompoundNode::GetInternalNodes() const
+Gex::NodeList Gex::CompoundNode::GetNodes() const
 {
-    return innerNodes;
+    return nodes;
 }
 
 
-std::string Gex::CompoundNode::UniqueName(const std::string& name) const
-{
-    return Gex::Utils::UniqueName(name, innerNodes);
-}
-
-
-bool Gex::CompoundNode::RemoveInternalNode(const std::string& node)
-{
-    Node* nodePtr = GetInternalNode(node);
-    if (!nodePtr)
-    {
-        return false;
-    }
-
-    innerNodes.erase(std::find(innerNodes.begin(), innerNodes.end(), nodePtr));
-
-    delete nodePtr;
-    return true;
-}
-
-
-bool Gex::CompoundNode::IsInternalNode(Node* node) const
-{
-    return (std::find(innerNodes.begin(), innerNodes.end(), node) != innerNodes.end());
-}
-
-
-bool Gex::CompoundNode::IsInternalNode(const std::string& node) const
-{
-    Node* nodePtr = GetInternalNode(node);
-    if (!nodePtr)
-        return false;
-
-    return IsInternalNode(nodePtr);
-}
-
-
-Gex::NodeList Gex::CompoundNode::InternalNodes() const
-{
-    return innerNodes;
-}
-
-
-std::vector<std::string> Gex::CompoundNode::InternalNodeNames() const
+std::vector<std::string> Gex::CompoundNode::GetNodeNames() const
 {
     std::vector<std::string> names;
-    for (auto* node : innerNodes)
+    for (auto* node : nodes)
     {
         names.push_back(node->Name());
     }
@@ -834,7 +758,62 @@ std::vector<std::string> Gex::CompoundNode::InternalNodeNames() const
 }
 
 
-Gex::Node* Gex::CompoundNode::CreateInternalNode(std::string type, std::string name)
+std::string Gex::CompoundNode::UniqueName(const std::string& name) const
+{
+    return Gex::Utils::UniqueName(name, nodes);
+}
+
+
+bool Gex::CompoundNode::RemoveNode(const std::string& node)
+{
+    Node* nodePtr = GetNode(node);
+    if (!nodePtr)
+    {
+        return false;
+    }
+
+    nodes.erase(std::find(nodes.begin(), nodes.end(), nodePtr));
+
+    delete nodePtr;
+    return true;
+}
+
+
+bool Gex::CompoundNode::HasNode(Node* node) const
+{
+    return (std::find(nodes.begin(), nodes.end(), node) != nodes.end());
+}
+
+
+bool Gex::CompoundNode::HasNode(const std::string& node) const
+{
+    Node* nodePtr = GetNode(node);
+    if (!nodePtr)
+        return false;
+
+    return HasNode(nodePtr);
+}
+
+
+Gex::NodeList Gex::CompoundNode::InternalNodes() const
+{
+    return nodes;
+}
+
+
+std::vector<std::string> Gex::CompoundNode::InternalNodeNames() const
+{
+    std::vector<std::string> names;
+    for (auto* node : nodes)
+    {
+        names.push_back(node->Name());
+    }
+
+    return names;
+}
+
+
+Gex::Node* Gex::CompoundNode::CreateNode(std::string type, std::string name)
 {
     if (name.empty())
     {
@@ -856,7 +835,7 @@ Gex::Node* Gex::CompoundNode::CreateInternalNode(std::string type, std::string n
         return nullptr;
     }
 
-    if (!AddInternalNode(newNode))
+    if (!AddNode(newNode))
     {
         delete newNode;
         return nullptr;
@@ -959,9 +938,20 @@ void Gex::CompoundNode::Serialize(rapidjson::Value& dict,
 {
 	Gex::Node::Serialize(dict, json);
 
+    Config conf = Config::GetConfig();
+
+    std::set<std::string> plugins;
+    std::set<std::string> nodeTypes;
+
     rapidjson::Value& internalNodesDict = rapidjson::Value().SetObject();
-    for (Node* node : innerNodes)
+    for (Node* node : nodes)
     {
+        std::string plugin = node->Plugin();
+        if (!plugin.empty())
+            plugins.insert(plugin);
+
+        nodeTypes.insert(node->Type());
+
         rapidjson::Value& internalNodeDict = rapidjson::Value().SetObject();
 
         NodeFactory::GetFactory()->SaveNode(node, internalNodeDict, json);
@@ -973,54 +963,117 @@ void Gex::CompoundNode::Serialize(rapidjson::Value& dict,
     }
 
     rapidjson::Value& connections = rapidjson::Value(rapidjson::kArrayType).GetArray();
-    for (auto node : innerNodes)
+    for (auto node : nodes)
     {
         AttributeList attributes = node->GetAllAttributes();
         for (auto* attr : attributes)
         {
-            _JsonPushAttributeConnection(this, connections, attr, json);
+            Attribute* src = attr->Source();
+            if (!src)
+            {
+                continue;
+            }
+
+            Node* srcNode = src->Node();
+
+            // Do not serialize compound input that could also exist
+            // in this level of the graph and would cause a mixing in
+            // connections.
+            if (node->IsCompound())
+            {
+                if (CompoundNode::FromNode(node)->HasNode(srcNode))
+                {
+                    continue;
+                }
+            }
+
+            rapidjson::Value& connection = rapidjson::Value(rapidjson::kArrayType).GetArray();
+            connection.PushBack(rapidjson::Value().SetString(srcNode->Name().c_str(), json.GetAllocator()).Move(),
+                                json.GetAllocator());
+            connection.PushBack(rapidjson::Value().SetString(src->Longname().c_str(), json.GetAllocator()).Move(),
+                                json.GetAllocator());
+            connection.PushBack(rapidjson::Value().SetString(node->Name().c_str(), json.GetAllocator()).Move(),
+                                json.GetAllocator());
+            connection.PushBack(rapidjson::Value().SetString(attr->Longname().c_str(), json.GetAllocator()).Move(),
+                                json.GetAllocator());
+
+            connections.PushBack(connection.Move(), json.GetAllocator());
         }
     }
 
     for (auto* attr : AllInternalAttributes())
     {
-        auto val = [this](Node* src){return this->IsInternalNode(src);};
+        auto val = [this](Node* src){return this->HasNode(src);};
         _JsonPushAttributeConnection(this, connections, attr, json, val);
     }
 
-    dict.AddMember(rapidjson::StringRef(COMPOUND_NODES_K), internalNodesDict,
+    rapidjson::Value& pluginsValue = rapidjson::Value().SetArray();
+    for (const auto& plugin : plugins)
+    {
+        pluginsValue.PushBack(rapidjson::Value().SetString(plugin.c_str(), json.GetAllocator()).Move(),
+                              json.GetAllocator());
+    }
+
+    rapidjson::Value& typesValue = rapidjson::Value().SetArray();
+    for (const auto& type : nodeTypes)
+    {
+        typesValue.PushBack(rapidjson::Value().SetString(type.c_str(), json.GetAllocator()).Move(),
+                            json.GetAllocator());
+    }
+
+    rapidjson::Value& nodesKey = rapidjson::Value().SetString(
+            conf.compoundNodesKey.c_str(), json.GetAllocator());
+    dict.AddMember(nodesKey.Move(), internalNodesDict,
                    json.GetAllocator());
 
-    dict.AddMember(rapidjson::StringRef(COMPOUND_CONNECTIONS_K), connections,
+    rapidjson::Value& connectionsKey = rapidjson::Value().SetString(
+            conf.compoundConnectionsKey.c_str(), json.GetAllocator());
+    dict.AddMember(connectionsKey.Move(), connections,
+                   json.GetAllocator());
+
+    rapidjson::Value& graphPluginsKey = rapidjson::Value().SetString(
+            conf.compoundPluginsKey.c_str(), json.GetAllocator());
+    dict.AddMember(graphPluginsKey.Move(), pluginsValue,
+                   json.GetAllocator());
+
+    rapidjson::Value& graphNodeTypes = rapidjson::Value().SetString(
+            conf.compoundNodeTypes.c_str(), json.GetAllocator());
+    dict.AddMember(graphNodeTypes.Move(), typesValue,
                    json.GetAllocator());
 }
 
 
-void Gex::CompoundNode::Deserialize(rapidjson::Value& dict)
+bool Gex::CompoundNode::Deserialize(rapidjson::Value& dict)
 {
-    Gex::Node::Deserialize(dict);
+    bool success = Gex::Node::Deserialize(dict);
+
+    if (!success)
+        return success;
+
+    Config conf = Config::GetConfig();
 
     std::map<std::string, Node*> createdNodes;
-    if (dict.HasMember(COMPOUND_NODES_K))
+    if (dict.HasMember(conf.compoundNodesKey.c_str()))
     {
-        rapidjson::Value& nodes = dict[COMPOUND_NODES_K];
-        for (auto iter = nodes.MemberBegin(); iter != nodes.MemberEnd(); iter++)
+        rapidjson::Value& nodes_ = dict[conf.compoundNodesKey.c_str()];
+        for (auto iter = nodes_.MemberBegin(); iter != nodes_.MemberEnd(); iter++)
         {
             Node* node = NodeFactory::GetFactory()->LoadNode(iter->name.GetString(), iter->value);
             if (!node)
             {
+                success = false;
                 continue;
             }
 
-            AddInternalNode(node);
+            AddNode(node);
 
             createdNodes[iter->name.GetString()] = node;
         }
     }
 
-    if (dict.HasMember(COMPOUND_CONNECTIONS_K))
+    if (dict.HasMember(conf.compoundConnectionsKey.c_str()))
     {
-        rapidjson::Value& connections = dict[COMPOUND_CONNECTIONS_K];
+        rapidjson::Value& connections = dict[conf.compoundConnectionsKey.c_str()];
         for (auto iter = connections.Begin(); iter != connections.End(); iter++)
         {
             rapidjson::Value& list = iter->GetArray();
@@ -1030,7 +1083,7 @@ void Gex::CompoundNode::Deserialize(rapidjson::Value& dict)
             std::string dstattr = list[3].GetString();
 
             Node* src = nullptr;
-            if (srcname == THIS)
+            if (srcname == conf.thisKey)
             {
                 src = this;
             }
@@ -1045,7 +1098,7 @@ void Gex::CompoundNode::Deserialize(rapidjson::Value& dict)
             }
 
             Node* dst = nullptr;
-            if (dstname == THIS)
+            if (dstname == conf.thisKey)
             {
                 dst = this;
             }
@@ -1077,6 +1130,68 @@ void Gex::CompoundNode::Deserialize(rapidjson::Value& dict)
             }
         }
     }
+
+    return success;
+}
+
+
+Gex::Feedback Gex::CompoundNode::CheckLoadStatus(rapidjson::Value& dict)
+{
+    Feedback res;
+
+    Config conf = Config::GetConfig();
+
+    std::set<std::string> missingTypes;
+    if (dict.HasMember(conf.compoundNodeTypes.c_str()))
+    {
+        rapidjson::Value& types = dict[conf.compoundNodeTypes.c_str()];
+        for (int i = 0; i < types.Size(); i++)
+        {
+            std::string typeName = types[i].GetString();
+            if (!NodeFactory::GetFactory()->TypeExists(typeName))
+            {
+                missingTypes.insert(typeName);
+            }
+        }
+    }
+
+    if (missingTypes.empty())
+    {
+        return res;
+    }
+
+    std::set<std::string> missingPlugins;
+    if (dict.HasMember(conf.compoundNodeTypes.c_str()))
+    {
+        rapidjson::Value& plugins = dict[conf.compoundNodeTypes.c_str()];
+        for (int i = 0; i < plugins.Size(); i++)
+        {
+            std::string pluginName = plugins[i].GetString();
+            if (!PluginLoader::PluginLoaded(pluginName))
+            {
+                missingPlugins.insert(pluginName);
+            }
+        }
+    }
+
+    std::string message = "Some node types are missing or not loaded : \n";
+    for (const std::string& missingType : missingTypes)
+    {
+        message += "    - " + missingType + "\n";
+    }
+
+    if (!missingPlugins.empty())
+    {
+        message += "This may be related to missing plugins : \n";
+        for (const std::string& missingPlugin : missingPlugins)
+        {
+            message += "    - " + missingPlugin + "\n";
+        }
+    }
+
+    res.status = Status::Failed;
+    res.message = message;
+    return res;
 }
 
 
@@ -1090,7 +1205,7 @@ bool Gex::CompoundNode::Evaluate(NodeAttributeData &ctx,
 
 Gex::ScheduleNodeList Gex::CompoundNode::ToScheduledNodes()
 {
-    auto schelNodes = Gex::ScheduleNodes(innerNodes);
+    auto schelNodes = Gex::ScheduleNodes(nodes);
 
     auto* preScheduleNode = new CompoundPreScheduledNode(this);
     auto* postScheduleNode = new CompoundPostScheduledNode(this);

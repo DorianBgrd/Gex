@@ -159,7 +159,16 @@ bool Gex::NodeFactory::SaveNode(Node* node, rapidjson::Value& dict, rapidjson::D
             .SetString(rapidjson::StringRef(typename_.c_str()), json.GetAllocator());
     rapidjson::Value& typeKey = rapidjson::Value().SetString(Config::GetConfig().nodeTypeKey.c_str(),
                                                              json.GetAllocator());
+
     dict.AddMember(typeKey, typeValue, json.GetAllocator());
+
+    rapidjson::Value& nameValue = rapidjson::Value(rapidjson::kStringType)
+            .SetString(rapidjson::StringRef(node->Name().c_str()), json.GetAllocator());
+    rapidjson::Value& nameKey = rapidjson::Value().SetString(Config::GetConfig().nodeNameKey.c_str(),
+                                                             json.GetAllocator());
+
+    dict.AddMember(nameKey, nameValue, json.GetAllocator());
+
     builder->SerializeNode(node, dict, json);
     return true;
 }

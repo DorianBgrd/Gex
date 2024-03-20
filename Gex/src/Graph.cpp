@@ -19,15 +19,15 @@
 
 
 
-Gex::GraphContext::GraphContext(Graph* graph)
+Gex::GraphContext::GraphContext()
 {
-    properties = graph->Properties();
+
 }
 
 
 Gex::GraphContext::GraphContext(const GraphContext& other)
 {
-    properties = other.properties;
+    resources = other.resources;
 }
 
 
@@ -40,292 +40,6 @@ void Gex::GraphContext::RegisterResource(std::string resource)
 std::vector<std::string> Gex::GraphContext::Resources() const
 {
     return resources;
-}
-
-
-Gex::PropertyWrapper Gex::GraphContext::Property(std::string name) const
-{
-    return properties.at(name);
-}
-
-
-Gex::Property::Property(std::any value, Type type_)
-{
-    type = type_;
-    value = value;
-    isArray = false;
-    hash = value.type().hash_code();
-}
-
-
-Gex::Property::Property(size_t h, Type type_, bool array)
-{
-    type = type_;
-    hash = h;
-    isArray = array;
-}
-
-
-Gex::Property::Type Gex::Property::GetType() const
-{
-    return type;
-}
-
-
-bool Gex::Property::HasValue() const
-{
-    return value.has_value();
-}
-
-
-bool Gex::Property::IsArray() const
-{
-    return isArray;
-}
-
-
-std::any Gex::Property::GetValue() const
-{
-    return value;
-}
-
-
-bool Gex::Property::SetValue(std::any v)
-{
-    if (value.type().hash_code() != hash)
-    {
-        return false;
-    }
-
-    value = v;
-    return true;
-}
-
-
-std::vector<std::any> Gex::Property::GetArrayValues() const
-{
-    std::vector<std::any> values;
-    for (auto* property : properties)
-    {
-        values.push_back(property->GetValue());
-    }
-
-    return values;
-}
-
-
-bool Gex::Property::SetArrayValues(std::vector<std::any> values)
-{
-    bool success = true;
-
-    unsigned int i = 0;
-    for (auto value : values)
-    {
-        if (value.type().hash_code() != hash)
-        {
-            auto* handler = TSys::TypeRegistry::GetRegistry()->GetTypeHandle(hash);
-            if (!handler)
-            {
-                continue;
-            }
-
-            if (!handler->CanConvertFrom(value.type().hash_code()))
-            {
-                continue;
-            }
-
-            value = handler->ConvertFrom(value, value);
-        }
-
-        if (i >= properties.size())
-        {
-            properties.push_back(new Property(value));
-        }
-
-        i++;
-    }
-
-    return success;
-}
-
-
-
-
-Gex::PropertyWrapper::PropertyWrapper(Property* prop)
-{
-    property = SafePtr<Property>(prop);
-}
-
-
-Gex::PropertyWrapper::PropertyWrapper(const PropertyWrapper& other)
-{
-    property = other.property;
-}
-
-
-bool Gex::PropertyWrapper::SetValue(const std::any& value)
-{
-    if (!property.valid())
-    {
-        return false;
-    }
-
-    if (property->GetType() != Property::Type::Input)
-    {
-        return false;
-    }
-
-    return property->SetValue(value);
-}
-
-
-bool Gex::PropertyWrapper::HasValue() const
-{
-    if (!property.valid())
-        return false;
-
-    return property->HasValue();
-}
-
-
-bool Gex::PropertyWrapper::IsArray() const
-{
-    if (!property.valid())
-        return false;
-
-    return property->IsArray();
-}
-
-
-bool Gex::PropertyWrapper::IsValid() const
-{
-    return (property.valid());
-}
-
-
-std::any Gex::PropertyWrapper::Get() const
-{
-    if (!property.valid())
-        return {};
-
-    return property->GetValue();
-}
-
-
-std::vector<std::any> Gex::PropertyWrapper::GetArrayValues() const
-{
-    if (!property.valid())
-        return {};
-
-    return property->GetArrayValues();
-
-}
-
-
-
-
-
-Gex::Graph::~Graph()
-{
-    for (auto* sn : scheduledNodes)
-        delete sn;
-
-    scheduledNodes.clear();
-
-    for (auto n : nodes)
-        delete n;
-
-    nodes.clear();
-
-    for (const auto& p : properties)
-        delete p.second;
-
-    properties.clear();
-}
-
-
-Gex::Node* Gex::Graph::CreateNode(std::string type, std::string name_)
-{
-    if (name_.empty())
-    {
-        name_ = type;
-    }
-
-    std::string uniqueName = UniqueName(name_);
-
-    auto* factory = NodeFactory::GetFactory();
-    Node* node = factory->CreateNode(type, uniqueName);
-
-    AddNode(node);
-
-    return node;
-}
-
-
-bool Gex::Graph::AddNode(Node* node)
-{
-    if (std::find(nodes.begin(), nodes.end(), node) != nodes.end())
-    {
-        return false;
-    }
-
-    nodes.push_back(node);
-    node->SetGraph(this);
-
-    // Updates node name to make it unique.
-    node->SetName(UniqueName(node->Name()));
-
-    return true;
-}
-
-
-Gex::Property* Gex::Graph::AddProperty(const std::string& name,
-                                       const std::any& value)
-{
-    if (properties.count(name) > 0)
-    {
-        return properties.at(name);
-    }
-
-    auto* property = new Property(value);
-    properties[name] = property;
-
-    return property;
-}
-
-
-bool Gex::Graph::RemoveProperty(const std::string& name)
-{
-    if (properties.count(name) == 0)
-    {
-        return false;
-    }
-
-    auto* prop = properties.at(name);
-    delete prop;
-    properties.erase(name);
-    return true;
-}
-
-
-Gex::Property* Gex::Graph::GetProperty(const std::string& name) const
-{
-    if (properties.count(name) == 0)
-        return nullptr;
-
-    return properties.at(name);
-}
-
-
-Gex::PropertyWrappers Gex::Graph::Properties() const
-{
-    PropertyWrappers props;
-    for (const auto& pr : properties)
-    {
-        props[pr.first] = PropertyWrapper(pr.second);
-    }
-
-    return props;
 }
 
 
@@ -435,7 +149,7 @@ Gex::Node* Duplicate(std::map<Gex::Node*, Gex::Node*>& res,
 
     if (parent)
     {
-        Gex::CompoundNode::FromNode(parent)->AddInternalNode(new_);
+        Gex::CompoundNode::FromNode(parent)->AddNode(new_);
     }
     else
     {
@@ -596,12 +310,6 @@ Gex::NodeList Gex::Graph::DuplicateNodes(NodeList sources, bool copyLinks,
 }
 
 
-std::string Gex::Graph::UniqueName(const std::string& name) const
-{
-    return Gex::Utils::UniqueName(name, nodes);
-}
-
-
 Gex::NodeList Gex::Graph::DuplicateNodes(NodeList sources, bool copyLinks)
 {
     return DuplicateNodes(sources, copyLinks, nullptr);
@@ -622,7 +330,7 @@ Gex::Node* Gex::Graph::ToCompound(NodeList sources, bool duplicate,
     }
 
     for (auto* node : sources) {
-        compound->AddInternalNode(node);
+        compound->AddNode(node);
         std::remove(nodes.begin(), nodes.end(), node);
 
         for (auto *attribute: node->GetAllAttributes())
@@ -710,21 +418,6 @@ Gex::Node* Gex::Graph::ToCompound(NodeList sources, bool duplicate,
 }
 
 
-bool Gex::Graph::RemoveNode(Gex::Node* node)
-{
-    auto index = std::find(nodes.begin(), nodes.end(), node);
-    if (index == nodes.end())
-    {
-        return false;
-    }
-
-    nodes.erase(index);
-    delete node;
-    return true;
-}
-
-
-
 struct FindMatchingNode
 {
     std::string match;
@@ -744,55 +437,6 @@ FindMatchingNode CreateMatch(std::string name)
 }
 
 
-bool Gex::Graph::RemoveNode(std::string nodename)
-{
-    auto idx = std::find_if(nodes.begin(), nodes.end(), CreateMatch(nodename));
-    if (idx == nodes.end())
-    {
-        return false;
-    }
-
-    delete *idx;
-    nodes.erase(idx);
-    return true;
-}
-
-
-Gex::Node* Gex::Graph::FindNode(std::string path) const
-{
-    std::string n;
-    std::string sp;
-    size_t pos = path.find(Config::GetConfig().nodePathSeparator);
-    if (pos == std::string::npos)
-    {
-        n = path;
-    }
-    else
-    {
-        n = path.substr(0, pos - 1);
-        sp = path.substr(pos + 1, std::string::npos);
-    }
-
-    FindMatchingNode match;
-    match.match = n;
-
-    auto index = std::find_if(nodes.begin(), nodes.end(), match);
-    if (index == nodes.end())
-    {
-        return nullptr;
-    }
-
-    Node* result = *index;
-    if (sp.empty())
-        return result;
-
-    if (!result->IsCompound())
-        return nullptr;
-
-    return Node::ConvertTo<CompoundNode>(result)->GetInternalNode(sp);
-}
-
-
 Gex::Attribute* Gex::Graph::FindAttribute(std::string attr) const
 {
     size_t pos  = attr.find(Config::GetConfig().attributeSeparator.c_str());
@@ -804,7 +448,7 @@ Gex::Attribute* Gex::Graph::FindAttribute(std::string attr) const
     std::string nodePath = attr.substr(0, pos - 1);
     std::string attrPath = attr.substr(pos + 1, std::string::npos);
 
-    auto* node = FindNode(nodePath);
+    auto* node = GetNode(nodePath);
     if (!node)
     {
         return nullptr;
@@ -814,233 +458,13 @@ Gex::Attribute* Gex::Graph::FindAttribute(std::string attr) const
 }
 
 
-bool Gex::Graph::Serialize(rapidjson::Value& dict, rapidjson::Document& json) const
+bool Gex::Graph::Run(Profiler& profiler,
+                     unsigned int threads,
+                     NodeCallback nodeStarted,
+                     NodeResCallback nodeDone,
+                     GraphCtxCallback evalDone)
 {
-    rapidjson::Value& nodesdict = rapidjson::Value(rapidjson::kObjectType).GetObject();
-    rapidjson::Value& connections = rapidjson::Value(rapidjson::kArrayType).GetArray();
-
-    std::set<std::string> plugins;
-    std::set<std::string> nodeTypes;
-    for (auto node : nodes)
-    {
-        // Plugins.
-        std::string plugin = node->Plugin();
-        if (!plugin.empty())
-            plugins.insert(plugin);
-
-        nodeTypes.insert(node->Type());
-
-        // General data.
-        rapidjson::Value& nodedict = rapidjson::Value(rapidjson::kObjectType).GetObject();
-
-        NodeFactory::GetFactory()->SaveNode(node, nodedict, json);
-
-        rapidjson::Value& key = rapidjson::Value().SetString(node->Name().c_str(),
-                                                             json.GetAllocator());
-
-        nodesdict.AddMember(key, nodedict, json.GetAllocator());
-
-        // Connections.
-        AttributeList attributes = node->GetAllAttributes();
-        for (auto* attr : attributes)
-        {
-            Attribute* src = attr->Source();
-            if (!src)
-            {
-                continue;
-            }
-
-            Node* srcNode = src->Node();
-
-            // Do not serialize compound input that could also exist
-            // in this level of the graph and would cause a mixing in
-            // connections.
-            if (node->IsCompound())
-            {
-                if (CompoundNode::FromNode(node)->IsInternalNode(srcNode))
-                {
-                    continue;
-                }
-            }
-
-            rapidjson::Value& connection = rapidjson::Value(rapidjson::kArrayType).GetArray();
-            connection.PushBack(rapidjson::Value().SetString(srcNode->Name().c_str(), json.GetAllocator()).Move(),
-                                json.GetAllocator());
-            connection.PushBack(rapidjson::Value().SetString(src->Longname().c_str(), json.GetAllocator()).Move(),
-                                json.GetAllocator());
-            connection.PushBack(rapidjson::Value().SetString(node->Name().c_str(), json.GetAllocator()).Move(),
-                                json.GetAllocator());
-            connection.PushBack(rapidjson::Value().SetString(attr->Longname().c_str(), json.GetAllocator()).Move(),
-                                json.GetAllocator());
-
-            connections.PushBack(connection.Move(), json.GetAllocator());
-        }
-    }
-
-    rapidjson::Value& pluginsValue = rapidjson::Value().SetArray();
-    for (auto plugin : plugins)
-    {
-        pluginsValue.PushBack(rapidjson::Value().SetString(plugin.c_str(), json.GetAllocator()).Move(),
-                              json.GetAllocator());
-    }
-
-    rapidjson::Value& typesValue = rapidjson::Value().SetArray();
-    for (auto type : nodeTypes)
-    {
-        typesValue.PushBack(rapidjson::Value().SetString(type.c_str(), json.GetAllocator()).Move(),
-                            json.GetAllocator());
-    }
-
-    Config conf = Config::GetConfig();
-    rapidjson::Value& graphNodesKey = rapidjson::Value().SetString(
-            conf.graphNodesKey.c_str(), json.GetAllocator());
-    dict.AddMember(graphNodesKey.Move(), nodesdict,
-                   json.GetAllocator());
-
-    rapidjson::Value& graphConnectionsKey = rapidjson::Value().SetString(
-            conf.graphConnectionsKey.c_str(), json.GetAllocator());
-    dict.AddMember(graphConnectionsKey.Move(),connections,
-                   json.GetAllocator());
-
-    rapidjson::Value& graphPluginsKey = rapidjson::Value().SetString(
-            conf.graphPluginsKey.c_str(), json.GetAllocator());
-    dict.AddMember(graphPluginsKey.Move(), pluginsValue,
-                   json.GetAllocator());
-
-    rapidjson::Value& graphNodeTypes = rapidjson::Value().SetString(
-            conf.graphNodeTypes.c_str(), json.GetAllocator());
-    dict.AddMember(graphNodeTypes.Move(), typesValue,
-                   json.GetAllocator());
-
-    return true;
-}
-
-
-bool Gex::Graph::Deserialize(rapidjson::Value& dict)
-{
-    Config conf = Config::GetConfig();
-
-    if (dict.HasMember(conf.graphNodesKey.c_str()))
-    {
-        rapidjson::Value& serializedNodes = dict[conf.graphNodesKey.c_str()];
-        for (rapidjson::Value::MemberIterator itr = serializedNodes.MemberBegin();
-             itr != serializedNodes.MemberEnd(); ++itr)
-        {
-            std::string name = itr->name.GetString();
-
-            Gex::Node* node = NodeFactory::GetFactory()->LoadNode(
-                    name, itr->value);
-
-            nodes.push_back(node);
-            node->SetGraph(this);
-        }
-    }
-
-    if (dict.HasMember(conf.graphConnectionsKey.c_str()))
-    {
-        rapidjson::Value& serializedConnections = dict[conf.graphConnectionsKey.c_str()];
-        for(rapidjson::Value::ValueIterator cnsitr = serializedConnections.Begin();
-            cnsitr != serializedConnections.End(); cnsitr++)
-        {
-            auto array = cnsitr->GetArray();
-            std::string srcn = array[0].GetString();
-            std::string srca = array[1].GetString();
-            std::string dstn = array[2].GetString();
-            std::string dsta = array[3].GetString();
-
-            auto* srcnode = FindNode(srcn);
-            if (!srcnode)
-                continue;
-
-            auto* dstnode = FindNode(dstn);
-            if (!dstnode)
-                continue;
-
-            Attribute* srcattr = srcnode->GetAttribute(srca);
-            if (!srcattr)
-                continue;
-
-            Attribute* dstattr = dstnode->GetAttribute(dsta);
-            if (!dstattr)
-                continue;
-
-            dstattr->ConnectSource(srcattr);
-        }
-    }
-
-    return true;
-}
-
-
-
-Gex::Feedback Gex::Graph::CheckLoadStatus(rapidjson::Value& dict)
-{
-    Feedback res;
-
-    Config conf = Config::GetConfig();
-
-    std::set<std::string> missingTypes;
-    if (dict.HasMember(conf.graphNodeTypes.c_str()))
-    {
-        rapidjson::Value& types = dict[conf.graphNodeTypes.c_str()];
-        for (int i = 0; i < types.Size(); i++)
-        {
-            std::string typeName = types[i].GetString();
-            if (!NodeFactory::GetFactory()->TypeExists(typeName))
-            {
-                missingTypes.insert(typeName);
-            }
-        }
-    }
-
-    if (missingTypes.empty())
-    {
-        return res;
-    }
-
-    std::set<std::string> missingPlugins;
-    if (dict.HasMember(conf.graphPluginsKey.c_str()))
-    {
-        rapidjson::Value& plugins = dict[conf.graphPluginsKey.c_str()];
-        for (int i = 0; i < plugins.Size(); i++)
-        {
-            std::string pluginName = plugins[i].GetString();
-            if (!PluginLoader::PluginLoaded(pluginName))
-            {
-                missingPlugins.insert(pluginName);
-            }
-        }
-    }
-
-    std::string message = "Some node types are missing or not loaded : \n";
-    for (std::string missingType : missingTypes)
-    {
-        message += "    - " + missingType + "\n";
-    }
-
-    if (!missingPlugins.empty())
-    {
-        message += "This may be related to missing plugins : \n";
-        for (std::string missingPlugin : missingPlugins)
-        {
-            message += "    - " + missingPlugin + "\n";
-        }
-    }
-
-    res.status = Status::Failed;
-    res.message = message;
-    return res;
-}
-
-
-
-bool Gex::Graph::Compute(Profiler& profiler,
-                         unsigned int threads,
-                         NodeCallback nodeStarted,
-                         NodeResCallback nodeDone,
-                         GraphCtxCallback evalDone)
-{
-    GraphContext context(this);
+    GraphContext context;
 
     profiler->Start();
 
@@ -1060,7 +484,7 @@ bool Gex::Graph::Compute(Profiler& profiler,
     }
 
     auto evaluator = std::make_shared<NodeEvaluator>(
-            ScheduleNodes(nodes, true), context, profiler,
+            ScheduleNodes({this}, true), context, profiler,
             false, threads, nodeStarted,
             nodeDone, finalize);
 
@@ -1079,19 +503,15 @@ void Gex::Graph::FinalizeEvaluation(const GraphContext& context) const
 }
 
 
-Gex::NodeList Gex::Graph::Nodes() const
+void Gex::Graph::AttributeChanged(Attribute* attr, AttributeChange change)
 {
-   return nodes;
-}
+    CompoundNode::AttributeChanged(attr, change);
 
-
-std::vector<std::string> Gex::Graph::NodeNames() const
-{
-    std::vector<std::string> names;
-    for (auto* node : nodes)
+    if (change == AttributeChange::Connected
+        || change == AttributeChange::Disconnected
+        || change == AttributeChange::ChildAttributeConnected
+        || change == AttributeChange::ChildAttributeDisconnected)
     {
-        names.push_back(node->Name());
+        Invalidate();
     }
-
-    return names;
 }

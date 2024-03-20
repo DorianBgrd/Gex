@@ -7,7 +7,6 @@
 #include "NodeAttributeData.h"
 #include "Attribute.h"
 #include "Profiler.h"
-#include "Evaluation.h"
 #include "Scheduling.h"
 #include <map>
 #include <vector>
@@ -18,7 +17,6 @@
 
 namespace Gex
 {
-    class Graph;
     class Attribute;
 	class DefaultNodeBuilder;
 	class CompoundNodeBuilder;
@@ -29,13 +27,13 @@ namespace Gex
 	class NodeAttributeData;
 	class EvaluationContext;
     class ScheduledNode;
+    class NodeEvaluator;
 
 	class GEX_API Node
 	{
 	protected:
         friend CompoundNode;
         friend Attribute;
-        friend Graph;
 		friend NodeFactory;
         friend NodeBuilder;
 		friend DefaultNodeBuilder;
@@ -65,11 +63,9 @@ namespace Gex
         std::vector<std::string> resources;
 
         Node* parent = nullptr;
-        Graph* graph = nullptr;
         Attribute* previous = nullptr;
         Attribute* next = nullptr;
 
-        size_t computeHash;
 	public:
         /**
          * Returns node's type name.
@@ -200,33 +196,6 @@ namespace Gex
           */
          virtual bool IsCompound() const;
 
-         Graph* Graph() const;
-
-    protected:
-
-        /**
-         * Builds hash from node's attribute.
-         * @return size_t hash.
-         */
-        virtual size_t BuildHash(bool followCnx=false) const;
-
-        void SetComputeHash(size_t hash);
-
-        virtual void SetGraph(Gex::Graph* graph);
-
-    public:
-        /**
-         * Returns last compute hash.
-         * @return size_t hash.
-         */
-        size_t ComputeHash() const;
-
-        /**
-         * Returns whether node is dirty and need re-computation.
-         * @return bool: is dirty.
-         */
-        virtual bool IsDirty() const;
-
     protected:
         std::any InitValueFromHash(size_t hash, Feedback* success=nullptr);
 
@@ -345,7 +314,7 @@ namespace Gex
 		virtual void Serialize(rapidjson::Value& dict,
                                rapidjson::Document& json) const;
 
-        virtual void Deserialize(rapidjson::Value& dict);
+        virtual bool Deserialize(rapidjson::Value& dict);
 
     protected:
         /**
@@ -443,7 +412,7 @@ namespace Gex
         friend NodeEvaluator;
 
 	protected:
-		NodeList innerNodes;
+		NodeList nodes;
 
         using Node::Node;
 
@@ -457,7 +426,7 @@ namespace Gex
 
         bool IsCompound() const override;
 
-        void SetGraph(Gex::Graph* graph) override;
+        std::string UniqueName(const std::string& name) const;
 
         template <typename T>
         Attribute* CreateInternalAttribute(std::string name, AttrValueType valueType = AttrValueType::Single,
@@ -502,39 +471,39 @@ namespace Gex
          * @param name: node name.
          * @return node pointer.
          */
-        virtual Node* CreateInternalNode(std::string type, std::string name=std::string());
+        virtual Node* CreateNode(std::string type, std::string name= std::string());
 
         /**
          * Adds node pointer as internal node.
          * @param node: node pointer.
          * @return success.
          */
-        virtual bool AddInternalNode(Node* node);
+        virtual bool AddNode(Node* node);
 
         /**
          * Removes internal node.
          * @param node: node to remove.
          * @return success.
          */
-        virtual bool RemoveInternalNode(Node* node);
+        virtual bool RemoveNode(Node* node);
 
         /**
          * Removes internal node using its name.
          * @param node: nod name.
          * @return success.
          */
-        virtual bool RemoveInternalNode(const std::string& node);
+        virtual bool RemoveNode(const std::string& node);
 
         /**
          * Returns node pointer with name if it exists.
          * @param node: node name.
          * @return node pointer.
          */
-        virtual Node* GetInternalNode(const std::string& node) const;
+        virtual Node* GetNode(const std::string& node) const;
 
-        NodeList GetInternalNodes() const;
+        NodeList GetNodes() const;
 
-        std::string UniqueName(const std::string& name) const override;
+        std::vector<std::string> GetNodeNames() const;
 
         /**
          * Returns whether specified node pointer is an internal
@@ -542,14 +511,14 @@ namespace Gex
          * @param node: node pointer.
          * @return is internal node.
          */
-        virtual bool IsInternalNode(Node* node) const;
+        virtual bool HasNode(Node* node) const;
 
         /**
          * Returns whether specified node name is an internal node.
          * @param node: node name.
          * @return is internal node.
          */
-        virtual bool IsInternalNode(const std::string& node) const;
+        virtual bool HasNode(const std::string& node) const;
 
         /**
          * Returns top level internal attributes.
@@ -640,7 +609,9 @@ namespace Gex
          * Deserializes node values.
          * @param dict
          */
-        void Deserialize(rapidjson::Value& dict) override;
+        bool Deserialize(rapidjson::Value& dict) override;
+
+        static Feedback CheckLoadStatus(rapidjson::Value& dict);
 
     public:
         /**

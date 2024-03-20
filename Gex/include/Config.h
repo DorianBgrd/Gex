@@ -24,13 +24,16 @@ namespace Gex
         std::string attributeChildrenKey = "ChildAttributes";
 
         std::string nodeTypeKey = "Type";
+        std::string nodeNameKey = "Name";
         std::string nodeAttributesKey = "Attributes";
         std::string nodeCustomAttributesKey = "CustomAttributes";
 
-        std::string graphNodesKey = "Nodes";
-        std::string graphConnectionsKey = "Connections";
-        std::string graphPluginsKey = "Plugins";
-        std::string graphNodeTypes = "NodeTypes";
+        std::string compoundNodesKey = "Nodes";
+        std::string compoundConnectionsKey = "Connections";
+        std::string compoundPluginsKey = "Plugins";
+        std::string compoundNodeTypes = "NodeTypes";
+
+        std::string thisKey = "This";
 
         static Config GetConfig();
     };

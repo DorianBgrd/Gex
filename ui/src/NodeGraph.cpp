@@ -1408,7 +1408,7 @@ Gex::Ui::LinkItem::LinkItem(AttributeItem *source, AttributeItem *dest): QGraphi
 
     if (auto* cmp = Gex::CompoundNode::FromNode(src->Attribute()->Node()))
     {
-        if (cmp->IsInternalNode(dst->Attribute()->Node()))
+        if (cmp->HasNode(dst->Attribute()->Node()))
         {
             sourceInternal = true;
         }
@@ -1416,7 +1416,7 @@ Gex::Ui::LinkItem::LinkItem(AttributeItem *source, AttributeItem *dest): QGraphi
 
     if (auto* cmp = Gex::CompoundNode::FromNode(dst->Attribute()->Node()))
     {
-        if (cmp->IsInternalNode(src->Attribute()->Node()))
+        if (cmp->HasNode(src->Attribute()->Node()))
         {
             destInternal = true;
         }
@@ -1872,10 +1872,18 @@ void Gex::Ui::NodeGraphScene::OnItemDoubleClicked(QGraphicsItem* item)
 void Gex::Ui::NodeGraphScene::UpdateNode(Gex::Node* node)
 {
     NodeItem* nodeItem = nodeItems.value(node, nullptr);
-    if (!nodeItem)
-        return;
+    if (nodeItem)
+    {
+        nodeItem->RebuildAttributes();
+    }
+    else if (node == graphContext->compound)
+    {
+        input->RebuildAttributes();
+        input->ShowAsInternalInput();
 
-    nodeItem->RebuildAttributes();
+        output->RebuildAttributes();
+        output->ShowAsInternalOutput();
+    }
 }
 
 
@@ -2807,8 +2815,9 @@ void Gex::Ui::GraphWidget::Initialize()
 {
     auto* context = new NodeGraphContext();
     context->graph = graph;
+    context->compound = graph;
     context->name = "Root";
-    context->GetNodes = [this](){return this->graph->Nodes();};
+    context->GetNodes = [this](){return this->graph->GetNodes();};
     context->CreateNode = [this](std::string t, std::string n){return this->graph->CreateNode(t, n);};
     context->DeleteNode = [this](Gex::Node* node){this->graph->RemoveNode(node);};
     contexts.append(context);
@@ -2845,8 +2854,8 @@ void Gex::Ui::GraphWidget::RegisterContext(Gex::CompoundNode* compound)
     context->name = compound->Name().c_str();
     context->compound = compound;
     context->GetNodes = [compound](){return compound->InternalNodes();};
-    context->CreateNode = [compound](std::string t, std::string n){return compound->CreateInternalNode(t, n);},
-    context->DeleteNode = [compound](Gex::Node* node){compound->RemoveInternalNode(node);};
+    context->CreateNode = [compound](std::string t, std::string n){return compound->CreateNode(t, n);},
+    context->DeleteNode = [compound](Gex::Node* node){ compound->RemoveNode(node);};
 
     contextsWidget->AddContext(compound->Name());
 
@@ -2914,6 +2923,12 @@ void Gex::Ui::GraphWidget::SwitchGraph(Gex::Graph* graph_)
 void Gex::Ui::GraphWidget::UpdateNode(Gex::Node* node)
 {
     scene->UpdateNode(node);
+
+    auto* context = scene->CurrentContext();
+    if (node == context->compound)
+    {
+
+    }
 }
 
 
@@ -2962,14 +2977,14 @@ void Gex::Ui::GraphWidget::RunGraph()
 
     scene->ClearNodeEvaluation();
 
-    graph->Compute(profiler, threadsSpinBox->value(),
-                   [this](Gex::Node* node)
-                   {this->scene->NodeEvaluationStarted(node);},
-                   [this](Gex::Node* node, bool success)
-                   {if (success) this->scene->NodeEvaluationDone(node, success);},
-                   [this](const Gex::GraphContext& ctx)
-                   {EmitProfiler(this, ctx);}
-                   );
+    graph->Run(profiler, threadsSpinBox->value(),
+               [this](Gex::Node* node)
+               {this->scene->NodeEvaluationStarted(node);},
+               [this](Gex::Node* node, bool success)
+               {if (success) this->scene->NodeEvaluationDone(node, success);},
+               [this](const Gex::GraphContext& ctx)
+               {EmitProfiler(this, ctx);}
+               );
 }
 
 

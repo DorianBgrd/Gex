@@ -11,8 +11,6 @@ set(CMAKE_VS_PLATFORM_NAME "x64")
 
 
 # remove default flags provided with CMake for MSVC
-set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
-
 set(CMAKE_CXX_FLAGS "/EHsc")
 
 ########################################################################################################################
@@ -35,4 +33,4 @@ add_subdirectory(PathsPlugin)
 add_subdirectory(StringPlugin)
 add_subdirectory(UsdPlugin)
 #add_subdirectory(MayaInternalPlugin)
-add_subdirectory(GraphPlugin)
+#add_subdirectory(GraphPlugin)

@@ -167,15 +167,15 @@ Gex::NodeList Gex::ImportNodes(const std::string& filepath,
 
     auto* importGraph = LoadGraph(filepath);;
 
-    for (auto* node : importGraph->Nodes())
+    for (auto* node : importGraph->GetNodes())
     {
         if (destinationGraph)
             destinationGraph->AddNode(node);
         else
-            destinationNode->AddInternalNode(node);
+            destinationNode->AddNode(node);
     }
 
-    auto res = importGraph->Nodes();
+    auto res = importGraph->GetNodes();
 
     delete importGraph;
 

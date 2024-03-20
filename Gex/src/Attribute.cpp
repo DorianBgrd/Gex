@@ -720,7 +720,7 @@ bool  Gex::Attribute::_CanConnectSource(Attribute* source)
     // if current node is an internal node.
     if (CompoundNode* sourceCmp = CompoundNode::FromNode(source->Node()))
     {
-        if (sourceCmp->IsInternalNode(Node()) && source->IsInternal())
+        if (sourceCmp->HasNode(Node()) && source->IsInternal())
         {
             return (source->IsInput() && IsInput());
         }
@@ -730,7 +730,7 @@ bool  Gex::Attribute::_CanConnectSource(Attribute* source)
         // if source node is an internal node.
     else if (CompoundNode* compound = CompoundNode::FromNode(Node()))
     {
-        if (compound->IsInternalNode(source->Node()) && IsInternal())
+        if (compound->HasNode(source->Node()) && IsInternal())
         {
             return (source->IsOutput() && IsOutput());
         }

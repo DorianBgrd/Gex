@@ -29,7 +29,7 @@ int main(int argc, char** argv)
 
     Gex::Graph* lg = Gex::LoadGraph("D:\\graph.json");
 
-    Gex::Node* n_1 = lg->FindNode("Node1");
+    Gex::Node* n_1 = lg->GetNode("Node1");
     auto* at_1 = n_1->GetAttribute("String");
     auto v = at_1->Get<std::string>();
 
