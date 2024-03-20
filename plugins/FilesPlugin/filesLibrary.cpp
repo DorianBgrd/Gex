@@ -1,7 +1,3 @@
-//
-// Created by Dorian on 6/7/2022.
-//
-
 #ifndef LIBRARY_FILES_H
 #define LIBRARY_FILES_H
 
