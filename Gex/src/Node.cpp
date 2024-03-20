@@ -155,7 +155,8 @@ bool Gex::Node::IsDirty() const
 
 std::any Gex::Node::InitValueFromHash(size_t hash, Feedback* success)
 {
-    auto* handler = TSys::TypeRegistry::GetRegistry()->GetTypeHandle(hash);
+    auto* registry = TSys::TypeRegistry::GetRegistry();
+    auto* handler = registry->GetTypeHandle(hash);
     if (!handler)
     {
         if (success)

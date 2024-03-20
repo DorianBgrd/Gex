@@ -31,7 +31,7 @@ namespace Gex
     {
         friend NodeEvaluator;
         std::vector<std::string> resources;
-        ReadOnlyPropertyMap properties;
+        PropertyWrappers properties;
 
     public:
         GraphContext(Graph* graph);
@@ -42,89 +42,123 @@ namespace Gex
 
         std::vector<std::string> Resources() const;
 
-        std::any PropertyValue(std::string name) const;
+        PropertyWrapper Property(std::string name) const;
     };
 
 
     class GEX_API Property: USING_SAFE_PTR(Property)
     {
-        std::any propValue;
+        size_t hash;
+        std::any value;
+        std::vector<Property*> properties;
+
+        bool isArray = false;
 
     public:
-        Property(const std::any& value=std::any());
-
-        std::any GetAnyValue() const;
-
-        template<typename T>
-        Feedback GetValue(T& value) const
+        enum class Type
         {
-            Feedback feedback;
+            Input,
+            Output
+        };
 
-            auto v = GetAnyValue();
-            if (!v.has_value())
-            {
-                feedback.Set(Status::Failed, "No value found.");
-                return feedback;
-            }
+    private:
+        Type type;
 
-            if (v.type().hash_code() == typeid(T).hash_code())
-            {
-                return value = std::any_cast<T>(v);
-            }
+    public:
+        Property(std::any value, Type type=Type::Input);
 
-            auto* handler = TSys::TypeRegistry::GetRegistry()->GetTypeHandle<T>();
-            if (!handler)
-            {
-                feedback.Set(Status::Failed, "Specified type is not registered.");
-                return feedback;
-            }
+        Property(size_t hash, Type type=Type::Input,
+                 bool array=false);
 
-            if (!handler->CanConvertFrom(v))
-            {
-                feedback.Set(Status::Failed, "Current value is not convertible to specified type.");
-                return feedback;
-            }
+        Type GetType() const;
 
-            value = handler->ConvertFrom(v);
-            feedback.Set(Status::Success, "");
-            return feedback;
-        }
+        bool HasValue() const;
 
-        bool SetAnyValue(std::any value);
+        bool IsArray() const;
 
-        template<typename T>
-        bool SetValue(T value)
-        {
-            return SetAnyValue(std::make_any<T>(value));
-        }
+        std::any GetValue() const;
+
+        bool SetValue(std::any value);
+
+        std::vector<std::any> GetArrayValues() const;
+
+        bool SetArrayValues(std::vector<std::any> values);
     };
 
 
-    class GEX_API ReadOnlyProperty: public Property
+    class GEX_API PropertyWrapper
     {
         SafePtr<Property> property;
 
     public:
-        ReadOnlyProperty() = default;
+        PropertyWrapper() = default;
 
-        ReadOnlyProperty(Property* prop);
+        PropertyWrapper(Property* prop);
 
-        ReadOnlyProperty(const ReadOnlyProperty& other);
+        PropertyWrapper(const PropertyWrapper& other);
 
-        std::any GetAnyValue() const;
+        std::any Get() const;
+
+        std::vector<std::any> GetArrayValues() const;
 
         template<typename T>
-        Feedback GetValue(T& value) const
+        T GetValue(Feedback* success=nullptr) const
         {
             if (!property.valid())
             {
-                Feedback failed;
-                failed.Set(Status::Failed, "Current pointer is not valid.");
-                return failed;
+                if (success)
+                    success->Set(Status::Failed, "Current pointer is not valid.");
+                return T();
             }
 
-            return property->GetValue<T>(value);
+            auto any = Get();
+
+            auto destHash = typeid(T).hash_code();
+            if (any.type().hash_code() == destHash)
+                return std::any_cast<T>(any);
+
+            auto* handler = TSys::TypeRegistry::GetRegistry()->GetTypeHandle(destHash);
+            if (!handler->CanConvertFrom(any))
+            {
+                if (success)
+                    success->Set(Status::Failed, "Destination and source "
+                                                 "type are not compatible.");
+
+                return T();
+            }
+
+            success->Set(Status::Success, "");
+
+            auto res = handler->ConvertFrom(any, any);
+            return std::any_cast<T>(res);
         }
+
+        template<typename T>
+        std::vector<T> ArrayValues(Feedback* success=nullptr) const
+        {
+            std::vector<T> res;
+            for (auto any : GetArrayValues())
+            {
+                if (!typeid(T).hash_code())
+                {
+
+                }
+            }
+        }
+
+        template<class T>
+        bool Set(T value)
+        {
+            return SetValue(std::make_any<T>(value));
+        }
+
+        bool SetValue(const std::any& value);
+
+        bool HasValue() const;
+
+        bool IsArray() const;
+
+        bool IsValid() const;
     };
 
 
@@ -158,7 +192,7 @@ namespace Gex
 
         Property* GetProperty(const std::string& name) const;
 
-        ReadOnlyPropertyMap Properties() const;
+        PropertyWrappers Properties() const;
 
     public:
         /**

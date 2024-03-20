@@ -40,7 +40,6 @@ namespace Gex
         friend NodeBuilder;
 		friend DefaultNodeBuilder;
 		friend CompoundNodeBuilder;
-		friend NodeEvaluationContext;
 		friend NodeAttributeData;
         friend EvaluationContext;
         friend NodeEvaluator;

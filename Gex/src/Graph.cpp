@@ -43,53 +43,183 @@ std::vector<std::string> Gex::GraphContext::Resources() const
 }
 
 
-Gex::Property::Property(const std::any& value)
+Gex::PropertyWrapper Gex::GraphContext::Property(std::string name) const
 {
-    propValue = value;
+    return properties.at(name);
 }
 
 
-std::any Gex::Property::GetAnyValue() const
+Gex::Property::Property(std::any value, Type type_)
 {
-    return propValue;
+    type = type_;
+    value = value;
+    isArray = false;
+    hash = value.type().hash_code();
 }
 
 
-bool Gex::Property::SetAnyValue(std::any value)
+Gex::Property::Property(size_t h, Type type_, bool array)
 {
-    auto* registry = TSys::TypeRegistry::GetRegistry();
-    auto* handler = registry->GetTypeHandle(value.type().hash_code());
-    if (!handler)
+    type = type_;
+    hash = h;
+    isArray = array;
+}
+
+
+Gex::Property::Type Gex::Property::GetType() const
+{
+    return type;
+}
+
+
+bool Gex::Property::HasValue() const
+{
+    return value.has_value();
+}
+
+
+bool Gex::Property::IsArray() const
+{
+    return isArray;
+}
+
+
+std::any Gex::Property::GetValue() const
+{
+    return value;
+}
+
+
+bool Gex::Property::SetValue(std::any v)
+{
+    if (value.type().hash_code() != hash)
     {
         return false;
     }
 
-    propValue = value;
+    value = v;
     return true;
+}
+
+
+std::vector<std::any> Gex::Property::GetArrayValues() const
+{
+    std::vector<std::any> values;
+    for (auto* property : properties)
+    {
+        values.push_back(property->GetValue());
+    }
+
+    return values;
+}
+
+
+bool Gex::Property::SetArrayValues(std::vector<std::any> values)
+{
+    bool success = true;
+
+    unsigned int i = 0;
+    for (auto value : values)
+    {
+        if (value.type().hash_code() != hash)
+        {
+            auto* handler = TSys::TypeRegistry::GetRegistry()->GetTypeHandle(hash);
+            if (!handler)
+            {
+                continue;
+            }
+
+            if (!handler->CanConvertFrom(value.type().hash_code()))
+            {
+                continue;
+            }
+
+            value = handler->ConvertFrom(value, value);
+        }
+
+        if (i >= properties.size())
+        {
+            properties.push_back(new Property(value));
+        }
+
+        i++;
+    }
+
+    return success;
 }
 
 
 
 
-Gex::ReadOnlyProperty::ReadOnlyProperty(Property* prop)
+Gex::PropertyWrapper::PropertyWrapper(Property* prop)
 {
     property = SafePtr<Property>(prop);
 }
 
 
-Gex::ReadOnlyProperty::ReadOnlyProperty(const ReadOnlyProperty& other)
+Gex::PropertyWrapper::PropertyWrapper(const PropertyWrapper& other)
 {
     property = other.property;
 }
 
-std::any Gex::ReadOnlyProperty::GetAnyValue() const
-{
-    if (property.valid())
-        return {};
 
-    return property->GetAnyValue();
+bool Gex::PropertyWrapper::SetValue(const std::any& value)
+{
+    if (!property.valid())
+    {
+        return false;
+    }
+
+    if (property->GetType() != Property::Type::Input)
+    {
+        return false;
+    }
+
+    return property->SetValue(value);
 }
 
+
+bool Gex::PropertyWrapper::HasValue() const
+{
+    if (!property.valid())
+        return false;
+
+    return property->HasValue();
+}
+
+
+bool Gex::PropertyWrapper::IsArray() const
+{
+    if (!property.valid())
+        return false;
+
+    return property->IsArray();
+}
+
+
+bool Gex::PropertyWrapper::IsValid() const
+{
+    return (property.valid());
+}
+
+
+std::any Gex::PropertyWrapper::Get() const
+{
+    if (!property.valid())
+        return {};
+
+    return property->GetValue();
+}
+
+
+std::vector<std::any> Gex::PropertyWrapper::GetArrayValues() const
+{
+    if (!property.valid())
+        return {};
+
+    return property->GetArrayValues();
+
+}
 
 
 
@@ -187,15 +317,15 @@ Gex::Property* Gex::Graph::GetProperty(const std::string& name) const
 }
 
 
-Gex::ReadOnlyPropertyMap Gex::Graph::Properties() const
+Gex::PropertyWrappers Gex::Graph::Properties() const
 {
-    ReadOnlyPropertyMap readOnlyProps;
+    PropertyWrappers props;
     for (const auto& pr : properties)
     {
-        readOnlyProps[pr.first] = ReadOnlyProperty(pr.second);
+        props[pr.first] = PropertyWrapper(pr.second);
     }
 
-    return readOnlyProps;
+    return props;
 }
 
 
