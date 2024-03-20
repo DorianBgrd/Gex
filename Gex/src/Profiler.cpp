@@ -190,6 +190,7 @@ Gex::ProfilerScope::ProfilerScope(Profiler profiler_,
                                   std::string category,
                                   std::string name)
 {
+    profiler = profiler_;
     event = profiler_->StartEvent(category, name);
 }
 
