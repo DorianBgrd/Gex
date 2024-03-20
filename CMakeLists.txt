@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.25)
+cmake_minimum_required(VERSION 3.24)
 project(Gex)
 
 set(CMAKE_CXX_STANDARD 17)
@@ -37,7 +37,9 @@ add_library(
         Gex/src/Profiler.cpp
         Gex/include/utils.h
         Gex/src/utils.cpp
-        Gex/include/defs.h Gex/include/Scheduling.h Gex/src/Scheduling.cpp)
+        Gex/include/defs.h
+        Gex/include/Scheduling.h
+        Gex/src/Scheduling.cpp)
 
 
 target_include_directories(

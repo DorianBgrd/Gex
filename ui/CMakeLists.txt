@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.25)
+cmake_minimum_required(VERSION 3.24)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -41,7 +41,7 @@ add_library(
         src/ProfileViewer.cpp
         include/GraphView.h
         src/GraphView.cpp
-)
+        include/PropertyEditor.h src/PropertyEditor.cpp)
 
 add_compile_definitions(Gex_ui PRIVATE GEX_UI_API_EXPORT)
 
