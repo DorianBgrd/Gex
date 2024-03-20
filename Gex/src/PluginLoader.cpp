@@ -16,9 +16,11 @@ std::vector<std::string> Gex::PluginLoader::searchPaths;
 std::vector<std::string> Gex::PluginLoader::loadedPlugins;
 
 
-Gex::PluginLoader::PluginLoader(NodeFactory* f)
+Gex::PluginLoader::PluginLoader(NodeFactory* f,
+                                TSys::TypeRegistry* r)
 {
     factory = f;
+    registry = r;
 }
 
 
@@ -121,7 +123,8 @@ bool Gex::PluginLoader::LoadPlugin(std::string name)
 
 Gex::PluginLoader* Gex::PluginLoader::LoadPlugin(std::string name, bool &result)
 {
-    auto* loader = new PluginLoader(NodeFactory::GetFactory());
+    auto* loader = new PluginLoader(NodeFactory::GetFactory(),
+                                    TSys::TypeRegistry::GetRegistry());
 
     auto fileRes = new Feedback();
     std::filesystem::path libPath = SearchFilePath(name, fileRes);

@@ -18,6 +18,7 @@ namespace Gex
         std::string pluginPath;
         std::map<std::string, NodeBuilder*> registeredBuilders;
         NodeFactory* factory;
+        TSys::TypeRegistry* registry;
 
         static std::vector<std::string> loadedPlugins;
 
@@ -28,7 +29,7 @@ namespace Gex
         static void AddSearchPath(std::string path);
 
     public:
-        PluginLoader(NodeFactory* factory);
+        PluginLoader(NodeFactory* factory, TSys::TypeRegistry* registry);
 
         [[nodiscard]]
         bool IsValid() const;
@@ -54,7 +55,7 @@ namespace Gex
         template<class Type, class Handler>
         void RegisterTypeHandler()
         {
-            TSys::TypeRegistry::GetRegistry()->RegisterType<Type, Handler>();
+            registry->RegisterType<Type, Handler>();
         }
 
     public:
