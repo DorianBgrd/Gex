@@ -22,7 +22,6 @@ set(CMAKE_CXX_FLAGS "/EHsc")
 
 add_definitions(
         /DPlugins_EXPORT
-        /DPipelineLibrary2_IMPORTS
 )
 
 
@@ -34,5 +33,6 @@ add_subdirectory(MathPlugin)
 add_subdirectory(MayaPlugin)
 add_subdirectory(PathsPlugin)
 add_subdirectory(StringPlugin)
-#add_subdirectory(UsdPlugin)
+add_subdirectory(UsdPlugin)
 #add_subdirectory(MayaInternalPlugin)
+add_subdirectory(GraphPlugin)

@@ -18,8 +18,9 @@
 
 #include "pxr/base/gf/half.h"
 
-
-#include "include/Gex.h"
+#include "Tsys/include/tsys.h"
+#include "Tsys/include/defaultTypes.h"
+#include "Gex/include/Gex.h"
 
 #include <filesystem>
 
@@ -68,7 +69,7 @@ namespace UsdPlugin
 {
     // Usd default types ----------------
     template<typename PxrType, typename CppType, typename JsonType>
-    struct PxrGfToCppDefault: public PipelineLibrary::TypeHandler
+    struct PxrGfToCppDefault: public TSys::TypeHandler
     {
         void SerializeValue(std::any v, rapidjson::Value& value,
                             rapidjson::Document& document)
@@ -178,7 +179,7 @@ namespace UsdPlugin
     };
 
 
-    struct TfTokenHandler: public PipelineLibrary::TypeHandler
+    struct TfTokenHandler: public TSys::TypeHandler
     {
         std::string ApiName() const override
         {
@@ -263,7 +264,7 @@ namespace UsdPlugin
     // Matrix -----------------------
 
     template<typename Matrix>
-    struct GfMatrixHandler: public PipelineLibrary::TypeHandler
+    struct GfMatrixHandler: public TSys::TypeHandler
     {
         virtual const int Rows() const
         {
@@ -368,7 +369,7 @@ namespace UsdPlugin
     // Quats -----------------------
 
     template<typename Quat, typename Def>
-    struct GfQuatHandler: public PipelineLibrary::TypeHandler
+    struct GfQuatHandler: public TSys::TypeHandler
     {
         void SerializeValue(std::any v, rapidjson::Value& value,
                             rapidjson::Document& document) const override
@@ -517,7 +518,7 @@ namespace UsdPlugin
     }
 
     template<typename Vec, typename Def, template<typename t1, typename t2> class Bld>
-    struct GfVecHandler: public PipelineLibrary::TypeHandler
+    struct GfVecHandler: public TSys::TypeHandler
     {
          virtual const unsigned int Count() const
          {
@@ -684,7 +685,7 @@ namespace UsdPlugin
     // ----------------------------------
 
 
-    struct UsdStageHandler: public PipelineLibrary::TypeHandler
+    struct UsdStageHandler: public TSys::TypeHandler
     {
         std::string ApiName() const override
         {
@@ -787,7 +788,7 @@ namespace UsdPlugin
     };
 
 
-    struct UsdStagePrimHandler: public PipelineLibrary::TypeHandler
+    struct UsdStagePrimHandler: public TSys::TypeHandler
     {
         std::string ApiName() const override
         {
@@ -884,7 +885,7 @@ namespace UsdPlugin
     };
 
 
-    struct UsdStagePrimAttributeHandler: public PipelineLibrary::TypeHandler
+    struct UsdStagePrimAttributeHandler: public TSys::TypeHandler
     {
         std::string ApiName() const override
         {
@@ -981,21 +982,22 @@ namespace UsdPlugin
     };
 
 
-    class OpenUsdStage: public PipelineLibrary::Node
+    class OpenUsdStage: public Gex::Node
     {
     public:
         void InitAttributes() override
         {
-            CreateAttribute<pxr::SdfLayerRefPtr>("OpenLayer", PipelineLibrary::AttrValueType::Single,
-                                            PipelineLibrary::AttrType::Input);
+            CreateAttribute<pxr::SdfLayerRefPtr>("OpenLayer", Gex::AttrValueType::Single,
+                                            Gex::AttrType::Input);
 
-            CreateAttribute<pxr::UsdStageRefPtr>("Stage", PipelineLibrary::AttrValueType::Single,
-                                            PipelineLibrary::AttrType::Output);
+            CreateAttribute<pxr::UsdStageRefPtr>("Stage", Gex::AttrValueType::Single,
+                                            Gex::AttrType::Output);
         }
 
 
-        bool Evaluate(PipelineLibrary::NodeAttributeData &context,
-                      PipelineLibrary::GraphContext& graphContext)
+        bool Evaluate(Gex::NodeAttributeData &context,
+                      Gex::GraphContext& graphContext,
+                      Gex::NodeProfiler& profiler)
                       override
         {
             auto root  = context.GetAttribute("OpenLayer").GetValue<pxr::SdfLayerRefPtr>();
@@ -1014,21 +1016,22 @@ namespace UsdPlugin
     GENERATE_DEFAULT_BUILDER(OpenUsdStageBuilder, OpenUsdStage)
 
 
-    class GetUsdStageRootLayer: public PipelineLibrary::Node
+    class GetUsdStageRootLayer: public Gex::Node
     {
     public:
         void InitAttributes() override
         {
-            CreateAttribute<pxr::UsdStageRefPtr>("Stage", PipelineLibrary::AttrValueType::Single,
-                                                 PipelineLibrary::AttrType::Static);
+            CreateAttribute<pxr::UsdStageRefPtr>("Stage", Gex::AttrValueType::Single,
+                                                 Gex::AttrType::Static);
 
-            CreateAttribute<pxr::SdfLayerRefPtr>("RootLayer", PipelineLibrary::AttrValueType::Single,
-                                                 PipelineLibrary::AttrType::Output);
+            CreateAttribute<pxr::SdfLayerRefPtr>("RootLayer", Gex::AttrValueType::Single,
+                                                 Gex::AttrType::Output);
         }
 
 
-        bool Evaluate(PipelineLibrary::NodeAttributeData &context,
-                      PipelineLibrary::GraphContext& graphContext)
+        bool Evaluate(Gex::NodeAttributeData &context,
+                      Gex::GraphContext& graphContext,
+                      Gex::NodeProfiler& profiler)
         override
         {
             auto stage  = context.GetAttribute("Stage").GetValue<pxr::UsdStageRefPtr>();
@@ -1044,21 +1047,22 @@ namespace UsdPlugin
     GENERATE_DEFAULT_BUILDER(GetUsdStageRootLayerBuilder, GetUsdStageRootLayer)
 
 
-    class GetUsdStagePrim: public PipelineLibrary::Node
+    class GetUsdStagePrim: public Gex::Node
     {
     public:
         void InitAttributes() override
         {
-            CreateAttribute<pxr::UsdStageRefPtr>("Stage", PipelineLibrary::AttrValueType::Single,
-                                                 PipelineLibrary::AttrType::Static);
+            CreateAttribute<pxr::UsdStageRefPtr>("Stage", Gex::AttrValueType::Single,
+                                                 Gex::AttrType::Static);
 
-            CreateAttribute<pxr::UsdPrim>("PrimPath", PipelineLibrary::AttrValueType::Single,
-                                                 PipelineLibrary::AttrType::Output);
+            CreateAttribute<pxr::UsdPrim>("PrimPath", Gex::AttrValueType::Single,
+                                                 Gex::AttrType::Output);
         }
 
 
-        bool Evaluate(PipelineLibrary::NodeAttributeData &context,
-                      PipelineLibrary::GraphContext& graphContext)
+        bool Evaluate(Gex::NodeAttributeData &context,
+                      Gex::GraphContext& graphContext,
+                      Gex::NodeProfiler& profiler)
         override
         {
             auto stage  = context.GetAttribute("Stage").GetValue<pxr::UsdStageRefPtr>();
@@ -1075,21 +1079,22 @@ namespace UsdPlugin
     GENERATE_DEFAULT_BUILDER(GetUsdStagePrimBuilder, GetUsdStagePrim)
 
 
-    class GetUsdPrimStage: public PipelineLibrary::Node
+    class GetUsdPrimStage: public Gex::Node
     {
     public:
         void InitAttributes() override
         {
-            CreateAttribute<pxr::UsdPrim>("Prim", PipelineLibrary::AttrValueType::Single,
-                                          PipelineLibrary::AttrType::Static);
+            CreateAttribute<pxr::UsdPrim>("Prim", Gex::AttrValueType::Single,
+                                          Gex::AttrType::Static);
 
-            CreateAttribute<pxr::UsdStageRefPtr>("Stage", PipelineLibrary::AttrValueType::Single,
-                                                 PipelineLibrary::AttrType::Output);
+            CreateAttribute<pxr::UsdStageRefPtr>("Stage", Gex::AttrValueType::Single,
+                                                 Gex::AttrType::Output);
         }
 
 
-        bool Evaluate(PipelineLibrary::NodeAttributeData &context,
-                      PipelineLibrary::GraphContext& graphContext)
+        bool Evaluate(Gex::NodeAttributeData &context,
+                      Gex::GraphContext& graphContext,
+                      Gex::NodeProfiler& profiler)
         override
         {
             auto prim  = context.GetAttribute("Prim").GetValue<pxr::UsdPrim>();
@@ -1106,24 +1111,25 @@ namespace UsdPlugin
     GENERATE_DEFAULT_BUILDER(GetUsdPrimStageBuilder, GetUsdPrimStage)
 
 
-    class GetUsdStagePrimAttribute: public PipelineLibrary::Node
+    class GetUsdStagePrimAttribute: public Gex::Node
     {
     public:
         void InitAttributes() override
         {
-            CreateAttribute<pxr::UsdPrim>("Prim", PipelineLibrary::AttrValueType::Single,
-                                          PipelineLibrary::AttrType::Input);
+            CreateAttribute<pxr::UsdPrim>("Prim", Gex::AttrValueType::Single,
+                                          Gex::AttrType::Input);
 
-            CreateAttribute<std::string>("AttributeName", PipelineLibrary::AttrValueType::Single,
-                                         PipelineLibrary::AttrType::Input);
+            CreateAttribute<std::string>("AttributeName", Gex::AttrValueType::Single,
+                                         Gex::AttrType::Input);
 
-            CreateAttribute<pxr::UsdAttribute>("Attribute", PipelineLibrary::AttrValueType::Single,
-                                              PipelineLibrary::AttrType::Output);
+            CreateAttribute<pxr::UsdAttribute>("Attribute", Gex::AttrValueType::Single,
+                                              Gex::AttrType::Output);
         }
 
 
-        bool Evaluate(PipelineLibrary::NodeAttributeData &context,
-                      PipelineLibrary::GraphContext& graphContext)
+        bool Evaluate(Gex::NodeAttributeData &context,
+                      Gex::GraphContext& graphContext,
+                      Gex::NodeProfiler& profiler)
         override
         {
             auto prim  = context.GetAttribute("Prim").GetValue<pxr::UsdPrim>();
@@ -1145,7 +1151,7 @@ namespace UsdPlugin
     GENERATE_DEFAULT_BUILDER(GetUsdStagePrimAttributeBuilder, GetUsdStagePrimAttribute)
 
 
-    struct SdfLayerHandler: public PipelineLibrary::TypeHandler
+    struct SdfLayerHandler: public TSys::TypeHandler
     {
         std::string ApiName() const override
         {
@@ -1224,12 +1230,12 @@ namespace UsdPlugin
 
         size_t Hash() const override
         {
-            return typeid(pxr::SdfLayer).hash_code();
+            return typeid(pxr::SdfLayerRefPtr).hash_code();
         }
 
         std::string Name() const override
         {
-            return typeid(pxr::SdfLayer).name();
+            return typeid(pxr::SdfLayerRefPtr).name();
         }
 
         std::string PythonName() const override
@@ -1253,7 +1259,7 @@ namespace UsdPlugin
     };
 
 
-    struct SdfPathToStr: public PipelineLibrary::TypeConverter
+    struct SdfPathToStr: public TSys::TypeConverter
     {
         [[nodiscard]]
         std::any Convert(std::any from, std::any to) const override
@@ -1263,7 +1269,7 @@ namespace UsdPlugin
     };
 
 
-    struct StrToSdfPath: public PipelineLibrary::TypeConverter
+    struct StrToSdfPath: public TSys::TypeConverter
     {
         [[nodiscard]]
         std::any Convert(std::any from, std::any to) const override
@@ -1273,7 +1279,7 @@ namespace UsdPlugin
     };
 
 
-    struct SdfPathHandler: public PipelineLibrary::TypeHandler
+    struct SdfPathHandler: public TSys::TypeHandler
     {
         std::string ApiName() const override
         {
@@ -1371,23 +1377,24 @@ namespace UsdPlugin
     };
 
 
-    class CreateSdfLayer: public PipelineLibrary::Node
+    class CreateSdfLayer: public Gex::Node
     {
     public:
         void InitAttributes() override
         {
-            CreateAttribute<std::string>("Identifier", PipelineLibrary::AttrValueType::Single,
-                                         PipelineLibrary::AttrType::Input);
+            CreateAttribute<std::string>("Identifier", Gex::AttrValueType::Single,
+                                         Gex::AttrType::Input);
 
-            CreateAttribute<pxr::SdfLayerRefPtr>("Layer", PipelineLibrary::AttrValueType::Single,
-                                            PipelineLibrary::AttrType::Output);
-            CreateAttribute<std::string>("RootPath", PipelineLibrary::AttrValueType::Single,
-                                          PipelineLibrary::AttrType::Output);
+            CreateAttribute<pxr::SdfLayerRefPtr>("Layer", Gex::AttrValueType::Single,
+                                            Gex::AttrType::Output);
+            CreateAttribute<std::string>("RootPath", Gex::AttrValueType::Single,
+                                          Gex::AttrType::Output);
         }
 
 
-        bool Evaluate(PipelineLibrary::NodeAttributeData &context,
-                      PipelineLibrary::GraphContext& graphContext)
+        bool Evaluate(Gex::NodeAttributeData &context,
+                      Gex::GraphContext& graphContext,
+                      Gex::NodeProfiler& profiler)
                       override
         {
             auto identifier  = context.GetAttribute("Identifier").GetValue<std::string>();
@@ -1410,21 +1417,22 @@ namespace UsdPlugin
     GENERATE_DEFAULT_BUILDER(CreateSdfLayerBuilder, CreateSdfLayer)
 
 
-    class OpenSdfLayer: public PipelineLibrary::Node
+    class OpenSdfLayer: public Gex::Node
     {
     public:
         void InitAttributes() override
         {
-            CreateAttribute<std::string>("Filepath", PipelineLibrary::AttrValueType::Single,
-                                         PipelineLibrary::AttrType::Input);
+            CreateAttribute<std::string>("Filepath", Gex::AttrValueType::Single,
+                                         Gex::AttrType::Input);
 
-            CreateAttribute<pxr::SdfLayerRefPtr>("Layer", PipelineLibrary::AttrValueType::Single,
-                                                 PipelineLibrary::AttrType::Output);
+            CreateAttribute<pxr::SdfLayerRefPtr>("Layer", Gex::AttrValueType::Single,
+                                                 Gex::AttrType::Output);
         }
 
 
-        bool Evaluate(PipelineLibrary::NodeAttributeData &context,
-                      PipelineLibrary::GraphContext& graphContext)
+        bool Evaluate(Gex::NodeAttributeData &context,
+                      Gex::GraphContext& graphContext,
+                      Gex::NodeProfiler& profiler)
         override
         {
             auto fp  = context.GetAttribute("Filepath").GetValue<std::string>();
@@ -1440,20 +1448,20 @@ namespace UsdPlugin
     GENERATE_DEFAULT_BUILDER(OpenSdfLayerBuilder, OpenSdfLayer)
 
 
-    class DefinePrim: public PipelineLibrary::Node
+    class DefinePrim: public Gex::Node
     {
     public:
         void InitAttributes() override
         {
-            CreateAttribute<std::string>("Parent", PipelineLibrary::AttrValueType::Single,
-                                         PipelineLibrary::AttrType::Input);
-            CreateAttribute<std::string>("Name", PipelineLibrary::AttrValueType::Single,
-                                         PipelineLibrary::AttrType::Input);
-            CreateAttribute<pxr::UsdStageRefPtr>("Stage", PipelineLibrary::AttrValueType::Single,
-                                             PipelineLibrary::AttrType::Static);
+            CreateAttribute<std::string>("Parent", Gex::AttrValueType::Single,
+                                         Gex::AttrType::Input);
+            CreateAttribute<std::string>("Name", Gex::AttrValueType::Single,
+                                         Gex::AttrType::Input);
+            CreateAttribute<pxr::UsdStageRefPtr>("Stage", Gex::AttrValueType::Single,
+                                             Gex::AttrType::Static);
 
-            CreateAttribute<pxr::UsdPrim>("OutPrim", PipelineLibrary::AttrValueType::Single,
-                                         PipelineLibrary::AttrType::Output);
+            CreateAttribute<pxr::UsdPrim>("OutPrim", Gex::AttrValueType::Single,
+                                         Gex::AttrType::Output);
         }
 
 
@@ -1463,8 +1471,9 @@ namespace UsdPlugin
         }
 
 
-        bool Evaluate(PipelineLibrary::NodeAttributeData &context,
-                      PipelineLibrary::GraphContext& graphContext)
+        bool Evaluate(Gex::NodeAttributeData &context,
+                      Gex::GraphContext& graphContext,
+                      Gex::NodeProfiler& profiler)
         override
         {
             auto parent  = context.GetAttribute("Parent").GetValue<std::string>();
@@ -1525,19 +1534,20 @@ namespace UsdPlugin
     GENERATE_DEFAULT_BUILDER(DefineCubeBuilder, DefineCube)
 
 
-    class GetPrimPath: public PipelineLibrary::Node
+    class GetPrimPath: public Gex::Node
     {
     public:
         void InitAttributes() override
         {
-            CreateAttribute<pxr::UsdPrim>("Prim", PipelineLibrary::AttrValueType::Single,
-                                         PipelineLibrary::AttrType::Static);
-            CreateAttribute<std::string>("Path", PipelineLibrary::AttrValueType::Single,
-                                         PipelineLibrary::AttrType::Output);
+            CreateAttribute<pxr::UsdPrim>("Prim", Gex::AttrValueType::Single,
+                                         Gex::AttrType::Static);
+            CreateAttribute<std::string>("Path", Gex::AttrValueType::Single,
+                                         Gex::AttrType::Output);
         }
 
-        bool Evaluate(PipelineLibrary::NodeAttributeData &context,
-                      PipelineLibrary::GraphContext& graphContext)
+        bool Evaluate(Gex::NodeAttributeData &context,
+                      Gex::GraphContext& graphContext,
+                      Gex::NodeProfiler& profiler)
         override
         {
             auto prim  = context.GetAttribute("Prim").GetValue<pxr::UsdPrim>();
@@ -1551,25 +1561,26 @@ namespace UsdPlugin
     GENERATE_DEFAULT_BUILDER(GetPrimPathBuilder, GetPrimPath)
 
 
-    class OverridePrim: public PipelineLibrary::Node
+    class OverridePrim: public Gex::Node
     {
     public:
         void InitAttributes() override
         {
-            CreateAttribute<std::string>("Parent", PipelineLibrary::AttrValueType::Single,
-                                         PipelineLibrary::AttrType::Input);
-            CreateAttribute<std::string>("Name", PipelineLibrary::AttrValueType::Single,
-                                         PipelineLibrary::AttrType::Input);
-            CreateAttribute<pxr::UsdStageRefPtr>("Stage", PipelineLibrary::AttrValueType::Single,
-                                                 PipelineLibrary::AttrType::Static);
+            CreateAttribute<std::string>("Parent", Gex::AttrValueType::Single,
+                                         Gex::AttrType::Input);
+            CreateAttribute<std::string>("Name", Gex::AttrValueType::Single,
+                                         Gex::AttrType::Input);
+            CreateAttribute<pxr::UsdStageRefPtr>("Stage", Gex::AttrValueType::Single,
+                                                 Gex::AttrType::Static);
 *
-            CreateAttribute<pxr::UsdPrim>("Prim", PipelineLibrary::AttrValueType::Single,
-                                          PipelineLibrary::AttrType::Output);
+            CreateAttribute<pxr::UsdPrim>("Prim", Gex::AttrValueType::Single,
+                                          Gex::AttrType::Output);
         }
 
 
-        bool Evaluate(PipelineLibrary::NodeAttributeData &context,
-                      PipelineLibrary::GraphContext& graphContext)
+        bool Evaluate(Gex::NodeAttributeData &context,
+                      Gex::GraphContext& graphContext,
+                      Gex::NodeProfiler& profiler)
         override
         {
             auto path  = context.GetAttribute("Parent").GetValue<std::string>();
@@ -1596,19 +1607,20 @@ namespace UsdPlugin
     GENERATE_DEFAULT_BUILDER(OverridePrimBuilder, OverridePrim)
 
 
-    class AddReference: public PipelineLibrary::Node
+    class AddReference: public Gex::Node
     {
     public:
         void InitAttributes() override
         {
-            CreateAttribute<std::string>("ReferencePath", PipelineLibrary::AttrValueType::Single,
-                                         PipelineLibrary::AttrType::Input);
-            CreateAttribute<pxr::UsdPrim>("OverridePrim", PipelineLibrary::AttrValueType::Single,
-                                          PipelineLibrary::AttrType::Static);
+            CreateAttribute<std::string>("ReferencePath", Gex::AttrValueType::Single,
+                                         Gex::AttrType::Input);
+            CreateAttribute<pxr::UsdPrim>("OverridePrim", Gex::AttrValueType::Single,
+                                          Gex::AttrType::Static);
         }
 
-        bool Evaluate(PipelineLibrary::NodeAttributeData &context,
-                      PipelineLibrary::GraphContext& graphContext)
+        bool Evaluate(Gex::NodeAttributeData &context,
+                      Gex::GraphContext& graphContext,
+                      Gex::NodeProfiler& profiler)
                       override
         {
             auto prim = context.GetAttribute("OverridePrim").GetValue<pxr::UsdPrim>();
@@ -1624,23 +1636,24 @@ namespace UsdPlugin
     GENERATE_DEFAULT_BUILDER(AddReferenceBuilder, AddReference)
 
 
-    class CreateVariantSet: public PipelineLibrary::Node
+    class CreateVariantSet: public Gex::Node
     {
     public:
         void InitAttributes() override
         {
-            CreateAttribute<pxr::UsdPrim>("Prim", PipelineLibrary::AttrValueType::Single,
-                                         PipelineLibrary::AttrType::Static);
+            CreateAttribute<pxr::UsdPrim>("Prim", Gex::AttrValueType::Single,
+                                         Gex::AttrType::Static);
 
-            CreateAttribute<std::string>("VariantSet", PipelineLibrary::AttrValueType::Single,
-                                         PipelineLibrary::AttrType::Static);
+            CreateAttribute<std::string>("VariantSet", Gex::AttrValueType::Single,
+                                         Gex::AttrType::Static);
 
-            CreateAttribute<std::string>("Variants", PipelineLibrary::AttrValueType::Multi,
-                                         PipelineLibrary::AttrType::Static);
+            CreateAttribute<std::string>("Variants", Gex::AttrValueType::Multi,
+                                         Gex::AttrType::Static);
         }
 
-        bool Evaluate(PipelineLibrary::NodeAttributeData &context,
-                      PipelineLibrary::GraphContext& graphContext)
+        bool Evaluate(Gex::NodeAttributeData &context,
+                      Gex::GraphContext& graphContext,
+                      Gex::NodeProfiler& profiler)
                       override
         {
             auto primpath = context.GetAttribute("PrimPath").GetValue<std::string>();
@@ -1663,23 +1676,24 @@ namespace UsdPlugin
     GENERATE_DEFAULT_BUILDER(CreateVariantSetBuilder, CreateVariantSet)
 
 
-    class EditVariantSet: public PipelineLibrary::CompoundNode
+    class EditVariantSet: public Gex::CompoundNode
     {
     public:
         void InitAttributes() override
         {
-            CreateInternalAttribute<pxr::UsdPrim>("Prim", PipelineLibrary::AttrValueType::Single,
-                                                PipelineLibrary::AttrType::Static);
+            CreateInternalAttribute<pxr::UsdPrim>("Prim", Gex::AttrValueType::Single,
+                                                Gex::AttrType::Static);
 
-            CreateInternalAttribute<std::string>("VariantSet", PipelineLibrary::AttrValueType::Single,
-                                            PipelineLibrary::AttrType::Input);
+            CreateInternalAttribute<std::string>("VariantSet", Gex::AttrValueType::Single,
+                                            Gex::AttrType::Input);
 
-            CreateInternalAttribute<std::string>("Variant", PipelineLibrary::AttrValueType::Single,
-                                            PipelineLibrary::AttrType::Input);
+            CreateInternalAttribute<std::string>("Variant", Gex::AttrValueType::Single,
+                                            Gex::AttrType::Input);
         }
 
-        bool Evaluate(PipelineLibrary::NodeAttributeData &ctx,
-                      PipelineLibrary::GraphContext &graphContext)
+        bool Evaluate(Gex::NodeAttributeData &ctx,
+                      Gex::GraphContext &graphContext,
+                      Gex::NodeProfiler& profiler)
                       override
         {
             auto variantSetName = ctx.GetAttribute("VariantSet").GetValue<std::string>();
@@ -1698,7 +1712,7 @@ namespace UsdPlugin
                     {
                         pxr::UsdEditContext editContext(variantSet.GetVariantEditContext());
 
-                        result = PipelineLibrary::CompoundNode::Evaluate(ctx, graphContext);
+                        result = Gex::CompoundNode::Evaluate(ctx, graphContext, profiler);
                     }
                 }
             }
@@ -1711,21 +1725,22 @@ namespace UsdPlugin
     GENERATE_DEFAULT_BUILDER(EditVariantSetBuilder, EditVariantSet)
 
 
-    class SaveStage: public PipelineLibrary::Node
+    class SaveStage: public Gex::Node
     {
     public:
         void InitAttributes() override
         {
-            CreateAttribute<std::string>("Filepath", PipelineLibrary::AttrValueType::Single,
-                                         PipelineLibrary::AttrType::Static);
+            CreateAttribute<std::string>("Filepath", Gex::AttrValueType::Single,
+                                         Gex::AttrType::Static);
 
-            CreateAttribute<pxr::UsdStageRefPtr>("Stage", PipelineLibrary::AttrValueType::Single,
-                                            PipelineLibrary::AttrType::Input);
+            CreateAttribute<pxr::UsdStageRefPtr>("Stage", Gex::AttrValueType::Single,
+                                            Gex::AttrType::Input);
         }
 
 
-        bool Evaluate(PipelineLibrary::NodeAttributeData &context,
-                      PipelineLibrary::GraphContext& graphContext)
+        bool Evaluate(Gex::NodeAttributeData &context,
+                      Gex::GraphContext& graphContext,
+                      Gex::NodeProfiler& profiler)
         override
         {
             auto filepath  = context.GetAttribute("Filepath").GetValue<std::string>();
@@ -1745,12 +1760,12 @@ namespace UsdPlugin
     GENERATE_DEFAULT_BUILDER(SaveStageBuilder, SaveStage)
 
     template<typename UsdType>
-    class DefaultConstantNode: public PipelineLibrary::Node
+    class DefaultConstantNode: public Gex::Node
     {
         void InitAttributes() override
         {
-            CreateAttribute<UsdType>("Value", PipelineLibrary::AttrValueType::Single,
-                                     PipelineLibrary::AttrType::Static);
+            CreateAttribute<UsdType>("Value", Gex::AttrValueType::Single,
+                                     Gex::AttrType::Static);
         }
     };
 
@@ -1898,32 +1913,33 @@ namespace UsdPlugin
     };
 
 
-    class UsdStagePrimCreateAttribute: public PipelineLibrary::Node
+    class UsdStagePrimCreateAttribute: public Gex::Node
     {
     public:
         void InitAttributes() override
         {
-            PipelineLibrary::Enum values;
+            TSys::Enum values;
             for (auto pair: _valueMap) {
                 values.AddValue(pair.first, pair.second.typeName);
             }
-            auto vals = std::make_any<PipelineLibrary::Enum>(values);
+            auto vals = std::make_any<TSys::Enum>(values);
 
-            CreateAttribute<pxr::UsdPrim>("Prim", PipelineLibrary::AttrValueType::Single,
-                                         PipelineLibrary::AttrType::Static);
-            CreateAttribute<std::string>("AttributeName", PipelineLibrary::AttrValueType::Single,
-                                         PipelineLibrary::AttrType::Static);
-            CreateAttributeFromValue("AttributeType", vals, PipelineLibrary::AttrValueType::Single,
-                                     PipelineLibrary::AttrType::Input);
+            CreateAttribute<pxr::UsdPrim>("Prim", Gex::AttrValueType::Single,
+                                         Gex::AttrType::Static);
+            CreateAttribute<std::string>("AttributeName", Gex::AttrValueType::Single,
+                                         Gex::AttrType::Static);
+            CreateAttributeFromValue("AttributeType", vals, Gex::AttrValueType::Single,
+                                     Gex::AttrType::Input);
 
-            CreateAttribute<pxr::UsdAttribute>("Attribute", PipelineLibrary::AttrValueType::Single,
-                                              PipelineLibrary::AttrType::Output);
+            CreateAttribute<pxr::UsdAttribute>("Attribute", Gex::AttrValueType::Single,
+                                              Gex::AttrType::Output);
 
         }
 
 
-        bool Evaluate(PipelineLibrary::NodeAttributeData &context,
-                      PipelineLibrary::GraphContext& graphContext)
+        bool Evaluate(Gex::NodeAttributeData &context,
+                      Gex::GraphContext& graphContext,
+                      Gex::NodeProfiler& profiler)
                       override
         {
             auto prim = context.GetAttribute("Prim").GetValue<pxr::UsdPrim>();
@@ -1931,7 +1947,7 @@ namespace UsdPlugin
                 return false;
 
             std::string name = context.GetAttribute("AttributeName").GetValue<std::string>();
-            int index = context.GetAttribute("AttributeType").GetValue<PipelineLibrary::Enum>().CurrentIndex();
+            int index = context.GetAttribute("AttributeType").GetValue<TSys::Enum>().CurrentIndex();
 
             auto vtn  = _valueMap.at(index);
 
@@ -1948,22 +1964,23 @@ namespace UsdPlugin
     GENERATE_DEFAULT_BUILDER(UsdStagePrimCreateAttributeBuilder, UsdStagePrimCreateAttribute)
 
 
-    class UsdStagePrimSetAttribute: public PipelineLibrary::Node
+    class UsdStagePrimSetAttribute: public Gex::Node
     {
         void InitAttributes()
         {
-            CreateAttribute<pxr::UsdAttribute>("Attribute", PipelineLibrary::AttrValueType::Single,
-                                                 PipelineLibrary::AttrType::Static);
-            CreateAttribute<PipelineLibrary::AnyValue>("Value", PipelineLibrary::AttrValueType::Single,
-                                                       PipelineLibrary::AttrType::Input);
+            CreateAttribute<pxr::UsdAttribute>("Attribute", Gex::AttrValueType::Single,
+                                                 Gex::AttrType::Static);
+            CreateAttribute<TSys::AnyValue>("Value", Gex::AttrValueType::Single,
+                                                       Gex::AttrType::Input);
         }
 
 
-        bool Evaluate(PipelineLibrary::NodeAttributeData &context,
-                      PipelineLibrary::GraphContext& graphContext)
+        bool Evaluate(Gex::NodeAttributeData &context,
+                      Gex::GraphContext& graphContext,
+                      Gex::NodeProfiler& profiler)
                       override
         {
-            auto value = context.GetAttribute("Value").GetValue<PipelineLibrary::AnyValue>();
+            auto value = context.GetAttribute("Value").GetValue<TSys::AnyValue>();
             std::any inputValue = value.InputValue();
 
             bool result = false;
@@ -1971,7 +1988,7 @@ namespace UsdPlugin
             if (attribute)
             {
                 auto hash = inputValue.type().hash_code();
-                auto typeHandle = PipelineLibrary::Context::GetAttributeConfig()->GetTypeHandle(hash);
+                auto typeHandle = TSys::TypeRegistry::GetRegistry()->GetTypeHandle(hash);
                 if (typeHandle)
                 {
                     for (auto pair : _valueMap)
@@ -1994,50 +2011,46 @@ namespace UsdPlugin
 
     GENERATE_DEFAULT_BUILDER(UsdStagePrimSetAttributeBuilder, UsdStagePrimSetAttribute)
 
-
-    class UsdViewOpen: public PipelineLibrary::OpenCommand
-    {
-        using PipelineLibrary::OpenCommand::OpenCommand;
-    public:
-        int OpenFilepath(const std::string& filepath) const override
-        {
-            std::string command = "usdview";
-
-            char* env = std::getenv("USD_VIEW");
-            if (env)
-                command = env;
-
-            return std::system((command + " " + filepath).c_str());
-        }
-    };
-
-
-    class UsdViewOpenBuilder: public PipelineLibrary::CommandBuilder
-    {
-        PipelineLibrary::OpenCommand* GenerateCommand(const std::string& identifier,
-                                                      const std::string& filename)
-                                                      const override
-        {
-            return new UsdViewOpen(identifier, filename);
-        }
-    };
+//
+//    class UsdViewOpen: public Gex::OpenCommand
+//    {
+//        using Gex::OpenCommand::OpenCommand;
+//    public:
+//        int OpenFilepath(const std::string& filepath) const override
+//        {
+//            std::string command = "usdview";
+//
+//            char* env = std::getenv("USD_VIEW");
+//            if (env)
+//                command = env;
+//
+//            return std::system((command + " " + filepath).c_str());
+//        }
+//    };
+//
+//
+//    class UsdViewOpenBuilder: public Gex::CommandBuilder
+//    {
+//        Gex::OpenCommand* GenerateCommand(const std::string& identifier,
+//                                                      const std::string& filename)
+//                                                      const override
+//        {
+//            return new UsdViewOpen(identifier, filename);
+//        }
+//    };
 }
 
 
-REGISTER_PLUGIN(PipelineLibrary::PluginLoader* loader)
+REGISTER_PLUGIN(Gex::PluginLoader* loader)
 {
-    loader->InitializeContext();
-
-
-
     loader->RegisterTypeHandler<pxr::UsdStageRefPtr, UsdPlugin::UsdStageHandler>();
 
     loader->RegisterTypeHandler<pxr::SdfPath, UsdPlugin::SdfPathHandler>();
 
-    loader->GetContext()->GetAttributeConfig()->GetTypeHandleFromApiName("String")
+    TSys::TypeRegistry::GetRegistry()->GetTypeHandleFromApiName("String")
             ->RegisterConverter<pxr::SdfPath, UsdPlugin::SdfPathToStr>();
 
-    loader->GetContext()->GetAttributeConfig()->GetTypeHandleFromApiName("SdfPath")
+    TSys::TypeRegistry::GetRegistry()->GetTypeHandleFromApiName("SdfPath")
             ->RegisterConverter<std::string, UsdPlugin::StrToSdfPath>();
 
     loader->RegisterTypeHandler<pxr::SdfLayerRefPtr, UsdPlugin::SdfLayerHandler>();
@@ -2171,8 +2184,5 @@ REGISTER_PLUGIN(PipelineLibrary::PluginLoader* loader)
 
     loader->RegisterNode<UsdPlugin::GfVec4hConstantBuilder>("Usd/Constants/Half4");
 
-
-
-
-    loader->RegisterSoftwareOpenCommand("usdview", new UsdPlugin::UsdViewOpenBuilder());
+//    loader->RegisterSoftwareOpenCommand("usdview", new UsdPlugin::UsdViewOpenBuilder());
 }

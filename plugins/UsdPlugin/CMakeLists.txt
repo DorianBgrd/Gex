@@ -6,7 +6,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 project(UsdPlugin CXX)
 
 # remove default flags provided with CMake for MSVC
-set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
+#set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
 
 set(CMAKE_CXX_FLAGS "/EHsc")
 
@@ -18,22 +18,19 @@ add_definitions("/DQT_NO_KEYWORDS")
 
 add_definitions(
         /DPlugins_EXPORT
-        /DPipelineLibrary2_IMPORTS
-        /Zc:__cplusplus
-        /permissive-
 )
 
 
-find_package(pxr REQUIRED HINTS ${PXR_ROOT_DIR})
+find_package(pxr REQUIRED HINTS $ENV{PXR_ROOT_DIR})
 
 
 # Find Qt package -------------------------------------------------------------
-find_package(Qt6 COMPONENTS Widgets Core Gui Svg SvgWidgets REQUIRED)
-qt_standard_project_setup()
+#find_package(Qt6 COMPONENTS Widgets Core Gui Svg SvgWidgets REQUIRED)
+#qt_standard_project_setup()
 
-set(CMAKE_AUTOUIC ON)
-set(CMAKE_AUTOMOC ON)
-set(CMAKE_AUTORCC ON)
+#set(CMAKE_AUTOUIC ON)
+#set(CMAKE_AUTOMOC ON)
+#set(CMAKE_AUTORCC ON)
 # -----------------------------------------------------------------------------
 
 add_library(
@@ -41,7 +38,7 @@ add_library(
         SHARED
 
         UsdPlugin.cpp
-        Ui/UsdUiPlugin.cpp
+#        Ui/UsdUiPlugin.cpp
 )
 
 
@@ -61,6 +58,10 @@ target_include_directories(
         ${Qt6Gui_INCLUDE_DIRS}
         ${Qt6Svg_INCLUDE_DIRS}
         ${Qt6SvgWidgets_INCLUDE_DIRS}
+
+        $ENV{TSYS_DIR}
+        $ENV{RAPIDJSON_DIR}
+        $ENV{SAFEPTRS_DIR}
 )
 
 
@@ -73,13 +74,15 @@ target_link_directories(
         ${Python_LIBRARY_DIRS}
         ${PXR_LIBRARY_DIRS}
         ${PXR_LIB_DIRS}
-        ${CMAKE_BINARY_DIR}/PipelineSoftware2/TypeEngine
+        ${PXR_INCLUDE_DIRS}/../lib
 
-        Qt6::Widgets
-        Qt6::Core
-        Qt6::Gui
-        Qt6::Svg
-        Qt6::SvgWidgets
+        ${TSYS_LIBRARY_DIR}
+
+#        Qt6::Widgets
+#        Qt6::Core
+#        Qt6::Gui
+#        Qt6::Svg
+#        Qt6::SvgWidgets
 )
 
 
@@ -87,17 +90,17 @@ target_link_libraries(
         UsdPlugin
         PUBLIC
         ${Boost_LIBRARIES}
-        PipelineLibrary2
         Python::Python
         Python::Module
         ${PXR_LIBRARIES}
         ${Python_LIBRARIES}
 
-        Qt6::Widgets
-        Qt6::Core
-        Qt6::Gui
-        Qt6::Svg
-        Qt6::SvgWidgets
+        TSys
+        Gex
 
-        TypeEngine
+#        Qt6::Widgets
+#        Qt6::Core
+#        Qt6::Gui
+#        Qt6::Svg
+#        Qt6::SvgWidgets
 )
