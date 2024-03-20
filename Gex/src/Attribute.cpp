@@ -21,7 +21,6 @@ Gex::Attribute::Attribute()
 	parentAttribute = nullptr;
 	attributeNode = nullptr;
 	attributeAnyValue = std::make_any<int>(0);
-	attributeIsMulti = false;
 	attributeIsUserDefined = false;
 }
 
@@ -52,24 +51,12 @@ Gex::Attribute::Attribute(std::string name, std::any v, AttrValueType valueType,
     attributeAnyValue = v;
     parentAttribute = parent;
 
-    bool isMulti = false;
-    bool isHolder = false;
-    ValueTypeToArguments(valueType, isMulti, isHolder);
-
-    attributeIsMulti = isMulti;
-    attributeIsHolder = isHolder;
     attributeIsUserDefined = userDefined;
     attributeValueType = valueType;
     attributeType = type;
     defaultValue = v;
 
 //    InitDefaultValue();
-}
-
-
-std::any Gex::Attribute::InitNoneValue()
-{
-    return std::make_any<TSys::None>(TSys::None());
 }
 
 
@@ -92,15 +79,9 @@ Gex::Attribute::Attribute(const std::string& name, AttrType type, bool multi,
         attributeLongname = name;
     else
         attributeLongname = parent->Longname() + Config::GetConfig().attributeSeparator + name;
-    attributeAnyValue = InitNoneValue();
+    attributeAnyValue = std::make_any<TSys::None>(TSys::None());
     parentAttribute = parent;
 
-    bool isInput = false;
-    bool isOutput = false;
-    TypeToArguments(type, isInput, isOutput);
-
-    attributeIsMulti = multi;
-    attributeIsHolder = true;
     attributeIsUserDefined = userDefined;
     if (multi)
         attributeValueType = AttrValueType::MultiHolder;
@@ -300,13 +281,15 @@ bool Gex::Attribute::IsStatic() const
 
 bool Gex::Attribute::IsMulti() const
 {
-	return attributeIsMulti;
+	return(attributeValueType == AttrValueType::Multi ||
+           attributeValueType == AttrValueType::MultiHolder);
 }
 
 
 bool Gex::Attribute::IsHolder() const
 {
-	return attributeIsHolder;
+    return(attributeValueType == AttrValueType::Holder ||
+           attributeValueType == AttrValueType::MultiHolder);
 }
 
 

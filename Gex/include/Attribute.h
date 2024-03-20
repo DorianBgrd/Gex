@@ -45,23 +45,17 @@ namespace Gex
 
 	class Node;
 	class CompoundNode;
-	class NodeEvaluationContext;
     class NodeAttributeData;
-	class PythonAttribute;
 
 	class GEX_API Attribute: USING_SAFE_PTR(Attribute)
 	{
 		friend Node;
 		friend CompoundNode;
-		friend NodeEvaluationContext;
 		friend NodeAttributeData;
-		friend PythonAttribute;
 
 	protected:
 		std::string attributeName;
 		std::string attributeLongname;
-		bool attributeIsMulti;
-		bool attributeIsHolder;
 		bool attributeIsUserDefined;
         bool isInternal;
 		AttrValueType attributeValueType;
@@ -78,46 +72,6 @@ namespace Gex
 
         SafePtr<Attribute> source;
         std::vector<SafePtr<Attribute>> dests;
-
-	private:
-		void TypeToArguments(AttrType type, bool& isInput, bool& isOutput)
-		{
-			isInput = false;
-			isOutput = false;
-
-			if (type == AttrType::Input)
-            {
-                isInput = true;
-            }
-			else if(type == AttrType::Output)
-            {
-                isOutput = true;
-            }
-			else if(type == AttrType::Static)
-            {
-				isInput = true;
-				isOutput = true;
-			}
-		}
-
-		void ValueTypeToArguments(AttrValueType vType, bool& isMulti, bool& isHolder)
-		{
-			isMulti = false;
-			isHolder = false;
-			if (vType == AttrValueType::Multi)
-			{
-				isMulti = true;
-			}
-			else if (vType == AttrValueType::Holder)
-			{
-				isHolder = true;
-			}
-			else if (vType == AttrValueType::MultiHolder)
-			{
-				isMulti = true;
-				isHolder = true;
-			}
-		}
 
 	public:
 
@@ -196,12 +150,7 @@ namespace Gex
                            AttrType type = AttrType::Static, bool userDefined = false,
                            Node* node = nullptr, Attribute* parent=nullptr);
 
-    protected:
-        static std::any InitNoneValue();
-
     public:
-
-
         /**
          * Creates new holder attribute.
          * @param std::string name: attribute name.
@@ -251,6 +200,10 @@ namespace Gex
          */
 		Node* Node() const;
 
+        /**
+         * Returns attribute parent.
+         * @return Attribute* parent.
+         */
         Attribute* ParentAttribute() const;
 
         /**
@@ -635,12 +588,6 @@ namespace Gex
 		 * @return bool: success.
 		*/
 		bool DisconnectDest(unsigned int index, Attribute* attribute);
-
-//	protected:
-//		bool RegisterSource(Attribute* attribute);
-//		bool RegisterSource(std::string identifier, std::string attribute, bool innerCompound);
-//		bool RegisterDest(Attribute* attribute);
-//        bool RegisterDest(std::string identifier, std::string attribute, bool innerCompound);
 
 	public:
 		Attribute* Source() const;
