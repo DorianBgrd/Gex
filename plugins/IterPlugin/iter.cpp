@@ -28,17 +28,20 @@ namespace iter
             CreateAttribute<TSys::AnyValue>(
                     "input", Gex::AttrValueType::Multi);
 
-            CreateInternalAttribute<int>(
+            auto* idxat = CreateAttribute<int>(
                     "index", Gex::AttrValueType::Single,
                     Gex::AttrType::Input);
+            idxat->SetInternal(true);
 
-            CreateInternalAttribute<TSys::AnyValue>(
+            auto* in = CreateAttribute<TSys::AnyValue>(
                     "in", Gex::AttrValueType::Single,
                     Gex::AttrType::Input);
+            in->SetInternal(true);
 
-            CreateInternalAttribute<TSys::AnyValue>(
+            auto* out = CreateAttribute<TSys::AnyValue>(
                     "out", Gex::AttrValueType::Single,
                      Gex::AttrType::Output);
+            out->SetInternal(true);
 
             CreateAttribute<TSys::AnyValue>(
                     "output", Gex::AttrValueType::Multi,

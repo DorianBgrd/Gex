@@ -778,7 +778,7 @@ bool Gex::Ui::NodePlugItem::IsOutputAnchor() const
 
 
 Gex::Ui::NodeItem::NodeItem(Gex::Node* node_,
-                                      QGraphicsItem* parent):
+                            QGraphicsItem* parent):
         QObject(), QGraphicsItem(parent)
 {
     node = node_;
@@ -808,7 +808,13 @@ Gex::Ui::NodeItem::NodeItem(Gex::Node* node_,
     title->setDefaultTextColor(QColor("white"));
     title->setPlainText(node_->Name().c_str());
     title->setTextInteractionFlags(Qt::TextEditable);
-//    title->update();
+
+    internalTitle = new QGraphicsTextItem(this);
+    internalTitle->setDefaultTextColor(QColor("white"));
+    QFont internalFont("sans", 10);
+    internalFont.setItalic(true);
+    internalTitle->setFont(internalFont);
+    internalTitle->setPos(0, -20);
 
     TitleDoc* doc = title->TitleDocument();
 
@@ -824,6 +830,8 @@ Gex::Ui::NodeItem::NodeItem(Gex::Node* node_,
     type->setDefaultTextColor(QColor("white"));
     type->setPlainText(node->Type().c_str());
     type->setPos(0, title->boundingRect().height());
+
+    type->setPlainText(node->Type().c_str());
 
     CreateAttributes();
 
@@ -1387,6 +1395,8 @@ void Gex::Ui::NodeItem::ShowAsInternalInput()
 {
     ShowAsInternal(true);
 
+    internalTitle->setPlainText("(Inputs)");
+
     SetAttributeVisibility(AttributeVisibilityMode::OnlyInternalInputs);
 }
 
@@ -1394,6 +1404,8 @@ void Gex::Ui::NodeItem::ShowAsInternalInput()
 void Gex::Ui::NodeItem::ShowAsInternalOutput()
 {
     ShowAsInternal(true);
+
+    internalTitle->setPlainText("(Outputs)");
 
     SetAttributeVisibility(AttributeVisibilityMode::OnlyInternalOutputs);
 }
@@ -1556,6 +1568,61 @@ void Gex::Ui::PreviewLinkItem::Draw(QPointF dest)
     path.lineTo(dest);
 
     setPath(path);
+}
+
+
+Gex::Ui::NodeGraphContext::NodeGraphContext(const QString& name_,
+                                            Gex::CompoundNode* node_)
+{
+    name = name_;
+    node = node_;
+}
+
+
+QString Gex::Ui::NodeGraphContext::Name() const
+{
+    return name;
+}
+
+
+Gex::CompoundNode* Gex::Ui::NodeGraphContext::Compound() const
+{
+    return node;
+}
+
+Gex::NodeList Gex::Ui::NodeGraphContext::GetNodes() const
+{
+    return node->GetNodes();
+}
+
+
+Gex::Node* Gex::Ui::NodeGraphContext::CreateNode(std::string type, std::string name)
+{
+    return node->CreateNode(type, name);
+}
+
+
+void Gex::Ui::NodeGraphContext::DeleteNode(Gex::Node* node_)
+{
+    node->RemoveNode(node_);
+}
+
+
+Gex::NodeList Gex::Ui::NodeGraphContext::DuplicateNodes(Gex::NodeList nodes, bool copyLinks)
+{
+    return node->DuplicateNodes(nodes, copyLinks);
+}
+
+
+void Gex::Ui::NodeGraphContext::StorePositions(QMap<Gex::Node*, QPointF> positions_)
+{
+    nodePositions = positions_;
+}
+
+
+QMap<Gex::Node*, QPointF> Gex::Ui::NodeGraphContext::GetPositions() const
+{
+    return nodePositions;
 }
 
 
@@ -1876,7 +1943,7 @@ void Gex::Ui::NodeGraphScene::UpdateNode(Gex::Node* node)
     {
         nodeItem->RebuildAttributes();
     }
-    else if (node == graphContext->compound)
+    else if (node == graphContext->Compound())
     {
         input->RebuildAttributes();
         input->ShowAsInternalInput();
@@ -1998,9 +2065,12 @@ void Gex::Ui::NodeGraphView::ExportSelectedNodes()
     if (file.isEmpty())
         return;
 
-    auto success = Gex::ExportNodes(graphScene->CurrentContext()->graph,
-                                    graphScene->SelectedNodes(),
-                                    file.toStdString());
+    std::filesystem::path p(file.toStdString());
+
+    auto success = Gex::ExportAsCompound(graphScene->SelectedNodes(),
+                                         graphScene->CurrentContext()->Compound(),
+                                         p.parent_path().string(),
+                                         p.filename().string());
 
     ShowMessage(Gex::Ui::MakeFeedback(success));
 }
@@ -2020,7 +2090,7 @@ void Gex::Ui::NodeGraphView::ExportSelectedNodesAsCompound()
     auto file_ = exf.filename().string();
 
     auto success = Gex::ExportAsCompound(graphScene->SelectedNodes(),
-                                         graphScene->CurrentContext()->graph,
+                                         graphScene->CurrentContext()->Compound(),
                                          directory, file_);
 
     ShowMessage(Gex::Ui::MakeFeedback(success));
@@ -2200,10 +2270,12 @@ void Gex::Ui::NodeGraphScene::SwitchGraphContext(NodeGraphContext* context)
 {
     if (!nodeItems.empty())
     {
+        QMap<Gex::Node*, QPointF> positions;
         for (auto* node : nodeItems.keys())
         {
-            graphContext->nodePositions[node] = nodeItems.value(node)->scenePos();
+            positions[node] = nodeItems.value(node)->scenePos();
         }
+        graphContext->StorePositions(positions);
     }
 
     Clear();  // Clear all content.
@@ -2211,24 +2283,25 @@ void Gex::Ui::NodeGraphScene::SwitchGraphContext(NodeGraphContext* context)
     graphContext = context;
     for (Gex::Node* node : graphContext->GetNodes())
     {
-        NodeItem* item = new NodeItem(node);
+        auto* item = new NodeItem(node);
         addItem(item);
 
         nodeItems[node] = item;
 
-        if (graphContext->nodePositions.contains(node))
+        auto positions = graphContext->GetPositions();
+        if (positions.contains(node))
         {
-            item->setPos(graphContext->nodePositions.value(node));
+            item->setPos(positions.value(node));
         }
     }
 
-    if (context->compound)
+    if (context->Compound())
     {
-        input = new NodeItem(context->compound);
+        input = new NodeItem(context->Compound());
         addItem(input);
         input->ShowAsInternalInput();
 
-        output = new NodeItem(context->compound);
+        output = new NodeItem(context->Compound());
         addItem(output);
         output->ShowAsInternalOutput();
     }
@@ -2303,7 +2376,7 @@ Gex::Ui::NodeGraphContext* Gex::Ui::NodeGraphScene::CurrentContext() const
 
 void Gex::Ui::NodeGraphScene::DuplicateNodes(std::vector<Node*> nodes, bool copyLinks)
 {
-    std::vector<Gex::Node*> duplicateds = graphContext->graph->DuplicateNodes(nodes, copyLinks);
+    std::vector<Gex::Node*> duplicateds = graphContext->DuplicateNodes(nodes, copyLinks);
 
     QList<NodeItem*> newItems;
     for (auto* dupnode : duplicateds)
@@ -2362,7 +2435,7 @@ void Gex::Ui::NodeGraphScene::ConvertSelectedNodesToCompound()
         nodes.push_back(n->Node());
     }
 
-    auto* cmp = graphContext->graph->ToCompound(nodes);
+    auto* cmp = graphContext->compound->ToCompound(nodes);
 
     for (auto* item : extract)
     {
@@ -2697,12 +2770,11 @@ void Gex::Ui::ContextsWidget::ClearContexts()
 QEvent::Type Gex::Ui::GraphWidget::scheduleEventType = QEvent::Type(QEvent::registerEventType());
 
 
-Gex::Ui::GraphWidget::GraphWidget(Gex::Graph* graph_,
+Gex::Ui::GraphWidget::GraphWidget(Gex::CompoundNode* graph_,
                                   QWidget* parent): QWidget(parent)
 {
     graph = graph_;
 
-    graph->AddInvalidateCallback([this](){ this->InitIdlePrepare(); });
     profiler = MakeProfiler();
 
     setWindowFlag(Qt::Window, true);
@@ -2813,13 +2885,7 @@ Gex::Ui::GraphWidget::~GraphWidget()
 
 void Gex::Ui::GraphWidget::Initialize()
 {
-    auto* context = new NodeGraphContext();
-    context->graph = graph;
-    context->compound = graph;
-    context->name = "Root";
-    context->GetNodes = [this](){return this->graph->GetNodes();};
-    context->CreateNode = [this](std::string t, std::string n){return this->graph->CreateNode(t, n);};
-    context->DeleteNode = [this](Gex::Node* node){this->graph->RemoveNode(node);};
+    auto* context = new NodeGraphContext("Root", graph);
     contexts.append(context);
 
     contextsWidget->AddContext("Root");
@@ -2897,17 +2963,11 @@ void Gex::Ui::GraphWidget::InitIdlePrepare()
 // TODO : Mettre ca dans un thread en priority low plutot ?
 bool Gex::Ui::GraphWidget::event(QEvent *event)
 {
-    if (event->type() == scheduleEventType)
-    {
-        graph->Schedule();
-        return true;
-    }
-
     return QWidget::event(event);
 }
 
 
-void Gex::Ui::GraphWidget::SwitchGraph(Gex::Graph* graph_)
+void Gex::Ui::GraphWidget::SwitchGraph(Gex::CompoundNode* graph_)
 {
     graph = graph_;
 
@@ -2923,12 +2983,6 @@ void Gex::Ui::GraphWidget::SwitchGraph(Gex::Graph* graph_)
 void Gex::Ui::GraphWidget::UpdateNode(Gex::Node* node)
 {
     scene->UpdateNode(node);
-
-    auto* context = scene->CurrentContext();
-    if (node == context->compound)
-    {
-
-    }
 }
 
 

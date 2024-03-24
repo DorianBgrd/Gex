@@ -14,7 +14,7 @@ BOOST_PYTHON_MODULE(Gex_Python)
 
     Gex::Python::Attribute_Wrap::RegisterPythonWrapper();
 
-    Gex::Python::Graph_Wrap::RegisterPythonWrapper();
+//    Gex::Python::Graph_Wrap::RegisterPythonWrapper();
 
     Gex::Python::GraphContext_Wrap::RegisterPythonWrapper();
 

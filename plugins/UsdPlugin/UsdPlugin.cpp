@@ -1681,14 +1681,17 @@ namespace UsdPlugin
     public:
         void InitAttributes() override
         {
-            CreateInternalAttribute<pxr::UsdPrim>("Prim", Gex::AttrValueType::Single,
-                                                Gex::AttrType::Static);
+            auto* primat = CreateAttribute<pxr::UsdPrim>("Prim", Gex::AttrValueType::Single,
+                                                         Gex::AttrType::Static);
+            primat->SetInternal(true);
 
-            CreateInternalAttribute<std::string>("VariantSet", Gex::AttrValueType::Single,
-                                            Gex::AttrType::Input);
+            auto* variantsetat = CreateAttribute<std::string>("VariantSet", Gex::AttrValueType::Single,
+                                                                  Gex::AttrType::Input);
+            variantsetat->SetInternal(true);
 
-            CreateInternalAttribute<std::string>("Variant", Gex::AttrValueType::Single,
-                                            Gex::AttrType::Input);
+            auto* variantat = CreateAttribute<std::string>("Variant", Gex::AttrValueType::Single,
+                                                      Gex::AttrType::Input);
+            variantat->SetInternal(true);
         }
 
         bool Evaluate(Gex::NodeAttributeData &ctx,

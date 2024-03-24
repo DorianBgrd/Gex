@@ -280,6 +280,7 @@ namespace Gex
             NodePlugItem* sourcePlug;
             NodePlugItem* destPlug;
             NodeNameItem* title;
+            QGraphicsTextItem* internalTitle;
             bool showInternal = false;
             QColor customBorderColor;
             bool userCustomBorderColor = false;
@@ -443,21 +444,33 @@ namespace Gex
         };
 
 
-        struct NodeGraphContext
+        class NodeGraphContext
         {
+            Q_OBJECT
+
             QString name;
-
-            Gex::Graph* graph;
-
-            Gex::CompoundNode* compound = nullptr;
-
-            std::function<std::vector<Gex::Node*>()> GetNodes;
-
-            std::function<Gex::Node*(std::string, std::string)> CreateNode;
-
-            std::function<void(Gex::Node*)> DeleteNode;
+            Gex::CompoundNode* node;
 
             QMap<Gex::Node*, QPointF> nodePositions;
+
+        public:
+            NodeGraphContext(const QString& name, Gex::CompoundNode* node);
+
+            QString Name() const;
+
+            Gex::CompoundNode* Compound() const;
+
+            Gex::NodeList GetNodes() const;
+
+            Gex::Node* CreateNode(std::string, std::string);
+
+            void DeleteNode(Gex::Node*);
+
+            Gex::NodeList DuplicateNodes(Gex::NodeList nodes, bool copyLinks);
+
+            void StorePositions(QMap<Gex::Node*, QPointF> positions);
+
+            QMap<Gex::Node*, QPointF> GetPositions() const;
         };
 
 
@@ -648,7 +661,7 @@ namespace Gex
         {
             Q_OBJECT
 
-            Gex::Graph* graph;
+            Gex::CompoundNode* graph;
             Gex::Profiler profiler;
             NodeGraphScene* scene = nullptr;
             NodeGraphView* view = nullptr;
@@ -660,7 +673,7 @@ namespace Gex
             static QEvent::Type scheduleEventType;
 
         public:
-            GraphWidget(Gex::Graph* graph,
+            GraphWidget(Gex::CompoundNode* graph,
                         QWidget* parent=nullptr);
 
             ~GraphWidget() override;
@@ -673,7 +686,7 @@ namespace Gex
 
             void SwitchContext(unsigned int index);
 
-            void SwitchGraph(Gex::Graph* graph);
+            void SwitchGraph(Gex::CompoundNode* graph);
 
         protected:
             void ClearContexts();

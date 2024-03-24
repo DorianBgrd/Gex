@@ -22,7 +22,6 @@ add_library(
         SHARED
         Gex/src/Attribute.cpp
         Gex/src/Evaluation.cpp
-        Gex/src/Graph.cpp
         Gex/src/Node.cpp
         Gex/src/NodeAttributeData.cpp
         Gex/src/NodeFactory.cpp

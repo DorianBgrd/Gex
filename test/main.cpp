@@ -10,7 +10,7 @@
 
 int main(int argc, char** argv)
 {
-    auto* graph = new Gex::Graph();
+    auto* graph = new Gex::CompoundNode();
 
     bool success = Gex::PluginLoader::LoadPlugin(PLUGIN_PATH);
 
@@ -27,7 +27,8 @@ int main(int argc, char** argv)
 
     Gex::SaveGraph(graph, "D:\\graph.json");
 
-    Gex::Graph* lg = Gex::LoadGraph("D:\\graph.json");
+    Gex::CompoundNode* lg = Gex::CompoundNode::FromNode(
+            Gex::LoadGraph("D:\\graph.json"));
 
     Gex::Node* n_1 = lg->GetNode("Node1");
     auto* at_1 = n_1->GetAttribute("String");

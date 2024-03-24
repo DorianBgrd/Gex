@@ -2,7 +2,7 @@
 #include <QTabBar>
 
 
-Gex::Ui::GraphView::GraphView(Gex::Graph* graph_, QWidget* parent): QWidget(parent)
+Gex::Ui::GraphView::GraphView(Gex::CompoundNode* graph_, QWidget* parent): QWidget(parent)
 {
     graph = graph_;
 
@@ -39,7 +39,7 @@ Gex::Ui::ProfileView* Gex::Ui::GraphView::GetProfileWidget() const
 }
 
 
-void Gex::Ui::GraphView::SwitchGraph(Gex::Graph* graph_)
+void Gex::Ui::GraphView::SwitchGraph(Gex::CompoundNode* graph_)
 {
     graph = graph_;
     graphView->SwitchGraph(graph);

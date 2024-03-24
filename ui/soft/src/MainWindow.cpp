@@ -6,7 +6,7 @@
 #include "UiRes/include/uires.h"
 
 
-Gex::Editor::MainWindow::MainWindow(Gex::Graph* graph_, std::string file,
+Gex::Editor::MainWindow::MainWindow(Gex::CompoundNode* graph_, std::string file,
                                     QWidget* parent): QMainWindow(parent)
 {
     auto* widget = new QWidget(this);
@@ -60,7 +60,7 @@ Gex::Feedback Gex::Editor::MainWindow::New()
         delete graph;
     }
 
-    graph = new Gex::Graph();
+    graph = new Gex::CompoundNode();
     graphView->SwitchGraph(graph);
 
     ShowMessage(feedback);
@@ -72,12 +72,12 @@ Gex::Feedback Gex::Editor::MainWindow::New()
 Gex::Feedback Gex::Editor::MainWindow::Open(std::string file)
 {
     Gex::Feedback feedback;
-    Gex::Graph* graph_ = Gex::LoadGraph(file, &feedback);
+    Gex::Node* graph_ = Gex::LoadGraph(file, &feedback);
 
     currentFile = file;
     if ((feedback.status == Gex::Status::Failed) || (feedback.status == Gex::Status::Error))
     {
-        graph_ = new Gex::Graph();
+        graph_ = new Gex::CompoundNode();
         currentFile = "";
     }
 
@@ -86,7 +86,7 @@ Gex::Feedback Gex::Editor::MainWindow::Open(std::string file)
         delete graph;
     }
 
-    graph = graph_;
+    graph = CompoundNode::FromNode(graph_);
     graphView->SwitchGraph(graph);
 
     ShowMessage(feedback);

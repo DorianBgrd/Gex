@@ -1,6 +1,5 @@
 #include "python/include/io.h"
 #include "Gex/include/io.h"
-#include "Gex/include/graph.h"
 #include "boost/python.hpp"
 
 
@@ -10,7 +9,7 @@ bool Gex::Python::IO::pythonRegistered = false;
 boost::python::object Python_SaveGraph(boost::python::tuple args,
                                        boost::python::dict kwargs)
 {
-    Gex::Graph* graph = boost::python::extract<Gex::Graph*>(args[0]);
+    Gex::CompoundNode* graph = boost::python::extract<Gex::CompoundNode*>(args[0]);
     std::string filepath = boost::python::extract<std::string>(args[1]);
 
     return boost::python::object(Gex::Feedback(Gex::SaveGraph(graph, filepath)));
@@ -36,9 +35,12 @@ boost::python::object Python_LoadGraph(boost::python::tuple args,
     if (pyfeedback)
         feedback = boost::python::extract<Gex::Feedback*>(pyfeedback);
 
-    Gex::Graph* graph = Gex::LoadGraph(filepath, feedback);
+    Gex::Node* graph = Gex::LoadGraph(filepath, feedback);
+    if (!graph)
+        return {};
 
-    return boost::python::object(boost::python::ptr(Gex::LoadGraph(filepath, feedback)));
+
+    return boost::python::object(boost::python::ptr(Gex::CompoundNode::FromNode(graph)));
 }
 
 

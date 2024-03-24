@@ -12,13 +12,13 @@ namespace Gex::Editor
     {
         Q_OBJECT
 
-        Gex::Graph* graph;
+        Gex::CompoundNode* graph;
         Gex::Ui::GraphView* graphView;
         std::string currentFile;
         QAction* saveAction;
 
     public:
-        MainWindow(Gex::Graph* graph, std::string file="",
+        MainWindow(Gex::CompoundNode* graph, std::string file="",
                    QWidget* parent=nullptr);
 
         Gex::Feedback New();

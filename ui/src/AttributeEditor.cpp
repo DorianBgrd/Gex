@@ -303,8 +303,10 @@ void Gex::Ui::ExtraAttributeDialog::CreateAttribute()
     if (targetNode->IsCompound() && internal->isChecked())
     {
         auto* compound = Gex::Node::ConvertTo<Gex::CompoundNode>(targetNode);
-        compound->CreateInternalAttribute(attributeName->text().toStdString(),
-                                          value, valueType, attrType);
+        auto* at = compound->CreateAttributeFromValue(attributeName->text().toStdString(),
+                                                      value, valueType, attrType);
+        at->SetInternal(true);
+
     }
     else
     {

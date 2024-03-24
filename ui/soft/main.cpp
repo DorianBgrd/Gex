@@ -20,16 +20,24 @@ int main(int argc, char** argv)
 
     parser.Parse(argc, argv);
 
-    Gex::Graph* graph;
+    Gex::CompoundNode* graph;
 
     Gex::Feedback feedback;
     if (parser.FlagFound("-f"))
     {
-        graph = Gex::LoadGraph(parser.FlagResult("-f"), &feedback);
+        auto* g = Gex::LoadGraph(parser.FlagResult("-f"), &feedback);
+        if (g)
+            graph = Gex::CompoundNode::FromNode(g);
+        else
+            graph = Gex::CompoundNode::FromNode(
+                    Gex::NodeFactory::GetFactory()->CreateNode("CompoundNode", "Graph")
+            );
     }
     else
     {
-        graph = new Gex::Graph();
+        graph = Gex::CompoundNode::FromNode(
+                Gex::NodeFactory::GetFactory()->CreateNode("CompoundNode", "Graph")
+                );
         feedback.status = Gex::Status::Success;
         feedback.message = "Created new graph.";
     }

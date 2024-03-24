@@ -1,7 +1,6 @@
 #include "Gex/include/Node.h"
 #include "python/include/Node.h"
 #include "Gex/include/Attribute.h"
-#include "Gex/include/Graph.h"
 
 #include "Tsys/include/tsys.h"
 
@@ -99,56 +98,56 @@ boost::python::object Gex_Node_CreateAttribute(boost::python::tuple args,
 
 
 
-boost::python::object Gex_CompoundNode_CreateInternalAttribute(boost::python::tuple args,
-                                                               boost::python::dict kwargs)
-{
-    Gex::CompoundNode* self = boost::python::extract<Gex::CompoundNode*>(args[0]);
-    std::string name = boost::python::extract<std::string>(args[1]);
-    boost::python::object type = args[2];
-    Gex::AttrValueType attrValueType = Gex::AttrValueType::Single;
-    Gex::AttrType attrType = Gex::AttrType::Input;
-    Gex::Attribute* parent = nullptr;
-
-    if (boost::python::len(args) > 3)
-    {
-        attrValueType = boost::python::extract<Gex::AttrValueType>(args[3]);
-    }
-    else if (boost::python::object vt = kwargs.get("valueType"))
-    {
-        attrValueType = boost::python::extract<Gex::AttrValueType>(vt);
-    }
-
-    if (boost::python::len(args) > 4)
-    {
-        attrType = boost::python::extract<Gex::AttrType>(args[4]);
-    }
-    else if (boost::python::object vty = kwargs.get("type"))
-    {
-        attrType = boost::python::extract<Gex::AttrType>(vty);
-    }
-
-    if (boost::python::len(args) > 5)
-    {
-        parent = boost::python::extract<Gex::Attribute*>(args[5]);
-    }
-    else if (boost::python::object pt = kwargs.get("parent"))
-    {
-        parent = boost::python::extract<Gex::Attribute*>(pt);
-    }
-
-    Gex::Feedback feedback;
-    std::any value = InitPythonValue(type, feedback);
-
-    Gex::Attribute* attribute = self->CreateInternalAttribute(name, value, attrValueType,
-                                                              attrType, parent);
-    if (!attribute)
-    {
-        return {};
-    }
-
-    return boost::python::object(boost::python::ptr(attribute));
-}
-
+//boost::python::object Gex_CompoundNode_CreateInternalAttribute(boost::python::tuple args,
+//                                                               boost::python::dict kwargs)
+//{
+//    Gex::CompoundNode* self = boost::python::extract<Gex::CompoundNode*>(args[0]);
+//    std::string name = boost::python::extract<std::string>(args[1]);
+//    boost::python::object type = args[2];
+//    Gex::AttrValueType attrValueType = Gex::AttrValueType::Single;
+//    Gex::AttrType attrType = Gex::AttrType::Input;
+//    Gex::Attribute* parent = nullptr;
+//
+//    if (boost::python::len(args) > 3)
+//    {
+//        attrValueType = boost::python::extract<Gex::AttrValueType>(args[3]);
+//    }
+//    else if (boost::python::object vt = kwargs.get("valueType"))
+//    {
+//        attrValueType = boost::python::extract<Gex::AttrValueType>(vt);
+//    }
+//
+//    if (boost::python::len(args) > 4)
+//    {
+//        attrType = boost::python::extract<Gex::AttrType>(args[4]);
+//    }
+//    else if (boost::python::object vty = kwargs.get("type"))
+//    {
+//        attrType = boost::python::extract<Gex::AttrType>(vty);
+//    }
+//
+//    if (boost::python::len(args) > 5)
+//    {
+//        parent = boost::python::extract<Gex::Attribute*>(args[5]);
+//    }
+//    else if (boost::python::object pt = kwargs.get("parent"))
+//    {
+//        parent = boost::python::extract<Gex::Attribute*>(pt);
+//    }
+//
+//    Gex::Feedback feedback;
+//    std::any value = InitPythonValue(type, feedback);
+//
+//    Gex::Attribute* attribute = self->CreateInternalAttribute(name, value, attrValueType,
+//                                                              attrType, parent);
+//    if (!attribute)
+//    {
+//        return {};
+//    }
+//
+//    return boost::python::object(boost::python::ptr(attribute));
+//}
+//
 
 
 
@@ -389,7 +388,7 @@ void Gex::Python::CompoundNode_Wrap::RegisterPythonWrapper()
             .def("GetNode", boost::python::raw_function(&CN_Python_GetInternalNode, 1))
             .def("HasNode", _IsInternalNode)
             .def("RemoveNode", _RemoveInternalNode)
-            .def("CreateInternalAttribute", boost::python::raw_function(&Gex_CompoundNode_CreateInternalAttribute, 3))
+//            .def("CreateInternalAttribute", boost::python::raw_function(&Gex_CompoundNode_CreateInternalAttribute, 3))
             .def("FromNode", boost::python::raw_function(&CN_Python_FromNode, 1))
             .staticmethod("FromNode")
             ;
