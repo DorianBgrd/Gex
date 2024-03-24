@@ -5,7 +5,6 @@
 #include "Attribute.h"
 #include "Config.h"
 #include "Evaluation.h"
-#include "Graph.h"
 #include "Node.h"
 #include "NodeAttributeData.h"
 #include "NodeFactory.h"

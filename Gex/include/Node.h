@@ -23,11 +23,26 @@ namespace Gex
 	class CompoundNode;
 	class NodeFactory;
 	class NodeBuilder;
-    class GraphContext;
 	class NodeAttributeData;
 	class EvaluationContext;
     class ScheduledNode;
     class NodeEvaluator;
+
+
+    class GEX_API GraphContext
+    {
+        friend NodeEvaluator;
+        std::vector<std::string> resources;
+
+    public:
+        GraphContext();
+
+        GraphContext(const GraphContext& other);
+
+        void RegisterResource(std::string resource);
+
+        std::vector<std::string> Resources() const;
+    };
 
 	class GEX_API Node
 	{
@@ -54,7 +69,6 @@ namespace Gex
          */
         void EndInitialization();
 
-	protected:
 		std::string nodeName;
         std::string typeName;
         std::string pluginName;
@@ -65,6 +79,14 @@ namespace Gex
         Node* parent = nullptr;
         Attribute* previous = nullptr;
         Attribute* next = nullptr;
+
+        ScheduleNodeList scheduledNodes;
+        bool isScheduled = false;
+
+        CallbackId invalidCbId = 0;
+        CallbackId scheduleCbId = 0;
+        InvalidateCallbacks invalidateCallbacks;
+        ScheduleCallbacks scheduleCallbacks;
 
 	public:
         /**
@@ -196,7 +218,7 @@ namespace Gex
           */
          virtual bool IsCompound() const;
 
-    protected:
+    private:
         std::any InitValueFromHash(size_t hash, Feedback* success=nullptr);
 
     public:
@@ -257,7 +279,7 @@ namespace Gex
 		 * Returns whether attribute with name exists.
 		 * @returns bool exists.
 		 */
-		bool HasAttribute(std::string name);
+		bool HasAttribute(std::string name) const;
 
         /**
          * Gets Attribute pointer from name,
@@ -265,15 +287,8 @@ namespace Gex
          * @param std::string name: attribute name.
          * @return Attribute* attribute.
          */
-		Attribute* GetAttribute(std::string name);
+		Attribute* GetAttribute(std::string name) const;
 
-        /**
-         * Returns python object for attribute.
-         * @param std::string name: attribute name.
-         * @return boost::python::object object.
-         */
-		boost::python::object PythonGetAttribute(std::string name);
-		
         /**
          * Returns all attributes pointers.
          * @return std::vector<Attribute*> attributes.
@@ -309,11 +324,14 @@ namespace Gex
 		NodeList DownstreamNodes();
 
 		/**
-		 * Serializes node to file.
+		 * Serializes node to json values.
 		 */
 		virtual void Serialize(rapidjson::Value& dict,
                                rapidjson::Document& json) const;
 
+        /**
+		 * Deserializes node from json values.
+		 */
         virtual bool Deserialize(rapidjson::Value& dict);
 
     protected:
@@ -328,6 +346,11 @@ namespace Gex
          */
         bool PullAttributes();
 
+        /**
+         * Retrieves an unique name from provided node name.
+         * @param name: input name.
+         * @return unique name.
+         */
         virtual std::string UniqueName(const std::string& name) const;
 
     public:
@@ -357,6 +380,32 @@ namespace Gex
         virtual bool Compute(GraphContext &context,
                              NodeProfiler& profiler);
 
+        /**
+         * Runs the node as a graph.
+         * This function schedules subsequent nodes and
+         * launches an evaluator. Launching this function
+         * on a default node would provide a scheduling
+         * and calculation overhead, prefer using the
+         * Compute() member function for such use case.
+         *
+         * @param profile: input profiler.
+         * @param threads: thread number.
+         * @param nodeStarted: callback triggered on each
+         *  node start.
+         * @param nodeDone: callback triggered on each
+         *  node end.
+         * @param evalDone: callback triggered when overall
+         *  evaluation is done.
+         * @return
+         */
+        bool Run(Profiler& profile, unsigned int threads=1,
+                 NodeCallback nodeStarted=nullptr,
+                 NodeResCallback nodeDone=nullptr,
+                 GraphCtxCallback evalDone=nullptr);
+
+    private:
+        void FinalizeEvaluation(const GraphContext& context) const;
+
     protected:
         /**
          * Computation function.
@@ -370,7 +419,44 @@ namespace Gex
                               NodeProfiler& profiler);
 
     public:
+        /**
+         * Returns whether node is currently scheduled. Base implementation
+         * of this function returns true, as a 'single' node does not need to
+         * perform complex scheduling, as opposed to compound nodes.
+         * @return bool: is scheduled.
+         */
+        bool IsScheduled() const;
+
+        /**
+         * Declares scheduling as invalid, which will cause re-scheduling at
+         * next evaluation. Default node implementation triggers invalidation
+         * when a new connection is made.
+         */
+        void InvalidateScheduling();
+
+    protected:
+        /**
+         * Declares node as re-scheduled.
+         */
+        void ValidateScheduling();
+
+    public:
         ScheduledNode* ToScheduledNode();
+
+        virtual ScheduleNodeList ToScheduledNodes();
+
+    public:
+        CallbackId AddInvalidateCallback(InvalidateCallback callback);
+
+        void RemoveInvalidateCallback(CallbackId callback);
+
+        void ClearInvalidateCallbacks();
+
+        CallbackId AddScheduleCallback(ScheduleCallback callback);
+
+        void RemoveScheduleCallback(CallbackId callback);
+
+        void ClearScheduleCallbacks();
 
     public:
 
@@ -411,10 +497,7 @@ namespace Gex
         friend CompoundPostScheduledNode;
         friend NodeEvaluator;
 
-	protected:
-		NodeList nodes;
-
-        using Node::Node;
+        NodeList nodes;
 
 	public:
         ~CompoundNode() override;
@@ -427,39 +510,6 @@ namespace Gex
         bool IsCompound() const override;
 
         std::string UniqueName(const std::string& name) const;
-
-        template <typename T>
-        Attribute* CreateInternalAttribute(std::string name, AttrValueType valueType = AttrValueType::Single,
-                                           AttrType type = AttrType::Static, Attribute* parent=nullptr)
-        {
-            Attribute* attribute = CreateAttribute<T>(name, valueType, type, parent);
-            if (!attribute)
-            {
-                return attribute;
-            }
-
-            attribute->SetInternal(true);
-            return attribute;
-        }
-
-
-        Attribute* CreateInternalAttribute(std::string name, std::any v, AttrValueType valueType = AttrValueType::Single,
-                                           AttrType type = AttrType::Static, Attribute* parent = nullptr);
-
-
-        Attribute* CreateInternalAttribute(const std::string& name, AttrType type = AttrType::Static,
-                                           bool multi=false, Attribute* parent = nullptr);
-
-
-        Attribute* CreateInternalAttribute(std::string name, boost::python::object type, AttrType attributeType);
-
-
-        Attribute* CreateInternalAttribute(std::string name, boost::python::object type, AttrType attributeType,
-                                           AttrValueType valueType);
-
-
-        Attribute* CreateInternalAttribute(std::string name, boost::python::object type, AttrType attributeType,
-                                           AttrValueType valueType, Attribute* parent);
 
         NodeList InternalNodes() const;
 
@@ -505,6 +555,8 @@ namespace Gex
 
         std::vector<std::string> GetNodeNames() const;
 
+        Attribute* FindAttribute(std::string attr) const;
+
         /**
          * Returns whether specified node pointer is an internal
          * node.
@@ -533,7 +585,7 @@ namespace Gex
          */
         AttributeList AllInternalAttributes() const;
 
-    protected:
+    private:
 
         /**
          * Function launched by the Compute() function, just
@@ -546,7 +598,13 @@ namespace Gex
                                  GraphContext &graphContext,
                                  NodeProfiler& profiler);
 
-    public:
+        /**
+         * Function launched by the Compute() function, just
+         * after the Evaluate() function is called.
+         *
+         * @param ctx: Node evaluation context.
+         * @return bool: success.
+         */
         bool PreCompute(GraphContext &context,
                         NodeProfiler& profiler);
 
@@ -566,6 +624,7 @@ namespace Gex
                       NodeProfiler& profiler)
                       override;
 
+    private:
         /**
          * Function launched by the Compute() function, just
          * after the Evaluate() function is called.
@@ -586,9 +645,10 @@ namespace Gex
         void PullInternalOutputs();
 
     public:
-        virtual ScheduleNodeList ToScheduledNodes();
+        void AttributeChanged(Attribute* attr, AttributeChange change) override;
 
-    public:
+        ScheduleNodeList ToScheduledNodes() override;
+
         /**
          * Launches compound computing.
          * @return bool: success.
@@ -615,6 +675,25 @@ namespace Gex
 
     public:
         /**
+         * Duplicates specified internal nodes.
+         * @param sources: source nodes.
+         * @param copyLinks: copy sources links.
+         * @return resulting nodes.
+         */
+        NodeList DuplicateNodes(NodeList sources, bool copyLinks=false);
+
+        /**
+         * Compacts sources nodes to a new compound node.
+         * @param sources: source nodes.
+         * @param duplicate: duplicates to new compound.
+         * @param keepExternalConnections: Keep external connections.
+         * @return resulting compound node.
+         */
+        Gex::Node* ToCompound(NodeList sources, bool duplicate=false,
+                              bool keepExternalConnections=true);
+
+
+        /**
          * Creates a compound node from specified node
          * if conversion is possible.
          * This is the equivalent of doing a dynamic_cast.
@@ -624,14 +703,6 @@ namespace Gex
          * @return CompoundNode pointer.
          */
         static CompoundNode* FromNode(Node* node);
-
-        /**
-         * Checks whether node is a compound node. This function
-         * uses the FromNode function, checking the result.
-         * @param node: node pointer.
-         * @return bool is compound node.
-         */
-        static bool IsCompound(Node* node);
 	};
 
 }

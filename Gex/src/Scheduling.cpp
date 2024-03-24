@@ -139,8 +139,7 @@ void ResolveNodesLevels(SchelNode* node, SchelNodeDict& nodes, unsigned int leve
 }
 
 
-Gex::ScheduleNodeList Gex::ScheduleNodes(NodeList nodes,
-                                         bool expandCompounds)
+Gex::ScheduleNodeList Gex::ScheduleNodes(NodeList nodes, bool expand)
 {
     std::map<Gex::Node*, ScheduledNode*> schelNodes;
 
@@ -197,9 +196,9 @@ Gex::ScheduleNodeList Gex::ScheduleNodes(NodeList nodes,
         for (auto p : iter->second)
         {
             auto* n = p;
-            if (expandCompounds && n->node->IsCompound())
+            if (expand && n->node->IsCompound())
             {
-                auto cmpSchels = CompoundNode::FromNode(n->node)->ToScheduledNodes();
+                auto cmpSchels = n->node->ToScheduledNodes();
 
 //            scheduledNodes.insert(iter, cmpSchels.begin(), cmpSchels.end());
                 scheduledNodes.insert(scheduledNodes.end(), cmpSchels.begin(), cmpSchels.end());

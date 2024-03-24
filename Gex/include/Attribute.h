@@ -59,7 +59,6 @@ namespace Gex
 		friend CompoundNode;
 		friend NodeAttributeData;
 
-	protected:
 		std::string attributeName;
 		std::string attributeLongname;
 		bool attributeIsUserDefined;
@@ -97,6 +96,7 @@ namespace Gex
          */
         void SignalChange(AttributeChange change);
 
+    public:
         /**
          * Copies attribute.
          * @param std::string name: copy attribute name.
@@ -106,6 +106,7 @@ namespace Gex
          */
         Attribute* Copy(std::string name, Node* node, Attribute* parent=nullptr) const;
 
+    private:
         /**
          * Copies specified attribute as child of current
          * attribute.
@@ -151,7 +152,6 @@ namespace Gex
             Attribute(name, typeid(T).hash_code(), valueType,
                       type, userDefined, node, parent){}
 
-    protected:
         explicit Attribute(const std::string& name, size_t hash, AttrValueType valueType = AttrValueType::Single,
                            AttrType type = AttrType::Static, bool userDefined = false,
                            Node* node = nullptr, Attribute* parent=nullptr);
@@ -253,7 +253,7 @@ namespace Gex
          */
         void Reset();
 
-    protected:
+    private:
         /**
          * Resets attribute to its default value.
          */
@@ -325,8 +325,7 @@ namespace Gex
          */
         bool IsInternal() const;
 
-    protected:
-        void SetInternal(bool internal);
+        bool SetInternal(bool internal);
 
     public:
         /**
@@ -373,7 +372,7 @@ namespace Gex
          */
         std::vector<Attribute*> GetAllAttributes() const;
 
-	protected:
+	public:
         /**
          * Adds specfied attribute as child.
          * @param Attribute* child: attribute ptr.
@@ -458,7 +457,7 @@ namespace Gex
 		*/
 		bool CreateIndex(unsigned int index);
 
-    protected:
+    private:
         bool _CreateIndex(unsigned int index);
 
     public:
@@ -469,7 +468,7 @@ namespace Gex
          */
         bool RemoveIndex(unsigned int index);
 
-    protected:
+    private:
         bool _RemoveIndex(unsigned int index);
 
     public:
@@ -479,7 +478,7 @@ namespace Gex
          */
         bool ClearIndices();
 
-    protected:
+    private:
         bool _ClearIndices();
 
     public:
@@ -490,7 +489,7 @@ namespace Gex
          */
         unsigned int AttributeIndex(Attribute* sub, Feedback* status=nullptr);
 
-    protected:
+    private:
         bool _CanConnectSource(Attribute* source);
 
 	public:
@@ -516,7 +515,7 @@ namespace Gex
 		*/
 		bool ConnectSource(Attribute* attribute);
 
-    protected:
+    private:
         bool _ConnectSource(Attribute* attribute);
 
     public:
@@ -536,7 +535,7 @@ namespace Gex
 		*/
 		bool ConnectDest(Attribute* attribute);
 
-    protected:
+    private:
 
         bool _ConnectDest(Attribute* attribute);
 
@@ -563,7 +562,7 @@ namespace Gex
 		*/
 		bool DisconnectSource(Attribute* attribute);
 
-    protected:
+    private:
         bool _DisconnectSource(Attribute* attribute);
 
     public:
@@ -582,7 +581,7 @@ namespace Gex
 		*/
 		bool DisconnectDest(Attribute* attribute);
 
-    protected:
+    private:
         bool _DisconnectDest(Attribute* attribute);
 
     public:
@@ -602,7 +601,7 @@ namespace Gex
 
         std::vector<Attribute*> Dests();
 
-    protected:
+    private:
         std::any Convert(std::any value, size_t sourceHash, size_t destHash,
                          Feedback* success=nullptr);
 
@@ -748,7 +747,7 @@ namespace Gex
 
         void SerializeConnections(rapidjson::Value& dict, rapidjson::Document& json);
 
-    protected:
+    private:
         /**
          * Pull attributes sources.
          * @return bool success.

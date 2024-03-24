@@ -32,7 +32,7 @@ namespace Gex
 
 
     GEX_API
-    ScheduleNodeList ScheduleNodes(NodeList nodes, bool expandCompounds = true);
+    ScheduleNodeList ScheduleNodes(NodeList nodes, bool expand = true);
 }
 
 #endif //GEX_SCHEDULING_H

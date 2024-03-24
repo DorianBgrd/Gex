@@ -55,7 +55,7 @@ namespace Gex
          * @param name: node name.
          * @return Node ptr.
          */
-        virtual Node* InitNode(std::string name) const;
+        virtual Node* InitNode() const;
 
         /**
          * Deserializes node data.
@@ -70,7 +70,7 @@ namespace Gex
          * @param dict: data.
          * @return Node ptr.
          */
-        virtual Node* LoadNode(std::string name, rapidjson::Value& dict) const;
+        virtual Node* LoadNode(rapidjson::Value& dict) const;
 
         /**
          * Serializes node.
@@ -112,6 +112,8 @@ namespace Gex
 		NodeBuilder* defaultBuilder;
 		std::map<std::string, NodeBuilder*> builders;
 
+        NodeFactory();
+
 		bool HasBuilder(const std::string& type) const;
 
 	public:
@@ -126,7 +128,7 @@ namespace Gex
 
 		Node* CreateNode(const std::string& type, const std::string& name) const;
 
-        Node* LoadNode(std::string name, rapidjson::Value& dict) const;
+        Node* LoadNode(rapidjson::Value& dict) const;
 
         bool SaveNode(Node* node, rapidjson::Value& dict, rapidjson::Document& json) const;
 

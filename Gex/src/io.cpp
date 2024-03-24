@@ -43,14 +43,22 @@ void Gex::ExportToFile(const std::string& filepath,
 }
 
 
-Gex::Feedback Gex::SaveGraph(Gex::Graph *graph, const std::string& filepath)
+Gex::Feedback Gex::SaveGraph(Gex::Node *graph, const std::string& filepath)
 {
     Feedback result;
 
     rapidjson::Document json;
     rapidjson::Value& dict = json.SetObject();
 
-    graph->Serialize(dict, json);
+    NodeBuilder* builder = NodeFactory::GetFactory()->GetBuilder(graph->Type());
+    if (!builder)
+    {
+        result.Set(Status::Failed, "Specified node type "
+            + graph->Type() +  " is not registered.");
+        return result;
+    }
+
+    builder->SaveNode(graph, dict, json);
 
     ExportToFile(filepath, json, &result);
     if (!result)
@@ -92,7 +100,7 @@ bool LoadJsonFile(const std::string& filepath, rapidjson::Document& json,
     return true;
 }
 
-Gex::Graph* Gex::LoadGraph(const std::string& filepath, Feedback* success)
+Gex::Node* Gex::LoadGraph(const std::string& filepath, Feedback* success)
 {
     rapidjson::Document doc;
     if (!LoadJsonFile(filepath, doc, success))
@@ -100,8 +108,8 @@ Gex::Graph* Gex::LoadGraph(const std::string& filepath, Feedback* success)
         return nullptr;
     }
 
-    auto* graph = new Graph();
-    if (!graph->Deserialize(doc.GetObject()))
+    auto* graph = NodeFactory::GetFactory()->LoadNode(doc.GetObject());
+    if (!graph)
     {
         delete graph;
         if (success)
@@ -115,17 +123,26 @@ Gex::Graph* Gex::LoadGraph(const std::string& filepath, Feedback* success)
 }
 
 
-Gex::Feedback Gex::ExportAsCompound(NodeList nodes, Graph* graph, const std::string& directory,
+Gex::Feedback Gex::ExportAsCompound(NodeList nodes, Node* graph, const std::string& directory,
                                     const std::string& name, bool force)
 {
-    Node* compound = graph->ToCompound(nodes, true, false);
+    CompoundNode* graphCmp = CompoundNode::FromNode(graph);
+
+    Feedback success;
+    if (!graphCmp)
+    {
+        success.Set(Gex::Status::Failed,
+                    "Provided graph node is "
+                    "not a compound node.");
+        return success;
+    }
+
+    Node* compound = graphCmp->ToCompound(nodes, true, false);
 
     rapidjson::Document json;
     rapidjson::Value& dict = json.SetObject();
 
     compound->Serialize(dict, json);
-
-    Feedback success;
 
     std::filesystem::path rpath = directory;
     rpath.append(name + ".json");
@@ -136,46 +153,45 @@ Gex::Feedback Gex::ExportAsCompound(NodeList nodes, Graph* graph, const std::str
         return success;
     }
 
-    graph->RemoveNode(compound);
+    graphCmp->RemoveNode(compound);
 
     Gex::ExportToFile(rpath.string(), json, &success);
     return success;
 }
 
 
-Gex::Feedback Gex::ExportNodes(Graph* graph, NodeList nodes,
-                               const std::string& filepath)
-{
-    auto* exportGraph = new Graph();
-
-    graph->DuplicateNodes(nodes, true, nullptr, exportGraph);
-
-    auto result = SaveGraph(exportGraph, filepath);
-
-    delete exportGraph;
-
-    return result;
-}
+//Gex::Feedback Gex::ExportNodes(Node* graph, NodeList nodes,
+//                               const std::string& filepath)
+//{
+//    auto* exportGraph = new CompoundNode();
+//
+//    CompoundNode* cmpGraph = CompoundNode::FromNode(graph);
+//    cmpGraph->DuplicateNodes(nodes, true, nullptr, exportGraph);
+//
+//    auto result = SaveGraph(exportGraph, filepath);
+//
+//    delete exportGraph;
+//
+//    return result;
+//}
 
 
 Gex::NodeList Gex::ImportNodes(const std::string& filepath,
-                               Graph* destinationGraph,
                                CompoundNode* destinationNode,
                                Feedback* success)
 {
     rapidjson::Document json;
 
-    auto* importGraph = LoadGraph(filepath);;
+    auto* importGraph = LoadGraph(filepath);
 
-    for (auto* node : importGraph->GetNodes())
+    auto* importCompound = CompoundNode::FromNode(importGraph);
+
+    for (auto* node : importCompound->GetNodes())
     {
-        if (destinationGraph)
-            destinationGraph->AddNode(node);
-        else
-            destinationNode->AddNode(node);
+        destinationNode->AddNode(node);
     }
 
-    auto res = importGraph->GetNodes();
+    auto res = importCompound->GetNodes();
 
     delete importGraph;
 

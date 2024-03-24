@@ -17,15 +17,13 @@ void Gex::NodeBuilder::SetPlugin(std::string plugin)
 }
 
 
-Gex::Node* Gex::NodeBuilder::InitNode(std::string name) const
+Gex::Node* Gex::NodeBuilder::InitNode() const
 {
     Node* node = CreateNode();
 
     node->SetPlugin(Plugin());
 
     node->Initialize();
-
-    node->SetName(std::move(name));
     return node;
 }
 
@@ -42,9 +40,9 @@ void Gex::NodeBuilder::DeserializeNode(rapidjson::Value& dict, Node* node) const
 }
 
 
-Gex::Node* Gex::NodeBuilder::LoadNode(std::string name, rapidjson::Value& dict) const
+Gex::Node* Gex::NodeBuilder::LoadNode(rapidjson::Value& dict) const
 {
-    Node* node = InitNode(name);
+    Node* node = InitNode();
 
     DeserializeNode(dict, node);
 
@@ -81,6 +79,21 @@ Gex::NodeFactory* Gex::NodeFactory::GetFactory()
     }
 
     return factory;
+}
+
+
+class CompoundNodeBuilder: public Gex::NodeBuilder
+{
+    Gex::Node* CreateNode() const
+    {
+        return new Gex::CompoundNode();
+    }
+};
+
+
+Gex::NodeFactory::NodeFactory()
+{
+    RegisterNodeBuilder("CompoundNode", new CompoundNodeBuilder());
 }
 
 
@@ -122,7 +135,7 @@ Gex::NodeBuilder* Gex::NodeFactory::GetBuilder(const std::string& type) const
 }
 
 
-Gex::Node* Gex::NodeFactory::LoadNode(std::string name, rapidjson::Value& dict) const
+Gex::Node* Gex::NodeFactory::LoadNode(rapidjson::Value& dict) const
 {
     if (!dict.HasMember(Config::GetConfig().nodeTypeKey.c_str()))
     {
@@ -137,7 +150,7 @@ Gex::Node* Gex::NodeFactory::LoadNode(std::string name, rapidjson::Value& dict) 
 		return nullptr;
 	}
 
-    Node* node = builder->LoadNode(name, dict);
+    Node* node = builder->LoadNode(dict);
 
     node->SetType(nodeType);
 
@@ -188,8 +201,8 @@ Gex::Node* Gex::NodeFactory::CreateNode(const std::string& type, const std::stri
         return nullptr;
     }
 
-    Node* node = builder->InitNode(name);
-
+    Node* node = builder->InitNode();
+    node->SetName(name);
     node->SetType(type);
 
     return node;

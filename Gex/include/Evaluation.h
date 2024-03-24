@@ -2,7 +2,10 @@
 #define NODELIBRARY2COMPLETE_EVALUATION_H
 
 #include "api.h"
-#include "Graph.h"
+#include "Scheduling.h"
+#include "Profiler.h"
+#include "Profiler.h"
+#include "Node.h"
 
 #include <vector>
 #include <string>
