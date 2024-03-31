@@ -71,6 +71,22 @@ Gex::Feedback Gex::SaveGraph(Gex::Node *graph, const std::string& filepath)
 }
 
 
+bool LoadJsonString(const std::string& content, rapidjson::Document& json,
+                    Gex::Feedback* success=nullptr)
+{
+    json.Parse(content.c_str());
+
+    if (!json.IsObject())
+    {
+        if (success)
+            success->Set(Gex::Status::Failed, "Failed deserializing graph.");
+        return false;
+    }
+
+    return true;
+}
+
+
 bool LoadJsonFile(const std::string& filepath, rapidjson::Document& json,
                   Gex::Feedback* success=nullptr)
 {
@@ -88,17 +104,10 @@ bool LoadJsonFile(const std::string& filepath, rapidjson::Document& json,
                         (std::istreambuf_iterator<char>()));
 
     filestream.close();
-    json.Parse(content.c_str());
 
-    if (!json.IsObject())
-    {
-        if (success)
-            success->Set(Gex::Status::Failed, "Failed deserializing graph.");
-        return false;
-    }
-
-    return true;
+    return LoadJsonString(content, json, success);
 }
+
 
 Gex::Node* Gex::LoadGraph(const std::string& filepath, Feedback* success)
 {
@@ -122,6 +131,28 @@ Gex::Node* Gex::LoadGraph(const std::string& filepath, Feedback* success)
     return graph;
 }
 
+
+Gex::Node* Gex::LoadGraphString(const std::string& content, Feedback* success)
+{
+    rapidjson::Document doc;
+    if (!LoadJsonString(content, doc, success))
+    {
+        return nullptr;
+    }
+
+    auto* graph = NodeFactory::GetFactory()->LoadNode(doc.GetObject());
+    if (!graph)
+    {
+        delete graph;
+        if (success)
+            success->Set(Status::Failed, "Failed deserializing graph.");
+        return nullptr;
+    }
+
+    if (success)
+        success->Set(Status::Success, "Successfully loaded graph.");
+    return graph;
+}
 
 Gex::Feedback Gex::ExportAsCompound(NodeList nodes, Node* graph, const std::string& directory,
                                     const std::string& name, bool force)

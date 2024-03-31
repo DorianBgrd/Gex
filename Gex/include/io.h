@@ -13,6 +13,8 @@ namespace Gex
 
     GEX_API Node* LoadGraph(const std::string& filepath, Feedback* success=nullptr);
 
+    GEX_API Node* LoadGraphString(const std::string& content, Feedback* success=nullptr);
+
     GEX_API Feedback ExportAsCompound(NodeList nodes, Node* graph, const std::string& directory,
                                       const std::string& name, bool force=false);
 
