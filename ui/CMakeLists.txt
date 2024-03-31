@@ -41,7 +41,8 @@ add_library(
         src/ProfileViewer.cpp
         include/GraphView.h
         src/GraphView.cpp
-        include/PropertyEditor.h src/PropertyEditor.cpp)
+        include/PropertyEditor.h
+        src/PropertyEditor.cpp)
 
 add_compile_definitions(Gex_ui PRIVATE GEX_UI_API_EXPORT)
 
