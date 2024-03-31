@@ -446,8 +446,6 @@ namespace Gex
 
         class NodeGraphContext
         {
-            Q_OBJECT
-
             QString name;
             Gex::CompoundNode* node;
 
