@@ -2435,7 +2435,7 @@ void Gex::Ui::NodeGraphScene::ConvertSelectedNodesToCompound()
         nodes.push_back(n->Node());
     }
 
-    auto* cmp = graphContext->compound->ToCompound(nodes);
+    auto* cmp = graphContext->Compound()->ToCompound(nodes);
 
     for (auto* item : extract)
     {
@@ -2915,13 +2915,7 @@ void Gex::Ui::GraphWidget::OnNodeSelected()
 
 void Gex::Ui::GraphWidget::RegisterContext(Gex::CompoundNode* compound)
 {
-    auto *context = new NodeGraphContext();
-
-    context->name = compound->Name().c_str();
-    context->compound = compound;
-    context->GetNodes = [compound](){return compound->InternalNodes();};
-    context->CreateNode = [compound](std::string t, std::string n){return compound->CreateNode(t, n);},
-    context->DeleteNode = [compound](Gex::Node* node){ compound->RemoveNode(node);};
+    auto *context = new NodeGraphContext(compound->Name().c_str(), compound);
 
     contextsWidget->AddContext(compound->Name());
 
