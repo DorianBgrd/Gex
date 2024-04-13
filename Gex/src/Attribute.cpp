@@ -123,7 +123,7 @@ void Gex::Attribute::SignalChange(AttributeChange change)
         return;
     }
 
-    attributeNode->AttributeChanged(this, change);
+    attributeNode->SignalAttributeChange(this, change);
 }
 
 

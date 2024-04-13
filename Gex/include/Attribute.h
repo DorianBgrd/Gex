@@ -41,6 +41,8 @@ namespace Gex
         ValueChanged,
         IndexAdded,
         IndexRemoved,
+        AttributeAdded,
+        AttributeRemoved,
         ChildAttributeConnected,
         ChildAttributeDisconnected,
         ChildAttributeValueChanged,
