@@ -193,34 +193,47 @@ Gex::ScheduleNodeList Gex::ScheduleNodes(NodeList nodes, bool expand)
     std::vector<Gex::ScheduledNode*> scheduledNodes;
     for (auto iter = dict.begin(); iter != dict.end(); iter++)
     {
+        // For each node in scheduled nodes.
         for (auto p : iter->second)
         {
             auto* n = p;
+
+            // If it is a compound, expand it.
             if (expand && n->node->IsCompound())
             {
+                // Transform the compound to a series of scheduled nodes.
                 auto cmpSchels = n->node->ToScheduledNodes();
 
-//            scheduledNodes.insert(iter, cmpSchels.begin(), cmpSchels.end());
+                // Append resulting scheduled nodes from resulting scheduled.
                 scheduledNodes.insert(scheduledNodes.end(), cmpSchels.begin(), cmpSchels.end());
 
+                // Previous nodes of the first compound series node is the current
+                // node previous nodes.
                 cmpSchels.front()->previousNodes = n->previousNodes;
+
+                // Then, for each previous nodes of current node, remove it from
+                // their own future nodes and replace it with the first nodes from
+                // compound series.
                 for (auto src : n->previousNodes)
                 {
-                    auto srcindex = std::remove(src->previousNodes.begin(), src->previousNodes.end(), n);
-                    if (srcindex == n->previousNodes.end())
+                    auto srcindex = std::remove(src->futureNodes.begin(), src->futureNodes.end(), n);
+                    if (srcindex == src->futureNodes.end())
                         continue;
 
-                    src->previousNodes.push_back(cmpSchels.front());
+                    src->futureNodes.push_back(cmpSchels.front());
                 }
 
+                // Then, for each future nodes of current node, remove it from
+                // their own previous nodes and replace it with the last nodes
+                // from compound series.
                 cmpSchels.back()->futureNodes = n->futureNodes;
                 for (auto src : n->futureNodes)
                 {
-                    auto dstindex = std::remove(src->futureNodes.begin(), src->futureNodes.end(), n);
-                    if (dstindex == src->futureNodes.end())
+                    auto dstindex = std::remove(src->previousNodes.begin(), src->previousNodes.end(), n);
+                    if (dstindex == src->previousNodes.end())
                         continue;
 
-                    src->futureNodes.push_back(cmpSchels.back());
+                    src->previousNodes.push_back(cmpSchels.back());
                 }
 
                 delete n;
