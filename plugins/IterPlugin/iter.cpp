@@ -106,37 +106,148 @@ namespace iter
             return true;
         }
 
-        std::vector<Gex::ScheduledNode*> ToScheduledNodes() override
+//        std::vector<Gex::ScheduledNode*> ToScheduledNodes() override
+//        {
+//            size_t length_ = GetAttribute("input")->ValidIndices().size();
+//
+//            std::vector<Gex::ScheduledNode*> result;
+//
+//            Gex::ScheduledNode* last = nullptr;
+//            for (unsigned int i= 0; i < length_; i++)
+//            {
+//                auto schelNodes = Gex::CompoundNode::ToScheduledNodes();
+//
+//                if (last)
+//                    schelNodes.at(0)->previousNodes.push_back(last);
+//
+//                result.insert(result.end(), schelNodes.begin(), schelNodes.end());
+//
+//                last = result.at(result.size() - 1);
+//            }
+//
+//            return result;
+//        }
+    };
+
+    GENERATE_DEFAULT_BUILDER(IteratorBuilder, Iterator)
+
+    class Plugin_API ForRangeLoop: public Gex::CompoundNode
+    {
+        Gex::ScheduleNodeList compoundScheduledNodes;
+
+    protected:
+        std::vector<unsigned int> indices;
+
+        void InitAttributes() override
         {
-            size_t length_ = GetAttribute("input")->ValidIndices().size();
+            Gex::CompoundNode::InitAttributes();
 
-            std::vector<Gex::ScheduledNode*> result;
+            CreateAttribute<TSys::AnyValue>(
+                    "Array", Gex::AttrValueType::Multi);
 
-            Gex::ScheduledNode* last = nullptr;
-            for (unsigned int i= 0; i < length_; i++)
+            CreateAttribute<TSys::AnyValue>(
+                    "Value", Gex::AttrValueType::Single,
+                    Gex::AttrType::Input)->SetInternal(true);
+
+            CreateAttribute<TSys::AnyValue>(
+                    "OutValue", Gex::AttrValueType::Single,
+                    Gex::AttrType::Output)->SetInternal(true);
+
+            CreateAttribute<TSys::AnyValue>(
+                    "OutArray", Gex::AttrValueType::Multi,
+                    Gex::AttrType::Output);
+        }
+
+        bool PreEvaluate(Gex::NodeAttributeData &ctx,
+                         Gex::GraphContext &graphContext,
+                         Gex::NodeProfiler &profiler) override
+        {
+            indices = ctx.GetAttribute("Array").Indices();
+            return true;
+        }
+
+
+        bool IterEvaluate(Gex::NodeEvaluator& evaluator,
+                          Gex::NodeAttributeData &ctx,
+                          Gex::GraphContext &graphContext,
+                          Gex::NodeProfiler &profiler)
+        {
+            auto prof = profiler.GetProfiler();
+
+            if (!IsScheduled())
             {
-                auto schelNodes = Gex::CompoundNode::ToScheduledNodes();
-
-                if (last)
-                    schelNodes.at(0)->previousNodes.push_back(last);
-
-                result.insert(result.end(), schelNodes.begin(), schelNodes.end());
-
-                last = result.at(result.size() - 1);
+                Schedule();
             }
 
-            return result;
+            evaluator.Run();
+
+            return (evaluator.Status() == Gex::NodeEvaluator::EvaluationStatus::Done);
+        }
+
+        bool Evaluate(Gex::NodeAttributeData &ctx,
+                      Gex::GraphContext &graphContext,
+                      Gex::NodeProfiler &profiler) override
+        {
+            Gex::NodeEvaluator evaluator(
+                    compoundScheduledNodes, graphContext,
+                    profiler.GetProfiler(), false, 1);
+
+            ctx.GetAttribute("OutArray").ClearMultiIndices();
+
+            for (auto index : indices)
+            {
+                auto iv = ctx.GetAttribute("Array").GetIndex(index).GetAnyValue();
+
+                ctx.GetAttribute("Value").SetAnyValue(iv);
+
+                if (!IterEvaluate(evaluator, ctx, graphContext, profiler))
+                {
+                    return false;
+                }
+
+//                if (!Gex::CompoundNode::Evaluate(ctx, graphContext, profiler))
+//                {
+//                    return false;
+//                }
+
+                PullInternalOutputs();
+
+                auto ov = ctx.GetAttribute("OutValue").GetAnyValue();
+
+                ctx.GetAttribute("OutArray").CreateIndex(index);
+
+                ctx.GetAttribute("OutArray").GetIndex(index).SetAnyValue(ov);
+            }
+
+            return true;
+        }
+
+        bool PostEvaluate(Gex::NodeAttributeData &ctx,
+                          Gex::GraphContext &graphContext,
+                          Gex::NodeProfiler &profiler) override
+        {
+            return true;
+        }
+
+        Gex::ScheduleNodeList ToScheduledNodes() override
+        {
+            compoundScheduledNodes = Gex::ScheduleNodes(GetNodes());
+
+            return {ToScheduledNode()};
         }
     };
 
+    GENERATE_DEFAULT_BUILDER(ForRangeLoopBuilder, ForRangeLoop)
 
-    GENERATE_DEFAULT_BUILDER(IteratorBuilder, Iterator)
 }
 
 
 extern EXPORT RegisterPlugin(Gex::PluginLoader* loader)
 {
-    loader->RegisterNode<iter::IteratorBuilder>("Iterator");
+    loader->RegisterNode<iter::IteratorBuilder>("Iter/Iterator");
+
+    loader->RegisterNode<iter::ForRangeLoopBuilder>("Iter/ForRangeLoop");
+
 }
 
 
