@@ -609,8 +609,6 @@ namespace Gex
          */
         AttributeList AllInternalAttributes() const;
 
-        void Schedule() override;
-
     private:
 
         /**
