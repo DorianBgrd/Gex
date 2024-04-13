@@ -867,10 +867,10 @@ bool Gex::CompoundNode::AddNode(Node *node)
         return false;
     }
 
-    nodes.push_back(node);
     node->SetParent(this);
     node->SetName(node->Name());
 
+    nodes.push_back(node);
     return true;
 }
 
