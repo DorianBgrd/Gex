@@ -22,7 +22,7 @@ std::string Gex::Utils::UniqueName(const std::string &name, const Gex::NodeList&
 {
     std::string uniqueName = Gex::Utils::ValidateName(name);
 
-    int counter = 0;
+    int counter = 1;
     std::vector<std::string> nodeNames;
     for (auto n : nodes)
     {
