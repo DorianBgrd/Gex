@@ -44,6 +44,7 @@ namespace Gex
         std::vector<std::string> Resources() const;
     };
 
+
 	class GEX_API Node
 	{
 	protected:
@@ -58,6 +59,7 @@ namespace Gex
         friend NodeEvaluator;
 
         bool initializing;
+        unsigned int nextId = 0;
 
         /**
          * Starts node initialization.
@@ -87,6 +89,7 @@ namespace Gex
         CallbackId scheduleCbId = 0;
         InvalidateCallbacks invalidateCallbacks;
         ScheduleCallbacks scheduleCallbacks;
+        AttributeChangedCallbacks attrCallbacks;
 
 	public:
         /**
@@ -147,6 +150,10 @@ namespace Gex
          */
 		std::string SetName(const std::string& p);
 
+        unsigned int RegisterAttributeCallback(AttributeChangeCallback cb);
+
+        bool DeregisterAttributeCallback(unsigned int index);
+
     protected:
 		// Adds attribute to node.
         /**
@@ -155,6 +162,8 @@ namespace Gex
          * @return bool success.
          */
 		bool AddAttribute(Attribute* attr);
+
+        bool RemoveAttribute(Attribute* attr);
 
         /**
          * Default constructor.
@@ -179,6 +188,13 @@ namespace Gex
          * Should be overriden in node types.
          */
         virtual void InitAttributes();
+
+        /**
+         * Signals changes.
+         * @param attribute: attribure ptr.
+         * @param change: change that occured.
+         */
+        void SignalAttributeChange(Attribute* attribute, AttributeChange change);
 
         /**
          * Member function called when an attribute changes.
@@ -270,6 +286,12 @@ namespace Gex
 
 		Attribute* CreateAttributeFromValue(std::string name, std::any v, AttrValueType valueType = AttrValueType::Single,
                                             AttrType type = AttrType::Static, Attribute* parent = nullptr);
+
+
+        Attribute* CreateAttributeFromTypeName(const std::string& name, const std::string& apiName,
+                                               AttrValueType valueType = AttrValueType::Single,
+                                               AttrType type = AttrType::Static,
+                                               Attribute* parent = nullptr);
 
 
         Attribute* CreateAttribute(const std::string& name, AttrType type = AttrType::Static,
@@ -440,6 +462,8 @@ namespace Gex
          */
         void ValidateScheduling();
 
+        virtual void Schedule();
+
     public:
         ScheduledNode* ToScheduledNode();
 
@@ -584,6 +608,8 @@ namespace Gex
          * @return std::vector<Attribute*> internal attributes.
          */
         AttributeList AllInternalAttributes() const;
+
+        void Schedule() override;
 
     private:
 

@@ -12,7 +12,7 @@
 #include "Tsys/include/defaultTypes.h"
 
 #include <filesystem>
-#include <iostream>
+#include <map>
 #include <any>
 
 
@@ -45,6 +45,7 @@ Gex::Node::Node(Node* parent_)
     previous = nullptr;
     next = nullptr;
     parent = parent_;
+    nextId = 0;
 }
 
 
@@ -181,6 +182,22 @@ Gex::Attribute* Gex::Node::CreateAttributeFromValue(std::string name, std::any v
 }
 
 
+Gex::Attribute* Gex::Node::CreateAttributeFromTypeName(const std::string& name, const std::string& apiName,
+                                                       AttrValueType valueType, AttrType type,
+                                                       Attribute* parent)
+{
+    auto* registry = TSys::TypeRegistry::GetRegistry();
+    auto* handler = registry->GetTypeHandleFromApiName(apiName);
+    if (!handler)
+    {
+        return nullptr;
+    }
+
+    return CreateAttributeFromValue(name, handler->InitValue(),
+                                    valueType, type, parent);
+}
+
+
 Gex::Attribute* Gex::Node::CreateAttribute(const std::string& name, AttrType type,
                                            bool multi, Attribute* parent)
 {
@@ -248,6 +265,29 @@ std::string Gex::Node::SetName(const std::string& p)
 }
 
 
+unsigned int Gex::Node::RegisterAttributeCallback(
+        AttributeChangeCallback cb)
+{
+    unsigned int id = nextId;
+    attrCallbacks[id] = std::move(cb);
+
+    nextId++;
+    return id;
+}
+
+
+bool Gex::Node::DeregisterAttributeCallback(
+        unsigned int index)
+{
+    auto idx = attrCallbacks.find(index);
+    if (idx == attrCallbacks.end())
+        return false;
+
+    attrCallbacks.erase(idx);
+    return true;
+}
+
+
 bool Gex::Node::AddAttribute(Attribute* attr)
 {
 	std::string _name = attr->Longname();
@@ -259,7 +299,28 @@ bool Gex::Node::AddAttribute(Attribute* attr)
 
 	attr->SetParentNode(this);
 	attributes[_name] = attr;
+
+    SignalAttributeChange(attr, AttributeChange::AttributeAdded);
+
 	return true;
+}
+
+
+bool Gex::Node::RemoveAttribute(Attribute* attr)
+{
+    std::string _name = attr->Longname();
+
+    auto idx = attributes.find(_name);
+    if (idx == attributes.end())
+    {
+        return false;
+    }
+
+    SignalAttributeChange(idx->second, AttributeChange::AttributeRemoved);
+
+    delete idx->second;
+    attributes.erase(idx);
+    return true;
 }
 
 
@@ -555,34 +616,47 @@ void Gex::Node::InitAttributes()
 }
 
 
-void Gex::Node::AttributeChanged(Attribute* attribute, AttributeChange change)
+void Gex::Node::SignalAttributeChange(Attribute* attribute,
+                                      AttributeChange change)
 {
-    if (!parent)
+    AttributeChanged(attribute, change);
+
+    for (const auto& callb : attrCallbacks)
     {
-        return;
+        callb.second(attribute, change);
     }
 
-    switch (change)
+    if (parent)
     {
-        case AttributeChange::Connected:
-            parent->AttributeChanged(attribute, AttributeChange::ChildAttributeConnected);
-            break;
-        case AttributeChange::Disconnected:
-            parent->AttributeChanged(attribute, AttributeChange::ChildAttributeDisconnected);
-            break;
-        case AttributeChange::ValueChanged:
-            parent->AttributeChanged(attribute, AttributeChange::ChildAttributeValueChanged);
-            break;
-        case AttributeChange::IndexAdded:
-            parent->AttributeChanged(attribute, AttributeChange::ChildAttributeIndexAdded);
-            break;
-        case AttributeChange::IndexRemoved:
-            parent->AttributeChanged(attribute, AttributeChange::ChildAttributeIndexRemoved);
-            break;
-        default:
-            parent->AttributeChanged(attribute, change);
-            break;
+        switch (change)
+        {
+            case AttributeChange::Connected:
+                parent->SignalAttributeChange(attribute, AttributeChange::ChildAttributeConnected);
+                break;
+            case AttributeChange::Disconnected:
+                parent->SignalAttributeChange(attribute, AttributeChange::ChildAttributeDisconnected);
+                break;
+            case AttributeChange::ValueChanged:
+                parent->SignalAttributeChange(attribute, AttributeChange::ChildAttributeValueChanged);
+                break;
+            case AttributeChange::IndexAdded:
+                parent->SignalAttributeChange(attribute, AttributeChange::ChildAttributeIndexAdded);
+                break;
+            case AttributeChange::IndexRemoved:
+                parent->SignalAttributeChange(attribute, AttributeChange::ChildAttributeIndexRemoved);
+                break;
+            default:
+                parent->SignalAttributeChange(attribute, change);
+                break;
+        }
     }
+
+}
+
+
+void Gex::Node::AttributeChanged(Attribute* attribute, AttributeChange change)
+{
+
 }
 
 
@@ -623,7 +697,7 @@ bool Gex::Node::Run(Profiler& profiler,
 
     std::function<void(const GraphContext&)> finalize =
             [this, evalDone](const GraphContext& context) -> void {
-                this->FinalizeEvaluation(context); evalDone(context); };
+                this->FinalizeEvaluation(context); if (evalDone){evalDone(context);}; };
 
     lmbda.Stop();
 
@@ -631,9 +705,7 @@ bool Gex::Node::Run(Profiler& profiler,
     {
         auto schelScope = ProfilerScope(profiler, "Global", "Scheduling");
 
-        scheduledNodes = ScheduleNodes({this}, true);
-
-        ValidateScheduling();
+        Schedule();
     }
 
     auto evaluator = std::make_shared<NodeEvaluator>(
@@ -679,6 +751,14 @@ void Gex::Node::InvalidateScheduling()
 void Gex::Node::ValidateScheduling()
 {
     isScheduled = true;
+}
+
+
+void Gex::Node::Schedule()
+{
+    scheduledNodes = ScheduleNodes({this}, true);
+
+    ValidateScheduling();
 }
 
 
@@ -846,7 +926,10 @@ Gex::Node* Gex::CompoundNode::GetNode(const std::string& node) const
     if (!(*result)->IsCompound())
         return nullptr;
 
-    return ConvertTo<CompoundNode>(*result)->GetNode(sn);
+    if (pos != std::string::npos)
+        return CompoundNode::FromNode(*result)->GetNode(sn);
+
+    return *result;
 }
 
 
@@ -876,7 +959,7 @@ Gex::Attribute* Gex::CompoundNode::FindAttribute(std::string attr) const
         return GetAttribute(attr);
     }
 
-    std::string nodePath = attr.substr(0, pos - 1);
+    std::string nodePath = attr.substr(0, pos);
     std::string attrPath = attr.substr(pos + 1, std::string::npos);
 
     auto* node = GetNode(nodePath);
