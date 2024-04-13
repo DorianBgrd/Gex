@@ -776,6 +776,55 @@ bool Gex::Ui::NodePlugItem::IsOutputAnchor() const
 }
 
 
+qreal Gex::Ui::NodeItem::defaultCompTitleOffset = 15;
+qreal Gex::Ui::NodeItem::defaultWidth = 100;
+qreal Gex::Ui::NodeItem::defaultSpacing = 10;
+qreal Gex::Ui::NodeItem::defaultFooter = 10;
+
+
+void Gex::Ui::NodeItem::SetDefaultWidth(qreal width)
+{
+    defaultWidth = width;
+}
+
+
+qreal Gex::Ui::NodeItem::DefaultWidth()
+{
+    return defaultWidth;
+}
+
+
+qreal Gex::Ui::NodeItem::DefaultTitleOffset()
+{
+    return defaultCompTitleOffset;
+}
+
+void Gex::Ui::NodeItem::SetDefaultTitleOffset(qreal offset)
+{
+    defaultCompTitleOffset = offset;
+}
+
+qreal Gex::Ui::NodeItem::DefaultSpacing()
+{
+    return defaultSpacing;
+}
+
+void Gex::Ui::NodeItem::SetDefaultSpacing(qreal spacing)
+{
+    defaultSpacing = spacing;
+}
+
+qreal Gex::Ui::NodeItem::DefaultFooter()
+{
+    return defaultFooter;
+}
+
+void Gex::Ui::NodeItem::SetDefaultFooter(qreal footer)
+{
+    defaultFooter = footer;
+}
+
+
 
 Gex::Ui::NodeItem::NodeItem(Gex::Node* node_,
                             QGraphicsItem* parent):
@@ -792,7 +841,7 @@ Gex::Ui::NodeItem::NodeItem(Gex::Node* node_,
 
     destPlug = new NodePlugItem(this, false);
     destPlug->setRect(PLUG_RECT);
-    destPlug->setPos(NODE_DEFAULT_WIDTH, (ATTRIBUTE_HEIGHT - PLUG_RECT.height()) / 2);
+    destPlug->setPos(DefaultWidth(), (ATTRIBUTE_HEIGHT - PLUG_RECT.height()) / 2);
     destPlug->setBrush(QBrush(QColor("#408CCB")));
     destPlug->setPen(Qt::NoPen);
     destPlug->setZValue(10);
@@ -814,7 +863,9 @@ Gex::Ui::NodeItem::NodeItem(Gex::Node* node_,
     QFont internalFont("sans", 10);
     internalFont.setItalic(true);
     internalTitle->setFont(internalFont);
-    internalTitle->setPos(0, -20);
+
+    QFontMetrics metrics(internalFont);
+    internalTitle->setPos(0,  -metrics.capHeight() - defaultCompTitleOffset);
 
     TitleDoc* doc = title->TitleDocument();
 
@@ -829,9 +880,12 @@ Gex::Ui::NodeItem::NodeItem(Gex::Node* node_,
     type->setFont(typeFont);
     type->setDefaultTextColor(QColor("white"));
     type->setPlainText(node->Type().c_str());
-    type->setPos(0, title->boundingRect().height());
+    type->setPos(0, title->boundingRect().bottom());
 
     type->setPlainText(node->Type().c_str());
+
+    attributesY = (title->boundingRect().height() +
+            type->boundingRect().height() + 5);
 
     CreateAttributes();
 
@@ -899,7 +953,7 @@ void Gex::Ui::NodeItem::RebuildAttributes()
 
 void Gex::Ui::NodeItem::PlaceAttributes()
 {
-    qreal posY = NODE_HEADER_HEIGHT;
+    qreal posY = attributesY;
 
     bool skippedInput = false;
     bool skippedOutput = false;
@@ -912,7 +966,7 @@ void Gex::Ui::NodeItem::PlaceAttributes()
                 attr->setVisible(true);
                 attr->SetTextVisibility(true);
                 attr->setPos(0, posY);
-                posY += attr->TotalHeight();
+                posY += attr->TotalHeight() + DefaultSpacing();
             }
             sourcePlug->setVisible(false);
             destPlug->setVisible(false);
@@ -941,7 +995,7 @@ void Gex::Ui::NodeItem::PlaceAttributes()
                     attr->setVisible(true);
                     attr->SetTextVisibility(true);
                     attr->setPos(0, posY);
-                    posY += attr->TotalHeight();
+                    posY += attr->TotalHeight() + DefaultSpacing();
                 }
             }
 
@@ -956,7 +1010,7 @@ void Gex::Ui::NodeItem::PlaceAttributes()
                     attr->setVisible(true);
                     attr->SetTextVisibility(true);
                     attr->setPos(0, posY);
-                    posY += attr->TotalHeight();
+                    posY += attr->TotalHeight() + DefaultSpacing();
                 }
                 else
                 {
@@ -985,7 +1039,7 @@ void Gex::Ui::NodeItem::PlaceAttributes()
                     attr->setVisible(true);
                     attr->SetTextVisibility(true);
                     attr->setPos(0, posY);
-                    posY += attr->TotalHeight();
+                    posY += attr->TotalHeight() + DefaultSpacing();
                 }
                 else
                 {
@@ -1014,7 +1068,7 @@ void Gex::Ui::NodeItem::PlaceAttributes()
                     attr->setVisible(true);
                     attr->SetTextVisibility(true);
                     attr->setPos(0, posY);
-                    posY += attr->TotalHeight();
+                    posY += attr->TotalHeight() + DefaultSpacing();
                 }
                 else
                 {
@@ -1044,7 +1098,7 @@ void Gex::Ui::NodeItem::PlaceAttributes()
                     attr->setVisible(true);
                     attr->SetTextVisibility(true);
                     attr->setPos(0, posY);
-                    posY += attr->TotalHeight();
+                    posY += attr->TotalHeight() + DefaultSpacing();
                 }
                 else
                 {
@@ -1065,7 +1119,7 @@ void Gex::Ui::NodeItem::PlaceAttributes()
                     attr->setVisible(true);
                     attr->SetTextVisibility(true);
                     attr->setPos(0, posY);
-                    posY += attr->TotalHeight();
+                    posY += attr->TotalHeight() + DefaultSpacing();
                 }
                 else
                 {
@@ -1158,14 +1212,14 @@ void Gex::Ui::NodeItem::InitializeLinks()
 
 QSize Gex::Ui::NodeItem::AdjustedSize() const
 {
-    qreal height = NODE_HEADER_HEIGHT;
+    qreal height = attributesY;
 
     switch (AttributeVisibility())
     {
         case AttributeVisibilityMode::All:
             for (auto* attr : attributes)
             {
-                height += attr->TotalHeight();
+                height += attr->TotalHeight() + defaultSpacing;
             }
             break;
         case AttributeVisibilityMode::Settable:
@@ -1175,7 +1229,7 @@ QSize Gex::Ui::NodeItem::AdjustedSize() const
                     !attr->Attribute()->IsDefault() &&
                     attr->Attribute()->IsInput())
                 {
-                    height += attr->TotalHeight();
+                    height += attr->TotalHeight() + defaultSpacing;
                 }
             }
             break;
@@ -1185,7 +1239,7 @@ QSize Gex::Ui::NodeItem::AdjustedSize() const
                 if (attr->Attribute()->HasSource() ||
                     attr->Attribute()->HasDests())
                 {
-                    height += attr->TotalHeight();
+                    height += attr->TotalHeight() + defaultSpacing;
                 }
             }
             break;
@@ -1195,7 +1249,7 @@ QSize Gex::Ui::NodeItem::AdjustedSize() const
                 if (attr->Attribute()->IsInput() ||
                     attr->Attribute()->IsStatic())
                 {
-                    height += attr->TotalHeight();
+                    height += attr->TotalHeight() + defaultSpacing;
                 }
             }
             break;
@@ -1205,7 +1259,7 @@ QSize Gex::Ui::NodeItem::AdjustedSize() const
                 if (attr->Attribute()->IsOutput() ||
                     !attr->Attribute()->IsStatic())
                 {
-                    height += attr->TotalHeight();
+                    height += attr->TotalHeight() + defaultSpacing;
                 }
             }
             break;
@@ -1216,7 +1270,7 @@ QSize Gex::Ui::NodeItem::AdjustedSize() const
                     (attr->Attribute()->IsInput() ||
                      attr->Attribute()->IsStatic()))
                 {
-                    height += attr->TotalHeight();
+                    height += attr->TotalHeight() + defaultSpacing;
                 }
             }
             break;
@@ -1227,14 +1281,15 @@ QSize Gex::Ui::NodeItem::AdjustedSize() const
                     (attr->Attribute()->IsOutput() &&
                      !attr->Attribute()->IsStatic()))
                 {
-                    height += attr->TotalHeight();
+                    height += attr->TotalHeight() + defaultSpacing;
                 }
             }
             break;
     }
 
 
-    return QSize(NODE_DEFAULT_WIDTH, height);
+    return QSize(DefaultWidth(),
+                 height + defaultFooter);
 }
 
 

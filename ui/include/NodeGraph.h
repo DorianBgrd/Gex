@@ -27,7 +27,6 @@
 #include <QStackedWidget>
 
 
-#define NODE_HEADER_HEIGHT 50
 #define NODE_DEFAULT_WIDTH 100
 #define ATTRIBUTE_HEIGHT 25
 #define PLUG_RECT QRect(0, 0, 10, 10)
@@ -284,6 +283,30 @@ namespace Gex
             bool showInternal = false;
             QColor customBorderColor;
             bool userCustomBorderColor = false;
+            qreal attributesY;
+
+        public:
+            static qreal defaultCompTitleOffset;
+            static qreal defaultWidth;
+            static qreal defaultSpacing;
+            static qreal defaultFooter;
+
+        public:
+            static qreal DefaultWidth();
+
+            static void SetDefaultWidth(qreal width);
+
+            static qreal DefaultTitleOffset();
+
+            static void SetDefaultTitleOffset(qreal offset);
+
+            static qreal DefaultSpacing();
+
+            static void SetDefaultSpacing(qreal spacing);
+
+            static qreal DefaultFooter();
+
+            static void SetDefaultFooter(qreal footer);
 
         public:
             enum {
