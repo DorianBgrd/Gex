@@ -6,7 +6,7 @@
 
 namespace Gex
 {
-    GEX_API void ExportToFile(const std::string& filepath, rapidjson::Document& json,
+    GEX_API void ExportToFile(const std::string& filepath, const std::string& str,
                               Feedback* result=nullptr);
 
     GEX_API Feedback SaveGraph(Node* graph, const std::string& filepath);
@@ -17,6 +17,9 @@ namespace Gex
 
     GEX_API Feedback ExportAsCompound(NodeList nodes, Node* graph, const std::string& directory,
                                       const std::string& name, bool force=false);
+
+    GEX_API Feedback ExportToString(Node* graph, std::string& str,
+                                    bool pretty=true);
 
 //    GEX_API Feedback ExportNodes(Node* graph, NodeList nodes,
 //                                 const std::string& filepath);

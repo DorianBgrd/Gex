@@ -11,14 +11,9 @@
 
 
 void Gex::ExportToFile(const std::string& filepath,
-                       rapidjson::Document& json,
-                       Feedback* result)
+                       const std::string& str, Feedback* result)
 {
-    rapidjson::StringBuffer buffer;
-    rapidjson::Writer write(buffer);
-    rapidjson::PrettyWriter<rapidjson::StringBuffer> writer(buffer);
 
-    json.Accept(writer);
 
     std::filesystem::path file(filepath);
     std::filesystem::path directory = file.parent_path();
@@ -36,7 +31,7 @@ void Gex::ExportToFile(const std::string& filepath,
     std::ofstream stream;
     stream.open(filepath);
 
-    stream << buffer.GetString();
+    stream << str;
     stream.close();
 
     result->Set(Gex::Status::Success, "");
@@ -45,22 +40,14 @@ void Gex::ExportToFile(const std::string& filepath,
 
 Gex::Feedback Gex::SaveGraph(Gex::Node *graph, const std::string& filepath)
 {
-    Feedback result;
-
-    rapidjson::Document json;
-    rapidjson::Value& dict = json.SetObject();
-
-    NodeBuilder* builder = NodeFactory::GetFactory()->GetBuilder(graph->Type());
-    if (!builder)
+    std::string str;
+    Feedback result = ExportToString(graph, str);
+    if (!result)
     {
-        result.Set(Status::Failed, "Specified node type "
-            + graph->Type() +  " is not registered.");
         return result;
     }
 
-    builder->SaveNode(graph, dict, json);
-
-    ExportToFile(filepath, json, &result);
+    ExportToFile(filepath, str, &result);
     if (!result)
     {
         return result;
@@ -68,6 +55,47 @@ Gex::Feedback Gex::SaveGraph(Gex::Node *graph, const std::string& filepath)
 
     result.Set(Status::Success, "Successfully saved graph to " + filepath);
     return result;
+}
+
+
+template<typename Writer>
+Gex::Feedback _ExportToString(Gex::Node* graph, std::string& str)
+{
+    Gex::Feedback result;
+
+    rapidjson::Document json;
+    rapidjson::Value& dict = json.SetObject();
+
+    if (!Gex::NodeFactory::GetFactory()->SaveNode(graph, dict, json))
+    {
+        result.Set(Gex::Status::Failed, "Specified node type "
+                + graph->Type() +  " is not registered.");
+        return result;
+    }
+
+    rapidjson::StringBuffer buffer;
+    rapidjson::Writer write(buffer);
+    Writer writer(buffer);
+
+    json.Accept(writer);
+
+    str = buffer.GetString();
+
+    result.Set(Gex::Status::Success, "Successfully exported node to string.");
+    return result;
+}
+
+
+Gex::Feedback Gex::ExportToString(Node* graph, std::string& str, bool pretty)
+{
+    if (pretty)
+    {
+        return _ExportToString<rapidjson::PrettyWriter<rapidjson::StringBuffer>>(graph, str);
+    }
+    else
+    {
+        return _ExportToString<rapidjson::Writer<rapidjson::StringBuffer>>(graph, str);
+    }
 }
 
 
@@ -173,7 +201,12 @@ Gex::Feedback Gex::ExportAsCompound(NodeList nodes, Node* graph, const std::stri
     rapidjson::Document json;
     rapidjson::Value& dict = json.SetObject();
 
-    compound->Serialize(dict, json);
+    std::string str;
+    success = Gex::ExportToString(compound, str);
+    if (!success)
+    {
+        return success;
+    }
 
     std::filesystem::path rpath = directory;
     rpath.append(name + ".json");
@@ -186,9 +219,11 @@ Gex::Feedback Gex::ExportAsCompound(NodeList nodes, Node* graph, const std::stri
 
     graphCmp->RemoveNode(compound);
 
-    Gex::ExportToFile(rpath.string(), json, &success);
+
+    Gex::ExportToFile(rpath.string(), str, &success);
     return success;
 }
+
 
 
 //Gex::Feedback Gex::ExportNodes(Node* graph, NodeList nodes,
