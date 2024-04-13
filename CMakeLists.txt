@@ -17,9 +17,14 @@ set(TSYS_LIBRARY_DIR "$ENV{TSYS_DIR}/Tsys/cmake-build-${BUILD_TYPE}")
 
 message("TSYS_LIBRARY_DIR : ${TSYS_LIBRARY_DIR}")
 
-add_library(
-        Gex
-        SHARED
+
+##########################
+# Set sources for library.
+##########################
+
+set(
+        GEX_SOURCES
+
         Gex/src/Attribute.cpp
         Gex/src/Evaluation.cpp
         Gex/src/Node.cpp
@@ -38,12 +43,13 @@ add_library(
         Gex/src/utils.cpp
         Gex/include/defs.h
         Gex/include/Scheduling.h
-        Gex/src/Scheduling.cpp)
+        Gex/src/Scheduling.cpp
+)
 
 
-target_include_directories(
-        Gex
-        PUBLIC
+set(
+        GEX_INCLUDE_DIRECTORIES
+
         ${CMAKE_SOURCE_DIR}
         $ENV{RAPIDJSON_DIR}
         $ENV{TSYS_DIR}
@@ -52,12 +58,36 @@ target_include_directories(
         ${Python_INCLUDE_DIRS}
 )
 
-target_link_directories(
-        Gex
-        PUBLIC
+set(
+        GEX_LINK_DIRECTORIES
+
         ${Boost_LIBRARY_DIRS}
         ${Python_LIBRARY_DIRS}
         ${TSYS_LIBRARY_DIR}
+)
+
+##############################
+# Shared Library
+#############################
+
+add_library(
+        Gex
+        SHARED
+        ${GEX_SOURCES}
+)
+
+
+target_include_directories(
+        Gex
+        PUBLIC
+        ${GEX_INCLUDE_DIRECTORIES}
+)
+
+
+target_link_directories(
+        Gex
+        PUBLIC
+        ${GEX_LINK_DIRECTORIES}
 )
 
 target_link_libraries(
@@ -66,6 +96,40 @@ target_link_libraries(
         ${Boost_LIBRARIES}
         ${Python_LIBRARIES}
         TSys
+)
+
+
+##############################
+# Static Library
+#############################
+
+
+add_library(
+        Gex_Static
+        STATIC
+        ${GEX_SOURCES}
+)
+
+
+target_include_directories(
+        Gex_Static
+        PUBLIC
+        ${GEX_INCLUDE_DIRECTORIES}
+)
+
+
+target_link_directories(
+        Gex_Static
+        PUBLIC
+        ${GEX_LINK_DIRECTORIES}
+)
+
+target_link_libraries(
+        Gex_Static
+        PUBLIC
+        ${Boost_LIBRARIES}
+        ${Python_LIBRARIES}
+        TSys_Static
 )
 
 
