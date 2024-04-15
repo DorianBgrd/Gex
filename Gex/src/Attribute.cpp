@@ -73,6 +73,7 @@ Gex::Attribute::Attribute(const std::string& name, AttrType type, bool multi,
                           bool userDefined, Gex::Node* node, Attribute* parent)
 {
     isInternal = false;
+    isExternal = true;
     attributeNode = node;
     attributeName = name;
     if (parent == nullptr)
@@ -316,6 +317,22 @@ bool Gex::Attribute::SetInternal(bool internal)
         return false;
 
     isInternal = internal;
+    return true;
+}
+
+
+bool Gex::Attribute::IsExternal() const
+{
+    return isExternal;
+}
+
+
+bool Gex::Attribute::SetExternal(bool external)
+{
+    if (!attributeIsUserDefined && !attributeNode->IsInitializing())
+        return false;
+
+    isExternal = external;
     return true;
 }
 
@@ -1035,8 +1052,8 @@ std::vector<Gex::Attribute*> Gex::Attribute::Dests()
 }
 
 
-std::any Gex::Attribute::Convert(std::any value, size_t sourceHash, size_t destHash,
-                                 Feedback* success)
+std::any Gex::Attribute::Convert(std::any value, size_t destHash,
+                                 Feedback* success) const
 {
     auto* handler = TSys::TypeRegistry::GetRegistry()->GetTypeHandle(destHash);
     if (!handler)
@@ -1047,7 +1064,7 @@ std::any Gex::Attribute::Convert(std::any value, size_t sourceHash, size_t destH
     }
 
     std::any cvrtval = handler->ConvertFrom(value, attributeAnyValue);
-    if (!cvrtval.has_value())
+    if (!cvrtval.has_value() || cvrtval.type().hash_code() != destHash)
     {
         if (success)
             success->status = Status::Failed;
@@ -1058,6 +1075,48 @@ std::any Gex::Attribute::Convert(std::any value, size_t sourceHash, size_t destH
         success->status = Status::Success;
 
     return cvrtval;
+}
+
+
+bool Gex::Attribute::ValueSet(std::any value)
+{
+    if (attributeType == AttrType::Output || !isExternal)
+    {
+        return false;
+    }
+
+    return SetAnyValue(std::move(value));
+}
+
+
+std::any Gex::Attribute::ValueGet(size_t hash, Feedback* status) const
+{
+    if (hash != TypeHash())
+    {
+        std::any cvrtval = Convert(attributeAnyValue, TypeHash());
+        if (!cvrtval.has_value())
+        {
+            if (status)
+                status->status = Status::Failed;
+        }
+        return cvrtval;
+    }
+
+    if (status)
+        status->status =Status::Success;
+    return attributeAnyValue;
+}
+
+
+std::vector<Gex::Attribute*> Gex::Attribute::GetArray() const
+{
+    std::vector<Attribute*> arr;
+    for (std::pair<unsigned int, Attribute*> p : multiValues)
+    {
+        arr.push_back(p.second);
+    }
+
+    return arr;
 }
 
 
@@ -1088,14 +1147,14 @@ bool Gex::Attribute::SetAnyValue(std::any value)
     size_t destHash = value.type().hash_code();
     size_t typeHash = TypeHash();
 
-    auto* handler = TSys::TypeRegistry::GetRegistry()->GetTypeHandle(TypeHash());
-    if (!handler)
-    {
-        return false;
-    }
-
     if (destHash != typeHash)
     {
+        auto* handler = TSys::TypeRegistry::GetRegistry()->GetTypeHandle(TypeHash());
+        if (!handler)
+        {
+            return false;
+        }
+
         std::any dstval = handler->ConvertFrom(value, attributeAnyValue);
         if (!dstval.has_value())
         {
@@ -1105,8 +1164,7 @@ bool Gex::Attribute::SetAnyValue(std::any value)
         value = dstval;
     }
 
-    attributeAnyValue = handler->CopyValue(value);
-
+    attributeAnyValue = value;
     SignalChange(AttributeChange::ValueChanged);
     return true;
 }

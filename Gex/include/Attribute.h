@@ -65,6 +65,7 @@ namespace Gex
 		std::string attributeLongname;
 		bool attributeIsUserDefined;
         bool isInternal;
+        bool isExternal;
 		AttrValueType attributeValueType;
 		AttrType attributeType;
 
@@ -327,7 +328,27 @@ namespace Gex
          */
         bool IsInternal() const;
 
+        /**
+         * Sets attribute as internal.
+         * @param internal: internal  state.
+         */
         bool SetInternal(bool internal);
+
+        /**
+         * Returns zhether attribute is external.
+         * All attributes are external by default, and
+         * may be set from the outside. A non external
+         * attribute may only be set from the Evaluate
+         * node method.
+         * @return attribute is external.
+         */
+        bool IsExternal() const;
+
+        /**
+         * Sets attribute as external.
+         * @param external: external  state.
+         */
+        bool SetExternal(bool external);
 
     public:
         /**
@@ -604,90 +625,40 @@ namespace Gex
         std::vector<Attribute*> Dests();
 
     private:
-        std::any Convert(std::any value, size_t sourceHash, size_t destHash,
-                         Feedback* success=nullptr);
+        std::any Convert(std::any value, size_t destHash,
+                         Feedback* success=nullptr) const;
 
-		template<class T>
-		bool ValueSet(T value)
-		{
-
-
-			size_t sourceHash = typeid(T).hash_code();
-			size_t destHash = TypeHash();
-			if (destHash != sourceHash)
-			{
-                Feedback success;
-                auto cvrtval = Convert(std::make_any<T>(value),
-                        sourceHash, destHash, &success);
-                if (!success)
-                {
-                    return false;
-                }
-
-                attributeAnyValue = cvrtval;
-                return true;
-			}
-
-			attributeAnyValue = std::make_any<T>(value);
-			return true;
-		}
+		bool ValueSet(std::any value);
 
 	public:
 		template<class T>
 		bool Set(T value)
 		{
-			if (attributeType == AttrType::Output)
-			{
-				return false;
-			}
-
-			return ValueSet(value);
+			return ValueSet(std::make_any<T>(value));
 		}
+
+    private:
+        std::any ValueGet(size_t dest, Feedback* status=nullptr) const;
 
 	public:
 		template<class T>
 		T Get(Feedback* status=nullptr)
 		{
-			size_t destHash = typeid(T).hash_code();
-			if (destHash != TypeHash())
-			{
-                std::any cvrtval = Convert(attributeAnyValue, TypeHash(), destHash);
-                if (!cvrtval.has_value())
-                {
-                    if (status)
-                        status->status = Status::Failed;
-                    return T();
-                }
+			std::any dest = ValueGet(typeid(T).hash_code(), status);
+            if (!dest.has_value())
+            {
+                if (status)
+                    status->status = Status::Failed;
 
-                try
-                {
-                    if (status)
-                        status->status = Status::Success;
-                    return std::any_cast<T>(cvrtval);
-                }
-                catch (std::bad_any_cast &exc)
-                {
-                    if (status)
-                        status->status = Status::Failed;
-                    return T();
-                }
-			}
+                return T();
+            }
 
             if (status)
-                status->status =Status::Success;
+                status->status = Status::Success;
 			return std::any_cast<T>(attributeAnyValue);
 		}
 
-		std::vector<Attribute*> GetArray()
-		{
-			std::vector<Attribute*> arr;
-			for (std::pair<unsigned int, Attribute*> p : multiValues)
-			{
-				arr.push_back(p.second);
-			}
-
-			return arr;
-		}
+		std::vector<Attribute*> GetArray() const;
 
 	public:
 		Attribute* GetIndexAttribute(unsigned int index) const;
