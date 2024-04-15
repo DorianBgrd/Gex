@@ -37,11 +37,13 @@ namespace iter
                     "in", Gex::AttrValueType::Single,
                     Gex::AttrType::Input);
             in->SetInternal(true);
+            in->SetExternal(false);
 
             auto* out = CreateAttribute<TSys::AnyValue>(
                     "out", Gex::AttrValueType::Single,
                      Gex::AttrType::Output);
             out->SetInternal(true);
+            out->SetExternal(false);
 
             CreateAttribute<TSys::AnyValue>(
                     "output", Gex::AttrValueType::Multi,
@@ -145,13 +147,17 @@ namespace iter
             CreateAttribute<TSys::AnyValue>(
                     "Array", Gex::AttrValueType::Multi);
 
-            CreateAttribute<TSys::AnyValue>(
+            auto* v = CreateAttribute<TSys::AnyValue>(
                     "Value", Gex::AttrValueType::Single,
-                    Gex::AttrType::Input)->SetInternal(true);
+                    Gex::AttrType::Input);
+            v->SetInternal(true);
+            v->SetExternal(false);
 
-            CreateAttribute<TSys::AnyValue>(
+            auto* ov = CreateAttribute<TSys::AnyValue>(
                     "OutValue", Gex::AttrValueType::Single,
-                    Gex::AttrType::Output)->SetInternal(true);
+                    Gex::AttrType::Output);
+            ov->SetInternal(true);
+            ov->SetExternal(false);
 
             CreateAttribute<TSys::AnyValue>(
                     "OutArray", Gex::AttrValueType::Multi,

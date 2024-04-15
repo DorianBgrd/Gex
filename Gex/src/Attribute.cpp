@@ -719,22 +719,6 @@ unsigned int Gex::Attribute::AttributeIndex(Attribute *sub, Feedback* status)
 }
 
 
-//bool CheckInternal(Gex::Attribute* source, Gex::Attribute* dest)
-//{
-//    if (Gex::CompoundNode* sourceCmp = Gex::CompoundNode::FromNode(source->Node()))
-//    {
-//        return ((source->IsInput() && dest->IsInput()) || (source->IsOutput() && dest->IsOutput())
-//                && sourceCmp->IsInternalNode(dest->Node()));
-//    }
-//    else if (Gex::CompoundNode* destCmp = Gex::CompoundNode::FromNode(dest->Node()))
-//    {
-//        return ((source->IsInput() && dest->IsInput()) || (source->IsOutput() && dest->IsOutput())
-//                && destCmp->IsInternalNode(source->Node()));
-//    }
-//
-//    return true;
-//}
-
 bool  Gex::Attribute::_CanConnectSource(Attribute* source)
 {
     // If source attribute is from a compound AND is internal, check
@@ -747,8 +731,8 @@ bool  Gex::Attribute::_CanConnectSource(Attribute* source)
         }
     }
 
-        // If current attribute is from a compound AND is internal, check
-        // if source node is an internal node.
+    // If current attribute is from a compound AND is internal, check
+    // if source node is an internal node.
     else if (CompoundNode* compound = CompoundNode::FromNode(Node()))
     {
         if (compound->HasNode(source->Node()) && IsInternal())
@@ -763,6 +747,11 @@ bool  Gex::Attribute::_CanConnectSource(Attribute* source)
     }
 
     else if (source->Node()->Parent() != Node()->Parent())
+    {
+        return false;
+    }
+
+    if (!isExternal)
     {
         return false;
     }

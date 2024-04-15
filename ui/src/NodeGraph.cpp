@@ -963,11 +963,15 @@ void Gex::Ui::NodeItem::PlaceAttributes()
         case AttributeVisibilityMode::All:
             for (auto* attr : attributes)
             {
+                if (!attr->Attribute()->IsExternal())
+                    continue;
+
                 attr->setVisible(true);
                 attr->SetTextVisibility(true);
                 attr->setPos(0, posY);
                 posY += attr->TotalHeight() + DefaultSpacing();
             }
+
             sourcePlug->setVisible(false);
             destPlug->setVisible(false);
             break;
@@ -976,7 +980,9 @@ void Gex::Ui::NodeItem::PlaceAttributes()
             {
                 if (attr->Attribute()->HasSource() ||
                     attr->Attribute()->IsDefault() ||
-                    (attr->Attribute()->IsOutput() && !attr->Attribute()->IsStatic()))
+                    (attr->Attribute()->IsOutput() &&
+                    !attr->Attribute()->IsStatic() &&
+                    attr->Attribute()->IsExternal()))
                 {
                     attr->Collapse();
                     attr->SetTextVisibility(false);
@@ -1034,7 +1040,8 @@ void Gex::Ui::NodeItem::PlaceAttributes()
             for (auto* attr : attributes)
             {
                 if (attr->Attribute()->IsInput() ||
-                    attr->Attribute()->IsStatic())
+                    attr->Attribute()->IsStatic() ||
+                    !attr->Attribute()->IsExternal())
                 {
                     attr->setVisible(true);
                     attr->SetTextVisibility(true);
@@ -1063,7 +1070,8 @@ void Gex::Ui::NodeItem::PlaceAttributes()
             for (auto* attr : attributes)
             {
                 if (attr->Attribute()->IsOutput() ||
-                    attr->Attribute()->IsStatic())
+                    attr->Attribute()->IsStatic() ||
+                    !attr->Attribute()->IsExternal())
                 {
                     attr->setVisible(true);
                     attr->SetTextVisibility(true);
@@ -1219,6 +1227,9 @@ QSize Gex::Ui::NodeItem::AdjustedSize() const
         case AttributeVisibilityMode::All:
             for (auto* attr : attributes)
             {
+                if (!attr->Attribute()->IsExternal())
+                    continue;
+
                 height += attr->TotalHeight() + defaultSpacing;
             }
             break;
@@ -1247,7 +1258,8 @@ QSize Gex::Ui::NodeItem::AdjustedSize() const
             for (auto* attr : attributes)
             {
                 if (attr->Attribute()->IsInput() ||
-                    attr->Attribute()->IsStatic())
+                    attr->Attribute()->IsStatic() ||
+                    !attr->Attribute()->IsExternal())
                 {
                     height += attr->TotalHeight() + defaultSpacing;
                 }
@@ -1257,7 +1269,8 @@ QSize Gex::Ui::NodeItem::AdjustedSize() const
             for (auto* attr : attributes)
             {
                 if (attr->Attribute()->IsOutput() ||
-                    !attr->Attribute()->IsStatic())
+                    !attr->Attribute()->IsStatic() ||
+                    !attr->Attribute()->IsExternal())
                 {
                     height += attr->TotalHeight() + defaultSpacing;
                 }
