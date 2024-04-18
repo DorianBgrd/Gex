@@ -8,6 +8,7 @@
 int main(int argc, char** argv)
 {
     char* pluginPath = argv[0];
+    char* graphF = argv[1];
 
     auto* graph = new Gex::CompoundNode();
 
@@ -24,10 +25,10 @@ int main(int argc, char** argv)
 
     at1->Set(std::string("Value"));
 
-    Gex::SaveGraph(graph, "D:\\graph.json");
+    Gex::SaveGraph(graph, graphF);
 
     Gex::CompoundNode* lg = Gex::CompoundNode::FromNode(
-            Gex::LoadGraph("D:\\graph.json"));
+            Gex::LoadGraph(graphF));
 
     Gex::Node* n_1 = lg->GetNode("Node1");
     auto* at_1 = n_1->GetAttribute("String");
