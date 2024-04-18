@@ -1,10 +1,14 @@
 import sys
 import os
-sys.path.insert(0, r"D:\WORK\GEX\Gex\cmake-build-release\python")
+
+moduledir = sys.argv[1]
+dfp = sys.argv[2]
+
+sys.path.insert(0, moduledir)
 
 import Gex
 
-plugins_dir = r"D:\WORK\GEX\Gex\cmake-build-release\plugins"
+plugins_dir = moduledir
 for element in os.listdir(plugins_dir):
     pdir = os.path.join(plugins_dir, element)
     if not os.path.isdir(pdir):
@@ -50,9 +54,9 @@ print(feedback.status)
 feedback.status = Gex.Status.Success
 print(feedback.status)
 
-feedback = Gex.SaveGraph(graph, r"D:\graph.json")
+feedback = Gex.SaveGraph(graph, dfp)
 print(feedback.status, feedback.message)
 
-graph = Gex.LoadGraph(r"D:\graph.json", feedback=feedback)
+graph = Gex.LoadGraph(dfp, feedback=feedback)
 print(graph)
 print(feedback.status, feedback.message)
