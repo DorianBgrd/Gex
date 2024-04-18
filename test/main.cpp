@@ -2,17 +2,16 @@
 #include <filesystem>
 
 
-#define PLUGIN_PATH "D:\\WORK\\GEX\\Gex\\cmake-build-debug\\plugins\\StringPlugin\\StringPlugin.dll"
-#define PLUGIN_DIR "D:\\WORK\\GEX\\Gex\\cmake-build-debug\\plugins"
-
 
 
 
 int main(int argc, char** argv)
 {
+    char* pluginPath = argv[0];
+
     auto* graph = new Gex::CompoundNode();
 
-    bool success = Gex::PluginLoader::LoadPlugin(PLUGIN_PATH);
+    bool success = Gex::PluginLoader::LoadPlugin(pluginPath);
 
     Gex::Node* n1 = graph->CreateNode("String/Constant", "Node1");
     Gex::Node* n2 = graph->CreateNode("String/Constant", "Node2");
