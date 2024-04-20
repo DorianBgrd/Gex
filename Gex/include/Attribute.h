@@ -64,8 +64,8 @@ namespace Gex
 		std::string attributeName;
 		std::string attributeLongname;
 		bool attributeIsUserDefined;
-        bool isInternal;
-        bool isExternal;
+        bool isInternal = false;
+        bool isExternal = true;
 		AttrValueType attributeValueType;
 		AttrType attributeType;
 
