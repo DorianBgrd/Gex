@@ -288,8 +288,15 @@ void Gex::Ui::AttributeItem::Initialize(Gex::Attribute* attr,
                                         AttributeItem* parent,
                                         NodeItem* node)
 {
+    QFont textFont("sans", 8);
+
+    defaultHeight = QFontMetrics(textFont).boundingRect(
+            attr->Name().c_str()).height();
+    plugRect = QRect(0, 0, defaultHeight / 1.5,
+                     defaultHeight / 1.5);
+
     setRect(QRect(0, 0, node->boundingRect().width(),
-                  ATTRIBUTE_HEIGHT));
+                  defaultHeight));
     setPen(Qt::NoPen);
 
     collapsed = true;
@@ -299,13 +306,13 @@ void Gex::Ui::AttributeItem::Initialize(Gex::Attribute* attr,
     input = new PlugItem(this, true);
     input->setBrush(QBrush("#E58C02"));
     input->setPen(Qt::NoPen);
-    input->setRect(PLUG_RECT);
+    input->setRect(plugRect);
     input->setVisible(attribute->IsInput());
 
     output = new PlugItem(this, false);
     output->setBrush(QBrush("#E58C02"));
     output->setPen(Qt::NoPen);
-    output->setRect(PLUG_RECT);
+    output->setRect(plugRect);
     output->setVisible(attribute->IsOutput());
 
     text = new QGraphicsTextItem(this);
@@ -328,7 +335,7 @@ void Gex::Ui::AttributeItem::Initialize(Gex::Attribute* attr,
     qreal height = metrics.boundingRect(attribute->Name().c_str()).height();
     text->update();
 
-    qreal textY = (ATTRIBUTE_HEIGHT - text->boundingRect().height()) / 2;
+    qreal textY = (defaultHeight - text->boundingRect().height()) / 2;
     width = text->boundingRect().width();
 
     if (attribute->IsInput() || attribute->IsStatic())
@@ -342,8 +349,8 @@ void Gex::Ui::AttributeItem::Initialize(Gex::Attribute* attr,
         input->setVisible(false);
     }
 
-    qreal plugY = (ATTRIBUTE_HEIGHT - PLUG_RECT.height())/2;
-    input->setPos(-PLUG_RECT.width(), plugY);
+    qreal plugY = (defaultHeight - plugRect.height())/2;
+    input->setPos(-plugRect.width(), plugY);
     output->setPos(rect().width(), plugY);
 
     if (attribute->IsMulti() || attribute->IsHolder())
@@ -354,7 +361,7 @@ void Gex::Ui::AttributeItem::Initialize(Gex::Attribute* attr,
             text->setPos(text->pos().x() + 14,
                          text->pos().y());
 
-            multiButton->setPos(4, (ATTRIBUTE_HEIGHT - multiButton->boundingRect().height())/2);
+            multiButton->setPos(4, (defaultHeight - multiButton->boundingRect().height())/2);
         }
         else
         {
@@ -362,7 +369,7 @@ void Gex::Ui::AttributeItem::Initialize(Gex::Attribute* attr,
                          text->pos().y());
 
             multiButton->setPos(nodeWidth - 4 - multiButton->boundingRect().width(),
-                                (ATTRIBUTE_HEIGHT - multiButton->boundingRect().height())/2);
+                                (defaultHeight - multiButton->boundingRect().height())/2);
         }
 
         text->setPlainText(metrics.elidedText(attribute->Name().c_str(),
@@ -375,10 +382,10 @@ void Gex::Ui::AttributeItem::Initialize(Gex::Attribute* attr,
 
 void Gex::Ui::AttributeItem::ShowAsInternal(bool internal)
 {
-    qreal plugY = (ATTRIBUTE_HEIGHT - PLUG_RECT.height())/2;
+    qreal plugY = (defaultHeight - plugRect.height())/2;
     if (internal)
     {
-        output->setPos(-PLUG_RECT.width(), plugY);
+        output->setPos(-plugRect.width(), plugY);
         input->setPos(rect().width(), plugY);
         if (attribute->IsStatic())
         {
@@ -387,7 +394,7 @@ void Gex::Ui::AttributeItem::ShowAsInternal(bool internal)
     }
     else
     {
-        input->setPos(-PLUG_RECT.width(), plugY);
+        input->setPos(-plugRect.width(), plugY);
         output->setPos(rect().width(), plugY);
         if (attribute->IsStatic())
         {
@@ -625,7 +632,7 @@ void Gex::Ui::AttributeItem::Collapse()
 
 void Gex::Ui::AttributeItem::Expand()
 {
-    qreal pos = ATTRIBUTE_HEIGHT;
+    qreal pos = boundingRect().height();
     for (AttributeItem* item : indexedAttributes)
     {
         item->setVisible(true);
@@ -659,7 +666,7 @@ bool Gex::Ui::AttributeItem::Collapsed() const
 
 qreal Gex::Ui::AttributeItem::TotalHeight() const
 {
-    qreal height = ATTRIBUTE_HEIGHT;
+    qreal height = boundingRect().height();
 
     if (!Collapsed())
     {
@@ -833,7 +840,7 @@ Gex::Ui::NodeItem::NodeItem(Gex::Node* node_,
     node = node_;
     sourcePlug = new NodePlugItem(this, true);
     sourcePlug->setRect(PLUG_RECT);
-    sourcePlug->setPos(-PLUG_RECT.width(), (ATTRIBUTE_HEIGHT - PLUG_RECT.height()) / 2);
+    sourcePlug->setPos(-PLUG_RECT.width(), 0);
     sourcePlug->setBrush(QBrush(QColor("#408CCB")));
     sourcePlug->setPen(Qt::NoPen);
     sourcePlug->setZValue(10);
@@ -841,7 +848,7 @@ Gex::Ui::NodeItem::NodeItem(Gex::Node* node_,
 
     destPlug = new NodePlugItem(this, false);
     destPlug->setRect(PLUG_RECT);
-    destPlug->setPos(DefaultWidth(), (ATTRIBUTE_HEIGHT - PLUG_RECT.height()) / 2);
+    destPlug->setPos(DefaultWidth(), 0);
     destPlug->setBrush(QBrush(QColor("#408CCB")));
     destPlug->setPen(Qt::NoPen);
     destPlug->setZValue(10);
@@ -964,12 +971,19 @@ void Gex::Ui::NodeItem::PlaceAttributes()
             for (auto* attr : attributes)
             {
                 if (!attr->Attribute()->IsExternal())
-                    continue;
-
-                attr->setVisible(true);
-                attr->SetTextVisibility(true);
-                attr->setPos(0, posY);
-                posY += attr->TotalHeight() + DefaultSpacing();
+                {
+                    attr->Collapse();
+                    attr->setVisible(false);
+                    attr->SetTextVisibility(false);
+                    attr->setPos(0, 0);
+                }
+                else
+                {
+                    attr->setVisible(true);
+                    attr->SetTextVisibility(true);
+                    attr->setPos(0, posY);
+                    posY += attr->TotalHeight() + DefaultSpacing();
+                }
             }
 
             sourcePlug->setVisible(false);
@@ -981,8 +995,7 @@ void Gex::Ui::NodeItem::PlaceAttributes()
                 if (attr->Attribute()->HasSource() ||
                     attr->Attribute()->IsDefault() ||
                     (attr->Attribute()->IsOutput() &&
-                    !attr->Attribute()->IsStatic() &&
-                    attr->Attribute()->IsExternal()))
+                    !attr->Attribute()->IsStatic()))
                 {
                     attr->Collapse();
                     attr->SetTextVisibility(false);
@@ -1112,6 +1125,7 @@ void Gex::Ui::NodeItem::PlaceAttributes()
                 {
                     attr->Collapse();
                     attr->setVisible(false);
+                    attr->SetTextVisibility(false);
                     attr->setPos(0, 0);
                 }
             }
@@ -1133,6 +1147,7 @@ void Gex::Ui::NodeItem::PlaceAttributes()
                 {
                     attr->Collapse();
                     attr->setVisible(false);
+                    attr->SetTextVisibility(false);
                     attr->setPos(0, 0);
                 }
             }
@@ -1758,8 +1773,8 @@ void Gex::Ui::NodeGraphScene::mouseMoveEvent(QGraphicsSceneMouseEvent* mouseEven
                     {
                         previewLink->SetState(PreviewLinkItem::State::Valid);
                     }
-                        // If source plug is an output, check if the destination attribute can
-                        // be connected as a source to the source plug.
+                    // If source plug is an output, check if the destination attribute can
+                    // be connected as a source to the source plug.
                     else if (previewLink->SourcePlug()->IsOutputAnchor() &&
                              destItem->Attribute()->CanConnectSource(sourceItem->Attribute()))
                     {

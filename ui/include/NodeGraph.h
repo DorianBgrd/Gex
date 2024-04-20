@@ -160,6 +160,8 @@ namespace Gex
             QVector<AttributeItem*> indexedAttributes;
             QVector<AttributeItem*> childAttributes;
             qreal textIndent = 0;
+            qreal defaultHeight;
+            QRect plugRect;
             bool asInternal = false;
 
             AttributeItem* parentAttribute;
