@@ -260,27 +260,8 @@ namespace Gex
                 return nullptr;
             }
 
-			auto* attribute = new Attribute(std::move(name), initValue,
-                                            valueType, type, !IsInitializing(),
-                                            this, parent);
-			
-			bool success = false;
-			if (parent == nullptr)
-			{
-				success = AddAttribute(attribute);
-			}
-			else
-			{
-				success = parent->AddChildAttribute(attribute);
-			}
-
-            if (!success)
-			{
-				delete attribute;
-                return nullptr;
-			}
-
-			return attribute;
+            return CreateAttributeFromValue(std::move(name), initValue, valueType,
+                                            type, parent);
 		}
 
 
