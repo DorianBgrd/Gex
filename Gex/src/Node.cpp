@@ -908,7 +908,7 @@ Gex::Node* Gex::CompoundNode::GetNode(const std::string& node) const
     std::string sn;
     if (pos != std::string::npos)
     {
-        n = node.substr(0, pos - 1);
+        n = node.substr(0, pos);
         sn = node.substr(pos + 1, std::string::npos);
     }
 
