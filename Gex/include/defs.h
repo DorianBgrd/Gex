@@ -23,6 +23,7 @@ namespace Gex
     typedef std::function<void()> InvalidateCallback;
     typedef std::function<void()> ScheduleCallback;
     typedef std::function<void(Attribute* attribute, const AttributeChange& change)> AttributeChangeCallback;
+    typedef std::function<void(std::string)> PluginLoadedCallback;
     typedef std::map<unsigned int, InvalidateCallback> InvalidateCallbacks;
     typedef std::map<unsigned int, InvalidateCallback> ScheduleCallbacks;
     typedef std::map<unsigned int, AttributeChangeCallback> AttributeChangedCallbacks;
