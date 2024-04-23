@@ -147,6 +147,15 @@ Gex::NodeEvaluator::NodeEvaluator(ScheduleNodeList nodes, GraphContext& ctx,
 }
 
 
+void Gex::NodeEvaluator::Reset()
+{
+    for (auto n: schelNodes)
+    {
+        n->evaluated = false;
+    }
+}
+
+
 void Gex::NodeEvaluator::Run()
 {
     std::vector<std::thread> stdthreads;

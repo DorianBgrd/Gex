@@ -89,6 +89,8 @@ namespace Gex
 
         ~NodeEvaluator();
 
+        void Reset();
+
         void Run();
 
         ScheduledNode* NextNode();
