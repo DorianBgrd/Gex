@@ -12,8 +12,11 @@
 #define REGISTER_PLUGIN_FUNC_NAME "RegisterPlugin"
 
 
+std::map<Gex::CallbackId, Gex::PluginLoadedCallback> Gex::PluginLoader::callbacks;
 std::vector<std::string> Gex::PluginLoader::searchPaths;
 std::vector<std::string> Gex::PluginLoader::loadedPlugins;
+
+Gex::CallbackId Gex::PluginLoader::nextIndex = 0;
 
 
 Gex::PluginLoader::PluginLoader(NodeFactory* f,
@@ -27,6 +30,25 @@ Gex::PluginLoader::PluginLoader(NodeFactory* f,
 void Gex::PluginLoader::AddSearchPath(std::string path)
 {
     searchPaths.push_back(path);
+}
+
+
+Gex::CallbackId Gex::PluginLoader::RegisterPluginCallback(PluginLoadedCallback callback)
+{
+    nextIndex++;
+    callbacks[nextIndex] = callback;
+    return nextIndex;
+}
+
+
+bool Gex::PluginLoader::DeregisterPluginCallback(CallbackId id)
+{
+    auto iter = callbacks.find(id);
+    if (iter == callbacks.end())
+        return false;
+
+    callbacks.erase(iter);
+    return true;
 }
 
 
@@ -153,6 +175,11 @@ Gex::PluginLoader* Gex::PluginLoader::LoadPlugin(std::string name, bool &result)
     auto function = (RegisterFunction)func;
     function(loader);
     result = true;
+
+    for (auto cb : callbacks)
+    {
+        cb.second(libPath.string());
+    }
 
     loadedPlugins.push_back(libPath.filename().string());
 

@@ -4,6 +4,7 @@
 #include <string>
 #include <filesystem>
 
+#include "defs.h"
 #include "api.h"
 #include "Status.h"
 #include "NodeFactory.h"
@@ -22,11 +23,18 @@ namespace Gex
 
         static std::vector<std::string> loadedPlugins;
 
+        static CallbackId nextIndex;
+
     protected:
         static std::vector<std::string> searchPaths;
+        static std::map<CallbackId, PluginLoadedCallback> callbacks;
 
     public:
         static void AddSearchPath(std::string path);
+
+        static CallbackId RegisterPluginCallback(PluginLoadedCallback callback);
+
+        static bool DeregisterPluginCallback(CallbackId id);
 
     public:
         PluginLoader(NodeFactory* factory, TSys::TypeRegistry* registry);
