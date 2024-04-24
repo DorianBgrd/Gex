@@ -154,6 +154,9 @@ void Gex::NodeEvaluator::Reset()
     {
         schelNode->evaluated = false;
     }
+
+    runningThreads = 0;
+    status = NodeEvaluator::EvaluationStatus::Running;
 }
 
 
