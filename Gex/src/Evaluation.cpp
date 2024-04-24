@@ -149,7 +149,7 @@ Gex::NodeEvaluator::NodeEvaluator(ScheduleNodeList nodes, GraphContext& ctx,
 
 void Gex::NodeEvaluator::Reset()
 {
-    n = 0;
+    n = -1;
     for (auto schelNode: schelNodes)
     {
         schelNode->evaluated = false;
