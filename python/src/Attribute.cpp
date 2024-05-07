@@ -93,13 +93,13 @@ bool Gex::Python::Attribute_Wrap::RegisterPythonWrapper()
             .value("Multi", Gex::AttrValueType::Multi)
             .value("Holder", Gex::AttrValueType::Holder)
             .value("MultiHolder", Gex::AttrValueType::MultiHolder)
-            .export_values();
+            ;
 
     boost::python::enum_<Gex::AttrType>("AttrType")
             .value("Input", Gex::AttrType::Input)
             .value("Output", Gex::AttrType::Output)
             .value("Static", Gex::AttrType::Static)
-            .export_values();
+            ;
 
     boost::python::enum_<Gex::AttributeChange>("AttributeChange")
             .value("Connected", Gex::AttributeChange::Connected)

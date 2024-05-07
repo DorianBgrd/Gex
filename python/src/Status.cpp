@@ -57,7 +57,7 @@ bool Gex::Python::Feedback_Wrap::RegisterPythonWrapper()
             .value("Warning", Gex::Status::Warning)
             .value("Failed", Gex::Status::Failed)
             .value("Error", Gex::Status::Error)
-            .export_values();
+            ;
 
 
     boost::python::class_<Gex::Feedback>(
