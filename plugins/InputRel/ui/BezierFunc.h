@@ -36,12 +36,13 @@ namespace Gex::InputRel
 
     class BezierHandleItem: public QGraphicsItem
     {
-        PositionChange nextChange;
+        PointRef handle;
         BezierPointItem* parentPoint;
+        PositionChange nextChange;
         double f;
 
     public:
-        BezierHandleItem(double factor,
+        BezierHandleItem(PointRef handle, double factor,
                          BezierPointItem* parent);
 
         QRectF boundingRect() const override;
@@ -62,6 +63,7 @@ namespace Gex::InputRel
     {
         friend BezierHandleItem;
 
+        BezierPointRef point;
         BezierGraph* view;
         BezierHandleItem* left;
         BezierHandleItem* right;
@@ -69,7 +71,8 @@ namespace Gex::InputRel
         double f = 1000;
 
     public:
-        BezierPointItem(BezierGraph* view, double factor,
+        BezierPointItem(BezierPointRef point,
+                        BezierGraph* view, double factor,
                         QGraphicsItem* parent=nullptr);
 
         QRectF boundingRect() const override;
@@ -94,10 +97,11 @@ namespace Gex::InputRel
 
     class BezierCurveItem: public QGraphicsPathItem
     {
+        double f;
     public:
-        BezierCurveItem(QGraphicsItem* parent=nullptr);
+        BezierCurveItem(double factor, QGraphicsItem* parent=nullptr);
 
-        void Draw(BezierCurve* curve);
+        void Draw(BezierFuncPtr curve);
     };
 
 
@@ -105,28 +109,72 @@ namespace Gex::InputRel
     {
         friend BezierPointItem;
 
-        BezierCurve* curve;
+        double f = 1000;
+        BezierFuncPtr curve;
         QVector<BezierPointItem*> points;
+        BezierCurveItem* curveItem;
 
     public:
-        BezierGraph(BezierCurve* curve=nullptr,
+        BezierGraph(BezierFunc* curve=nullptr,
                     QWidget* parent=nullptr);
+
+        void resizeEvent(QResizeEvent* event) override;
 
         void Clear();
 
         void Init();
 
-        void SetFunc(BezierCurve* curve);
+        void SetFunc(BezierFuncPtr curve);
 
-        BezierCurve* Func() const;
+        BezierFuncPtr Func() const;
 
-    protected:
-        void PointHandleChanged(BezierPointItem* item,
-                                PositionChange change,
-                                bool left=true);
+        void AddPoint(int x);
 
-        void PointChanged(BezierPointItem* item,
-                          PositionChange change);
+        void RemoveSelectedPoints();
+
+        BezierPointItem* InitPointItem(BezierPointRef p);
+    };
+
+
+    struct Plugin_API BezierFuncWidget: public UiTSys::TypedWidget
+    {
+        BezierGraph* graphView = nullptr;
+
+        virtual QWidget* CreateTypedWidget() override;
+
+        virtual void SetValue(std::any value) override;
+
+        virtual std::any GetValue() const override;
+
+        virtual void ShowConnected(bool connected) override;
+
+        virtual void ShowDisabled(bool disabled) override;
+    };
+
+
+    class Plugin_API BezierFuncWidgetCreator: public UiTSys::TypedWidgetCreator
+    {
+        UiTSys::TypedWidget* CreateWidget() const
+        {
+            return new BezierFuncWidget();
+        }
+    };
+
+
+    class Plugin_API BezierFuncInitWidget: public UiTSys::TypedInitWidget
+    {
+        BezierGraph* graphView;
+    public:
+
+        virtual QWidget* CreateInitWidget() override;
+
+        virtual std::any CreateValue() override;
+    };
+
+
+    class Plugin_API BezierFuncInitWidgetCreator: public UiTSys::TypedInitWidgetCreator
+    {
+        UiTSys::TypedInitWidget* CreateWidget() const override;
     };
 }
 

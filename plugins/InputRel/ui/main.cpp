@@ -13,4 +13,8 @@ extern EXPORT RegisterUiPlugin(Gex::PluginLoader* loader)
                          "LinearFunc", new Gex::InputRel::LinearFuncInitWidgetCreator(),
                          new Gex::InputRel::LinearFuncWidgetCreator()
                          );
+
+    engine->RegisterType(typeid(Gex::InputRel::BezierFuncPtr).hash_code(),
+                         "BezierFunc", new Gex::InputRel::BezierFuncInitWidgetCreator(),
+                         new Gex::InputRel::BezierFuncWidgetCreator());
 }

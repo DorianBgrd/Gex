@@ -1,26 +1,49 @@
 #ifndef GEX_BEZIERFUNC_H
 #define GEX_BEZIERFUNC_H
 
-#include <vector>
 #include <map>
+#include <set>
+#include <vector>
+#include <memory>
+
+#include "plugins/export.h"
+#include "plugins/InputRel/Func.h"
 
 namespace Gex::InputRel
 {
-    struct Point
+    struct Point;
+    typedef std::shared_ptr<Point> PointPtr;
+    typedef std::weak_ptr<Point> PointRef;
+
+    struct BezierPoint;
+    typedef std::shared_ptr<BezierPoint> BezierPointPtr;
+    typedef std::weak_ptr<BezierPoint> BezierPointRef;
+
+
+    struct Plugin_API Point
     {
+    private:
         double x=0;
         double y=0;
+
+    public:
+        Point(double x, double y);
 
         void operator=(Point other);
 
         void Swap(const Point& other);
-    };
 
+        double GetX() const;
 
-    struct ControlPoints
-    {
-        Point cp1;
-        Point cp2;
+        void SetX(double x);
+
+        double GetY() const;
+
+        void SetY(double y);
+
+        void Move(double dx, double dy);
+
+        static PointPtr NewPoint(double x, double y);
     };
 
 
@@ -31,19 +54,48 @@ namespace Gex::InputRel
     static bool operator==(const Point& p1, const Point& p2);
 
 
-    struct PointCompare
+    struct Plugin_API BezierPoint: public Point
     {
-        bool operator()(const Gex::InputRel::Point& point1,
-                        const Gex::InputRel::Point& point2)
+        PointPtr leftHandle;
+        PointPtr rightHandle;
+
+    public:
+        BezierPoint(double x, double y, double lx, double ly,
+                    double rx, double ry);
+
+        PointRef LeftHandle() const;
+
+        PointRef RightHandle() const;
+
+        static BezierPointPtr NewBezierPoint(
+                double x, double y, double lx, double ly,
+                double rx, double ry);
+    };
+
+
+    struct Plugin_API BezierPointCompare
+    {
+        bool operator()(const BezierPointPtr& point1,
+                        const BezierPointPtr& point2)
                         const
         {
-            return (point1.x < point2.x);
+            return (point1->GetX() < point2->GetX());
         }
     };
 
-    typedef std::vector<Point> Points;
-    typedef std::array<Point, 2> PointTuple;
-    typedef std::map<Point, ControlPoints, PointCompare> PointsMap;
+    typedef std::set<BezierPointPtr, BezierPointCompare> BezierPoints;
+
+    struct Plugin_API BezierPointRefCompare
+    {
+        bool operator()(const BezierPointRef& point1,
+                        const BezierPointRef& point2)
+        const
+        {
+            return (point1.lock()->GetX() < point2.lock()->GetX());
+        }
+    };
+
+    typedef std::set<BezierPointRef, BezierPointRefCompare> BezierPointRefs;
 
 
     enum class Side
@@ -52,46 +104,54 @@ namespace Gex::InputRel
         Right
     };
 
-    class BezierCurve
+
+    class Plugin_API BezierFunc: public Func
     // Bezier curve acts as bezier curve segments of 3 points.
     // This means that adding a point automatically adds a
     // control point between the previous point and the
     // added one.
     {
         // Curve point list.
-        PointsMap points;
+        BezierPoints points;
 
     public:
-        // Returns all curve points.
-//        Points CurvePoints() const;
+        BezierFunc();
 
         // Returns all control points.
-        ControlPoints ControlPoints(const Point& point, bool& found) const;
+        BezierPoints CurvePoints() const;
 
-        Points CurvePoints() const;
+        BezierPointRefs CurvePointRefs() const;
 
-        bool MovePoint(Point source, Point dest);
+        BezierPointRef PointAt(double x);
 
-        bool MovePoint(double sx, double sy, double dx, double dy);
+        BezierPointRef AddPoint(double x);
 
-        bool MoveControlPoint(Point point, Point source, Point dest,
-                              Side side=Side::Left);
-
-        PointsMap CurvePointsMap() const;
-
-        // Adds a new point to the curve.
-        void AddPoint(Point point);
-
-        // Removes point from the curve.
-        void RemovePoint(Point point);
+        void RemovePoint(double x);
 
     public:
-        Points AdjacentPoints(const double& x, bool& foundPrev,
-                              bool& foundPost) const;
+        BezierPoints AdjacentPoints(const double& x, bool& foundPrev,
+                                    bool& foundPost) const;
 
-        double y(const double& x) const;
+        double y(double x) const override;
+
+        bool Serialize(rapidjson::Value& dict,
+                       rapidjson::Document& json)
+                       const override;
+
+        bool Deserialize(rapidjson::Value& dict) override;
     };
 
+
+    typedef std::shared_ptr<BezierFunc> BezierFuncPtr;
+
+
+    struct BezierFuncHandler: public FuncWrapper<BezierFunc>
+    {
+        virtual std::string ApiName() const override
+        {
+            return "BezierFunc";
+        }
+    };
 }
 
 #endif //GEX_BEZIERFUNC_H

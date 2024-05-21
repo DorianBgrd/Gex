@@ -7,17 +7,19 @@
 
 
 Gex::InputRel::BezierHandleItem::BezierHandleItem(
-        double factor, BezierPointItem *parent):
+        PointRef handle_, double factor,
+        BezierPointItem *parent):
     QGraphicsItem(parent)
 {
     f = factor;
+    handle = std::move(handle_);
     parentPoint = parent;
 }
 
 
 QRectF Gex::InputRel::BezierHandleItem::boundingRect() const
 {
-    return QRectF(0, 0, 10 * f, 10 * f);
+    return QRectF(0, 0, f, f);
 }
 
 
@@ -67,16 +69,19 @@ QVariant Gex::InputRel::BezierHandleItem::itemChange(
 {
     QPointF p = pos();
 
-    nextChange.factor = f;
     if (change == QGraphicsItem::ItemPositionChange)
     {
         nextChange.prevX = p.x();
         nextChange.prevY = p.y();
+        nextChange.factor = f;
     }
     else if (change == QGraphicsItem::ItemPositionHasChanged)
     {
         nextChange.nextX = p.x();
         nextChange.nextY = p.y();
+
+        handle.lock()->SetX(p.x() / f);
+        handle.lock()->SetY(p.y() / f);
 
         SendPositionChange(nextChange);
     }
@@ -86,21 +91,23 @@ QVariant Gex::InputRel::BezierHandleItem::itemChange(
 
 
 
-Gex::InputRel::BezierPointItem::BezierPointItem(BezierGraph* view_,
+Gex::InputRel::BezierPointItem::BezierPointItem(BezierPointRef point_,
+                                                BezierGraph* view_,
                                                 double factor,
                                                 QGraphicsItem* parent):
     QGraphicsItem(parent)
 {
+    point = std::move(point_);
     f = factor;
     view = view_;
-    left = new BezierHandleItem(f, this);
-    right = new BezierHandleItem(f, this);
+    left = new BezierHandleItem(point.lock()->LeftHandle(), f, this);
+    right = new BezierHandleItem(point.lock()->RightHandle(), f, this);
 }
 
 
 QRectF Gex::InputRel::BezierPointItem::boundingRect() const
 {
-    return QRectF(0, 0, 15 * f, 15 * f);
+    return QRectF(0, 0, 1 * f, 1 * f);
 }
 
 
@@ -178,50 +185,48 @@ void Gex::InputRel::BezierPointItem::HandleMoved(
                     center.y() + distance * dir.y());
 
         destHandle->setPos(dest);
-
-        double ndx = dest.x();
-        double ndy = dest.y();
-        handleChange = {dx, dy, ndx, ndy, f};
-    }
-
-    view->PointHandleChanged(this, change, isLeft);
-    if (locked)
-    {
-        view->PointHandleChanged(this, handleChange, !isLeft);
     }
 }
 
 
 Gex::InputRel::BezierCurveItem::BezierCurveItem(
-        QGraphicsItem* parent): QGraphicsPathItem(parent)
+        double factor, QGraphicsItem* parent):
+        QGraphicsPathItem(parent)
 {
-
+    f = factor;
+    QPen pen(QColor(255, 0, 0));
+    pen.setWidth(f);
 }
 
 
-void Gex::InputRel::BezierCurveItem::Draw(BezierCurve* curve)
+void Gex::InputRel::BezierCurveItem::Draw(BezierFuncPtr curve)
 {
     QPainterPath path;
 
-    auto cmap = curve->CurvePointsMap();
+    auto curves = curve->CurvePoints();
 
-    auto previous = cmap.begin();
+    if (curves.empty())
+        return;
+
+    auto previous = curves.begin();
 
     auto previousPoint = *previous;
-    path.moveTo(previousPoint.first.x, previousPoint.first.y);
+    path.moveTo(previousPoint->GetX() * f, previousPoint->GetY() * f);
 
     previous++;
     auto next = previous;
-    for (;next != cmap.end(); next++)
+    for (;next != curves.end(); next++)
     {
-        QPoint cp1(previous->second.cp2.x,
-                   previous->second.cp2.y);
+        auto nextPoint = *next;
 
-        QPoint cp2(next->second.cp1.x,
-                   next->second.cp1.y);
+        QPoint cp1(previousPoint->RightHandle().lock()->GetX() * f,
+                   previousPoint->RightHandle().lock()->GetY() * f);
 
-        QPoint n(next->first.x,
-                 next->first.y);
+        QPoint cp2(nextPoint->LeftHandle().lock()->GetX() * f,
+                   nextPoint->LeftHandle().lock()->GetY() * f);
+
+        QPoint n(nextPoint->GetX() * f,
+                 nextPoint->GetY() * f);
 
         path.cubicTo(cp1, cp2, n);
         path.moveTo(n);
@@ -231,15 +236,24 @@ void Gex::InputRel::BezierCurveItem::Draw(BezierCurve* curve)
 }
 
 
-Gex::InputRel::BezierGraph::BezierGraph(BezierCurve* crv, QWidget* parent): QGraphicsView(parent)
+Gex::InputRel::BezierGraph::BezierGraph(BezierFunc* crv, QWidget* parent): QGraphicsView(parent)
 {
     if (!crv)
-        curve = new BezierCurve();
+        curve = std::make_shared<BezierFunc>();
 
     auto* gscene = new QGraphicsScene();
     setScene(gscene);
 
+    curveItem = new BezierCurveItem(f);
+    gscene->addItem(curveItem);
+
     Init();
+}
+
+
+void Gex::InputRel::BezierGraph::resizeEvent(QResizeEvent* event)
+{
+    fitInView(sceneRect(), Qt::AspectRatioMode::KeepAspectRatio);
 }
 
 
@@ -250,6 +264,29 @@ void Gex::InputRel::BezierGraph::Clear()
         scene()->removeItem(p);
         delete p;
     }
+
+    curveItem->Draw(curve);
+}
+
+
+Gex::InputRel::BezierPointItem* Gex::InputRel::BezierGraph::InitPointItem(BezierPointRef p)
+{
+    auto* point = new BezierPointItem(p, this, f);
+
+    scene()->addItem(point);
+
+    auto sp = p.lock();
+
+    point->setPos(sp->GetX() * f,
+                  sp->GetY() * f);
+
+    point->LeftHandle()->setPos(sp->LeftHandle().lock()->GetX() * f,
+                                sp->LeftHandle().lock()->GetY() * f);
+
+    point->RightHandle()->setPos(sp->RightHandle().lock()->GetX() * f,
+                                 sp->RightHandle().lock()->GetY() * f);
+
+    return point;
 }
 
 
@@ -257,45 +294,109 @@ void Gex::InputRel::BezierGraph::Init()
 {
     Clear();
 
-    for (auto p : curve->CurvePointsMap())
+    for (auto p : curve->CurvePointRefs())
     {
-        auto point = new BezierPointItem(this, f);
-        point->setPos(p.first.x,
-                      p.first.y);
-        point->LeftHandle()->setPos(p.second.cp1.x,
-                                    p.second.cp1.y);
-        point->RightHandle()->setPos(p.second.cp2.x,
-                                    p.second.cp2.y);
-
-        points.append(point);
+        points.append(InitPointItem(p));
     }
 }
 
 
-void Gex::InputRel::BezierGraph::SetFunc(BezierCurve* crv)
+void Gex::InputRel::BezierGraph::SetFunc(BezierFuncPtr crv)
 {
     curve = crv;
 
     Init();
 }
 
-Gex::InputRel::BezierCurve* Gex::InputRel::BezierGraph::Func() const
+Gex::InputRel::BezierFuncPtr Gex::InputRel::BezierGraph::Func() const
 {
     return curve;
 }
 
 
-void Gex::InputRel::BezierGraph::PointHandleChanged(
-        BezierPointItem* item, PositionChange change,
-        bool left)
+void Gex::InputRel::BezierGraph::AddPoint(int x)
 {
+    double vx = (x / f);
 
+    auto point = curve->AddPoint(vx);
+
+    auto* p = InitPointItem(point);
+
+    points.append(p);
+
+    scene()->addItem(p);
+
+    curveItem->Draw(curve);
 }
 
 
-void Gex::InputRel::BezierGraph::PointChanged(
-        BezierPointItem* item, PositionChange change)
+void Gex::InputRel::BezierGraph::RemoveSelectedPoints()
 {
+    auto sel = scene()->selectedItems();
+    for (auto* item : sel)
+    {
+        auto* pt = dynamic_cast<BezierPointItem*>(item);
+        if (!pt)
+            continue;
 
+        scene()->removeItem(pt);
+        delete pt;
+    }
+
+    curveItem->Draw(curve);
 }
 
+
+
+
+
+QWidget* Gex::InputRel::BezierFuncWidget::CreateTypedWidget()
+{
+    graphView = new BezierGraph(nullptr, this);
+    return graphView;
+}
+
+
+void Gex::InputRel::BezierFuncWidget::SetValue(std::any value)
+{
+    graphView->SetFunc(std::any_cast<BezierFuncPtr>(value));
+}
+
+
+std::any Gex::InputRel::BezierFuncWidget::GetValue() const
+{
+    return graphView->Func();
+}
+
+
+void Gex::InputRel::BezierFuncWidget::ShowConnected(bool connected)
+{
+    graphView->setDisabled(connected);
+}
+
+
+void Gex::InputRel::BezierFuncWidget::ShowDisabled(bool disabled)
+{
+    graphView->setDisabled(disabled);
+}
+
+
+
+
+QWidget* Gex::InputRel::BezierFuncInitWidget::CreateInitWidget()
+{
+    graphView = new BezierGraph();
+    return graphView;
+}
+
+
+std::any Gex::InputRel::BezierFuncInitWidget::CreateValue()
+{
+    return std::make_any<BezierFuncPtr>(graphView->Func());
+}
+
+
+UiTSys::TypedInitWidget* Gex::InputRel::BezierFuncInitWidgetCreator::CreateWidget() const
+{
+    return new BezierFuncInitWidget();
+}
