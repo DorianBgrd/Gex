@@ -1164,19 +1164,18 @@ void Gex::Attribute::SerializeAttribute(rapidjson::Value& value, rapidjson::Docu
 	// Sent value must be the root dict.
 	rapidjson::Value& resultValue = rapidjson::Value().SetObject();
 
-	rapidjson::Value& constructionValue = rapidjson::Value().SetArray();
-
     TSys::TypeHandler* handler = TSys::TypeRegistry::GetRegistry()->GetTypeHandle(TypeHash());
 
 	if (handler)
 	{
-        handler->SerializeConstruction(attributeAnyValue, constructionValue, doc);
+        rapidjson::Value& apiTypeValue = rapidjson::Value().SetString(
+                handler->ApiName().c_str(), doc.GetAllocator());
 
         rapidjson::Value& attrSerializedTypeKey = rapidjson::Value().SetString(
                 Config::GetConfig().attributeSerializedTypeKey.c_str(),
                 doc.GetAllocator());
 		resultValue.AddMember(attrSerializedTypeKey.Move(),
-                              constructionValue.Move(), doc.GetAllocator());
+                              apiTypeValue.Move(), doc.GetAllocator());
 	}
 
 	rapidjson::Value& typeValue = rapidjson::Value().SetInt((int)attributeType);
@@ -1210,21 +1209,23 @@ void Gex::Attribute::SerializeAttribute(rapidjson::Value& value, rapidjson::Docu
 
 
 Gex::Attribute* Gex::Attribute::DeserializeAttribute(
-	std::string name, rapidjson::Value& attributes,
-    Gex::Node* node, Attribute* parent,
-    bool userDefined)
+	const std::string& name, rapidjson::Value& attributes,
+    Gex::Node* node, Attribute* parent, bool userDefined)
 {
+    auto conf = Config::GetConfig();
+
 	rapidjson::Value& serialValues = attributes.GetObject();
 	
 	std::string attributeValueStr;
+
 	bool success = false;
 	size_t attributeValueHash;
-	rapidjson::Value& construction = rapidjson::Value().SetArray();
-	if (serialValues.HasMember(Config::GetConfig().attributeSerializedTypeKey.c_str()))
+
+    if (serialValues.HasMember(conf.attributeSerializedTypeKey.c_str()))
 	{
-		construction = serialValues[Config::GetConfig().attributeSerializedTypeKey.c_str()].GetArray();
-		attributeValueStr = construction[0].GetString();
-		attributeValueHash = TSys::TypeRegistry::GetRegistry()->GetHashFromName(attributeValueStr, success);
+        std::string apiTypeName = serialValues[conf.attributeSerializedTypeKey.c_str()].GetString();
+        attributeValueHash = TSys::TypeRegistry::GetRegistry()->HashFromApiName(
+                apiTypeName, success);
 	}
 	
 	if (!success)
@@ -1250,9 +1251,9 @@ Gex::Attribute* Gex::Attribute::DeserializeAttribute(
 		valuetype = AttrValueType(serialValues[Config::GetConfig().attributeValueTypeKey.c_str()].GetInt());
 	}
 
-	std::any v = handler->DeserializeConstruction(construction);
-
-	Attribute* result = new Attribute(name, v, valuetype, type, userDefined, node, parent);
+	auto* result = new Attribute(name, attributeValueHash,
+                                 valuetype, type, userDefined,
+                                 node, parent);
 
 	if (serialValues.HasMember(Config::GetConfig().attributeChildrenKey.c_str()))
 	{

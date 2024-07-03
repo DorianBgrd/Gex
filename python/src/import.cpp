@@ -4,6 +4,7 @@
 #include "python/include/Node.h"
 #include "python/include/io.h"
 #include "python/include/PluginLoader.h"
+#include "python/include/NodeFactory.h"
 
 #include "boost/python.hpp"
 
@@ -23,6 +24,8 @@ BOOST_PYTHON_MODULE(Gex_Python)
     Gex::Python::CompoundNode_Wrap::RegisterPythonWrapper();
 
     Gex::Python::PluginLoader_Wrap::RegisterPythonWrapper();
+
+    Gex::Python::NodeFactory_Wrap::RegisterPythonWrapper();
 
     Gex::Python::IO::RegisterPythonWrapper();
 

@@ -1,7 +1,19 @@
 #include "python/include/PluginLoader.h"
+#include "python/include/NodeFactory.h"
 
 
 bool Gex::Python::PluginLoader_Wrap::pythonRegistered = false;
+
+
+bool Gex_PluginLoader_LoadPlugin(boost::python::tuple args,
+                                 boost::python::dict kwargs)
+{
+    const std::string name = boost::python::extract<const std::string>(args[0]);
+//    const Gex::PluginType type = boost::python::extract<const Gex::PluginType>(args[1]);
+    int type = boost::python::extract<int>(args[1]);
+
+    return Gex::PluginLoader::LoadPlugin(name, Gex::PluginType(type));
+}
 
 
 boost::python::object Gex_PluginLoader_RegisterNode(boost::python::tuple args,
@@ -9,32 +21,38 @@ boost::python::object Gex_PluginLoader_RegisterNode(boost::python::tuple args,
 {
     Gex::PluginLoader* loader = boost::python::extract<Gex::PluginLoader*>(args[0]);
     std::string type = boost::python::extract<std::string>(args[1]);
-    boost::python::object builder = args[2];
+    boost::python::object builderType = args[2];
 
-    boost::python::object builderInst = builder();
+    boost::python::object builderInst = builderType();
     Py_IncRef(builderInst.ptr());
 
-    builderInst.attr("RegisterInLoader")(type, loader);
+    Gex::Python::NodeBuilder_Wrap* builder = boost::python::extract<Gex::Python::NodeBuilder_Wrap*>(builderInst);
 
+    loader->RegisterNode(type, builder);
     return {};
 }
 
 
 bool Gex::Python::PluginLoader_Wrap::RegisterPythonWrapper()
 {
+    std::cout << "[PluginLoader] Python registering : " << pythonRegistered << std::endl;
     if (pythonRegistered)
     {
         return false;
     }
 
-    bool(*Load)(std::string) = &Gex::PluginLoader::LoadPlugin;
+    boost::python::enum_<Gex::PluginType>("PluginType")
+            .value("Library", Gex::PluginType::Library)
+            .value("Python", Gex::PluginType::Python)
+            ;
 
     boost::python::class_<Gex::PluginLoader>("PluginLoader", boost::python::no_init)
             .def("RegisterNode", boost::python::raw_function(&Gex_PluginLoader_RegisterNode, 2))
-            .def("LoadPlugin", Load)
+            .def("LoadPlugin", boost::python::raw_function(Gex_PluginLoader_LoadPlugin, 2))
             .staticmethod("LoadPlugin")
             ;
 
     pythonRegistered= true;
+    std::cout << "[PluginLoader] Python registered : " << pythonRegistered << std::endl;
     return true;
 }

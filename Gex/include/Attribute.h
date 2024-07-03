@@ -714,7 +714,7 @@ namespace Gex
 		// Serialize / Deserializes Construction.
 		void SerializeAttribute(rapidjson::Value& value, rapidjson::Document& doc);
 
-		static Attribute* DeserializeAttribute(std::string name, 
+		static Attribute* DeserializeAttribute(const std::string& name,
 			rapidjson::Value& value, Gex::Node* node=nullptr,
             Attribute* parent=nullptr, bool userDefined=false);
 

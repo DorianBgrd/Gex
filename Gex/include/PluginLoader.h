@@ -13,6 +13,12 @@
 
 namespace Gex
 {
+    enum class PluginType
+    {
+        Library,
+        Python
+    };
+
     class GEX_API PluginLoader
     {
     protected:
@@ -46,7 +52,7 @@ namespace Gex
         std::map<std::string, NodeBuilder*> RegisteredBuilders() const;
 
     protected:
-        void RegisterPluginPath(std::string path);
+        void RegisterPluginPath(const std::string& path);
 
     public:
         std::string PluginPath();
@@ -58,7 +64,7 @@ namespace Gex
             RegisterNode(type, new NodeBuilderClass());
         }
 
-        void RegisterNode(std::string type, NodeBuilder* builder);
+        void RegisterNode(const std::string& type, NodeBuilder* builder);
 
         template<class Type, class Handler>
         void RegisterTypeHandler()
@@ -69,17 +75,27 @@ namespace Gex
     public:
         static std::vector<std::string> AvailablePaths();
 
-        static std::filesystem::path SearchFilePath(std::string name, Feedback* result=nullptr);
+        static std::filesystem::path SearchFilePath(const std::string& name, Feedback* result=nullptr);
 
-        static bool LoadPlugin(std::string name);
+        static bool LoadPlugin(const std::string& name, const PluginType& type=PluginType::Library);
 
-        static PluginLoader* LoadPlugin(std::string name, bool &result);
+    protected:
+        static void LoadCppPlugin(const std::string& name,
+                                  PluginLoader* loader,
+                                  Feedback* result=nullptr);
+
+        static void LoadPythonPlugin(const std::string& name,
+                                     PluginLoader* loader,
+                                     Feedback* result=nullptr);
+
+    public:
+        static PluginLoader* LoadPlugin(const std::string& name,
+                                        const PluginType& type,
+                                        Feedback* result);
 
         static bool PluginLoaded(std::string plugin);
 
         static std::vector<std::string> LoadedPlugins();
-
-//        static PluginLoader* LoadPythonPlugin(std::string name, Feedback* status=nullptr);
     };
 }
 

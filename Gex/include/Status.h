@@ -35,6 +35,13 @@ namespace Gex
             status = st;
             message = msg;
         }
+
+        static Feedback New(Status st, const std::string& msg)
+        {
+            Feedback f;
+            f.Set(st, msg);
+            return f;
+        }
     };
 }
 

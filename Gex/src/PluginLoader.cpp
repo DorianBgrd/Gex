@@ -6,6 +6,8 @@
 #include "boost/python.hpp"
 #include "Gex/include/NodeFactory.h"
 
+#include "python/include/PluginLoader.h"
+
 #include <fstream>
 
 
@@ -64,9 +66,9 @@ std::map<std::string, Gex::NodeBuilder*> Gex::PluginLoader::RegisteredBuilders()
 }
 
 
-void Gex::PluginLoader::RegisterPluginPath(std::string path)
+void Gex::PluginLoader::RegisterPluginPath(const std::string& path)
 {
-    pluginPath = std::move(path);
+    pluginPath = path;
 }
 
 
@@ -76,7 +78,7 @@ std::string Gex::PluginLoader::PluginPath()
 }
 
 
-void Gex::PluginLoader::RegisterNode(std::string type, NodeBuilder* builder)
+void Gex::PluginLoader::RegisterNode(const std::string& type, NodeBuilder* builder)
 {
     std::string pluginName = std::filesystem::path(pluginPath).filename().string();
     builder->SetPlugin(pluginName);
@@ -95,7 +97,7 @@ std::vector<std::string> Gex::PluginLoader::AvailablePaths()
 typedef void (*RegisterFunction)(Gex::PluginLoader*);
 
 
-std::filesystem::path Gex::PluginLoader::SearchFilePath(std::string name, Feedback* result)
+std::filesystem::path Gex::PluginLoader::SearchFilePath(const std::string& name, Feedback* result)
 {
     std::vector<std::string> pluginSearchPaths = AvailablePaths();
 
@@ -133,55 +135,136 @@ std::filesystem::path Gex::PluginLoader::SearchFilePath(std::string name, Feedba
 }
 
 
-bool Gex::PluginLoader::LoadPlugin(std::string name)
+bool Gex::PluginLoader::LoadPlugin(const std::string& name, const PluginType& type)
 {
-    bool success = false;
+    Feedback success;
 
-    LoadPlugin(name, success);
+    LoadPlugin(name, type, &success);
 
     return success;
 }
 
 
-Gex::PluginLoader* Gex::PluginLoader::LoadPlugin(std::string name, bool &result)
+void Gex::PluginLoader::LoadCppPlugin(const std::string& name, PluginLoader* loader, Feedback* result)
 {
-    auto* loader = new PluginLoader(NodeFactory::GetFactory(),
-                                    TSys::TypeRegistry::GetRegistry());
+    std::filesystem::path libPath = SearchFilePath(name, result);
 
-    auto fileRes = new Feedback();
-    std::filesystem::path libPath = SearchFilePath(name, fileRes);
-
-    if (!fileRes)
+    if (!result)
     {
-        result = false;
-        return loader;
+        if (result)
+            result->Set(Status::Success, "Plugin file not found.");
+        return;
     }
 
     HINSTANCE module = LoadLibraryEx(libPath.string().c_str(), nullptr, LOAD_WITH_ALTERED_SEARCH_PATH);
     if (!module)
     {
-        result = false;
-        return loader;
+        if (result)
+            result->Set(Status::Failed, "Could not load module");
+        return;
     }
 
     FARPROC func = GetProcAddress((HMODULE)module, REGISTER_PLUGIN_FUNC_NAME);
     if (!func)
     {
-        result = false;
-        return loader;
+        if (result)
+            result->Set(Status::Failed, "Could not find" +
+                                        std::string(REGISTER_PLUGIN_FUNC_NAME) +
+                                        " function.");
+        return;
     }
 
     loader->RegisterPluginPath(std::filesystem::absolute(libPath.string()).string());
     auto function = (RegisterFunction)func;
     function(loader);
-    result = true;
+
+    if (result)
+        result->Set(Status::Success, "");
+
+    loadedPlugins.push_back(libPath.filename().string());
 
     for (auto cb : callbacks)
     {
         cb.second(libPath.string());
     }
+}
 
-    loadedPlugins.push_back(libPath.filename().string());
+
+void Gex::PluginLoader::LoadPythonPlugin(const std::string& name, PluginLoader* loader, Feedback* result)
+{
+
+    if (!Py_IsInitialized())
+    {
+        Py_InitializeEx(1);
+        PyObject* main = PyImport_AddModule("__main__");
+        if (!main)
+        {
+            if (result)
+                result->Set(Status::Failed, "Could not initialize python.");
+            return;
+        }
+
+        Python::PluginLoader_Wrap::RegisterPythonWrapper();
+    }
+
+    PyObject* mod = PyImport_ImportModule(name.c_str());
+    if (!mod)
+    {
+        PyErr_Print();
+        if (result)
+            result->Set(Status::Failed, "Failed loading plugin.");
+        return;
+    }
+
+    PyObject* moddict = PyModule_GetDict(mod);
+
+    PyObject* func = PyDict_GetItem(moddict, PyUnicode_FromString(REGISTER_PLUGIN_FUNC_NAME));
+    if (func == Py_None)
+    {
+        PyErr_Print();
+        if (result)
+            result->Set(Status::Failed, "Could not find function " +
+                std::string(REGISTER_PLUGIN_FUNC_NAME) + " in plugin module.");
+        return;
+    }
+
+    boost::python::object o = boost::python::object(
+            boost::python::ptr(loader));
+
+    PyObject* res = PyObject_CallOneArg(func, o.ptr());
+    if (!res)
+    {
+        if (result)
+            result->Set(Status::Failed, "Failed calling " +
+                std::string(REGISTER_PLUGIN_FUNC_NAME));
+    }
+
+    if (result)
+        result->Set(Status::Success, "");
+
+    for (const auto& cb : callbacks)
+    {
+        cb.second(name);
+    }
+}
+
+
+Gex::PluginLoader* Gex::PluginLoader::LoadPlugin(const std::string& name, const PluginType& type,
+                                                 Feedback* result)
+{
+    auto* loader = new PluginLoader(NodeFactory::GetFactory(),
+                                    TSys::TypeRegistry::GetRegistry());
+
+    switch (type)
+    {
+        case PluginType::Library:
+            LoadCppPlugin(name, loader, result);
+            break;
+
+        case PluginType::Python:
+            LoadPythonPlugin(name, loader, result);
+            break;
+    }
 
     return loader;
 }

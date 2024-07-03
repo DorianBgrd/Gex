@@ -294,6 +294,19 @@ inline boost::python::list PtrVectorToBoostPtrList(std::vector<T*> vec)
 }
 
 
+template<class T>
+inline boost::python::list VectorToBoostList(std::vector<T> vec)
+{
+    boost::python::list l;
+    for (T value : vec)
+    {
+        l.append(value);
+    }
+
+    return l;
+}
+
+
 boost::python::object NW_Python_GetAttributes(boost::python::tuple args,
                                               boost::python::dict kwargs)
 {
@@ -357,6 +370,22 @@ boost::python::object CN_Python_FromNode(boost::python::tuple args, boost::pytho
 }
 
 
+boost::python::object CN_Python_GetNodes(boost::python::tuple args, boost::python::dict kwargs)
+{
+    Gex::CompoundNode* self = boost::python::extract<Gex::CompoundNode*>(args[0]);
+
+    return PtrVectorToBoostPtrList(self->GetNodes());
+}
+
+
+boost::python::object CN_Python_GetNodeNames(boost::python::tuple args, boost::python::dict kwargs)
+{
+    Gex::CompoundNode* self = boost::python::extract<Gex::CompoundNode*>(args[0]);
+
+    return VectorToBoostList(self->GetNodeNames());
+}
+
+
 Gex::Python::CompoundNode_Wrap::CompoundNode_Wrap(): Gex::CompoundNode(),
      boost::python::wrapper<Gex::CompoundNode>()
 {
@@ -386,6 +415,8 @@ void Gex::Python::CompoundNode_Wrap::RegisterPythonWrapper()
             .def("CreateNode", &Gex::CompoundNode::CreateNode,
                  boost::python::return_internal_reference())
             .def("GetNode", boost::python::raw_function(&CN_Python_GetInternalNode, 1))
+            .def("GetNodes", boost::python::raw_function(&CN_Python_GetNodes, 1))
+            .def("GetNodeNames", boost::python::raw_function(&CN_Python_GetNodeNames, 1))
             .def("HasNode", _IsInternalNode)
             .def("RemoveNode", _RemoveInternalNode)
 //            .def("CreateInternalAttribute", boost::python::raw_function(&Gex_CompoundNode_CreateInternalAttribute, 3))

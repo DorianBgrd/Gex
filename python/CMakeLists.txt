@@ -22,7 +22,9 @@ add_library(
         include/io.h
         src/io.cpp
         include/status.h
-        src/status.cpp)
+        src/status.cpp
+        include/NodeFactory.h
+        src/NodeFactory.cpp)
 
 
 target_include_directories(
