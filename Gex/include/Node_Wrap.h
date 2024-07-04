@@ -1,16 +1,16 @@
-#ifndef GEX_NODE_H
-#define GEX_NODE_H
+#ifndef GEX_NODE_WRAP_H
+#define GEX_NODE_WRAP_H
 
 #include "api.h"
-#include "Gex/include/Node.h"
+#include "Node.h"
 #include "boost/python.hpp"
 
 namespace  Gex
 {
     namespace Python
     {
-        struct GEX_PYTHON_API Node_Wrap: public Gex::Node,
-                                         public boost::python::wrapper<Gex::Node>
+        struct GEX_API Node_Wrap: public Gex::Node,
+                public boost::python::wrapper<Gex::Node>
         {
             static bool pythonRegistered;
 
@@ -43,7 +43,7 @@ namespace  Gex
         };
 
 
-        class GEX_PYTHON_API CompoundNode_Wrap: public Gex::CompoundNode,
+        class GEX_API CompoundNode_Wrap: public Gex::CompoundNode,
             public boost::python::wrapper<Gex::CompoundNode>
         {
 
@@ -66,4 +66,4 @@ namespace  Gex
 
 
 
-#endif //GEX_NODE_H
+#endif //GEX_NODE_WRAP_H

@@ -1,4 +1,4 @@
-#include "python/include/Graph.h"
+#include "Gex/include/Graph_Wrap.h"
 #include "Gex/include/Node.h"
 #include "boost/python.hpp"
 

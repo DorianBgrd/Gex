@@ -1,4 +1,4 @@
-#include "python/include/Attribute.h"
+#include "Gex/include/Attribute_Wrap.h"
 #include "Gex/include/Node.h"
 #include "Tsys/include/tsys.h"
 

@@ -6,7 +6,7 @@
 #include "boost/python.hpp"
 #include "Gex/include/NodeFactory.h"
 
-#include "python/include/PluginLoader.h"
+#include "Gex/include/PluginLoader_Wrap.h"
 
 #include <fstream>
 

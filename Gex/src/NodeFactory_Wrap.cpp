@@ -1,6 +1,8 @@
-#include "python/include/NodeFactory.h"
-#include "python/include/Node.h"
+#include "Gex/include/NodeFactory_Wrap.h"
+#include "Gex/include/Node_Wrap.h"
 
+
+bool Gex::Python::NodeBuilder_Wrap::pythonRegistered = false;
 
 
 Gex::Python::NodeBuilder_Wrap::NodeBuilder_Wrap():
@@ -32,6 +34,23 @@ Gex::Node* Gex::Python::NodeBuilder_Wrap::CreateNode() const
 
     return Gex::DefaultNodeBuilder::CreateNode();
 }
+
+
+bool Gex::Python::NodeBuilder_Wrap::RegisterPythonWrapper()
+{
+    if (pythonRegistered)
+    {
+        return false;
+    }
+
+    boost::python::class_<Gex::Python::NodeBuilder_Wrap>("NodeBuilder", boost::python::init())
+            .def("CreateNode", &Gex::Python::NodeBuilder_Wrap::CreateNode,
+                 boost::python::return_internal_reference());
+
+    pythonRegistered = true;
+    return true;
+}
+
 
 
 bool Gex::Python::NodeFactory_Wrap::pythonRegistered = false;
@@ -88,6 +107,8 @@ boost::python::object NF_RegisterNodeBuilder(boost::python::object args,
     Gex::NodeBuilder* cppbuilder = boost::python::extract<Gex::Python::NodeBuilder_Wrap*>(builder);
 
     loader->RegisterNode(nodeName, cppbuilder);
+
+    return {};
 }
 
 
@@ -104,11 +125,6 @@ bool Gex::Python::NodeFactory_Wrap::RegisterPythonWrapper()
 
     boost::python::class_<Gex::NodeFactory>("NodeFactory", boost::python::no_init)
             .def("RegisterNodeBuilder", boost::python::raw_function(NF_RegisterNodeBuilder, 3))
-            ;
-
-    boost::python::class_<Gex::Python::NodeBuilder_Wrap>("NodeBuilder", boost::python::init())
-            .def("CreateNode", &Gex::Python::NodeBuilder_Wrap::CreateNode,
-                 boost::python::return_internal_reference())
             ;
 
     pythonRegistered= true;

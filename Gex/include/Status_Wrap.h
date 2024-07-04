@@ -1,23 +1,24 @@
-#ifndef GEX_GRAPH_H
-#define GEX_GRAPH_H
+#ifndef GEX_PYTHON_STATUS_H
+#define GEX_PYTHON_STATUS_H
 
 #include "api.h"
-#include "Gex/include/Node.h"
 
 
 namespace Gex
 {
     namespace Python
     {
-        struct GEX_PYTHON_API GraphContext_Wrap: public Gex::GraphContext
+        struct GEX_API Feedback_Wrap
         {
         private:
             static bool pythonRegistered;
-
         public:
             static bool RegisterPythonWrapper();
         };
     }
 }
 
-#endif //GEX_GRAPH_H
+
+
+
+#endif //GEX_PYTHON_STATUS_H

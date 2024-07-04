@@ -37,7 +37,8 @@ Gex::Ui::UiPluginLoader* Gex::Ui::UiPluginLoader::LoadPlugin(
     }
 
     auto* loader = new UiPluginLoader();
-    feedback->Set(Gex::Status::Success, "");
+    if (feedback)
+        feedback->Set(Gex::Status::Success, "");
 
     loader->RegisterPluginPath(std::filesystem::absolute(path).string());
 

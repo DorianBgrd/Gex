@@ -5,9 +5,10 @@ set(CMAKE_CXX_STANDARD 17)
 
 add_definitions(/DGEX_API_EXPORT)
 
+set(BOOST_ROOT $ENV{BOOST_ROOT})
 
-find_package(Python 3.10 REQUIRED COMPONENTS Development Interpreter)
-find_package(Boost 1.77.0 COMPONENTS python310 REQUIRED)
+find_package(Python 3.11 REQUIRED COMPONENTS Development Interpreter)
+find_package(Boost 1.77.0 COMPONENTS python311 REQUIRED)
 
 message("Python found ${Python_FOUND}")
 
@@ -25,6 +26,7 @@ message("TSYS_LIBRARY_DIR : ${TSYS_LIBRARY_DIR}")
 set(
         GEX_SOURCES
 
+        # Cpp source files.
         Gex/src/Attribute.cpp
         Gex/src/Evaluation.cpp
         Gex/src/Node.cpp
@@ -44,6 +46,22 @@ set(
         Gex/include/defs.h
         Gex/include/Scheduling.h
         Gex/src/Scheduling.cpp
+
+        # Python wrapping file.
+        Gex/include/Attribute_Wrap.h
+        Gex/src/Attribute_Wrap.cpp
+        Gex/include/Graph_Wrap.h
+        Gex/src/Graph_Wrap.cpp
+        Gex/include/io_Wrap.h
+        Gex/src/io_Wrap.cpp
+        Gex/include/Node_Wrap.h
+        Gex/src/Node_Wrap.cpp
+        Gex/include/NodeFactory_Wrap.h
+        Gex/src/NodeFactory_Wrap.cpp
+        Gex/include/PluginLoader_Wrap.h
+        Gex/src/PluginLoader_Wrap.cpp
+        Gex/include/Status_Wrap.h
+        Gex/src/Status_Wrap.cpp
 )
 
 
@@ -87,6 +105,7 @@ target_include_directories(
 target_link_directories(
         Gex
         PUBLIC
+
         ${GEX_LINK_DIRECTORIES}
 )
 
@@ -133,7 +152,7 @@ target_link_libraries(
 )
 
 
-add_subdirectory(python)
+add_subdirectory(Gex/python)
 
 
 add_dependencies(
@@ -149,6 +168,12 @@ add_dependencies(
         ArraysPlugin
         Gex
 )
+
+
+#add_dependencies(
+#        InputRel
+#        Gex
+#)
 
 
 add_subdirectory(test)
@@ -175,6 +200,15 @@ add_subdirectory(ui)
 
 
 add_dependencies(
-        Gex_ui
+        Gex_Software
         Gex
+        Gex_ui
+        ArraysPlugin
+        DebugPlugin
+        FilesPlugin
+#        InputRel
+        IterPlugin
+        MathPlugin
+        PathsPlugin
+        StringPlugin
 )

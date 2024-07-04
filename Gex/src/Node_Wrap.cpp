@@ -1,5 +1,5 @@
 #include "Gex/include/Node.h"
-#include "python/include/Node.h"
+#include "Gex/include/Node_Wrap.h"
 #include "Gex/include/Attribute.h"
 
 #include "Tsys/include/tsys.h"

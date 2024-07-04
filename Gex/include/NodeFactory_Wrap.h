@@ -1,24 +1,31 @@
-#ifndef GEX_NODEFACTORY_H
-#define GEX_NODEFACTORY_H
+#ifndef GEX_NODEFACTORY_WRAP_H
+#define GEX_NODEFACTORY_WRAP_H
 
-#include "Gex/include/PluginLoader.h"
+#include "api.h"
+#include "PluginLoader.h"
 
 namespace Gex
 {
     namespace Python
     {
-        struct NodeBuilder_Wrap: public DefaultNodeBuilder,
+        struct GEX_API NodeBuilder_Wrap: public DefaultNodeBuilder,
                 public boost::python::wrapper<DefaultNodeBuilder>
         {
+        private:
+            static bool pythonRegistered;
+        public:
             NodeBuilder_Wrap();
 
             NodeBuilder_Wrap(const DefaultNodeBuilder base);
 
             Node* CreateNode() const override;
+
+        public:
+            static bool RegisterPythonWrapper();
         };
 
 
-        struct NodeFactory_Wrap
+        struct GEX_API NodeFactory_Wrap
         {
         private:
             static bool pythonRegistered;
@@ -28,4 +35,4 @@ namespace Gex
     }
 }
 
-#endif //GEX_NODEFACTORY_H
+#endif //GEX_NODEFACTORY_WRAP_H

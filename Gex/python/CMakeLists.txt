@@ -13,18 +13,8 @@ add_definitions(/DGEX_PYTHON_API_EXPORT)
 add_library(
         Gex_Python
         SHARED
-        src/Attribute.cpp
-        src/Graph.cpp
-        src/Node.cpp
-        src/import.cpp
-        include/PluginLoader.h
-        src/PluginLoader.cpp
-        include/io.h
-        src/io.cpp
-        include/status.h
-        src/status.cpp
-        include/NodeFactory.h
-        src/NodeFactory.cpp)
+        module.cpp
+)
 
 
 target_include_directories(

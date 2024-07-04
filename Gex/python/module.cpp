@@ -1,10 +1,10 @@
-#include "python/include/Attribute.h"
-#include "python/include/Graph.h"
-#include "python/include/Status.h"
-#include "python/include/Node.h"
-#include "python/include/io.h"
-#include "python/include/PluginLoader.h"
-#include "python/include/NodeFactory.h"
+#include "Gex/include/Attribute_Wrap.h"
+#include "Gex/include/Graph_Wrap.h"
+#include "Gex/include/Status_Wrap.h"
+#include "Gex/include/Node_Wrap.h"
+#include "Gex/include/io_Wrap.h"
+#include "Gex/include/PluginLoader_Wrap.h"
+#include "Gex/include/NodeFactory_Wrap.h"
 
 #include "boost/python.hpp"
 
@@ -15,8 +15,6 @@ BOOST_PYTHON_MODULE(Gex_Python)
 
     Gex::Python::Attribute_Wrap::RegisterPythonWrapper();
 
-//    Gex::Python::Graph_Wrap::RegisterPythonWrapper();
-
     Gex::Python::GraphContext_Wrap::RegisterPythonWrapper();
 
     Gex::Python::Node_Wrap::RegisterPythonWrapper();
@@ -25,9 +23,9 @@ BOOST_PYTHON_MODULE(Gex_Python)
 
     Gex::Python::PluginLoader_Wrap::RegisterPythonWrapper();
 
+    Gex::Python::NodeBuilder_Wrap::RegisterPythonWrapper();
+
     Gex::Python::NodeFactory_Wrap::RegisterPythonWrapper();
 
     Gex::Python::IO::RegisterPythonWrapper();
-
-//    Gex::Python::GraphContext_Wrap()::
 }

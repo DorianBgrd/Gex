@@ -1,5 +1,5 @@
-#include "python/include/PluginLoader.h"
-#include "python/include/NodeFactory.h"
+#include "Gex/include/PluginLoader_Wrap.h"
+#include "Gex/include/NodeFactory_Wrap.h"
 
 
 bool Gex::Python::PluginLoader_Wrap::pythonRegistered = false;

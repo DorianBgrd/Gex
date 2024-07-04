@@ -1,13 +1,13 @@
-#ifndef GEX_ATTRIBUTE_H
-#define GEX_ATTRIBUTE_H
+#ifndef GEX_ATTRIBUTE_WRAP_H
+#define GEX_ATTRIBUTE_WRAP_H
 
 #include "api.h"
-#include "Gex/include/Attribute.h"
+#include "Attribute.h"
 #include "boost/python.hpp"
 
 namespace Gex::Python
 {
-    struct GEX_PYTHON_API Attribute_Wrap: public Gex::Attribute,
+    struct GEX_API Attribute_Wrap: public Gex::Attribute,
         public boost::python::wrapper<Gex::Attribute>
     {
         protected:
@@ -20,4 +20,4 @@ namespace Gex::Python
 
 
 
-#endif //GEX_ATTRIBUTE_H
+#endif //GEX_ATTRIBUTE_WRAP_H
