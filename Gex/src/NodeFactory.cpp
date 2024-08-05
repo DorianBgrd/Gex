@@ -93,6 +93,7 @@ class CompoundNodeBuilder: public Gex::NodeBuilder
 
 Gex::NodeFactory::NodeFactory()
 {
+    defaultBuilder = nullptr;
     RegisterNodeBuilder("CompoundNode", new CompoundNodeBuilder());
 }
 
@@ -145,7 +146,7 @@ Gex::Node* Gex::NodeFactory::LoadNode(rapidjson::Value& dict) const
     std::string nodeType = dict[Config::GetConfig().nodeTypeKey.c_str()].GetString();
 
     NodeBuilder* builder = GetBuilder(nodeType);
-	if (builder == nullptr)
+	if (!builder)
 	{
 		return nullptr;
 	}
