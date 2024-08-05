@@ -1,60 +1,62 @@
 #include "Gex/include/Metadatas.h"
 
 
-Gex::Metadata::Metadata(size_t h)
+Gex::JsonValue Gex::NodeMetadata::Serialize(JsonDoc& doc) const
 {
-    hash = h;
-}
+    JsonValue serializedMetadata(rapidjson::kArrayType);
 
-
-bool Gex::Metadata::ValueSet(std::any val)
-{
-    if (val.type().hash_code() != hash)
+    for (auto mv : metadata)
     {
-        return false;
+        std::any anyval = mv.second;
+        auto* handler = TSys::TypeRegistry::GetRegistry()->GetTypeHandle(
+                anyval.type().hash_code());
+        if (!handler)
+            continue;
+
+        JsonValue valueArray(rapidjson::kArrayType);
+
+        JsonValue& name = rapidjson::Value(rapidjson::kStringType).SetString(
+                mv.first.c_str(), doc.GetAllocator());
+        JsonValue& type = rapidjson::Value(rapidjson::kStringType).SetString(
+                handler->ApiName().c_str(), doc.GetAllocator());
+        JsonValue& value = rapidjson::Value().SetArray();
+
+        handler->SerializeValue(anyval, value, doc);
+
+        valueArray.PushBack(name.Move(), doc.GetAllocator());
+        valueArray.PushBack(type.Move(), doc.GetAllocator());
+        valueArray.PushBack(value.Move(), doc.GetAllocator());
+
+        serializedMetadata.PushBack(valueArray.Move(), doc.GetAllocator());
     }
 
-    value = val;
-    return true;
+    return serializedMetadata;
 }
 
-
-std::any Gex::Metadata::ValueGet(const size_t& h)
+void Gex::NodeMetadata::Deserialize(JsonValue& val)
 {
-    if (!value.has_value())
-        return {};
+    metadata.clear();
 
-    if (value.type().hash_code() == hash)
+    for (unsigned int i = 0;i < val.Size(); i++)
     {
-        return value;
-    }
-    else
-    {
-        TSys::TypeHandler* handler = TSys::TypeRegistry::GetRegistry()->GetTypeHandle(h);
-        if (!handler->CanConvertFrom(value))
-        {
-            return {};
-        }
+        std::string name = val[i][0].GetString();
+        std::string type = val[i][1].GetString();
+        rapidjson::Value& m = val[i][2];
 
-        return handler->ConvertFrom(value, value);
+        auto* handler = TSys::TypeRegistry::GetRegistry()->GetTypeHandleFromApiName(type);
+        if (!handler)
+            continue;
+
+        std::any n;
+        metadata[name] = handler->DeserializeValue(n, m);
     }
 }
 
 
-bool Gex::Metadata::Serialize(JsonValue json, JsonDoc doc)
+Gex::NodeMetadata Gex::NodeMetadata::DeserializeMetadata(JsonValue val)
 {
-    TSys::TypeHandler* handler = TSys::TypeRegistry::GetRegistry()->GetTypeHandle(hash);
-    if (!handler || !value.has_value())
-    {
-        return true;
-    }
-
-    handler->SerializeValue(value, json, doc);
-    return false;
+    Gex::NodeMetadata m;
+    m.Deserialize(val);
+    return m;
 }
 
-
-bool Gex::Metadata::Deserialize(JsonValue json)
-{
-
-}

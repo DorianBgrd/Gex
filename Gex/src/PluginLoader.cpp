@@ -9,11 +9,13 @@
 #include "Gex/include/PluginLoader_Wrap.h"
 
 #include <fstream>
+#include <stdlib.h>
 
 
 #define REGISTER_PLUGIN_FUNC_NAME "RegisterPlugin"
 
 
+bool Gex::PluginLoader::initialized = false;
 std::map<Gex::CallbackId, Gex::PluginLoadedCallback> Gex::PluginLoader::callbacks;
 std::vector<std::string> Gex::PluginLoader::searchPaths;
 std::vector<std::string> Gex::PluginLoader::loadedPlugins;
@@ -88,8 +90,43 @@ void Gex::PluginLoader::RegisterNode(const std::string& type, NodeBuilder* build
 }
 
 
+#ifdef WIN32
+#define SEP ';'
+#else
+#define SEP ':'
+#endif
+
+
+void Gex::PluginLoader::Initialize()
+{
+    if (!initialized)
+    {
+        char* strenv = std::getenv(PLUGIN_PATHS_ENV);
+        if (strenv)
+        {
+            std::string env = strenv;
+
+            auto count = std::count(env.begin(), env.end(), SEP);
+
+            for (size_t i = 0; i <= count; i++)
+            {
+                auto nextSep = env.find(SEP);
+                AddSearchPath(env.substr(0, nextSep));
+
+                env = env.substr(nextSep + 1, std::string::npos);
+            }
+
+        }
+
+        initialized = true;
+    }
+}
+
+
 std::vector<std::string> Gex::PluginLoader::AvailablePaths()
 {
+    Initialize();
+
     return searchPaths;
 }
 

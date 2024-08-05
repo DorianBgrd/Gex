@@ -25,6 +25,7 @@ namespace Gex
 
         std::string nodeTypeKey = "Type";
         std::string nodeNameKey = "Name";
+        std::string nodeMetadataKey = "Metadata";
         std::string nodeAttributesKey = "Attributes";
         std::string nodeCustomAttributesKey = "CustomAttributes";
 

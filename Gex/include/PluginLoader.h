@@ -11,6 +11,9 @@
 #include "Tsys/include/tsys.h"
 
 
+#define PLUGIN_PATHS_ENV "GEX_PLUGIN_PATHS"
+
+
 namespace Gex
 {
     enum class PluginType
@@ -21,6 +24,10 @@ namespace Gex
 
     class GEX_API PluginLoader
     {
+    private:
+        static bool initialized;
+
+        static void Initialize();
     protected:
         std::string pluginPath;
         std::map<std::string, NodeBuilder*> registeredBuilders;

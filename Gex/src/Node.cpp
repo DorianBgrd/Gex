@@ -514,6 +514,11 @@ void Gex::Node::Serialize(rapidjson::Value& dict, rapidjson::Document& json) con
                 json.GetAllocator());
         dict.AddMember(cstmAttrKey.Move(), customAttrs, json.GetAllocator());
     }
+
+    rapidjson::Value mtdt = metadata.Serialize(json);
+    rapidjson::Value& mKey = rapidjson::Value().SetString(
+            conf.nodeMetadataKey.c_str(), json.GetAllocator());
+    dict.AddMember(mKey.Move(), mtdt, json.GetAllocator());
 }
 
 
@@ -551,6 +556,12 @@ bool Gex::Node::Deserialize(rapidjson::Value& dict)
     {
         rapidjson::Value& nameValue = dict[conf.nodeNameKey.c_str()];
         SetName(nameValue.GetString());
+    }
+
+    if (dict.HasMember(conf.nodeMetadataKey.c_str()))
+    {
+        rapidjson::Value& m = dict[conf.nodeMetadataKey.c_str()];
+        metadata.Deserialize(m);
     }
 
     return true;

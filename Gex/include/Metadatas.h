@@ -1,6 +1,7 @@
 #ifndef GEX_METADATAS_H
 #define GEX_METADATAS_H
 
+#include "api.h"
 #include "Status.h"
 
 #include <variant>
@@ -15,51 +16,100 @@
 #include "Tsys/include/tsys.h"
 
 #define M_TYPES int, float, double, std::string, std::vector<int>, std::vector<float>, std::vector<double>,
-#define IsAvailableType(T) bool(TSys::TypeRegistry::GetRegistry()->IsRegistered(T))
+#define IsAvailableType(T)
 
 namespace Gex
 {
-    typedef rapidjson::Value& JsonValue;
-    typedef rapidjson::Document& JsonDoc;
-    typedef std::any Val;
-    typedef size_t Hash;
+    typedef rapidjson::Value JsonValue;
+    typedef rapidjson::Document JsonDoc;
 
-    struct Metadata
+
+    template<class T>
+    bool IsMetadataType()
     {
-        size_t hash;
-        Val value;
+        return bool(TSys::TypeRegistry::GetRegistry()->IsRegistered(
+                typeid(T).hash_code()));
+    }
+
+
+    class GEX_API NodeMetadata
+    {
+        std::unordered_map<std::string, std::any> metadata;
 
     public:
-        Metadata(size_t h);
+        NodeMetadata() = default;
 
         template<class T>
-        Metadata(): Metadata(typeid(T).hash_code()){}
-
-
-        bool ValueSet(std::any val);
-
-        template<class T>
-        bool Set(T val)
+        bool SetMetadata(const std::string& name, T value)
         {
-            return ValueSet(std::any_cast<T>(val));
-        }
-
-        std::any ValueGet(const size_t& hash);
-
-        template<class T>
-        bool Get(T& val)
-        {
-            std::any cv = ValueGet(typeid(val).hash_code());
-            if (!cv.has_value())
+            if (!IsMetadataType<T>())
+            {
                 return false;
+            }
 
-            val = std::make_any<T>(cv);
+            metadata[name] = value;
             return true;
         }
 
-        bool Serialize(JsonValue json, JsonDoc doc);
+        std::any GetMetadata(const std::string& name) const
+        {
+            auto iter = metadata.find(name);
+            if (iter == metadata.end())
+            {
+                return {};
+            }
 
-        bool Deserialize(JsonValue json);
+            return iter->second;
+        }
+
+        template<class T>
+        bool Set(const std::string& name, T value)
+        {
+            return SetMetadata(name, value);
+        }
+
+        template<class T>
+        T Get(const std::string& name, Feedback* res=nullptr) const
+        {
+            auto val = GetMetadata(name);
+            if (!val.has_value())
+            {
+                if (res)
+                    res->Set(Status::Failed, "No value named " + name);
+
+                return {};
+            }
+
+            auto hash = typeid(T).hash_code();
+            if (hash == val.type().hash_code())
+            {
+                if (res)
+                    res->Set(Status::Success, "");
+
+                return std::any_cast<T>(val);
+            }
+
+            auto* handler = TSys::TypeRegistry::GetRegistry()->GetTypeHandle(hash);
+
+            if (handler->CanConvertFrom(val.type().hash_code()))
+            {
+                if (res)
+                    res->Set(Status::Success, "");
+
+                return std::any_cast<T>(handler->ConvertFrom(val, val));
+            }
+
+            if (res)
+                res->Set(Status::Failed, "Invalid metadata type.");
+
+            return {};
+        }
+
+        JsonValue Serialize(JsonDoc& doc) const;
+
+        void Deserialize(JsonValue& val);
+
+        static NodeMetadata DeserializeMetadata(JsonValue val);
     };
 }
 

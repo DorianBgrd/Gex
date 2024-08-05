@@ -3,6 +3,7 @@
 
 #include "api.h"
 #include "defs.h"
+#include "Metadatas.h"
 #include "boost/python.hpp"
 #include "NodeAttributeData.h"
 #include "Attribute.h"
@@ -90,6 +91,7 @@ namespace Gex
         InvalidateCallbacks invalidateCallbacks;
         ScheduleCallbacks scheduleCallbacks;
         AttributeChangedCallbacks attrCallbacks;
+        NodeMetadata metadata;
 
 	public:
         /**
@@ -129,6 +131,32 @@ namespace Gex
          * @return bool: is initializing.
          */
         bool IsInitializing() const;
+
+        /**
+         * Get Metadata value for specified name.
+         * @tparam M: Metadata value type.
+         * @param name: Metadata name.
+         * @param res: Result of the operation.
+         * @return resulting value.
+         */
+        template<class M>
+        M GetMetadata(std::string name, Feedback* res=nullptr) const
+        {
+            return metadata.Get<M>(name, res);
+        }
+
+        /**
+         * Sets metadata value for specified name.
+         * @tparam M: Metadata value type.
+         * @param name: Metadata name.
+         * @param value: Value to set.
+         * @return Operation success.
+         */
+        template<class M>
+        bool SetMetadata(std::string name, M value)
+        {
+            return metadata.Set<M>(name, value);
+        }
 
     protected:
         /**
