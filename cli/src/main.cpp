@@ -1,19 +1,20 @@
-#include "ArgParse/ArgParse.h"
-#include "Gex/include/Gex.h"
-
-#define EXECUTE "exec"
+#include "cli/include/exec.h"
 
 
 int main(int argc, char** argv)
 {
-    Parser parser;
 
     if (argc < 1)
     {
-        std::cerr << "A command is reauired." << std::endl;
+        std::cerr << "A command is required." << std::endl;
         return -1;
     }
 
+    std::string command = argv[1];
+    if (command == "exec")
+    {
+        return Exec::ExecuteGraph(argc, argv, 2);
+    }
 
     return 0;
 }
