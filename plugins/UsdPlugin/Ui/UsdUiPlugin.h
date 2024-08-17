@@ -1,15 +1,18 @@
 #ifndef PIPELINELIBRARY2COMPLETE_USDUIPLUGIN_H
 #define PIPELINELIBRARY2COMPLETE_USDUIPLUGIN_H
 
-#include "Gui/UiPluginLoader.h"
-#include "Gui/TypeEngine/TypeEngine.h"
+#include "UiTsys/include/uitsys.h"
 
 #include <QSpinBox>
+
+#include "plugins/export.h"
+#include "ui/include/PluginLoader.h"
 
 #include "pxr/base/gf/half.h"
 #include "pxr/usd/usd/prim.h"
 
-namespace PipelineSoftware2
+
+namespace Gex::Usd
 {
     class DoubleSpinBox: public QDoubleSpinBox
     {
@@ -45,7 +48,7 @@ namespace PipelineSoftware2
     };
 
 
-    class Plugin_API GfHalfWidget: public TypedWidget
+    class Plugin_API GfHalfWidget: public UiTSys::TypedWidget
     {
         Q_OBJECT
 
@@ -66,17 +69,13 @@ namespace PipelineSoftware2
     GENERATE_DEFAULT_WIDGET_CREATOR(GfHalfWidgetBuilder, GfHalfWidget)
 
 
-    class Plugin_API GfHalfInitWidget: public TypedInitWidget
+    class Plugin_API GfHalfInitWidget: public UiTSys::TypedInitWidget
     {
         DoubleSpinBox* widget = nullptr;
     public:
         virtual QWidget* CreateInitWidget() override;
 
         std::any CreateValue() override;
-
-        virtual PipelineLibrary::Property* CreateProperty(std::string name,
-                                                          bool array, bool upstream
-                                                          ) const override;
     };
 
 
@@ -85,7 +84,7 @@ namespace PipelineSoftware2
 
 
 
-    class Plugin_API SdfTimeCodeWidget: public TypedWidget
+    class Plugin_API SdfTimeCodeWidget: public UiTSys::TypedWidget
     {
         Q_OBJECT
 
@@ -104,24 +103,20 @@ namespace PipelineSoftware2
 
     GENERATE_DEFAULT_WIDGET_CREATOR(SdfTimeCodeWidgetBuilder, SdfTimeCodeWidget)
 
-    class Plugin_API SdfTimeCodeInitWidget: public TypedInitWidget
+    class Plugin_API SdfTimeCodeInitWidget: public UiTSys::TypedInitWidget
     {
         DoubleSpinBox* widget = nullptr;
     public:
         virtual QWidget* CreateInitWidget() override;
 
         std::any CreateValue() override;
-
-        virtual PipelineLibrary::Property* CreateProperty(std::string name,
-                                                          bool array, bool upstream
-        ) const override;
     };
 
     GENERATE_DEFAULT_INIT_WIDGET_CREATOR(SdfTimeCodeInitWidgetBuilder, SdfTimeCodeInitWidget)
 
 
 
-    class Plugin_API TfTokenWidget: public TypedWidget
+    class Plugin_API TfTokenWidget: public UiTSys::TypedWidget
     {
         Q_OBJECT
 
@@ -140,23 +135,19 @@ namespace PipelineSoftware2
 
     GENERATE_DEFAULT_WIDGET_CREATOR(TfTokenWidgetBuilder, TfTokenWidget)
 
-    class Plugin_API TfTokenInitWidget: public TypedInitWidget
+    class Plugin_API TfTokenInitWidget: public UiTSys::TypedInitWidget
     {
         QLineEdit* widget = nullptr;
     public:
         virtual QWidget* CreateInitWidget() override;
 
         std::any CreateValue() override;
-
-        virtual PipelineLibrary::Property* CreateProperty(std::string name,
-                                                          bool array, bool upstream
-        ) const override;
     };
 
     GENERATE_DEFAULT_INIT_WIDGET_CREATOR(TfTokenInitWidgetBuilder, TfTokenInitWidget)
 
 
-    class Plugin_API Matrix2dWidget: public TypedWidget
+    class Plugin_API Matrix2dWidget: public UiTSys::TypedWidget
     {
         Q_OBJECT
 
@@ -179,7 +170,7 @@ namespace PipelineSoftware2
 
     GENERATE_DEFAULT_WIDGET_CREATOR(Matrix2dWidgetBuilder, Matrix2dWidget)
 
-    class Plugin_API Matrix2dInitWidget: public TypedInitWidget
+    class Plugin_API Matrix2dInitWidget: public UiTSys::TypedInitWidget
     {
         DoubleSpinBox* widget1 = nullptr;
         DoubleSpinBox* widget2 = nullptr;
@@ -190,16 +181,12 @@ namespace PipelineSoftware2
         virtual QWidget* CreateInitWidget() override;
 
         std::any CreateValue() override;
-
-        virtual PipelineLibrary::Property* CreateProperty(std::string name,
-                                                          bool array, bool upstream
-        ) const override;
     };
 
     GENERATE_DEFAULT_INIT_WIDGET_CREATOR(Matrix2dInitWidgetBuilder, Matrix2dInitWidget)
 
 
-    class Plugin_API Matrix3dWidget: public TypedWidget
+    class Plugin_API Matrix3dWidget: public UiTSys::TypedWidget
     {
         Q_OBJECT
 
@@ -227,7 +214,7 @@ namespace PipelineSoftware2
 
     GENERATE_DEFAULT_WIDGET_CREATOR(Matrix3dWidgetBuilder, Matrix3dWidget)
 
-    class Plugin_API Matrix3dInitWidget: public TypedInitWidget
+    class Plugin_API Matrix3dInitWidget: public UiTSys::TypedInitWidget
     {
         DoubleSpinBox* widget1 = nullptr;
         DoubleSpinBox* widget2 = nullptr;
@@ -243,16 +230,12 @@ namespace PipelineSoftware2
         virtual QWidget* CreateInitWidget() override;
 
         std::any CreateValue() override;
-
-        virtual PipelineLibrary::Property* CreateProperty(std::string name,
-                                                          bool array, bool upstream
-        ) const override;
     };
 
     GENERATE_DEFAULT_INIT_WIDGET_CREATOR(Matrix3dInitWidgetBuilder, Matrix3dInitWidget)
 
 
-    class Plugin_API Matrix4dWidget: public TypedWidget
+    class Plugin_API Matrix4dWidget: public UiTSys::TypedWidget
     {
         Q_OBJECT
 
@@ -287,7 +270,7 @@ namespace PipelineSoftware2
 
     GENERATE_DEFAULT_WIDGET_CREATOR(Matrix4dWidgetBuilder, Matrix4dWidget)
 
-    class Plugin_API Matrix4dInitWidget: public TypedInitWidget
+    class Plugin_API Matrix4dInitWidget: public UiTSys::TypedInitWidget
     {
         DoubleSpinBox* widget1 = nullptr;
         DoubleSpinBox* widget2 = nullptr;
@@ -310,17 +293,13 @@ namespace PipelineSoftware2
         virtual QWidget* CreateInitWidget() override;
 
         std::any CreateValue() override;
-
-        virtual PipelineLibrary::Property* CreateProperty(std::string name,
-                                                          bool array, bool upstream
-        ) const override;
     };
 
     GENERATE_DEFAULT_INIT_WIDGET_CREATOR(Matrix4dInitWidgetBuilder, Matrix4dInitWidget)
 
 
     template<typename Quat, typename Widget>
-    class Plugin_API QuatWidget: public TypedWidget
+    class Plugin_API QuatWidget: public UiTSys::TypedWidget
     {
         Widget* widget1 = nullptr;
         Widget* widget2 = nullptr;
@@ -392,7 +371,7 @@ namespace PipelineSoftware2
 
 
     template<typename Quat, typename Widget>
-    class Plugin_API QuatInitWidget: public TypedInitWidget
+    class Plugin_API QuatInitWidget: public UiTSys::TypedInitWidget
     {
         Widget* widget1 = nullptr;
         Widget* widget2 = nullptr;
@@ -424,16 +403,6 @@ namespace PipelineSoftware2
                      widget3->value(), widget4->value());
 
             return std::make_any<Quat>(mat);
-        }
-
-        virtual PipelineLibrary::Property* CreateProperty(std::string name,
-                                                          bool array, bool upstream
-        ) const override
-        {
-            Quat mat(widget1->value(), widget2->value(),
-                     widget3->value(), widget4->value());
-
-            return new PipelineLibrary::Property(name, mat, nullptr, upstream);
         }
     };
 
@@ -478,7 +447,7 @@ namespace PipelineSoftware2
 
 
     template<typename Vec, typename Widget>
-    class Plugin_API Vec2Widget: public TypedWidget
+    class Plugin_API Vec2Widget: public UiTSys::TypedWidget
     {
 
         Widget* widget1 = nullptr;
@@ -533,7 +502,7 @@ namespace PipelineSoftware2
 
 
     template<typename Vec, typename Widget>
-    class Plugin_API Vec2InitWidget: public TypedInitWidget
+    class Plugin_API Vec2InitWidget: public UiTSys::TypedInitWidget
     {
         Widget* widget1 = nullptr;
         Widget* widget2 = nullptr;
@@ -558,15 +527,6 @@ namespace PipelineSoftware2
             Vec mat(widget1->value(), widget2->value());
 
             return std::make_any<Vec>(mat);
-        }
-
-        virtual PipelineLibrary::Property* CreateProperty(std::string name,
-                                                          bool array, bool upstream
-        ) const override
-        {
-            Vec mat(widget1->value(), widget2->value());
-
-            return new PipelineLibrary::Property(name, mat, nullptr, upstream);
         }
     };
 
@@ -624,7 +584,7 @@ namespace PipelineSoftware2
 
 
     template<typename Vec, typename Widget>
-    class Plugin_API Vec3Widget: public TypedWidget
+    class Plugin_API Vec3Widget: public UiTSys::TypedWidget
     {
 
         Widget* widget1 = nullptr;
@@ -687,7 +647,7 @@ namespace PipelineSoftware2
 
 
     template<typename Vec, typename Widget>
-    class Plugin_API Vec3InitWidget: public TypedInitWidget
+    class Plugin_API Vec3InitWidget: public UiTSys::TypedInitWidget
     {
         Widget* widget1 = nullptr;
         Widget* widget2 = nullptr;
@@ -715,15 +675,6 @@ namespace PipelineSoftware2
             Vec mat(widget1->value(), widget2->value(), widget3->value());
 
             return std::make_any<Vec>(mat);
-        }
-
-        virtual PipelineLibrary::Property* CreateProperty(std::string name,
-                                                          bool array, bool upstream
-        ) const override
-        {
-            Vec mat(widget1->value(), widget2->value(), widget3->value());
-
-            return new PipelineLibrary::Property(name, mat, nullptr, upstream);
         }
     };
 
@@ -782,7 +733,7 @@ namespace PipelineSoftware2
 
 
     template<typename Vec, typename Widget>
-    class Plugin_API Vec4Widget: public TypedWidget
+    class Plugin_API Vec4Widget: public UiTSys::TypedWidget
     {
         Widget* widget1 = nullptr;
         Widget* widget2 = nullptr;
@@ -853,7 +804,7 @@ namespace PipelineSoftware2
 
 
     template<typename Vec, typename Widget>
-    class Plugin_API Vec4InitWidget: public TypedInitWidget
+    class Plugin_API Vec4InitWidget: public UiTSys::TypedInitWidget
     {
         Widget* widget1 = nullptr;
         Widget* widget2 = nullptr;
@@ -885,16 +836,6 @@ namespace PipelineSoftware2
                     widget3->value(), widget4->value());
 
             return std::make_any<Vec>(mat);
-        }
-
-        virtual PipelineLibrary::Property* CreateProperty(std::string name,
-                                                          bool array, bool upstream
-        ) const override
-        {
-            Vec mat(widget1->value(), widget2->value(),
-                    widget3->value(), widget4->value());
-
-            return new PipelineLibrary::Property(name, mat, nullptr, upstream);
         }
     };
 
@@ -950,7 +891,8 @@ namespace PipelineSoftware2
 }
 
 
-REGISTER_UI_PLUGIN(PipelineSoftware2::UiPlugin* loader);
+extern "C" Plugin_API
+void RegisterUiPlugin(Gex::Ui::UiPluginLoader* loader);
 
 
 #endif //PIPELINELIBRARY2COMPLETE_USDUIPLUGIN_H

@@ -1,66 +1,53 @@
-//
-// Created by bouga on 23/10/2023.
-//
 #include "UsdUiPlugin.h"
 
 
-QWidget* PipelineSoftware2::GfHalfWidget::CreateTypedWidget()
+QWidget* Gex::Usd::GfHalfWidget::CreateTypedWidget()
 {
     widget = new DoubleSpinBox();
     Connect(widget, &DoubleSpinBox::valueChanged);
     return widget;
 }
 
-void PipelineSoftware2::GfHalfWidget::SetValue(std::any value)
+void Gex::Usd::GfHalfWidget::SetValue(std::any value)
 {
     pxr::GfHalf half = std::any_cast<pxr::GfHalf>(value);
 
     widget->setValue(half);
 }
 
-std::any PipelineSoftware2::GfHalfWidget::GetValue() const
+std::any Gex::Usd::GfHalfWidget::GetValue() const
 {
     pxr::GfHalf half(widget->value());
     return std::any_cast<pxr::GfHalf>(half);
 }
 
-void PipelineSoftware2::GfHalfWidget::ShowConnected(bool connected)
+void Gex::Usd::GfHalfWidget::ShowConnected(bool connected)
 {
     widget->setReadOnly(connected);
     widget->setProperty("connected", connected);
 }
 
-void PipelineSoftware2::GfHalfWidget::ShowDisabled(bool disabled)
+void Gex::Usd::GfHalfWidget::ShowDisabled(bool disabled)
 {
     widget->setDisabled(disabled);
 }
 
 
-QWidget* PipelineSoftware2::GfHalfInitWidget::CreateInitWidget()
+QWidget* Gex::Usd::GfHalfInitWidget::CreateInitWidget()
 {
     widget = new DoubleSpinBox(this);
     return widget;
 }
 
 
-std::any PipelineSoftware2::GfHalfInitWidget::CreateValue()
+std::any Gex::Usd::GfHalfInitWidget::CreateValue()
 {
     return std::make_any<pxr::GfHalf>(pxr::GfHalf(widget->value()));
 }
 
 
-PipelineLibrary::Property* PipelineSoftware2::GfHalfInitWidget::CreateProperty(std::string name,
-                                                                               bool array, bool upstream
-                                                                               ) const
-{
-    return new PipelineLibrary::Property(name, pxr::GfHalf(widget->value()),
-                                         nullptr, upstream);
-}
 
-
-
-
-QWidget* PipelineSoftware2::SdfTimeCodeWidget::CreateTypedWidget()
+QWidget* Gex::Usd::SdfTimeCodeWidget::CreateTypedWidget()
 {
     widget = new DoubleSpinBox();
     Connect(widget, &DoubleSpinBox::valueChanged);
@@ -68,116 +55,98 @@ QWidget* PipelineSoftware2::SdfTimeCodeWidget::CreateTypedWidget()
 }
 
 
-void PipelineSoftware2::SdfTimeCodeWidget::SetValue(std::any value)
+void Gex::Usd::SdfTimeCodeWidget::SetValue(std::any value)
 {
     pxr::SdfTimeCode half = std::any_cast<pxr::SdfTimeCode>(value);
 
     widget->setValue((double)half);
 }
 
-std::any PipelineSoftware2::SdfTimeCodeWidget::GetValue() const
+std::any Gex::Usd::SdfTimeCodeWidget::GetValue() const
 {
     pxr::GfHalf half(widget->value());
     return std::any_cast<pxr::SdfTimeCode>(half);
 }
 
-void PipelineSoftware2::SdfTimeCodeWidget::ShowConnected(bool connected)
+void Gex::Usd::SdfTimeCodeWidget::ShowConnected(bool connected)
 {
     widget->setReadOnly(connected);
     widget->setProperty("connected", connected);
 }
 
-void PipelineSoftware2::SdfTimeCodeWidget::ShowDisabled(bool disabled)
+void Gex::Usd::SdfTimeCodeWidget::ShowDisabled(bool disabled)
 {
     widget->setDisabled(disabled);
 }
 
 
-QWidget* PipelineSoftware2::SdfTimeCodeInitWidget::CreateInitWidget()
+QWidget* Gex::Usd::SdfTimeCodeInitWidget::CreateInitWidget()
 {
     widget = new DoubleSpinBox(this);
     return widget;
 }
 
 
-std::any PipelineSoftware2::SdfTimeCodeInitWidget::CreateValue()
+std::any Gex::Usd::SdfTimeCodeInitWidget::CreateValue()
 {
     return std::make_any<pxr::SdfTimeCode>(pxr::SdfTimeCode(widget->value()));
 }
 
 
-PipelineLibrary::Property* PipelineSoftware2::SdfTimeCodeInitWidget::CreateProperty(std::string name,
-                                                                               bool array, bool upstream
-                                                                                ) const
-{
-    return new PipelineLibrary::Property(name, pxr::SdfTimeCode(widget->value()),
-                                         nullptr, upstream);
-}
 
 
 
-
-
-QWidget* PipelineSoftware2::TfTokenWidget::CreateTypedWidget()
+QWidget* Gex::Usd::TfTokenWidget::CreateTypedWidget()
 {
     widget = new QLineEdit();
     Connect(widget, &QLineEdit::editingFinished);
     return widget;
 }
 
-void PipelineSoftware2::TfTokenWidget::SetValue(std::any value)
+void Gex::Usd::TfTokenWidget::SetValue(std::any value)
 {
     pxr::TfToken str = std::any_cast<pxr::TfToken>(value);
 
     widget->setText(str.GetString().c_str());
 }
 
-std::any PipelineSoftware2::TfTokenWidget::GetValue() const
+std::any Gex::Usd::TfTokenWidget::GetValue() const
 {
     pxr::TfToken str(widget->text().toStdString());
     return std::any_cast<pxr::TfToken>(str);
 }
 
-void PipelineSoftware2::TfTokenWidget::ShowConnected(bool connected)
+void Gex::Usd::TfTokenWidget::ShowConnected(bool connected)
 {
     widget->setReadOnly(connected);
     widget->setProperty("connected", connected);
 }
 
-void PipelineSoftware2::TfTokenWidget::ShowDisabled(bool disabled)
+void Gex::Usd::TfTokenWidget::ShowDisabled(bool disabled)
 {
     widget->setDisabled(disabled);
 }
 
 
 
-QWidget* PipelineSoftware2::TfTokenInitWidget::CreateInitWidget()
+QWidget* Gex::Usd::TfTokenInitWidget::CreateInitWidget()
 {
     widget = new QLineEdit(this);
     return widget;
 }
 
 
-std::any PipelineSoftware2::TfTokenInitWidget::CreateValue()
+std::any Gex::Usd::TfTokenInitWidget::CreateValue()
 {
     return std::make_any<pxr::TfToken>(pxr::TfToken(widget->text().toStdString()));
 }
 
 
-PipelineLibrary::Property* PipelineSoftware2::TfTokenInitWidget::CreateProperty(std::string name,
-                                                                                bool array, bool upstream
-                                                                                ) const
-{
-    return new PipelineLibrary::Property(name, pxr::TfToken(widget->text().toStdString()),
-                                         nullptr, upstream);
-}
 
 
 
 
-
-
-QWidget* PipelineSoftware2::Matrix2dWidget::CreateTypedWidget()
+QWidget* Gex::Usd::Matrix2dWidget::CreateTypedWidget()
 {
     QWidget* widget = new QWidget();
     QGridLayout* layout = new QGridLayout();
@@ -200,7 +169,7 @@ QWidget* PipelineSoftware2::Matrix2dWidget::CreateTypedWidget()
     return widget;
 }
 
-void PipelineSoftware2::Matrix2dWidget::SetValue(std::any value)
+void Gex::Usd::Matrix2dWidget::SetValue(std::any value)
 {
     pxr::GfMatrix2d mat = std::any_cast<pxr::GfMatrix2d>(value);
 
@@ -210,14 +179,14 @@ void PipelineSoftware2::Matrix2dWidget::SetValue(std::any value)
     widget4->setValue(mat[1][1]);
 }
 
-std::any PipelineSoftware2::Matrix2dWidget::GetValue() const
+std::any Gex::Usd::Matrix2dWidget::GetValue() const
 {
     pxr::GfMatrix2d mat(widget1->value(), widget2->value(),
                         widget3->value(), widget4->value());
     return std::any_cast<pxr::GfMatrix2d>(mat);
 }
 
-void PipelineSoftware2::Matrix2dWidget::ShowConnected(bool connected)
+void Gex::Usd::Matrix2dWidget::ShowConnected(bool connected)
 {
     widget1->setReadOnly(connected);
     widget1->setProperty("connected", connected);
@@ -229,7 +198,7 @@ void PipelineSoftware2::Matrix2dWidget::ShowConnected(bool connected)
     widget4->setProperty("connected", connected);
 }
 
-void PipelineSoftware2::Matrix2dWidget::ShowDisabled(bool disabled)
+void Gex::Usd::Matrix2dWidget::ShowDisabled(bool disabled)
 {
     widget1->setDisabled(disabled);
     widget2->setDisabled(disabled);
@@ -240,7 +209,7 @@ void PipelineSoftware2::Matrix2dWidget::ShowDisabled(bool disabled)
 
 
 
-QWidget* PipelineSoftware2::Matrix2dInitWidget::CreateInitWidget()
+QWidget* Gex::Usd::Matrix2dInitWidget::CreateInitWidget()
 {
     QWidget* widget = new QWidget();
     QGridLayout* layout = new QGridLayout();
@@ -259,7 +228,7 @@ QWidget* PipelineSoftware2::Matrix2dInitWidget::CreateInitWidget()
 }
 
 
-std::any PipelineSoftware2::Matrix2dInitWidget::CreateValue()
+std::any Gex::Usd::Matrix2dInitWidget::CreateValue()
 {
     pxr::GfMatrix2d mat(widget1->value(), widget2->value(),
                         widget3->value(), widget4->value());
@@ -268,22 +237,11 @@ std::any PipelineSoftware2::Matrix2dInitWidget::CreateValue()
 }
 
 
-PipelineLibrary::Property* PipelineSoftware2::Matrix2dInitWidget::CreateProperty(std::string name,
-                                                                                 bool array, bool upstream
-) const
-{
-    pxr::GfMatrix2d mat(widget1->value(), widget2->value(),
-                        widget3->value(), widget4->value());
-
-    return new PipelineLibrary::Property(name, mat, nullptr, upstream);
-}
 
 
 
 
-
-
-QWidget* PipelineSoftware2::Matrix3dWidget::CreateTypedWidget()
+QWidget* Gex::Usd::Matrix3dWidget::CreateTypedWidget()
 {
     QWidget* widget = new QWidget();
     QGridLayout* layout = new QGridLayout();
@@ -321,7 +279,7 @@ QWidget* PipelineSoftware2::Matrix3dWidget::CreateTypedWidget()
     return widget;
 }
 
-void PipelineSoftware2::Matrix3dWidget::SetValue(std::any value)
+void Gex::Usd::Matrix3dWidget::SetValue(std::any value)
 {
     pxr::GfMatrix3d mat = std::any_cast<pxr::GfMatrix3d>(value);
 
@@ -336,7 +294,7 @@ void PipelineSoftware2::Matrix3dWidget::SetValue(std::any value)
     widget9->setValue(mat[2][2]);
 }
 
-std::any PipelineSoftware2::Matrix3dWidget::GetValue() const
+std::any Gex::Usd::Matrix3dWidget::GetValue() const
 {
     pxr::GfMatrix3d mat(widget1->value(), widget2->value(),
                         widget3->value(), widget4->value(),
@@ -346,7 +304,7 @@ std::any PipelineSoftware2::Matrix3dWidget::GetValue() const
     return std::any_cast<pxr::GfMatrix3d>(mat);
 }
 
-void PipelineSoftware2::Matrix3dWidget::ShowConnected(bool connected)
+void Gex::Usd::Matrix3dWidget::ShowConnected(bool connected)
 {
     widget1->setReadOnly(connected);
     widget1->setProperty("connected", connected);
@@ -368,7 +326,7 @@ void PipelineSoftware2::Matrix3dWidget::ShowConnected(bool connected)
     widget9->setProperty("connected", connected);
 }
 
-void PipelineSoftware2::Matrix3dWidget::ShowDisabled(bool disabled)
+void Gex::Usd::Matrix3dWidget::ShowDisabled(bool disabled)
 {
     widget1->setDisabled(disabled);
     widget2->setDisabled(disabled);
@@ -383,7 +341,7 @@ void PipelineSoftware2::Matrix3dWidget::ShowDisabled(bool disabled)
 
 
 
-QWidget* PipelineSoftware2::Matrix3dInitWidget::CreateInitWidget()
+QWidget* Gex::Usd::Matrix3dInitWidget::CreateInitWidget()
 {
     QWidget* widget = new QWidget();
     QGridLayout* layout = new QGridLayout();
@@ -412,7 +370,7 @@ QWidget* PipelineSoftware2::Matrix3dInitWidget::CreateInitWidget()
 }
 
 
-std::any PipelineSoftware2::Matrix3dInitWidget::CreateValue()
+std::any Gex::Usd::Matrix3dInitWidget::CreateValue()
 {
     pxr::GfMatrix3d mat(widget1->value(), widget2->value(),
                         widget3->value(), widget4->value(),
@@ -424,25 +382,11 @@ std::any PipelineSoftware2::Matrix3dInitWidget::CreateValue()
 }
 
 
-PipelineLibrary::Property* PipelineSoftware2::Matrix3dInitWidget::CreateProperty(std::string name,
-                                                                                 bool array, bool upstream
-) const
-{
-    pxr::GfMatrix3d mat(widget1->value(), widget2->value(),
-                        widget3->value(), widget4->value(),
-                        widget5->value(), widget6->value(),
-                        widget7->value(), widget8->value(),
-                        widget9->value());
-
-    return new PipelineLibrary::Property(name, mat, nullptr, upstream);
-}
 
 
 
 
-
-
-QWidget* PipelineSoftware2::Matrix4dWidget::CreateTypedWidget()
+QWidget* Gex::Usd::Matrix4dWidget::CreateTypedWidget()
 {
     QWidget* widget = new QWidget();
     QGridLayout* layout = new QGridLayout();
@@ -502,7 +446,7 @@ QWidget* PipelineSoftware2::Matrix4dWidget::CreateTypedWidget()
     return widget;
 }
 
-void PipelineSoftware2::Matrix4dWidget::SetValue(std::any value)
+void Gex::Usd::Matrix4dWidget::SetValue(std::any value)
 {
     pxr::GfMatrix4d mat = std::any_cast<pxr::GfMatrix4d>(value);
 
@@ -524,7 +468,7 @@ void PipelineSoftware2::Matrix4dWidget::SetValue(std::any value)
     widget16->setValue(mat[3][3]);
 }
 
-std::any PipelineSoftware2::Matrix4dWidget::GetValue() const
+std::any Gex::Usd::Matrix4dWidget::GetValue() const
 {
     pxr::GfMatrix4d mat(widget1->value(), widget2->value(),
                         widget3->value(), widget4->value(),
@@ -537,7 +481,7 @@ std::any PipelineSoftware2::Matrix4dWidget::GetValue() const
     return std::any_cast<pxr::GfMatrix4d>(mat);
 }
 
-void PipelineSoftware2::Matrix4dWidget::ShowConnected(bool connected)
+void Gex::Usd::Matrix4dWidget::ShowConnected(bool connected)
 {
     widget1->setReadOnly(connected);
     widget1->setProperty("connected", connected);
@@ -573,7 +517,7 @@ void PipelineSoftware2::Matrix4dWidget::ShowConnected(bool connected)
     widget16->setProperty("connected", connected);
 }
 
-void PipelineSoftware2::Matrix4dWidget::ShowDisabled(bool disabled)
+void Gex::Usd::Matrix4dWidget::ShowDisabled(bool disabled)
 {
     widget1->setDisabled(disabled);
     widget2->setDisabled(disabled);
@@ -594,7 +538,7 @@ void PipelineSoftware2::Matrix4dWidget::ShowDisabled(bool disabled)
 }
 
 
-QWidget* PipelineSoftware2::Matrix4dInitWidget::CreateInitWidget()
+QWidget* Gex::Usd::Matrix4dInitWidget::CreateInitWidget()
 {
     QWidget* widget = new QWidget();
     QGridLayout* layout = new QGridLayout();
@@ -637,7 +581,7 @@ QWidget* PipelineSoftware2::Matrix4dInitWidget::CreateInitWidget()
 }
 
 
-std::any PipelineSoftware2::Matrix4dInitWidget::CreateValue()
+std::any Gex::Usd::Matrix4dInitWidget::CreateValue()
 {
     pxr::GfMatrix4d mat(widget1->value(), widget2->value(),
                         widget3->value(), widget4->value(),
@@ -652,106 +596,89 @@ std::any PipelineSoftware2::Matrix4dInitWidget::CreateValue()
 }
 
 
-PipelineLibrary::Property* PipelineSoftware2::Matrix4dInitWidget::CreateProperty(std::string name,
-                                                                                 bool array, bool upstream
-) const
+void RegisterUiPlugin(Gex::Ui::UiPluginLoader* loader)
 {
-    pxr::GfMatrix4d mat(widget1->value(), widget2->value(),
-                        widget3->value(), widget4->value(),
-                        widget5->value(), widget6->value(),
-                        widget7->value(), widget8->value(),
-                        widget9->value(), widget10->value(),
-                        widget11->value(), widget12->value(),
-                        widget13->value(), widget14->value(),
-                        widget15->value(), widget16->value());
+    loader->RegisterTypeWidget<pxr::GfHalf,
+            Gex::Usd::GfHalfInitWidgetBuilder,
+            Gex::Usd::GfHalfWidgetBuilder>("Half");
 
-    return new PipelineLibrary::Property(name, mat, nullptr, upstream);
-}
+    loader->RegisterTypeWidget<pxr::SdfTimeCode,
+            Gex::Usd::SdfTimeCodeInitWidgetBuilder,
+            Gex::Usd::SdfTimeCodeWidgetBuilder>("TimeCode");
 
+    loader->RegisterTypeWidget<pxr::TfToken,
+            Gex::Usd::TfTokenInitWidgetBuilder,
+            Gex::Usd::TfTokenWidgetBuilder>("Token");
 
-REGISTER_UI_PLUGIN(PipelineSoftware2::UiPlugin* loader)
-{
-    loader->RegisterUiType<pxr::GfHalf,
-            PipelineSoftware2::GfHalfWidgetBuilder,
-            PipelineSoftware2::GfHalfInitWidgetBuilder>("Half");
+    loader->RegisterTypeWidget<pxr::GfMatrix2d,
+            Gex::Usd::Matrix2dInitWidgetBuilder,
+            Gex::Usd::Matrix2dWidgetBuilder>("Matrix2d");
 
-    loader->RegisterUiType<pxr::SdfTimeCode,
-            PipelineSoftware2::SdfTimeCodeWidgetBuilder,
-            PipelineSoftware2::SdfTimeCodeInitWidgetBuilder>("TimeCode");
+    loader->RegisterTypeWidget<pxr::GfMatrix3d,
+            Gex::Usd::Matrix3dInitWidgetBuilder,
+            Gex::Usd::Matrix3dWidgetBuilder>("Matrix3d");
 
-    loader->RegisterUiType<pxr::TfToken,
-            PipelineSoftware2::TfTokenWidgetBuilder,
-            PipelineSoftware2::TfTokenInitWidgetBuilder>("Token");
+    loader->RegisterTypeWidget<pxr::GfMatrix4d,
+            Gex::Usd::Matrix4dInitWidgetBuilder,
+            Gex::Usd::Matrix4dWidgetBuilder>("Matrix4d");
 
-    loader->RegisterUiType<pxr::GfMatrix2d,
-            PipelineSoftware2::Matrix2dWidgetBuilder,
-            PipelineSoftware2::Matrix2dInitWidgetBuilder>("Matrix2d");
+    loader->RegisterTypeWidget<pxr::GfQuatd,
+            Gex::Usd::QuatdInitWidgetBuilder,
+            Gex::Usd::QuatdWidgetBuilder>("Quatd");
 
-    loader->RegisterUiType<pxr::GfMatrix3d,
-            PipelineSoftware2::Matrix3dWidgetBuilder,
-            PipelineSoftware2::Matrix3dInitWidgetBuilder>("Matrix3d");
+    loader->RegisterTypeWidget<pxr::GfQuatf,
+            Gex::Usd::QuatfInitWidgetBuilder,
+            Gex::Usd::QuatfWidgetBuilder>("Quatf");
 
-    loader->RegisterUiType<pxr::GfMatrix4d,
-            PipelineSoftware2::Matrix4dWidgetBuilder,
-            PipelineSoftware2::Matrix4dInitWidgetBuilder>("Matrix4d");
+    loader->RegisterTypeWidget<pxr::GfQuath,
+            Gex::Usd::QuathInitWidgetBuilder,
+            Gex::Usd::QuathWidgetBuilder>("Quath");
 
-    loader->RegisterUiType<pxr::GfQuatd,
-            PipelineSoftware2::QuatdWidgetBuilder,
-            PipelineSoftware2::QuatdInitWidgetBuilder>("Quatd");
+    loader->RegisterTypeWidget<pxr::GfVec2d,
+            Gex::Usd::Vec2dInitWidgetBuilder,
+            Gex::Usd::Vec2dWidgetBuilder>("Vec2d");
 
-    loader->RegisterUiType<pxr::GfQuatf,
-            PipelineSoftware2::QuatfWidgetBuilder,
-            PipelineSoftware2::QuatfInitWidgetBuilder>("Quatf");
+    loader->RegisterTypeWidget<pxr::GfVec2f,
+            Gex::Usd::QuatfInitWidgetBuilder,
+            Gex::Usd::QuatfWidgetBuilder>("Vec2f");
 
-    loader->RegisterUiType<pxr::GfQuath,
-            PipelineSoftware2::QuathWidgetBuilder,
-            PipelineSoftware2::QuathInitWidgetBuilder>("Quath");
+    loader->RegisterTypeWidget<pxr::GfVec2h,
+            Gex::Usd::Vec2hInitWidgetBuilder,
+            Gex::Usd::Vec2hWidgetBuilder>("Vec2h");
 
-    loader->RegisterUiType<pxr::GfVec2d,
-            PipelineSoftware2::Vec2dWidgetBuilder,
-            PipelineSoftware2::Vec2dInitWidgetBuilder>("Vec2d");
+    loader->RegisterTypeWidget<pxr::GfVec2i,
+            Gex::Usd::Vec2iInitWidgetBuilder,
+            Gex::Usd::Vec2iWidgetBuilder>("Vec2i");
 
-    loader->RegisterUiType<pxr::GfVec2f,
-            PipelineSoftware2::QuatfWidgetBuilder,
-            PipelineSoftware2::QuatfInitWidgetBuilder>("Vec2f");
+    loader->RegisterTypeWidget<pxr::GfVec3d,
+            Gex::Usd::Vec3dInitWidgetBuilder,
+            Gex::Usd::Vec3dWidgetBuilder>("Vec3d");
 
-    loader->RegisterUiType<pxr::GfVec2h,
-            PipelineSoftware2::Vec2hWidgetBuilder,
-            PipelineSoftware2::Vec2hInitWidgetBuilder>("Vec2h");
+    loader->RegisterTypeWidget<pxr::GfVec3f,
+            Gex::Usd::Vec3fInitWidgetBuilder,
+            Gex::Usd::Vec3fWidgetBuilder>("Vec3f");
 
-    loader->RegisterUiType<pxr::GfVec2i,
-            PipelineSoftware2::Vec2iWidgetBuilder,
-            PipelineSoftware2::Vec2iInitWidgetBuilder>("Vec2i");
+    loader->RegisterTypeWidget<pxr::GfVec3h,
+            Gex::Usd::Vec3hInitWidgetBuilder,
+            Gex::Usd::Vec3hWidgetBuilder>("Vec3h");
 
-    loader->RegisterUiType<pxr::GfVec3d,
-            PipelineSoftware2::Vec3dWidgetBuilder,
-            PipelineSoftware2::Vec3dInitWidgetBuilder>("Vec3d");
+    loader->RegisterTypeWidget<pxr::GfVec3i,
+            Gex::Usd::Vec3iInitWidgetBuilder,
+            Gex::Usd::Vec3iWidgetBuilder>("Vec3i");
 
-    loader->RegisterUiType<pxr::GfVec3f,
-            PipelineSoftware2::Vec3fWidgetBuilder,
-            PipelineSoftware2::Vec3fInitWidgetBuilder>("Vec3f");
+    loader->RegisterTypeWidget<pxr::GfVec4d,
+            Gex::Usd::Vec4dInitWidgetBuilder,
+            Gex::Usd::Vec4dWidgetBuilder>("Vec4d");
 
-    loader->RegisterUiType<pxr::GfVec3h,
-            PipelineSoftware2::Vec3hWidgetBuilder,
-            PipelineSoftware2::Vec3hInitWidgetBuilder>("Vec3h");
+    loader->RegisterTypeWidget<pxr::GfVec4f,
+            Gex::Usd::Vec4fInitWidgetBuilder,
+            Gex::Usd::Vec4fWidgetBuilder>("Vec4f");
 
-    loader->RegisterUiType<pxr::GfVec3i,
-            PipelineSoftware2::Vec3iWidgetBuilder,
-            PipelineSoftware2::Vec3iInitWidgetBuilder>("Vec3i");
+    loader->RegisterTypeWidget<pxr::GfVec4h,
+            Gex::Usd::Vec4hInitWidgetBuilder,
+            Gex::Usd::Vec4hWidgetBuilder>("Vec4h");
 
-    loader->RegisterUiType<pxr::GfVec4d,
-            PipelineSoftware2::Vec4dWidgetBuilder,
-            PipelineSoftware2::Vec4dInitWidgetBuilder>("Vec4d");
-
-    loader->RegisterUiType<pxr::GfVec4f,
-            PipelineSoftware2::Vec4fWidgetBuilder,
-            PipelineSoftware2::Vec4fInitWidgetBuilder>("Vec4f");
-
-    loader->RegisterUiType<pxr::GfVec4h,
-            PipelineSoftware2::Vec4hWidgetBuilder,
-            PipelineSoftware2::Vec4hInitWidgetBuilder>("Vec4h");
-
-    loader->RegisterUiType<pxr::GfVec4i,
-            PipelineSoftware2::Vec4iWidgetBuilder,
-            PipelineSoftware2::Vec4iInitWidgetBuilder>("Vec4i");
+    loader->RegisterTypeWidget<pxr::GfVec4i,
+            Gex::Usd::Vec4iInitWidgetBuilder,
+            Gex::Usd::Vec4iWidgetBuilder>("Vec4i");
 }

@@ -1,11 +1,4 @@
-
-#ifdef min
-#undef min
-#endif
-
-#ifdef max
-#undef max
-#endif
+#include "options.h"
 
 #include "pxr/usd/usd/stage.h"
 #include "pxr/usd/usd/prim.h"
@@ -23,6 +16,10 @@
 #include "Gex/include/Gex.h"
 
 #include <filesystem>
+
+#include "Geom.h"
+#include "plugins/export.h"
+
 
 
 template<typename Matrix>
@@ -788,8 +785,24 @@ namespace UsdPlugin
     };
 
 
+    struct MeshToPrim: public TSys::TypeConverter
+    {
+        std::any Convert(std::any from, std::any to) const override
+        {
+            return std::any_cast<pxr::UsdPrim>(
+                    std::any_cast<pxr::UsdGeomMesh>(
+                            from).GetPrim());
+        }
+    };
+
+
     struct UsdStagePrimHandler: public TSys::TypeHandler
     {
+        UsdStagePrimHandler(): TSys::TypeHandler()
+        {
+            RegisterConverter<pxr::UsdGeomMesh, MeshToPrim>();
+        }
+
         std::string ApiName() const override
         {
             return "UsdPrim";
@@ -982,7 +995,7 @@ namespace UsdPlugin
     };
 
 
-    class OpenUsdStage: public Gex::Node
+    class Plugin_API OpenUsdStage: public Gex::Node
     {
     public:
         void InitAttributes() override
@@ -1016,7 +1029,7 @@ namespace UsdPlugin
     GENERATE_DEFAULT_BUILDER(OpenUsdStageBuilder, OpenUsdStage)
 
 
-    class GetUsdStageRootLayer: public Gex::Node
+    class Plugin_API GetUsdStageRootLayer: public Gex::Node
     {
     public:
         void InitAttributes() override
@@ -1047,7 +1060,7 @@ namespace UsdPlugin
     GENERATE_DEFAULT_BUILDER(GetUsdStageRootLayerBuilder, GetUsdStageRootLayer)
 
 
-    class GetUsdStagePrim: public Gex::Node
+    class Plugin_API GetUsdStagePrim: public Gex::Node
     {
     public:
         void InitAttributes() override
@@ -1055,8 +1068,11 @@ namespace UsdPlugin
             CreateAttribute<pxr::UsdStageRefPtr>("Stage", Gex::AttrValueType::Single,
                                                  Gex::AttrType::Static);
 
-            CreateAttribute<pxr::UsdPrim>("PrimPath", Gex::AttrValueType::Single,
-                                                 Gex::AttrType::Output);
+            CreateAttribute<std::string>("Path", Gex::AttrValueType::Single,
+                                         Gex::AttrType::Static);
+
+            CreateAttribute<pxr::UsdPrim>("Prim", Gex::AttrValueType::Single,
+                                          Gex::AttrType::Output);
         }
 
 
@@ -1066,11 +1082,13 @@ namespace UsdPlugin
         override
         {
             auto stage  = context.GetAttribute("Stage").GetValue<pxr::UsdStageRefPtr>();
-
-            if (!stage)
+            auto path = context.GetAttribute("Path").GetValue<std::string>();
+            if (!stage || path.empty())
                 return false;
 
-            context.GetAttribute("RootLayer").SetValue(stage->GetRootLayer());
+            pxr::SdfPath sdfp(path);
+            pxr::UsdPrim prim = stage->GetPrimAtPath(sdfp);
+            context.GetAttribute("Prim").SetValue(prim);
             return true;
         }
     };
@@ -1079,7 +1097,7 @@ namespace UsdPlugin
     GENERATE_DEFAULT_BUILDER(GetUsdStagePrimBuilder, GetUsdStagePrim)
 
 
-    class GetUsdPrimStage: public Gex::Node
+    class Plugin_API GetUsdPrimStage: public Gex::Node
     {
     public:
         void InitAttributes() override
@@ -1111,7 +1129,7 @@ namespace UsdPlugin
     GENERATE_DEFAULT_BUILDER(GetUsdPrimStageBuilder, GetUsdPrimStage)
 
 
-    class GetUsdStagePrimAttribute: public Gex::Node
+    class Plugin_API GetUsdStagePrimAttribute: public Gex::Node
     {
     public:
         void InitAttributes() override
@@ -1377,7 +1395,7 @@ namespace UsdPlugin
     };
 
 
-    class CreateSdfLayer: public Gex::Node
+    class Plugin_API CreateSdfLayer: public Gex::Node
     {
     public:
         void InitAttributes() override
@@ -1417,7 +1435,7 @@ namespace UsdPlugin
     GENERATE_DEFAULT_BUILDER(CreateSdfLayerBuilder, CreateSdfLayer)
 
 
-    class OpenSdfLayer: public Gex::Node
+    class Plugin_API OpenSdfLayer: public Gex::Node
     {
     public:
         void InitAttributes() override
@@ -1448,7 +1466,7 @@ namespace UsdPlugin
     GENERATE_DEFAULT_BUILDER(OpenSdfLayerBuilder, OpenSdfLayer)
 
 
-    class DefinePrim: public Gex::Node
+    class Plugin_API DefinePrim: public Gex::Node
     {
     public:
         void InitAttributes() override
@@ -1495,7 +1513,7 @@ namespace UsdPlugin
     GENERATE_DEFAULT_BUILDER(DefinePrimBuilder, DefinePrim)
 
 
-    class DefineXform: public DefinePrim
+    class Plugin_API DefineXform: public DefinePrim
     {
     public:
         pxr::UsdPrim DoDefinePrim(pxr::UsdStageRefPtr stage, pxr::SdfPath path) override
@@ -1508,7 +1526,7 @@ namespace UsdPlugin
     GENERATE_DEFAULT_BUILDER(DefineXformBuilder, DefineXform)
 
 
-    class DefineSphere: public DefinePrim
+    class Plugin_API DefineSphere: public DefinePrim
     {
     public:
         pxr::UsdPrim DoDefinePrim(pxr::UsdStageRefPtr stage, pxr::SdfPath path) override
@@ -1521,7 +1539,7 @@ namespace UsdPlugin
     GENERATE_DEFAULT_BUILDER(DefineSphereBuilder, DefineSphere)
 
 
-    class DefineCube: public DefinePrim
+    class Plugin_API DefineCube: public DefinePrim
     {
     public:
         pxr::UsdPrim DoDefinePrim(pxr::UsdStageRefPtr stage, pxr::SdfPath path) override
@@ -1534,7 +1552,7 @@ namespace UsdPlugin
     GENERATE_DEFAULT_BUILDER(DefineCubeBuilder, DefineCube)
 
 
-    class GetPrimPath: public Gex::Node
+    class Plugin_API GetPrimPath: public Gex::Node
     {
     public:
         void InitAttributes() override
@@ -1561,7 +1579,7 @@ namespace UsdPlugin
     GENERATE_DEFAULT_BUILDER(GetPrimPathBuilder, GetPrimPath)
 
 
-    class OverridePrim: public Gex::Node
+    class Plugin_API OverridePrim: public Gex::Node
     {
     public:
         void InitAttributes() override
@@ -1607,7 +1625,7 @@ namespace UsdPlugin
     GENERATE_DEFAULT_BUILDER(OverridePrimBuilder, OverridePrim)
 
 
-    class AddReference: public Gex::Node
+    class Plugin_API AddReference: public Gex::Node
     {
     public:
         void InitAttributes() override
@@ -1636,7 +1654,7 @@ namespace UsdPlugin
     GENERATE_DEFAULT_BUILDER(AddReferenceBuilder, AddReference)
 
 
-    class CreateVariantSet: public Gex::Node
+    class Plugin_API CreateVariantSet: public Gex::Node
     {
     public:
         void InitAttributes() override
@@ -1676,7 +1694,7 @@ namespace UsdPlugin
     GENERATE_DEFAULT_BUILDER(CreateVariantSetBuilder, CreateVariantSet)
 
 
-    class EditVariantSet: public Gex::CompoundNode
+    class Plugin_API EditVariantSet: public Gex::CompoundNode
     {
     public:
         void InitAttributes() override
@@ -1728,7 +1746,7 @@ namespace UsdPlugin
     GENERATE_DEFAULT_BUILDER(EditVariantSetBuilder, EditVariantSet)
 
 
-    class SaveStage: public Gex::Node
+    class Plugin_API SaveStage: public Gex::Node
     {
     public:
         void InitAttributes() override
@@ -1774,7 +1792,7 @@ namespace UsdPlugin
 
 
 #define GENERATE_CONSTANT_NODE(UsdType, NodeType, BuilderName) \
-    class NodeType: public DefaultConstantNode<UsdType>{}; \
+    class Plugin_API NodeType: public DefaultConstantNode<UsdType>{}; \
     GENERATE_DEFAULT_BUILDER(BuilderName, NodeType)
 
 
@@ -1916,7 +1934,7 @@ namespace UsdPlugin
     };
 
 
-    class UsdStagePrimCreateAttribute: public Gex::Node
+    class Plugin_API UsdStagePrimCreateAttribute: public Gex::Node
     {
     public:
         void InitAttributes() override
@@ -1967,7 +1985,7 @@ namespace UsdPlugin
     GENERATE_DEFAULT_BUILDER(UsdStagePrimCreateAttributeBuilder, UsdStagePrimCreateAttribute)
 
 
-    class UsdStagePrimSetAttribute: public Gex::Node
+    class Plugin_API UsdStagePrimSetAttribute: public Gex::Node
     {
         void InitAttributes()
         {
@@ -2186,6 +2204,22 @@ REGISTER_PLUGIN(Gex::PluginLoader* loader)
     loader->RegisterNode<UsdPlugin::GfVec4iConstantBuilder>("Usd/Constants/Int4");
 
     loader->RegisterNode<UsdPlugin::GfVec4hConstantBuilder>("Usd/Constants/Half4");
+
+
+
+    loader->RegisterTypeHandler<pxr::UsdGeomMesh, UsdPlugin::UsdGeom::UsdGeomMeshType>();
+
+    loader->RegisterTypeHandler<UsdPlugin::UsdGeom::PointList, UsdPlugin::UsdGeom::UsdGeomPoints>();
+
+
+
+    loader->RegisterNode<UsdPlugin::UsdGeom::UsdGeomIsMeshBuilder>("Usd/Geom/IsMesh");
+
+    loader->RegisterNode<UsdPlugin::UsdGeom::UsdGeomPrimToMeshBuilder>("Usd/Geom/PrimToMesh");
+
+    loader->RegisterNode<UsdPlugin::UsdGeom::UsdGeomMovePointsBuilder>("Usd/Geom/MovePointsAlongNormal");
+
+    loader->RegisterNode<UsdPlugin::UsdGeom::UvMapBuilder>("Usd/Geom/UvMap");
 
 //    loader->RegisterSoftwareOpenCommand("usdview", new UsdPlugin::UsdViewOpenBuilder());
 }
