@@ -1,4 +1,7 @@
 #include "Gex/include/PluginLoader.h"
+#include "rapidjson/document.h"
+#include "Gex/include/Config.h"
+
 #include <windows.h>
 #include <libloaderapi.h>
 #include <filesystem>
@@ -9,6 +12,7 @@
 #include "Gex/include/PluginLoader_Wrap.h"
 
 #include <fstream>
+#include <cstdlib>
 #include <stdlib.h>
 
 
@@ -193,6 +197,13 @@ void Gex::PluginLoader::LoadCppPlugin(const std::string& name, PluginLoader* loa
         return;
     }
 
+    std::filesystem::path absolutePath = std::filesystem::absolute(libPath.string());
+    std::filesystem::path envFile = absolutePath.replace_extension(".json");
+    if (std::filesystem::exists(envFile))
+    {
+        LoadConfigFile(envFile.string());
+    }
+
     HINSTANCE module = LoadLibraryEx(libPath.string().c_str(), nullptr, LOAD_WITH_ALTERED_SEARCH_PATH);
     if (!module)
     {
@@ -211,7 +222,7 @@ void Gex::PluginLoader::LoadCppPlugin(const std::string& name, PluginLoader* loa
         return;
     }
 
-    loader->RegisterPluginPath(std::filesystem::absolute(libPath.string()).string());
+    loader->RegisterPluginPath(absolutePath.string());
     auto function = (RegisterFunction)func;
     function(loader);
 
@@ -242,6 +253,40 @@ void Gex::PluginLoader::LoadPythonPlugin(const std::string& name, PluginLoader* 
         }
 
         Python::PluginLoader_Wrap::RegisterPythonWrapper();
+    }
+
+    // Load environment file if found.
+    PyObject* pkgutil = PyImport_ImportModule("pkgutil");
+    if (pkgutil)
+    {
+        PyObject* pkgutilDict = PyModule_GetDict(pkgutil);
+        PyObject* getLoaderFunc = PyDict_GetItem(pkgutilDict, PyUnicode_FromString("get_loader"));
+
+        PyObject* loaderArgs = PyTuple_New(1);
+        PyTuple_SetItem(loaderArgs, 0, PyUnicode_FromString(name.c_str()));
+        PyObject* loaderKwargs = PyDict_New();
+
+        PyObject* moduleLoader = PyObject_Call(getLoaderFunc, loaderArgs, loaderKwargs);
+
+        PyObject* filename = PyObject_CallMethodOneArg(
+                moduleLoader, PyUnicode_FromString("get_filename"),
+                PyUnicode_FromString(name.c_str()));
+
+        std::string moduleFile  = PyUnicode_AsUTF8(filename);
+
+        std::filesystem::path modulePath = moduleFile;
+        if (modulePath.filename() == "__init__.py")
+        {
+            modulePath = modulePath.parent_path();
+        }
+
+        std::filesystem::path directory = modulePath.parent_path();
+        std::filesystem::path envFile = directory.append(name + ".json");
+
+        if (std::filesystem::exists(envFile))
+        {
+            LoadConfigFile(envFile.string());
+        }
     }
 
     PyObject* mod = PyImport_ImportModule(name.c_str());
@@ -319,69 +364,53 @@ std::vector<std::string> Gex::PluginLoader::LoadedPlugins()
 }
 
 
-#define PLUGIN_LOAD_FAILED(MESSAGE) \
-if (status)                         \
-{                                   \
-    status->status = Status::Failed; \
-}                                   \
-return loader;
+#ifdef GetObject
+#undef GetObject
+#endif
 
 
-//
-//Gex::PluginLoader* Gex::PluginLoader::LoadPythonPlugin(std::string name, Feedback* status)
-//{
-//    auto *loader = new PluginLoader(NodeFactory::GetFactory());
-//
-//    Feedback fileRes;
-//    std::filesystem::path libPath = SearchFilePath(name, &fileRes);
-//
-//    if (!fileRes) {
-//        PLUGIN_LOAD_FAILED("Plugin not found.")
-//    }
-//
-//    if (!Py_IsInitialized())
-//    {
-//        Py_InitializeEx(1);
-//        PyObject* main = PyImport_AddModule("__main__");
-//        if (!main)
-//        {
-//            PLUGIN_LOAD_FAILED("Could not initialize python.")
-//        }
-//    }
-//
-//    PyObject* sys = PyImport_ImportModule("sys");
-//    PyObject* sysdict = PyModule_GetDict(sys);
-//
-//    PyObject* path = PyDict_GetItemString(sysdict, "path");
-//    PyList_Insert(path, 0, PyUnicode_FromString(libPath.parent_path().string().c_str()));
-//
-//    std::string pluginName = libPath.stem().string();
-//    PyObject* plugin = PyImport_ImportModule(pluginName.c_str());
-//    if (!plugin)
-//    {
-//        PyErr_Print();
-//        PLUGIN_LOAD_FAILED("Plugin \"" + pluginName + "\" could not be loaded.");
-//    }
-//
-//    PyObject* pluginDict = PyModule_GetDict(plugin);
-//
-//    PyObject* func = PyDict_GetItem(pluginDict, PyUnicode_FromString(REGISTER_PLUGIN_FUNC_NAME));
-//    if (func == Py_None)
-//    {
-//        PyErr_Print();
-//        PLUGIN_LOAD_FAILED("Could not find \"" + std::string(REGISTER_PLUGIN_FUNC_NAME) + "\" function.");
-//    }
-//
-//    Python_PluginLoader::RegisterPythonWrapper();
-//
-//    boost::python::object o = boost::python::object(Python_PluginLoader(loader));
-////    bool res = boost::python::call<bool>(func, );
-//
-//    PyObject* res = PyObject_CallOneArg(func, o.ptr());
-//    if (status && res)
-//    {
-//        status->status = Status::Success;
-//    }
-//
-//    return loader;
-//}
+void Gex::PluginLoader::LoadConfigFile(std::string envFile)
+{
+    std::ifstream filestream(envFile);
+
+    std::string content((std::istreambuf_iterator<char>(filestream)),
+                        (std::istreambuf_iterator<char>()));
+
+    filestream.close();
+
+    rapidjson::Document json;
+    json.Parse(content.c_str());
+
+    rapidjson::Value& dict = json.GetObject();
+
+    auto conf = Config::GetConfig();
+    if (dict.HasMember(conf.pluginConfEnvKey.c_str()))
+    {
+        auto& envDict = dict[conf.pluginConfEnvKey.c_str()];
+
+        for (auto iter = envDict.MemberBegin(); iter != envDict.MemberEnd(); iter++)
+        {
+            std::string env = iter->name.GetString();
+
+            std::string value;
+            for (unsigned int i = 0; i < iter->value.Size(); i++)
+            {
+                if (i > 0)
+                    value += ";";
+                value += iter->value[i].GetString();
+            }
+
+            const char* current = std::getenv(env.c_str());
+            if (current)
+            {
+                value = std::string(current) + ";" + value;
+            }
+
+            if (!SetEnvironmentVariableA(env.c_str(), value.c_str()))
+            {
+                std::cerr << "# Warning : Failed to set env var " << env << "." << std::endl;
+            }
+        }
+    }
+}
+

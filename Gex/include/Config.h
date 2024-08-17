@@ -36,6 +36,9 @@ namespace Gex
 
         std::string thisKey = "This";
 
+        // Plugin config.
+        std::string pluginConfEnvKey = "plugin-env";
+
         static Config GetConfig();
     };
 
