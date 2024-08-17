@@ -129,8 +129,8 @@ void Gex::Ui::MultiAttributeWidget::RebuildAttributes()
 
 
 Gex::Ui::AttributeWidget::AttributeWidget(Gex::Attribute* attr,
-                                                    GraphWidget* graphWidget,
-                                                    QWidget* parent): QWidget(parent)
+                                          GraphWidget* graphWidget,
+                                          QWidget* parent): QWidget(parent)
 {
     graph = graphWidget;
     attribute = attr;
@@ -138,14 +138,9 @@ Gex::Ui::AttributeWidget::AttributeWidget(Gex::Attribute* attr,
     mainLayout->setContentsMargins(0, 0, 0, 0);
     setLayout(mainLayout);
 
-    UiTSys::TypedWidget* widget = UiTSys::UiTypeEngine::GetEngine()->CreateWidget(attr->TypeHash(),
-                                                                            attr->Name());
+    UiTSys::TypedWidget* widget = UiTSys::UiTypeEngine::GetEngine()->CreateWidget(
+            attr->TypeHash(), attr->Name());
     mainLayout->addWidget(widget);
-
-    QPushButton* followCnx = new QPushButton(this);
-    followCnx->setFixedSize(QSize(25, 25));
-    followCnx->setObjectName("FollowCnxButton");
-    mainLayout->addWidget(followCnx);
 
     widget->SetValue(attribute->GetAnyValue());
     widget->ShowConnected(attribute->HasSource());
