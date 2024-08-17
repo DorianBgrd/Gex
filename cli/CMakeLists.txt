@@ -28,6 +28,7 @@ target_include_directories(
         ${Boost_INCLUDE_DIRS}
         ${Python_INCLUDE_DIRS}
         ${ARGPARSE_DIR}
+        ${CMAKE_SOURCE_DIR}
 )
 
 target_link_directories(
@@ -54,7 +55,7 @@ add_custom_command(
         POST_BUILD
         COMMAND
         python $ENV{BUILD_UTILS_DIR}/BuildUtils/build_executable.py
-        --executable Gex-cli.exe --name Test --depth 2
+        --executable Gex-cli.exe --name Gex-cli --depth 2
         --directory ${CMAKE_CURRENT_BINARY_DIR}
         --search_directories ${CMAKE_BINARY_DIR} ${CMAKE_CURRENT_BINARY_DIR} ${TSYS_LIBRARY_DIR}
         --dependencies TSys.dll Gex.dll
