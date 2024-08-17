@@ -245,6 +245,109 @@ namespace iter
 
     GENERATE_DEFAULT_BUILDER(ForRangeLoopBuilder, ForRangeLoop)
 
+    class Plugin_API TestIter: public Gex::CompoundNode
+    {
+    public:
+        void InitAttributes() override
+        {
+            CreateAttribute<int>("ItGeom", Gex::AttrValueType::Single,
+                                          Gex::AttrType::Input);
+
+            TSys::Enum space;
+            space.AddValue(0, "Object");
+            space.AddValue(1, "World");
+
+            auto* p = CreateAttribute<int>("Position", Gex::AttrValueType::Single,
+                                              Gex::AttrType::Input);
+            p->SetInternal(true);
+            p->SetExternal(false);
+
+            auto* s = CreateAttributeFromValue("Space", std::make_any<TSys::Enum>(space),
+                                               Gex::AttrValueType::Single, Gex::AttrType::Input);
+            s->SetInternal(true);
+            s->SetExternal(false);
+
+            auto* n = CreateAttribute<int>("Normale", Gex::AttrValueType::Single,
+                                              Gex::AttrType::Input);
+            n->SetInternal(true);
+            n->SetExternal(false);
+
+            auto* w = CreateAttribute<float>("Weight",  Gex::AttrValueType::Single,
+                                             Gex::AttrType::Input);
+            w->SetInternal(true);
+            w->SetExternal(false);
+
+            auto* m = CreateAttribute<int>("Matrix",  Gex::AttrValueType::Single,
+                                               Gex::AttrType::Input);
+            m->SetInternal(true);
+            m->SetExternal(false);
+
+            auto* op = CreateAttribute<int>("OutPosition",  Gex::AttrValueType::Single,
+                                               Gex::AttrType::Output);
+            op->SetInternal(true);
+            m->SetExternal(false);
+        }
+    };
+
+    GENERATE_DEFAULT_BUILDER(TestIterBuilder, TestIter)
+
+    class Plugin_API CounterIter: public Gex::CompoundNode
+    {
+        std::string Description() const override
+        {
+            return "Performs a for loop using a counter.";
+        }
+
+        Gex::ScheduleNodeList ToScheduledNodes() override
+        {
+            return {ToScheduledNode()};
+        }
+
+        void InitAttributes() override
+        {
+            CreateAttribute<int>("Start", Gex::AttrValueType::Single,
+                                 Gex::AttrType::Input);
+            CreateAttribute<int>("End", Gex::AttrValueType::Single,
+                                 Gex::AttrType::Input);
+            auto* c = CreateAttribute<int>("Current", Gex::AttrValueType::Single,
+                                 Gex::AttrType::Input);
+            c->SetInternal(true);
+            c->SetExternal(false);
+        }
+
+        bool Evaluate(Gex::NodeAttributeData &ctx,
+                      Gex::GraphContext &graphContext,
+                      Gex::NodeProfiler &profiler) override
+        {
+            int start = ctx.GetAttribute("Start").GetValue<int>();
+            int end = ctx.GetAttribute("End").GetValue<int>();
+
+            if (start < 0 || end < start)
+            {
+                return false;
+            }
+
+            auto schelNodes = Gex::CompoundNode::ToScheduledNodes();
+            auto eval = Gex::NodeEvaluator(schelNodes, graphContext,
+                                           profiler.GetProfiler(),
+                                           false, 1);
+
+            for (unsigned int i = start; i < end; i++)
+            {
+                ctx.GetAttribute("Current").SetValue(i);
+
+                eval.Reset();
+                eval.Run();
+                
+                // Pull values.
+                PullInternalOutputs();
+            }
+
+            return true;
+        }
+    };
+
+    GENERATE_DEFAULT_BUILDER(CounterIterBuilder, CounterIter)
 }
 
 
@@ -254,6 +357,9 @@ extern EXPORT RegisterPlugin(Gex::PluginLoader* loader)
 
     loader->RegisterNode<iter::ForRangeLoopBuilder>("Iter/ForRangeLoop");
 
+    loader->RegisterNode<iter::TestIterBuilder>("Iter/TestIter");
+
+    loader->RegisterNode<iter::CounterIterBuilder>("Iter/CounterIter");
 }
 
 
