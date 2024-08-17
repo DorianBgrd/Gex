@@ -4,6 +4,7 @@
 #include <iostream>
 
 #include "Gex/include/Gex.h"
+#include "Tsys/include/defaultTypes.h"
 
 #include "../export.h"
 
@@ -22,8 +23,7 @@ namespace Debug
         {
             std::cout << "[DEBUG][Print] : InitAttributes" << std::endl;
 
-            CreateAttribute<int>("Attribute1");
-            CreateAttribute<float>("Attribute2");
+            CreateAttribute<TSys::AnyValue>("Attribute1");
         }
 
         bool Evaluate(Gex::NodeAttributeData &data,
