@@ -2211,15 +2211,25 @@ REGISTER_PLUGIN(Gex::PluginLoader* loader)
 
     loader->RegisterTypeHandler<UsdPlugin::UsdGeom::PointList, UsdPlugin::UsdGeom::UsdGeomPoints>();
 
+    loader->RegisterTypeHandler<UsdPlugin::UsdGeom::UsdTriangulatedMesh, UsdPlugin::UsdGeom::UsdTriangulatedMeshType>();
+
 
 
     loader->RegisterNode<UsdPlugin::UsdGeom::UsdGeomIsMeshBuilder>("Usd/Geom/IsMesh");
 
     loader->RegisterNode<UsdPlugin::UsdGeom::UsdGeomPrimToMeshBuilder>("Usd/Geom/PrimToMesh");
 
+    loader->RegisterNode<UsdPlugin::UsdGeom::UsdGeomMakeTriangulatedMeshBuilder>("Usd/Geom/MakeTriangulatedMesh");
+
     loader->RegisterNode<UsdPlugin::UsdGeom::UsdGeomMovePointsBuilder>("Usd/Geom/MovePointsAlongNormal");
 
     loader->RegisterNode<UsdPlugin::UsdGeom::UvMapBuilder>("Usd/Geom/UvMap");
+
+    loader->RegisterNode<UsdPlugin::UsdGeom::UsdGeomUvToPointBuilder>("Usd/Geom/UvToPoint");
+
+    loader->RegisterNode<UsdPlugin::UsdGeom::UsdGeomUVNormalBuilder>("Usd/Geom/UsdGeomUVNormal");
+
+    loader->RegisterNode<UsdPlugin::UsdGeom::UsdGeomRayIntersectBuilder>("Usd/Geom/UsdGeomRayIntersect");
 
 //    loader->RegisterSoftwareOpenCommand("usdview", new UsdPlugin::UsdViewOpenBuilder());
 }

@@ -68,6 +68,118 @@ namespace UsdPlugin
             size_t ValueHash(std::any val) const override;
         };
 
+
+        struct Triangle
+        {
+            // Point index in the mesh points definitions.
+            std::array<int, 3> pointsIndices;
+
+            // Points within the faces vertices list
+            // indices, that helps retrieving primvars
+            // values that are stored in faces indices
+            // such as uvs.
+            std::array<int, 3> pointsFaceIndices;
+
+            // Points position values.
+            std::array<pxr::GfVec3f, 3> points;
+
+            // Points uvs values.
+            std::array<pxr::GfVec2f, 3> uvs;
+
+            bool ComputeUvs(const pxr::UsdGeomPrimvarsAPI& api,
+                            const std::string& uvPrimvarName);
+        };
+
+
+        class Plugin_API UsdTriangulatedMesh
+        {
+            pxr::UsdGeomMesh msh;
+            std::vector<Triangle> triangles;
+            bool isValid;
+
+        public:
+            UsdTriangulatedMesh();
+
+            UsdTriangulatedMesh(pxr::UsdGeomMesh mesh);
+
+            UsdTriangulatedMesh(pxr::UsdPrim prim);
+
+            UsdTriangulatedMesh(const UsdTriangulatedMesh& other);
+
+        private:
+            void ComputeMesh();
+
+        public:
+            pxr::UsdGeomMesh GetMesh() const;
+
+            bool IsValid() const;
+
+            operator bool();
+
+            bool ComputeUvs(const pxr::UsdGeomPrimvarsAPI& api,
+                            const std::string& uvPrimvarName);
+        };
+
+
+        struct MeshToUsdTriangulatedMesh: public TSys::TypeConverter
+        {
+            std::any Convert(std::any from, std::any to) const;
+        };
+
+
+        struct UsdTriangulatedMeshType: public UnsavableHandler
+        {
+            UsdTriangulatedMeshType();
+
+            // Initializes the value to an invalid Geom
+            // mesh prim api.
+            std::any InitValue() const override;
+
+            // Checks whether the two usd geom mesh api
+            // operates on the same prims.
+            bool CompareValue(std::any v1, std::any v2) const override;
+
+            //
+            std::any FromPython(boost::python::object o) const override;
+
+            boost::python::object ToPython(std::any) const override;
+
+            std::any CopyValue(std::any source) const override;
+
+            size_t Hash() const override;
+
+            std::string Name() const override;
+
+            std::string PythonName() const override;
+
+            std::string ApiName() const override;
+
+            size_t ValueHash(std::any val) const override;
+        };
+
+
+        class Plugin_API UsdGeomMakeTriangulatedMesh: public Gex::Node
+        {
+            void InitAttributes() override;
+
+            bool Evaluate(Gex::NodeAttributeData &context,
+                          Gex::GraphContext &graphContext,
+                          Gex::NodeProfiler &profiler)
+                          override;
+        };
+
+
+        GENERATE_DEFAULT_BUILDER(UsdGeomMakeTriangulatedMeshBuilder,
+                                 UsdGeomMakeTriangulatedMesh)
+
+
+        struct Face
+        {
+            pxr::VtArray<pxr::GfVec3f> points;
+            pxr::VtArray<pxr::GfVec2f> uvs;
+        };
+
+
         typedef std::vector<int> PointList;
 
         struct UsdGeomPoints: public TSys::TypeHandler
@@ -237,19 +349,49 @@ namespace UsdPlugin
                                  UsdGeomMovePointsAlongNormals)
 
 
-        class Plugin_API UsdGeomUvToWorldSpace: public Gex::Node
+        class Plugin_API UsdGeomUvToPoint: public Gex::Node
         {
+            std::string Description() const override
+            {
+                return "Converts specified uv coordinates "
+                       "to local mesh point position. This "
+                       "node only considers triangulated "
+                       "faces at the moment.";
+            }
 
+            void InitAttributes() override;
+
+            bool Evaluate(Gex::NodeAttributeData &context,
+                          Gex::GraphContext &graphContext,
+                          Gex::NodeProfiler &profiler) override;
         };
 
 
-        GENERATE_DEFAULT_BUILDER(UsdGeomUvToWorldSpaceBuilder,
-                                 UsdGeomUvToWorldSpace)
+        GENERATE_DEFAULT_BUILDER(UsdGeomUvToPointBuilder,
+                                 UsdGeomUvToPoint)
+
+
+        class Plugin_API UsdGeomUVNormal: public Gex::Node
+        {
+            void InitAttributes() override;
+
+            bool Evaluate(Gex::NodeAttributeData &context,
+                          Gex::GraphContext &graphContext,
+                          Gex::NodeProfiler &profiler) override;
+        };
+
+
+        GENERATE_DEFAULT_BUILDER(UsdGeomUVNormalBuilder,
+                                 UsdGeomUVNormal)
 
 
         class Plugin_API UsdGeomRayIntersect: public Gex::Node
         {
+            void InitAttributes() override;
 
+            bool Evaluate(Gex::NodeAttributeData &context,
+                          Gex::GraphContext &graphContext,
+                          Gex::NodeProfiler &profiler) override;
         };
 
 
