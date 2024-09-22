@@ -47,3 +47,18 @@ target_link_libraries(
         Python::Python
         Python::Module
 )
+
+
+add_custom_command(
+        TARGET
+        StringPlugin
+        POST_BUILD
+        COMMAND
+        python ${CMAKE_SOURCE_DIR}/plugins/build_plugin.py
+
+        --package
+        --name StringPlugin
+        --plugin StringPlugin.dll
+        --plugin-file ${CMAKE_BINARY_DIR}/plugins/StringPlugin.dll
+        --type C++
+)

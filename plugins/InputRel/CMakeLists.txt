@@ -10,6 +10,7 @@ set(CMAKE_CXX_FLAGS "/EHsc")
 
 add_definitions(
         /DPipelineLibrary2_EXPORT
+        /DGEX_UI_API_IMPORT
 )
 
 
@@ -23,7 +24,7 @@ add_library(
         BezierFunc.h
         BezierFunc.cpp
 
-        main.cpp
+        Plugin.cpp
 
         # Ui files.
         ui/main.cpp
@@ -78,4 +79,14 @@ target_link_libraries(
         Qt6::Gui
         TSys
         UiTsys
+        Gex_ui
+)
+
+
+
+add_subdirectory(app)
+
+add_dependencies(
+        App
+        InputRel
 )

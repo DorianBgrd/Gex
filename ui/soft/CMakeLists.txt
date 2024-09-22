@@ -13,6 +13,8 @@ add_executable(
         main.cpp
         include/MainWindow.h
         src/MainWindow.cpp
+        include/PythonInterpreter.h
+        src/PythonInterpreter.cpp
 )
 
 
@@ -35,6 +37,7 @@ target_include_directories(
         $ENV{UI_TSYS_DIR}
         $ENV{QT_AWESOME_DIR}
         $ENV{ARGPARSE_DIR}
+        ${Boost_INCLUDE_DIRS}
 )
 
 
@@ -48,6 +51,8 @@ target_link_directories(
         ${CMAKE_BINARY_DIR}
         ${CMAKE_BINARY_DIR}/ui
 )
+
+message("Boost libraries ${Boost_LIBRARIES}")
 
 
 target_link_libraries(
@@ -63,6 +68,8 @@ target_link_libraries(
         UiRes
         Gex
         Gex_ui
+        SoftPython
+        ${Boost_LIBRARIES}
 )
 
 
@@ -81,6 +88,17 @@ target_link_libraries(
 #        --dependencies TSys.dll Gex.dll UiTSys.dll Gex_ui.dll UiRes.dll
 #)
 
+add_custom_command(
+        TARGET Gex_Software POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy
+        ${CMAKE_BINARY_DIR}/ui/SoftPython.dll
+        ${CMAKE_BINARY_DIR}/ui/SoftPython.pyd)
+
+
+set(PXR_LIBRARY_DIR ${PXR_ROOT}/lib)
+set(USD_PLUGIN_RELOC --add-extra-directory plugins ${CMAKE_BINARY_DIR}/plugins/UsdPlugin/UsdPlugin
+        --library-search-dir ${PXR_LIBRARY_DIR})
+
 
 add_custom_command(
         TARGET
@@ -94,7 +112,7 @@ add_custom_command(
         --executable ${CMAKE_BINARY_DIR}/ui/Gex_Software.exe
         --destination ${CMAKE_CURRENT_BINARY_DIR}
 
-        --library-search-dir ${Boost_LIBRARY_DIRS}
+#        --library-search-dir ${Boost_LIBRARY_DIRS}
         --library-search-dir ${Python_LIBRARY_DIRS}
         --library-search-dir ${CMAKE_CURRENT_SOURCE_DIR}
         --library-search-dir ${CMAKE_BINARY_DIR}/plugins
@@ -109,25 +127,39 @@ add_custom_command(
         --library $ENV{UI_TSYS_DIR}/UiTSys/cmake-build-${BUILD_TYPE}/UiTSys.dll
         --library ${CMAKE_BINARY_DIR}/Gex.dll
         --library ${QT_AWESOME_LIBRARY_DIR}/QtAwesome.dll
+        --library ${CMAKE_BINARY_DIR}/ui/SoftPython.dll
 
         --extra-directory ui
         --extra-directory plugins
         --extra-directory python
 
+        --add-extra-directory python ${CMAKE_BINARY_DIR}/ui/SoftPython.pyd
+
         --add-extra-directory ui ${CMAKE_CURRENT_SOURCE_DIR}/resources/stylesheet.css
 
-        --add-extra-directory plugins ${CMAKE_BINARY_DIR}/plugins/ArraysPlugin/ArraysPlugin.dll
-        --add-extra-directory plugins ${CMAKE_BINARY_DIR}/plugins/DebugPlugin/DebugPlugin.dll
-        --add-extra-directory plugins ${CMAKE_BINARY_DIR}/plugins/FilesPlugin/FilesPlugin.dll
-        --add-extra-directory plugins ${CMAKE_BINARY_DIR}/plugins/IterPlugin/IterPlugin.dll
-        --add-extra-directory plugins ${CMAKE_BINARY_DIR}/plugins/MathPlugin/MathPlugin.dll
-        --add-extra-directory plugins ${CMAKE_BINARY_DIR}/plugins/MayaPlugin/MayaPlugin.dll
-        --add-extra-directory plugins ${CMAKE_BINARY_DIR}/plugins/PathsPlugin/PathsPlugin.dll
-        --add-extra-directory plugins ${CMAKE_BINARY_DIR}/plugins/StringPlugin/StringPlugin.dll
-        --add-extra-directory plugins ${CMAKE_BINARY_DIR}/plugins/UsdPlugin/UsdPlugin.dll
+        --add-extra-directory plugins ${CMAKE_BINARY_DIR}/plugins/ArraysPlugin/ArraysPlugin
+        --add-extra-directory plugins ${CMAKE_BINARY_DIR}/plugins/DebugPlugin/DebugPlugin
+        --add-extra-directory plugins ${CMAKE_BINARY_DIR}/plugins/FilesPlugin/FilesPlugin
+        --add-extra-directory plugins ${CMAKE_BINARY_DIR}/plugins/IterPlugin/IterPlugin
+        --add-extra-directory plugins ${CMAKE_BINARY_DIR}/plugins/MathPlugin/MathPlugin
+        --add-extra-directory plugins ${CMAKE_BINARY_DIR}/plugins/MayaPlugin/MayaPlugin
+        --add-extra-directory plugins ${CMAKE_BINARY_DIR}/plugins/PathsPlugin/PathsPlugin
+        --add-extra-directory plugins ${CMAKE_BINARY_DIR}/plugins/StringPlugin/StringPlugin
+        --add-extra-directory plugins ${CMAKE_BINARY_DIR}/plugins/ImageManipPlugin/ImageManipPlugin
+        ${USD_PLUGIN_RELOC}
+#        --add-extra-directory plugins ${CMAKE_BINARY_DIR}/plugins/InputRel.dll
 #        --add-extra-directory plugins ${CMAKE_BINARY_DIR}/plugins/GraphPlugin/GraphPlugin.dll
 )
 
+
+add_subdirectory(
+        python
+)
+
+add_dependencies(
+        SoftPython
+        Gex_ui
+)
 
 
 

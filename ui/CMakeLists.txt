@@ -41,10 +41,11 @@ add_library(
         src/ProfileViewer.cpp
         include/GraphView.h
         src/GraphView.cpp
-        include/PropertyEditor.h
-        src/PropertyEditor.cpp
         include/PluginLoader.h
-        src/PluginLoader.cpp)
+        src/PluginLoader.cpp
+        include/NodeViewer.h
+        src/NodeViewer.cpp
+)
 
 add_compile_definitions(Gex_ui PRIVATE GEX_UI_API_EXPORT)
 
@@ -110,4 +111,6 @@ add_subdirectory(
 add_dependencies(
         Gex_Software
         Gex_ui
+        SoftPython
 )
+

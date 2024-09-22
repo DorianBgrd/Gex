@@ -11,7 +11,8 @@ set(CMAKE_VS_PLATFORM_NAME "x64")
 
 
 # Find Qt package -------------------------------------------------------------
-find_package(Qt6 COMPONENTS Widgets Core Gui Svg SvgWidgets REQUIRED)
+find_package(Qt6 COMPONENTS Widgets Core Gui Svg SvgWidgets 3DCore
+        3DRender 3DInput 3DLogic 3DExtras 3DAnimation REQUIRED)
 qt_standard_project_setup()
 
 set(CMAKE_AUTOUIC ON)
@@ -42,6 +43,7 @@ add_subdirectory(MathPlugin)
 add_subdirectory(MayaPlugin)
 add_subdirectory(PathsPlugin)
 add_subdirectory(StringPlugin)
+add_subdirectory(ImageManipPlugin)
 #add_subdirectory(PythonPlugin)
 
 # Usd plugin does not work in debug mode yet.

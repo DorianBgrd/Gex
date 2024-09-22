@@ -38,3 +38,18 @@ target_link_libraries(
         PUBLIC
         Gex
 )
+
+
+add_custom_command(
+        TARGET
+        PathsPlugin
+        POST_BUILD
+        COMMAND
+        python ${CMAKE_SOURCE_DIR}/plugins/build_plugin.py
+
+        --package
+        --name PathsPlugin
+        --plugin PathsPlugin.dll
+        --plugin-file ${CMAKE_BINARY_DIR}/plugins/PathsPlugin.dll
+        --type C++
+)

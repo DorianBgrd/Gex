@@ -7,10 +7,13 @@ add_definitions(/DGEX_API_EXPORT)
 
 set(BOOST_ROOT $ENV{BOOST_ROOT})
 
+set(Boost_USE_STATIC_LIBS OFF)
+
 find_package(Python 3.11 REQUIRED COMPONENTS Development Interpreter)
-find_package(Boost 1.77.0 COMPONENTS python311 REQUIRED)
+find_package(Boost 1.82.0 COMPONENTS python311 REQUIRED HINTS $ENV{BOOST_ROOT})
 
 message("Python found ${Python_FOUND}")
+message("Boost found ${Boost_FOUND}")
 
 string(TOLOWER ${CMAKE_BUILD_TYPE} BUILD_TYPE)
 
@@ -46,6 +49,8 @@ set(
         Gex/include/defs.h
         Gex/include/Scheduling.h
         Gex/src/Scheduling.cpp
+        Gex/include/Metadatas.h
+        Gex/src/Metadatas.cpp
 
         # Python wrapping file.
         Gex/include/Attribute_Wrap.h
@@ -212,3 +217,10 @@ add_dependencies(
         PathsPlugin
         StringPlugin
 )
+
+#if (NOT ${CMAKE_BUILD_TYPE} STREQUAL "Debug")
+add_dependencies(
+        Gex_Software
+        UsdPlugin
+)
+#endif()

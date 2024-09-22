@@ -51,3 +51,18 @@ target_link_libraries(
         Python::Python
         Python::Module
 )
+
+
+add_custom_command(
+        TARGET
+        DebugPlugin
+        POST_BUILD
+        COMMAND
+        python ${CMAKE_SOURCE_DIR}/plugins/build_plugin.py
+
+        --package
+        --name DebugPlugin
+        --plugin DebugPlugin.dll
+        --plugin-file ${CMAKE_BINARY_DIR}/plugins/DebugPlugin.dll
+        --type C++
+)
