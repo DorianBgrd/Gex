@@ -107,6 +107,11 @@ QLabel#DefaultLabel {
     background-color: transparent;
 }
 
+QFrame#AttributeCategoryLine
+{
+    background-color: #FFFFFF;
+}
+
 
 QTabWidget {
     color: #FFFFFF;
@@ -344,10 +349,18 @@ QLabel#TypedWidgetTitle {
     background-color: transparent;
 }
 
+QLabel#AttributeCategory
+{
+    color: #FFFFFF;
+    font-family: sans;
+    font-size: 12pt;
+    font-weight: bold;
+}
+
 QLabel#AttributeTitle{
     color: #FFFFFF;
     background-color: transparent;
-    font-size: 14;
+    font-size: 14pt;
     font-family: sans;
     font-weight: bold;
 }
@@ -355,7 +368,7 @@ QLabel#AttributeTitle{
 QLabel#AttributeType{
     color: #FFFFFF;
     background-color: transparent;
-    font-size: 9;
+    font-size: 9pt;
     font-family: sans;
     font-style: italic;
 }
@@ -363,7 +376,7 @@ QLabel#AttributeType{
 QLabel#AttributeDescription{
     color: #D7D7D7;
     background-color: transparent;
-    font-size: 8;
+    font-size: 8pt;
     font-family: sans;
     font-style: italic;
 }
