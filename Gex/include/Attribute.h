@@ -180,16 +180,12 @@ namespace Gex
         template<class T>
         bool SetDefaultValue(T value)
         {
-            std::any v = std::make_any<T>(value);
-            if (v.type().hash_code() != TypeHash())
-            {
-                return false;
-            }
-
-            defaultValue = v;
-            return true;
+            return SetDefaultAnyValue(std::make_any<T>(value));
         }
 
+        bool SetDefaultAnyValue(const std::any& value);
+
+    public:
         /**
          * Destructor.
          */

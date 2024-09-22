@@ -216,6 +216,26 @@ std::any Gex::Attribute::DefaultValue() const
 }
 
 
+bool Gex::Attribute::SetDefaultAnyValue(const std::any& v)
+{
+    bool isDefault = IsDefault();
+
+    if (v.type().hash_code() != TypeHash())
+    {
+        return false;
+    }
+
+    defaultValue = v;
+
+    if (isDefault)
+    {
+        Reset();
+    }
+
+    return true;
+}
+
+
 void Gex::Attribute::Reset()
 {
     CHECK_EDITABLE_SKIP()
