@@ -105,12 +105,21 @@ namespace Gex
         };
 
 
+        class GEX_UI_API AttributeTypeTitle: public QFrame
+        {
+        public:
+            AttributeTypeTitle(const QString& title, int fa_icon,
+                               QWidget* parent=nullptr);
+        };
+
+
         class GEX_UI_API AttributeTab: public QWidget
         {
         Q_OBJECT
             Gex::Node* node;
             GraphWidget* graph;
-            QVBoxLayout* widgetsLayout;
+            QVBoxLayout* inputWidgetsLayout;
+            QVBoxLayout* outputWidgetsLayout;
             QVector<QWidget*> widgets;
         public:
             AttributeTab(Gex::Node* node,

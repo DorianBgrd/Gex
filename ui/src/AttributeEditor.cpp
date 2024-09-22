@@ -324,6 +324,42 @@ void Gex::Ui::ExtraAttributeDialog::CreateAttribute()
 }
 
 
+Gex::Ui::AttributeTypeTitle::AttributeTypeTitle(
+        const QString& title, int fa_icon, QWidget* parent):
+        QFrame(parent)
+{
+//    setObjectName("AttributeCategory");
+
+    QVBoxLayout* vlayout = new QVBoxLayout();
+    vlayout->setAlignment(Qt::AlignTop);
+    vlayout->setContentsMargins(0, 0, 0, 0);
+    setLayout(vlayout);
+
+    QHBoxLayout* hlayout = new QHBoxLayout();
+    hlayout->setAlignment(Qt::AlignLeft);
+    hlayout->setContentsMargins(0, 0, 0, 0);
+    vlayout->addLayout(hlayout);
+
+    QPixmap icon = Res::UiRes::GetRes()->GetQtAwesome()->icon(
+            fa::fa_solid, fa_icon).pixmap(25, 25);
+    QLabel* iconLabel = new QLabel(this);
+    iconLabel->setScaledContents(true);
+    iconLabel->setPixmap(icon);
+    hlayout->addWidget(iconLabel);
+
+    QLabel* titleLabel = new QLabel(this);
+    titleLabel->setObjectName("AttributeCategory");
+    titleLabel->setFont(QFont("sans", 10));
+    titleLabel->setText(title);
+    hlayout->addWidget(titleLabel);
+
+    QFrame* line = new QFrame(this);
+    line->setObjectName("AttributeCategoryLine");
+    line->setFixedHeight(1);
+    vlayout->addWidget(line);
+}
+
+
 
 Gex::Ui::AttributeTab::AttributeTab(
         Gex::Node* node_,
@@ -376,10 +412,36 @@ void Gex::Ui::AttributeTab::Setup()
     attributesWidget->setContentsMargins(0, 0, 0, 0);
     attributesArea->setWidget(attributesWidget);
 
-    widgetsLayout = new QVBoxLayout();
-    widgetsLayout->setContentsMargins(0, 0, 0, 0);
-    widgetsLayout->setAlignment(Qt::AlignTop);
-    attributesWidget->setLayout(widgetsLayout);
+    QVBoxLayout* attributesWidgetLayout = new QVBoxLayout();
+    attributesWidgetLayout->setAlignment(Qt::AlignTop);
+    attributesWidgetLayout->setContentsMargins(0, 0, 0, 0);
+    attributesWidget->setLayout(attributesWidgetLayout);
+
+    AttributeTypeTitle* inputsTitle = new AttributeTypeTitle(
+            "Inputs", fa::fa_arrow_right_to_bracket);
+    attributesWidgetLayout->addWidget(inputsTitle);
+
+    QWidget* inputAttributesWidget = new QWidget(attributesWidget);
+    inputAttributesWidget->setContentsMargins(0, 0, 0, 0);
+    attributesWidgetLayout->addWidget(inputAttributesWidget);
+
+    inputWidgetsLayout = new QVBoxLayout();
+    inputWidgetsLayout->setContentsMargins(0, 0, 0, 0);
+    inputWidgetsLayout->setAlignment(Qt::AlignTop);
+    inputAttributesWidget->setLayout(inputWidgetsLayout);
+
+    AttributeTypeTitle* outputsTitle = new AttributeTypeTitle(
+            "Outputs", fa::fa_arrow_right_from_bracket);
+    attributesWidgetLayout->addWidget(outputsTitle);
+
+    QWidget* outputAttributesWidget = new QWidget(attributesWidget);
+    outputAttributesWidget->setContentsMargins(0, 0, 0, 0);
+    attributesWidgetLayout->addWidget(outputAttributesWidget);
+
+    outputWidgetsLayout = new QVBoxLayout();
+    outputWidgetsLayout->setContentsMargins(0, 0, 0, 0);
+    outputWidgetsLayout->setAlignment(Qt::AlignTop);
+    outputAttributesWidget->setLayout(outputWidgetsLayout);
 
     QPushButton* extraAttr = new QPushButton(this);
     extraAttr->setIcon(Res::UiRes::GetRes()->GetQtAwesome()->icon(fa::fa_solid, fa::fa_add));
@@ -402,25 +464,53 @@ void Gex::Ui::AttributeTab::Clear()
 }
 
 
+void CreateTabWidget(Gex::Attribute* attr,
+                     QVBoxLayout* widgetsLayout,
+                     QList<QWidget*>& widgets,
+                     Gex::Ui::GraphWidget* graph,
+                     Gex::Ui::AttributeTab* tab)
+{
+    QWidget* widget = nullptr;
+    if (attr->IsMulti() || attr->HasChildAttributes())
+    {
+        widget = new Gex::Ui::MultiAttributeWidget(attr, graph, tab);
+    }
+
+    else
+    {
+        widget = new Gex::Ui::AttributeWidget(attr, graph, tab);
+    }
+
+    widgetsLayout->addWidget(widget);
+    widgets.push_back(widget);
+}
+
+
 void Gex::Ui::AttributeTab::UpdateAttributes()
 {
     Clear();
 
+    std::vector<Gex::Attribute*> inputs;
+    std::vector<Gex::Attribute*> outputs;
+
     for (auto* attr : node->GetAttributes())
     {
-        QWidget* widget = nullptr;
-        if (attr->IsMulti() || attr->HasChildAttributes())
-        {
-            widget = new MultiAttributeWidget(attr, graph, this);
-        }
-
+        if (attr->IsInput())
+            inputs.push_back(attr);
         else
-        {
-            widget = new AttributeWidget(attr, graph, this);
-        }
+            outputs.push_back(attr);
+    }
 
-        widgetsLayout->addWidget(widget);
-        widgets.push_back(widget);
+    for (auto* attr : inputs)
+    {
+        CreateTabWidget(attr, inputWidgetsLayout,
+                        widgets, graph, this);
+    }
+
+    for (auto* attr : outputs)
+    {
+        CreateTabWidget(attr, outputWidgetsLayout,
+                        widgets, graph, this);
     }
 }
 
