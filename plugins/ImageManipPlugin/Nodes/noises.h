@@ -30,7 +30,20 @@ namespace ImageManip::Nodes
         override;
     };
 
+
     GENERATE_DEFAULT_BUILDER(DirtNoiseBuilder, DirtNoise)
+
+    class Plugin_API VoronoiCellNoise: public Gex::Node
+    {
+        void InitAttributes() override;
+
+        bool Evaluate(Gex::NodeAttributeData &context,
+                      Gex::GraphContext &graphContext,
+                      Gex::NodeProfiler &profiler)
+        override;
+    };
+
+    GENERATE_DEFAULT_BUILDER(VoronoiCellNoiseBuilder, VoronoiCellNoise)
 
 }
 

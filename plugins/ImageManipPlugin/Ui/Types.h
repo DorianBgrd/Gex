@@ -12,6 +12,7 @@
 #include <map>
 
 #include "Types/gradient.h"
+#include "Types/level.h"
 
 namespace ImageManip::Ui::Types
 {
@@ -266,6 +267,85 @@ namespace ImageManip::Ui::Types
     GENERATE_DEFAULT_WIDGET_CREATOR(
             LinearGradientWidgetBuilder,
             LinearGradientWidget)
+
+
+    class Plugin_API LevelEditor: public QWidget
+    {
+        Q_OBJECT
+
+        ImageManip::Types::LevelMap level;
+        int tickWidth = 8;
+        int tickHeight = 12;
+
+        struct Tick
+        {
+            QPolygon polygon;
+            std::function<void(LevelEditor*, double)> setFunc;
+        };
+
+        Tick lowTick;
+        Tick midTick;
+        Tick highTick;
+        Tick clampLowTick;
+        Tick clampHighTick;
+
+        void SetLow(double);
+
+        void SetMid(double);
+
+        void SetHigh(double);
+
+        void SetClampLow(double);
+
+        void SetClampHigh(double);
+
+        bool pressed = false;
+        Tick* currentTick = nullptr;
+        bool changed = false;
+
+        QPolygon DrawTick(const QPoint& p, const QPoint& pos, QPainter& painter, bool up,
+                      const QBrush& brush, const QBrush& hoverBrush,
+                      const QPen& pen, const QPen& hoverPen, bool current);
+    public:
+        LevelEditor(QWidget* parent=nullptr);
+
+        void paintEvent(QPaintEvent *event) override;
+
+        void SetLevelMap(ImageManip::Types::LevelMap map);
+
+        ImageManip::Types::LevelMap LevelMap() const;
+
+        QSize minimumSizeHint() const override;
+
+        void mousePressEvent(QMouseEvent *event) override;
+
+        void mouseMoveEvent(QMouseEvent *event) override;
+
+        void mouseReleaseEvent(QMouseEvent *event) override;
+
+        Q_SIGNAL void LevelChanged();
+    };
+
+
+    class Plugin_API LevelWidget: public UiTSys::TypedWidget
+    {
+        LevelEditor* m;
+
+    public:
+        QWidget* CreateTypedWidget() override;
+
+        void SetValue(std::any value) override;
+
+        std::any GetValue() const override;
+
+        void ShowConnected(bool connected) override;
+
+        void ShowDisabled(bool disabled) override;
+    };
+
+
+    GENERATE_DEFAULT_WIDGET_CREATOR(
+            LevelWidgetBuilder, LevelWidget);
 }
 
 #endif //GEX_UI_TYPES_H

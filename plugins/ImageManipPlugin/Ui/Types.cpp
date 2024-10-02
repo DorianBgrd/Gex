@@ -670,3 +670,254 @@ void ImageManip::Ui::Types::LinearGradientWidget::ShowDisabled(bool disabled)
 
 }
 
+
+void ImageManip::Ui::Types::LevelEditor::SetLow(double v)
+{
+    level.SetLow(v);
+}
+
+
+void ImageManip::Ui::Types::LevelEditor::SetMid(double v)
+{
+    level.SetMid(v);
+}
+
+
+void ImageManip::Ui::Types::LevelEditor::SetHigh(double v)
+{
+    level.SetHigh(v);
+}
+
+
+void ImageManip::Ui::Types::LevelEditor::SetClampLow(double v)
+{
+    level.SetClampLow(v);
+}
+
+
+void ImageManip::Ui::Types::LevelEditor::SetClampHigh(double v)
+{
+    level.SetClampHigh(v);
+}
+
+
+ImageManip::Ui::Types::LevelEditor::LevelEditor(
+        QWidget* parent):QWidget(parent)
+{
+    lowTick.setFunc = [](LevelEditor* e, double v){e->SetLow(v);};
+    midTick.setFunc = [](LevelEditor* e, double v){e->SetMid(v);};
+    highTick.setFunc = [](LevelEditor* e, double v){e->SetHigh(v);};
+    clampLowTick.setFunc = [](LevelEditor* e, double v){e->SetClampLow(v);};
+    clampHighTick.setFunc = [](LevelEditor* e, double v){e->SetClampHigh(v);};
+}
+
+
+QPolygon ImageManip::Ui::Types::LevelEditor::DrawTick(
+        const QPoint& p, const QPoint& pos, QPainter& painter, bool up,
+        const QBrush& brush, const QBrush& hoverBrush,
+        const QPen& pen, const QPen& hoverPen, bool current)
+{
+    QPainterPath path;
+
+    QList<QPoint> points;
+    if (up)
+    {
+        points = {
+                p,
+                {p.x() + (tickWidth / 2), (p.y() - tickWidth / 2)},
+                {p.x() + (tickWidth / 2), p.y() - tickHeight},
+                {p.x() - (tickWidth / 2), p.y() - tickHeight},
+                {p.x() - (tickWidth / 2), (p.y() - tickWidth / 2)},
+                p
+        };
+    }
+    else
+    {
+        points = {
+                p,
+                {p.x() + (tickWidth / 2), p.y() + (tickWidth / 2)},
+                {p.x() + (tickWidth / 2), p.y() + tickHeight},
+                {p.x() - (tickWidth / 2), p.y() + tickHeight},
+                {p.x() - (tickWidth / 2), p.y() + (tickWidth / 2)},
+                p
+        };
+    }
+
+    QPolygon polygon(points);
+
+    if (current)
+    {
+        painter.setBrush(hoverBrush);
+        painter.setPen(hoverPen);
+    }
+    else
+    {
+        painter.setBrush(brush);
+        painter.setPen(pen);
+    }
+
+    painter.drawPolygon(polygon);
+
+    return polygon;
+}
+
+
+void ImageManip::Ui::Types::LevelEditor::paintEvent(QPaintEvent *event)
+{
+    QLinearGradient gradient(0, 0, 1, 0);
+    gradient.setCoordinateMode(QLinearGradient::ObjectMode);
+    gradient.setColorAt(0, Qt::black);
+    gradient.setColorAt(1, Qt::white);
+
+    QRect dr = rect();
+    QRect r(tickWidth / 2, tickHeight, dr.width() - tickWidth,
+            dr.height() - tickHeight * 2);
+
+    QPainter painter(this);
+    painter.setBrush(gradient);
+
+    painter.drawRect(r);
+
+    painter.setBrush(Qt::black);
+
+    QPoint cursor = mapFromGlobal(QCursor::pos());
+
+    QBrush brush(Qt::black);
+    QBrush hoverBrush(Qt::gray);
+    QPen pen(Qt::gray);
+    QPen hoverPen(Qt::white);
+
+    double low = level.Low();
+    QPoint lowPoint(r.x() + (low * r.width()), r.top());
+    lowTick.polygon = DrawTick(lowPoint, cursor,
+                               painter, true, brush,
+                               hoverBrush, pen, hoverPen,
+                               (&lowTick == currentTick));
+
+    double high = level.High();
+    QPoint highPoint(r.x() + (high * r.width()), r.top());
+    highTick.polygon = DrawTick(highPoint, cursor,
+                                painter, true, brush,
+                                hoverBrush, pen, hoverPen,
+                                (&highTick == currentTick));
+
+    double mid = level.Mid();
+    QPoint midPoint(lowPoint.x() + mid * (highPoint.x() - lowPoint.x()), r.top());
+    midTick.polygon = DrawTick(midPoint, cursor,
+                               painter,true, brush,
+                               hoverBrush, pen, hoverPen,
+                               (&midTick == currentTick));
+
+    double clampLow = level.ClampLow();
+    clampLowTick.polygon = DrawTick(QPoint(r.x() + (clampLow * r.width()), r.bottom()),
+                                cursor, painter, false, brush, hoverBrush, pen, hoverPen,
+                                    (&clampLowTick == currentTick));
+
+    double clampHigh = level.ClampHigh();
+    clampHighTick.polygon = DrawTick(QPoint(r.x() + (clampHigh * r.width()), r.bottom()),
+                                     cursor, painter, false, brush, hoverBrush, pen,
+                                     hoverPen, (&clampHighTick == currentTick));
+}
+
+
+void ImageManip::Ui::Types::LevelEditor::SetLevelMap(
+        ImageManip::Types::LevelMap map)
+{
+    level = map;
+    update();
+}
+
+
+ImageManip::Types::LevelMap ImageManip::Ui::Types::LevelEditor::LevelMap() const
+{
+    return level;
+}
+
+
+QSize ImageManip::Ui::Types::LevelEditor::minimumSizeHint() const
+{
+    return {tickWidth * 6, tickHeight * 4};
+}
+
+
+void ImageManip::Ui::Types::LevelEditor::mousePressEvent(QMouseEvent *event)
+{
+    QList<Tick*> ticks = {&lowTick, &midTick, &highTick, &clampLowTick, &clampHighTick};
+
+    for (auto tick : ticks)
+    {
+        if (tick->polygon.containsPoint(event->pos(),  Qt::OddEvenFill))
+        {
+            currentTick = tick;
+            pressed = true;
+            return;
+        }
+    }
+
+    pressed = false;
+    update();
+}
+
+
+void ImageManip::Ui::Types::LevelEditor::mouseMoveEvent(QMouseEvent *event)
+{
+    if (pressed && currentTick)
+    {
+        QRect r(tickWidth / 2, tickHeight, rect().width() - tickWidth,
+                rect().height() - tickHeight * 2);
+        
+        double width = static_cast<double>(r.width()) - static_cast<double>(r.x());
+        double pos = static_cast<double>(event->position().x()) - static_cast<double>(r.x());
+
+        currentTick->setFunc(this, pos / width);
+
+        changed = true;
+    }
+
+    update();
+}
+
+
+void ImageManip::Ui::Types::LevelEditor::mouseReleaseEvent(QMouseEvent *event)
+{
+    if (changed)
+        Q_EMIT LevelChanged();
+    changed = false;
+
+    update();
+}
+
+
+QWidget* ImageManip::Ui::Types::LevelWidget::CreateTypedWidget()
+{
+    m = new LevelEditor();
+    Connect(m, &LevelEditor::LevelChanged);
+    return m;
+}
+
+
+void ImageManip::Ui::Types::LevelWidget::SetValue(std::any value)
+{
+    auto lmap = std::any_cast<ImageManip::Types::LevelMap>(value);
+
+    m->SetLevelMap(lmap);
+}
+
+
+std::any ImageManip::Ui::Types::LevelWidget::GetValue() const
+{
+    return std::make_any<ImageManip::Types::LevelMap>(m->LevelMap());
+}
+
+
+void ImageManip::Ui::Types::LevelWidget::ShowConnected(bool connected)
+{
+    m->setDisabled(connected);
+}
+
+
+void ImageManip::Ui::Types::LevelWidget::ShowDisabled(bool disabled)
+{
+    m->setDisabled(disabled);
+}
+

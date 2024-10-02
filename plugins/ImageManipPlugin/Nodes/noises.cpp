@@ -89,3 +89,41 @@ bool ImageManip::Nodes::DirtNoise::Evaluate(
 
     return context.GetAttribute("Image").SetValue<QImage>(noise);
 }
+
+
+void ImageManip::Nodes::VoronoiCellNoise::InitAttributes()
+{
+    ImageManip::Types::Resolution defaultRes = {1024, 1024};
+    CreateAttribute<ImageManip::Types::Resolution>(
+            "Resolution", Gex::AttrValueType::Single,
+            Gex::AttrType::Input)->SetDefaultValue(defaultRes);
+
+    CreateAttribute<int>("Seed", Gex::AttrValueType::Single,
+                         Gex::AttrType::Input)->SetDefaultValue(1);
+
+    CreateAttribute<int>("Size", Gex::AttrValueType::Single,
+                         Gex::AttrType::Input)->SetDefaultValue(10);
+
+    CreateAttribute<int>("Density", Gex::AttrValueType::Single,
+                         Gex::AttrType::Input)->SetDefaultValue(10);
+
+    CreateAttribute<QImage>("Image", Gex::AttrValueType::Single,
+                            Gex::AttrType::Output);
+}
+
+
+bool ImageManip::Nodes::VoronoiCellNoise::Evaluate(
+        Gex::NodeAttributeData &context,
+        Gex::GraphContext &graphContext,
+        Gex::NodeProfiler &profiler)
+{
+    auto res = context.GetAttribute("Resolution").GetValue<ImageManip::Types::Resolution>();
+    int seed = context.GetAttribute("Seed").GetValue<int>();
+    int density = context.GetAttribute("Density").GetValue<int>();
+
+    QImage noise = ImageManip::Manip::VoronoiCells(
+            res.at(0), res.at(1), density,
+            density, seed);
+
+    return context.GetAttribute("Image").SetValue<QImage>(noise);
+}

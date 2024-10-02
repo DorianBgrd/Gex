@@ -22,11 +22,13 @@ add_library(
         Manip/noises.cpp
         Manip/remap.cpp
         Manip/shapes.cpp
+        Manip/level.cpp
 
         Types/image.cpp
         Types/color.cpp
         Types/gradient.cpp
         Types/resolution.cpp
+        Types/level.cpp
 
         Nodes/blur.cpp
         Nodes/load.cpp
@@ -34,10 +36,12 @@ add_library(
         Nodes/noises.cpp
         Nodes/remap.cpp
         Nodes/shapes.cpp
+        Nodes/level.cpp
 
         plugin.cpp
 
         Ui/Types.cpp
+        Ui/Viewers/Viewers.cpp
 
         Ui/uiplugin.cpp)
 

@@ -6,8 +6,7 @@
 QImage ImageManip::Manip::GenerateRectangle(
         int imageWidth,
         int imageHeight,
-        int x,
-        int y,
+        int x, int y,
         int width,
         int height,
         const QColor& color)
@@ -29,8 +28,7 @@ QImage ImageManip::Manip::GenerateRectangle(
 QImage ImageManip::Manip::GenerateEllipse(
         int imageWidth,
         int imageHeight,
-        int x,
-        int y,
+        int x, int y,
         int width,
         int height,
         const QColor& color)

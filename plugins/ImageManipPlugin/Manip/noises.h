@@ -10,7 +10,11 @@ namespace ImageManip::Manip
                        bool blackAndWhite=true,
                        bool alpha=false);
 
-    QImage VoronoiCells(int width, int height, int seed);
+    QImage VoronoiCells(int imageWidth,
+                        int imageHeight,
+                        int width,
+                        int height,
+                        int seed);
 
     QImage VoronoiNoise(int width, int height, int seed);
 
