@@ -12,9 +12,13 @@
 
 namespace Gex::Ui
 {
+    class ViewerRegistry;
+    class ViewerCreator;
+
     class GEX_UI_API UiPluginLoader
     {
         UiTSys::UiTypeEngine* engine;
+        ViewerRegistry* registry;
         std::string pluginPath;
 
         static bool initialized;
@@ -43,6 +47,23 @@ namespace Gex::Ui
         {
             return RegisterTypeWidget(typeid(T).hash_code(), uiName,
                                       initCreator, creator, force);
+        }
+
+        template<typename T, typename InitCreatorType, typename WidgetCreatorType>
+        bool RegisterTypeWidget(const std::string& uiName, bool force=false)
+        {
+            return RegisterTypeWidget(typeid(T).hash_code(),
+                                      uiName, new InitCreatorType(),
+                                      new WidgetCreatorType(), force);
+        }
+
+        void RegisterNodeViewer(const std::string& type,
+                                ViewerCreator* creator);
+
+        template<class C>
+        void RegisterNodeViewer(const std::string& type)
+        {
+            RegisterNodeViewer(type, new C());
         }
 
         static bool Initialize();

@@ -7,6 +7,7 @@
 
 #include "Gex/include/PluginLoader.h"
 
+#include "ui/include/NodeViewer.h"
 
 #define REGISTER_UI_PLUGIN_FUNC "RegisterUiPlugin"
 
@@ -58,6 +59,7 @@ void Gex::Ui::UiPluginLoader::LoadPluginCallback(std::string path)
 Gex::Ui::UiPluginLoader::UiPluginLoader()
 {
     engine = UiTSys::UiTypeEngine::GetEngine();
+    registry = Gex::Ui::ViewerRegistry::GetRegistry();
 }
 
 
@@ -92,4 +94,12 @@ bool Gex::Ui::UiPluginLoader::Initialize()
 
     initialized = true;
     return initialized;
+}
+
+
+void Gex::Ui::UiPluginLoader::RegisterNodeViewer(
+        const std::string& type,
+        ViewerCreator* creator)
+{
+    registry->RegisterViewer(type, creator);
 }
