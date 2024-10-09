@@ -51,6 +51,7 @@ set(
         Gex/src/Scheduling.cpp
         Gex/include/Metadatas.h
         Gex/src/Metadatas.cpp
+        Gex/src/References.cpp
 
         # Python wrapping file.
         Gex/include/Attribute_Wrap.h
@@ -67,6 +68,7 @@ set(
         Gex/src/PluginLoader_Wrap.cpp
         Gex/include/Status_Wrap.h
         Gex/src/Status_Wrap.cpp
+        Gex/src/References_Wrap.cpp
 )
 
 
