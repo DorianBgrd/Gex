@@ -159,9 +159,9 @@ void Gex::Ui::AttributeWidget::OnValueChanged(std::any value)
 
 
 
-Gex::Ui::ExtraAttributeDialog::ExtraAttributeDialog(Gex::Node* node,
-                                                              GraphWidget* _graphWidget,
-                                                              QWidget* parent, QWidget* _updateWidget):
+Gex::Ui::ExtraAttributeDialog::ExtraAttributeDialog(
+        Gex::Node* node, GraphWidget* _graphWidget,
+        QWidget* parent, QWidget* _updateWidget):
         QDialog(parent)
 {
     graphWidget = _graphWidget;
@@ -266,9 +266,9 @@ void Gex::Ui::ExtraAttributeDialog::SetType(const QString& type)
     if (initWidget)
         initWidget->deleteLater();
 
-    size_t hash = UiTSys::UiTypeEngine::GetEngine()->UiHash(type.toStdString());
+    typeHash = UiTSys::UiTypeEngine::GetEngine()->UiHash(type.toStdString());
 
-    initWidget = UiTSys::UiTypeEngine::GetEngine()->CreateInitWidget(hash);
+    initWidget = UiTSys::UiTypeEngine::GetEngine()->CreateInitWidget(typeHash);
 
     initWidgetLayout->addWidget(initWidget);
 }
@@ -276,10 +276,19 @@ void Gex::Ui::ExtraAttributeDialog::SetType(const QString& type)
 
 void Gex::Ui::ExtraAttributeDialog::CreateAttribute()
 {
+    std::any value;
     if (!initWidget)
-        return;
+    {
+        auto* handler = TSys::TypeRegistry::GetRegistry()->GetTypeHandle(typeHash);
+        if (!handler)
+            return;
 
-    std::any value = initWidget->CreateValue();
+        value = handler->InitValue();
+    }
+    else
+    {
+        value = initWidget->CreateValue();
+    }
 
     Gex::AttrType attrType;
     if (input->isChecked() && output->isChecked())
@@ -560,8 +569,10 @@ Gex::Ui::AttributeEditor::AttributeEditor(GraphWidget* parent): QWidget(parent)
 
 void Gex::Ui::AttributeEditor::SetNodes(std::vector<Gex::Node*> nodes)
 {
+    currentNodes.clear();
     tab->clear();
 
+    currentNodes = nodes;
     for (auto* node : nodes)
     {
         AttributeTab* widget = new AttributeTab(node, graph, this);
@@ -569,4 +580,10 @@ void Gex::Ui::AttributeEditor::SetNodes(std::vector<Gex::Node*> nodes)
     }
 
     stacked->setCurrentIndex((int)(!nodes.empty()));
+}
+
+
+void Gex::Ui::AttributeEditor::Update()
+{
+    SetNodes(currentNodes);
 }

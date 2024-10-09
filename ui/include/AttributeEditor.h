@@ -85,6 +85,7 @@ namespace Gex
             QLineEdit* attributeName;
             QVBoxLayout* initWidgetLayout;
             UiTSys::TypedInitWidget* initWidget = nullptr;
+            size_t typeHash;
             GraphWidget* graphWidget;
             QCheckBox* input;
             QCheckBox* output;
@@ -145,11 +146,14 @@ namespace Gex
             QTabWidget* tab;
             GraphWidget* graph;
             QWidget* emptyWidget;
+            std::vector<Gex::Node*> currentNodes;
 
         public:
             AttributeEditor(GraphWidget* parent=nullptr);
 
             void SetNodes(std::vector<Gex::Node*> nodes);
+
+            void Update();
         };
     }
 }
