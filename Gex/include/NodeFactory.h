@@ -128,6 +128,8 @@ namespace Gex
 
 		Node* CreateNode(const std::string& type, const std::string& name) const;
 
+        Node* ReferenceNode(const std::string& path, const std::string& name) const;
+
         Node* LoadNode(rapidjson::Value& dict) const;
 
         bool SaveNode(Node* node, rapidjson::Value& dict, rapidjson::Document& json) const;

@@ -1,6 +1,8 @@
 #include "Gex/include/NodeFactory.h"
 #include "Gex/include/Config.h"
 #include "rapidjson/document.h"
+#include "Gex/include/io.h"
+#include "Gex/include/References.h"
 
 #include <boost/python.hpp>
 
@@ -138,6 +140,19 @@ Gex::NodeBuilder* Gex::NodeFactory::GetBuilder(const std::string& type) const
 
 Gex::Node* Gex::NodeFactory::LoadNode(rapidjson::Value& dict) const
 {
+    if (dict.HasMember(Config::GetConfig().nodeReferencePathKey.c_str()))
+    {
+        std::string path = dict[Config::GetConfig().nodeReferencePathKey.c_str()].GetString();
+
+        std::string name;
+        if (dict.HasMember(Config::GetConfig().nodeNameKey.c_str()))
+        {
+            name = dict[Config::GetConfig().nodeNameKey.c_str()].GetString();
+        }
+
+        return ReferenceNode(path, name);
+    }
+
     if (!dict.HasMember(Config::GetConfig().nodeTypeKey.c_str()))
     {
         return nullptr;
@@ -167,15 +182,29 @@ bool Gex::NodeFactory::SaveNode(Node* node, rapidjson::Value& dict, rapidjson::D
         return false;
     }
 
-    std::string typename_ = node->Type();
+    if (!node->IsReferenced())
+    {
+        std::string typename_ = node->Type();
 
-    rapidjson::Value& typeValue = rapidjson::Value(rapidjson::kStringType)
-            .SetString(rapidjson::StringRef(typename_.c_str()), json.GetAllocator());
-    rapidjson::Value& typeKey = rapidjson::Value().SetString(Config::GetConfig().nodeTypeKey.c_str(),
-                                                             json.GetAllocator());
+        rapidjson::Value& typeValue = rapidjson::Value(rapidjson::kStringType)
+                .SetString(rapidjson::StringRef(typename_.c_str()), json.GetAllocator());
+        rapidjson::Value& typeKey = rapidjson::Value().SetString(Config::GetConfig().nodeTypeKey.c_str(),
+                                                                 json.GetAllocator());
 
-    dict.AddMember(typeKey, typeValue, json.GetAllocator());
+        dict.AddMember(typeKey.Move(), typeValue.Move(), json.GetAllocator());
+    }
+    else
+    {
+        std::string refPath = node->ReferencePath();
 
+        rapidjson::Value& refValue = rapidjson::Value(rapidjson::kStringType)
+                .SetString(rapidjson::StringRef(refPath.c_str()), json.GetAllocator());
+        rapidjson::Value& refKey = rapidjson::Value().SetString(Config::GetConfig().nodeReferencePathKey.c_str(),
+                                                                 json.GetAllocator());
+
+        dict.AddMember(refKey.Move(), refValue.Move(), json.GetAllocator());
+    }
+    
     rapidjson::Value& nameValue = rapidjson::Value(rapidjson::kStringType)
             .SetString(rapidjson::StringRef(node->Name().c_str()), json.GetAllocator());
     rapidjson::Value& nameKey = rapidjson::Value().SetString(Config::GetConfig().nodeNameKey.c_str(),
@@ -209,6 +238,30 @@ Gex::Node* Gex::NodeFactory::CreateNode(const std::string& type, const std::stri
     return node;
 }
 
+
+Gex::Node* Gex::NodeFactory::ReferenceNode(const std::string& path, const std::string& name) const
+{
+    std::string referencePath = Gex::References::GetLoader()->ResolvePath(path);
+    if (referencePath.empty())
+        return nullptr;
+
+    auto* result = Gex::LoadGraph(referencePath);
+    if (!result)
+        return nullptr;
+
+    if (!name.empty())
+        result->SetName(name);
+
+    auto tc = [path, result](Gex::Node* n){
+        n->SetReferencePath(path);
+        n->SetEditable(n == result);
+        return true;
+    };
+
+    TraverseNodes(result, tc);
+
+    return result;
+}
 
 
 std::vector<std::string> Gex::NodeFactory::NodeTypes() const

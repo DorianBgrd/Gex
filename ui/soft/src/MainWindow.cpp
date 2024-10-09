@@ -21,6 +21,18 @@ Gex::Editor::MainWindow::MainWindow(Gex::CompoundNode* graph_, std::string file,
     graphView = new Gex::Ui::GraphView(graph, this);
     layout->addWidget(graphView);
 
+//    interpreter = new GexSoftware::PythonInterpreter(this);
+//    interpreter->Initialize();
+//
+//    addDockWidget(Qt::RightDockWidgetArea, interpreter);
+
+    dock = new Gex::Ui::ViewerDock(this);
+    addDockWidget(Qt::LeftDockWidgetArea, dock);
+
+    QObject::connect(graphView->GetGraphWidget(),
+                     &Gex::Ui::GraphWidget::SelectedNodeChanged,
+                     dock, &Gex::Ui::ViewerDock::NodeSelectionChanged);
+
     auto* menu = new QMenuBar(this);
     auto* fileMenu =  menu->addMenu("File");
 //    fileMenu->addAction(Res::UiRes::GetRes()->GetQtAwesome()->icon(fa::fa_solid, fa::fa_folder_open),
@@ -55,13 +67,16 @@ Gex::Feedback Gex::Editor::MainWindow::New()
     feedback.status = Gex::Status::Success;
     feedback.message = "New file";
 
-    if (graph)
-    {
-        delete graph;
-    }
+    auto* delGraph = graph;
 
     graph = new Gex::CompoundNode();
+    graph->SetName("Graph");
     graphView->SwitchGraph(graph);
+
+    if (delGraph)
+    {
+        delete delGraph;
+    }
 
     ShowMessage(feedback);
 
@@ -81,13 +96,15 @@ Gex::Feedback Gex::Editor::MainWindow::Open(std::string file)
         currentFile = "";
     }
 
-    if (graph)
-    {
-        delete graph;
-    }
+    auto* delGraph = graph;
 
     graph = CompoundNode::FromNode(graph_);
     graphView->SwitchGraph(graph);
+
+    if (delGraph)
+    {
+        delete delGraph;
+    }
 
     ShowMessage(feedback);
 

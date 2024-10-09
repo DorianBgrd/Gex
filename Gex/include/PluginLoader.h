@@ -84,8 +84,6 @@ namespace Gex
 
         static std::filesystem::path SearchFilePath(const std::string& name, Feedback* result=nullptr);
 
-        static bool LoadPlugin(const std::string& name, const PluginType& type=PluginType::Library);
-
     protected:
         static void LoadCppPlugin(const std::string& name,
                                   PluginLoader* loader,
@@ -95,10 +93,13 @@ namespace Gex
                                      PluginLoader* loader,
                                      Feedback* result=nullptr);
 
+        static PluginLoader* LoadPluginFile(const std::string& name,
+                                            const PluginType& type,
+                                            Feedback* result=nullptr);
+
     public:
         static PluginLoader* LoadPlugin(const std::string& name,
-                                        const PluginType& type,
-                                        Feedback* result);
+                                        Feedback* result=nullptr);
 
         static bool PluginLoaded(std::string plugin);
 

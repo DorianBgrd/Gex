@@ -263,3 +263,145 @@ Gex::NodeList Gex::ImportNodes(const std::string& filepath,
 
     return res;
 }
+
+
+typedef std::pair<Gex::Attribute*, std::string> AttrStr;
+typedef std::pair<std::string, Gex::Attribute*> StrAttr;
+
+
+bool Gex::ReloadNode(Gex::Node* node)
+{
+    if (!node->IsReferenced())
+        return false;
+
+    auto referencePath = node->ReferencePath();
+
+    std::vector<Gex::Node*> refNodes;
+
+    auto ptc = [referencePath, &refNodes](Gex::Node* n)
+    {
+        if (n->ReferencePath() == referencePath)
+        {
+            refNodes.push_back(n);
+        }
+        else
+        {
+            return true;
+        }
+
+        return false;
+    };
+
+    TraverseParents(node, ptc);
+
+    if (refNodes.empty())
+    {
+        return false;
+    }
+
+    auto* topNode = *(refNodes.end()--);
+    auto* parent = topNode->Parent();
+    std::string name = topNode->Name();
+
+    std::vector<AttrStr> inCnx;
+    std::vector<StrAttr> outCnx;
+
+    // Save input connections and output connections.
+    for (auto* attribute : topNode->GetAllAttributes())
+    {
+        if (attribute->IsInput() && attribute->HasSource())
+        {
+            auto* source = attribute->Source();
+            inCnx.emplace_back(source, attribute->Longname());
+            attribute->DisconnectSource(source);
+        }
+
+        if (attribute->IsOutput() && attribute->HasDests())
+        {
+            for (auto* dest : attribute->Dests())
+            {
+                outCnx.emplace_back(dest->Longname(), attribute);
+                attribute->DisconnectDest(dest);
+            }
+        }
+
+    }
+
+    // Delete node.
+    delete topNode;
+
+    // Recreate node.
+    auto* cmpParent = CompoundNode::FromNode(parent);
+
+    auto* reloadedNode = cmpParent->ReferenceNode(referencePath, name);
+
+    // Recreate input connections.
+    for (auto inCn : inCnx)
+    {
+        auto* attr = reloadedNode->GetAttribute(inCn.second);
+        if (!attr)
+            continue;
+
+        attr->ConnectSource(inCn.first);
+    }
+
+    // Recreate output connections.
+    for (auto outCn : outCnx)
+    {
+        auto* attr = reloadedNode->GetAttribute(outCn.first);
+        if (!attr)
+            continue;
+
+        attr->ConnectSource(outCn.second);
+    }
+
+    return true;
+}
+
+
+//#define GEX_REFERENCES_PATH_ENV "GEX_REFERENCES_PATH"
+//#define ENV_DELIMITER ';'
+
+//std::vector<std::string> Gex::ListAvailableReferences()
+//{
+//   char* env = std::getenv(GEX_REFERENCES_PATH_ENV);
+//   if (!env)
+//       return {};
+//
+//   std::string envStr = env;
+//
+//   std::vector<std::string> envDirs;
+//   while(!envStr.empty())
+//   {
+//       size_t index = envStr.find_first_of(ENV_DELIMITER);
+//
+//       envDirs.push_back(envStr.substr(0, index));
+//
+//       if (index == std::string::npos)
+//           break;
+//
+//       envStr = envStr.substr(index, std::string::npos);
+//   }
+//
+//   std::vector<std::string> refs;
+//   for (const auto& d : envDirs)
+//   {
+//       std::filesystem::path dir(d);
+//       for (const auto& p : std::filesystem::directory_iterator(dir))
+//       {
+//           if (!p.is_regular_file())
+//           {
+//               continue;
+//           }
+//
+//           if (p.path().extension() != ".json")
+//           {
+//               continue;
+//           }
+//
+//           refs.push_back(p.path().filename().string());
+//       }
+//   }
+//
+//   return refs;
+//}

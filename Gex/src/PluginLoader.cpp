@@ -103,6 +103,8 @@ void Gex::PluginLoader::RegisterNode(const std::string& type, NodeBuilder* build
 
 void Gex::PluginLoader::Initialize()
 {
+    AddSearchPath("");
+
     if (!initialized)
     {
         char* strenv = std::getenv(PLUGIN_PATHS_ENV);
@@ -148,49 +150,35 @@ std::filesystem::path Gex::PluginLoader::SearchFilePath(const std::string& name,
     pluginSearchPaths.emplace_back("");
 
     std::filesystem::path libPath;
-    bool found = false;
-
     for (const std::string& p : pluginSearchPaths)
     {
-        libPath = std::filesystem::path(p);
-        libPath.append(name);
+        libPath = std::filesystem::path(p).append(name);
 
         if (!std::filesystem::exists(libPath))
         {
             continue;
         }
 
-        found = true;
-        break;
+        if (result)
+            result->Set(Status::Success, "");
+        return libPath;
     }
 
-    if (!found)
+    if (result)
     {
-        if (result)
-        {
-            result->status = Status::Failed;
-        }
+        result->Set(Status::Failed, "Failed to find plugin path.");
     }
 
     return libPath;
 }
 
 
-bool Gex::PluginLoader::LoadPlugin(const std::string& name, const PluginType& type)
-{
-    Feedback success;
-
-    LoadPlugin(name, type, &success);
-
-    return success;
-}
-
-
 void Gex::PluginLoader::LoadCppPlugin(const std::string& name, PluginLoader* loader, Feedback* result)
 {
-    std::filesystem::path libPath = SearchFilePath(name, result);
+    Feedback found;
+    std::filesystem::path libPath = SearchFilePath(name, &found);
 
-    if (!result)
+    if (!found)
     {
         if (result)
             result->Set(Status::Success, "Plugin file not found.");
@@ -198,11 +186,6 @@ void Gex::PluginLoader::LoadCppPlugin(const std::string& name, PluginLoader* loa
     }
 
     std::filesystem::path absolutePath = std::filesystem::absolute(libPath.string());
-    std::filesystem::path envFile = absolutePath.replace_extension(".json");
-    if (std::filesystem::exists(envFile))
-    {
-        LoadConfigFile(envFile.string());
-    }
 
     HINSTANCE module = LoadLibraryEx(libPath.string().c_str(), nullptr, LOAD_WITH_ALTERED_SEARCH_PATH);
     if (!module)
@@ -238,9 +221,8 @@ void Gex::PluginLoader::LoadCppPlugin(const std::string& name, PluginLoader* loa
 }
 
 
-void Gex::PluginLoader::LoadPythonPlugin(const std::string& name, PluginLoader* loader, Feedback* result)
+void InitPython(Gex::Feedback* result=nullptr)
 {
-
     if (!Py_IsInitialized())
     {
         Py_InitializeEx(1);
@@ -248,46 +230,19 @@ void Gex::PluginLoader::LoadPythonPlugin(const std::string& name, PluginLoader* 
         if (!main)
         {
             if (result)
-                result->Set(Status::Failed, "Could not initialize python.");
+                result->Set(Gex::Status::Failed, "Could not initialize python.");
             return;
         }
 
-        Python::PluginLoader_Wrap::RegisterPythonWrapper();
+        Gex::Python::PluginLoader_Wrap::RegisterPythonWrapper();
     }
+}
 
-    // Load environment file if found.
-    PyObject* pkgutil = PyImport_ImportModule("pkgutil");
-    if (pkgutil)
-    {
-        PyObject* pkgutilDict = PyModule_GetDict(pkgutil);
-        PyObject* getLoaderFunc = PyDict_GetItem(pkgutilDict, PyUnicode_FromString("get_loader"));
 
-        PyObject* loaderArgs = PyTuple_New(1);
-        PyTuple_SetItem(loaderArgs, 0, PyUnicode_FromString(name.c_str()));
-        PyObject* loaderKwargs = PyDict_New();
+void Gex::PluginLoader::LoadPythonPlugin(const std::string& name, PluginLoader* loader, Feedback* result)
+{
 
-        PyObject* moduleLoader = PyObject_Call(getLoaderFunc, loaderArgs, loaderKwargs);
-
-        PyObject* filename = PyObject_CallMethodOneArg(
-                moduleLoader, PyUnicode_FromString("get_filename"),
-                PyUnicode_FromString(name.c_str()));
-
-        std::string moduleFile  = PyUnicode_AsUTF8(filename);
-
-        std::filesystem::path modulePath = moduleFile;
-        if (modulePath.filename() == "__init__.py")
-        {
-            modulePath = modulePath.parent_path();
-        }
-
-        std::filesystem::path directory = modulePath.parent_path();
-        std::filesystem::path envFile = directory.append(name + ".json");
-
-        if (std::filesystem::exists(envFile))
-        {
-            LoadConfigFile(envFile.string());
-        }
-    }
+    InitPython();
 
     PyObject* mod = PyImport_ImportModule(name.c_str());
     if (!mod)
@@ -331,8 +286,9 @@ void Gex::PluginLoader::LoadPythonPlugin(const std::string& name, PluginLoader* 
 }
 
 
-Gex::PluginLoader* Gex::PluginLoader::LoadPlugin(const std::string& name, const PluginType& type,
-                                                 Feedback* result)
+Gex::PluginLoader* Gex::PluginLoader::LoadPluginFile(
+        const std::string& name, const PluginType& type,
+        Feedback* result)
 {
     auto* loader = new PluginLoader(NodeFactory::GetFactory(),
                                     TSys::TypeRegistry::GetRegistry());
@@ -351,27 +307,43 @@ Gex::PluginLoader* Gex::PluginLoader::LoadPlugin(const std::string& name, const 
     return loader;
 }
 
-
-bool Gex::PluginLoader::PluginLoaded(std::string plugin)
-{
-    return (std::find(loadedPlugins.begin(), loadedPlugins.end(), plugin) != loadedPlugins.end());
-}
-
-
-std::vector<std::string> Gex::PluginLoader::LoadedPlugins()
-{
-    return loadedPlugins;
-}
-
-
 #ifdef GetObject
 #undef GetObject
 #endif
 
 
-void Gex::PluginLoader::LoadConfigFile(std::string envFile)
+std::string ToAbsolutePath(const std::string& path,
+                           const std::string& start)
 {
-    std::ifstream filestream(envFile);
+    std::string st = path.substr(0, 2);
+
+    std::filesystem::path p(path);
+    if (st == "./" || st == ".\\")
+    {
+        std::filesystem::path relPath(
+                path.substr(2, std::string::npos));
+
+        p = std::filesystem::path(start) / relPath;
+    }
+
+    return p.string();
+}
+
+
+Gex::PluginLoader* Gex::PluginLoader::LoadPlugin(
+        const std::string& pluginFile,
+        Feedback* result)
+{
+    Feedback found;
+    std::filesystem::path pluginPath = SearchFilePath(pluginFile, &found);
+    if (!found)
+    {
+        if (result)
+            result->Set(Status::Failed, "Plugin file not found.");
+        return nullptr;
+    }
+
+    std::ifstream filestream(pluginPath);
 
     std::string content((std::istreambuf_iterator<char>(filestream)),
                         (std::istreambuf_iterator<char>()));
@@ -381,13 +353,39 @@ void Gex::PluginLoader::LoadConfigFile(std::string envFile)
     rapidjson::Document json;
     json.Parse(content.c_str());
 
+    if (!json.IsObject())
+    {
+        if (result)
+            result->Set(Status::Failed, "Plugin file content was not readable.");
+        return nullptr;
+    }
+
     rapidjson::Value& dict = json.GetObject();
 
     auto conf = Config::GetConfig();
+    if (!dict.HasMember(conf.pluginConfPlugKey.c_str()))
+    {
+        if (result)
+            result->Set(Status::Failed, "Missing " + conf.pluginConfPlugKey);
+        return nullptr;
+    }
+
+    std::string start = pluginPath.parent_path().string();
+
+    std::string pluginPilePath = ToAbsolutePath(dict[conf.pluginConfPlugKey.c_str()].GetString(), start);
+
+    if(!dict.HasMember(conf.pluginConfTypeKey.c_str()))
+    {
+        if (result)
+            result->Set(Status::Failed, "Missing " + conf.pluginConfTypeKey);
+        return nullptr;
+    }
+
+    auto pluginType = PluginType(dict[conf.pluginConfTypeKey.c_str()].GetInt());
+
     if (dict.HasMember(conf.pluginConfEnvKey.c_str()))
     {
-        auto& envDict = dict[conf.pluginConfEnvKey.c_str()];
-
+        rapidjson::Value& envDict = dict[conf.pluginConfEnvKey.c_str()];
         for (auto iter = envDict.MemberBegin(); iter != envDict.MemberEnd(); iter++)
         {
             std::string env = iter->name.GetString();
@@ -397,7 +395,9 @@ void Gex::PluginLoader::LoadConfigFile(std::string envFile)
             {
                 if (i > 0)
                     value += ";";
-                value += iter->value[i].GetString();
+
+                // Path could be relative, make it absolute.
+                value += ToAbsolutePath(iter->value[i].GetString(), start);
             }
 
             const char* current = std::getenv(env.c_str());
@@ -412,5 +412,73 @@ void Gex::PluginLoader::LoadConfigFile(std::string envFile)
             }
         }
     }
+
+    if (dict.HasMember(conf.pluginConfPyEnvKey.c_str()))
+    {
+        InitPython();
+
+        PyObject* osModule = PyImport_ImportModule("os");
+        PyObject* osEnviron = PyDict_GetItem(PyModule_GetDict(osModule),
+                                             PyUnicode_FromString("environ"));
+
+        rapidjson::Value& pyEnvDict = dict[conf.pluginConfPyEnvKey.c_str()];
+        for (auto iter = pyEnvDict.MemberBegin(); iter != pyEnvDict.MemberEnd(); iter++)
+        {
+            const char* env = iter->name.GetString();
+
+            std::string value;
+            for (unsigned int i = 0; i < iter->value.Size(); i++)
+            {
+                if (i > 0)
+                    value += ";";
+
+                value += ToAbsolutePath(iter->value[i].GetString(), start);
+            }
+
+            PyObject* pykey = PyUnicode_FromString(env);
+            PyObject* pyenv = PyDict_GetItem(osEnviron, pykey);
+            if (pyenv)
+            {
+                PyUnicode_Append(&pyenv, PyUnicode_FromString(";"));
+                PyUnicode_Append(&pyenv, PyUnicode_FromString(value.c_str()));
+            }
+            else
+            {
+                pyenv = PyUnicode_FromString(value.c_str());
+            }
+
+            PyDict_SetItem(osEnviron, pykey, pyenv);
+        }
+    }
+
+    if (dict.HasMember(conf.pluginConfPyEnvKey.c_str()))
+    {
+        InitPython();
+
+        PyObject* sysModule = PyImport_ImportModule("sys");
+        PyObject* sysPath = PyDict_GetItem(PyModule_GetDict(sysModule),
+                                           PyUnicode_FromString("path"));
+
+        rapidjson::Value& pyPathList = dict[conf.pluginConfPyEnvKey.c_str()];
+        for (unsigned int sp = 0; sp < pyPathList.Size(); sp++)
+        {
+            PyList_Append(sysPath, PyUnicode_FromString(ToAbsolutePath(
+                    pyPathList[sp].GetString(), start).c_str()));
+        }
+    }
+
+    return LoadPluginFile(pluginPilePath, pluginType, result);
+}
+
+
+bool Gex::PluginLoader::PluginLoaded(std::string plugin)
+{
+    return (std::find(loadedPlugins.begin(), loadedPlugins.end(), plugin) != loadedPlugins.end());
+}
+
+
+std::vector<std::string> Gex::PluginLoader::LoadedPlugins()
+{
+    return loadedPlugins;
 }
 

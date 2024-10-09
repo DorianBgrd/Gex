@@ -10,6 +10,7 @@
 #include "NodeFactory.h"
 #include "PluginLoader.h"
 #include "Status.h"
+#include "References.h"
 #include "io.h"
 #include "Profiler.h"
 

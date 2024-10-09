@@ -109,7 +109,7 @@ std::string Gex::Node::Path() const
 
 bool Gex::Node::IsEditable() const
 {
-    return true;
+    return isEditable;
 }
 
 
@@ -125,9 +125,9 @@ void Gex::Node::SetPlugin(std::string plugin)
 }
 
 
-bool Gex::Node::SetEditable(bool editable)
+void Gex::Node::SetEditable(bool editable)
 {
-    return true;
+    isEditable = editable;
 }
 
 
@@ -234,6 +234,24 @@ void Gex::Node::EndInitialization()
 }
 
 
+bool Gex::Node::IsReferenced() const
+{
+    return (!referencePath.empty());
+}
+
+
+std::string Gex::Node::ReferencePath() const
+{
+    return referencePath;
+}
+
+
+void Gex::Node::SetReferencePath(const std::string& path)
+{
+    referencePath = path;
+}
+
+
 std::string Gex::Node::Type() const
 {
     return typeName;
@@ -279,6 +297,9 @@ unsigned int Gex::Node::RegisterAttributeCallback(
 bool Gex::Node::DeregisterAttributeCallback(
         unsigned int index)
 {
+    if (attrCallbacks.empty())
+        return false;
+
     auto idx = attrCallbacks.find(index);
     if (idx == attrCallbacks.end())
         return false;
@@ -499,15 +520,25 @@ void Gex::Node::Serialize(rapidjson::Value& dict, rapidjson::Document& json) con
 
         attr->Serialize(attrValue, json);
 
-        attrValues.AddMember(rapidjson::Value().SetString(attr->Name().c_str(), json.GetAllocator()).Move(),
-                             attrValue, json.GetAllocator());
+        // Only add attribute if some data was serialized.
+        if (attrValue.MemberCount())
+        {
+            attrValues.AddMember(rapidjson::Value().SetString(attr->Name().c_str(), json.GetAllocator()).Move(),
+                                 attrValue, json.GetAllocator());
+        }
     }
 
-    rapidjson::Value& attrKey = rapidjson::Value().SetString(conf.nodeAttributesKey.c_str(),
-                                                             json.GetAllocator());
-    dict.AddMember(attrKey, attrValues, json.GetAllocator());
+    if (attrValues.MemberCount())
+    {
+        rapidjson::Value& attrKey = rapidjson::Value().SetString(conf.nodeAttributesKey.c_str(),
+                                                                 json.GetAllocator());
+        dict.AddMember(attrKey, attrValues, json.GetAllocator());
+    }
 
-    if (customAttrs.MemberCount())
+    // TODO : For now the custom attributes are never stored
+    //  on referenced node, when we'd like to store attributes
+    //  that may have been created on it after referencing.
+    if (customAttrs.MemberCount() && !IsReferenced())
     {
         rapidjson::Value& cstmAttrKey = rapidjson::Value().SetString(
                 conf.nodeCustomAttributesKey.c_str(),
@@ -516,9 +547,12 @@ void Gex::Node::Serialize(rapidjson::Value& dict, rapidjson::Document& json) con
     }
 
     rapidjson::Value mtdt = metadata.Serialize(json);
-    rapidjson::Value& mKey = rapidjson::Value().SetString(
-            conf.nodeMetadataKey.c_str(), json.GetAllocator());
-    dict.AddMember(mKey.Move(), mtdt, json.GetAllocator());
+    if (mtdt.Size())
+    {
+        rapidjson::Value& mKey = rapidjson::Value().SetString(
+                conf.nodeMetadataKey.c_str(), json.GetAllocator());
+        dict.AddMember(mKey.Move(), mtdt, json.GetAllocator());
+    }
 }
 
 
@@ -873,7 +907,7 @@ bool Gex::CompoundNode::IsCompound() const
 
 bool Gex::CompoundNode::AddNode(Node *node)
 {
-    if (HasNode(node))
+    if (!IsEditable() || HasNode(node))
     {
         return false;
     }
@@ -888,7 +922,7 @@ bool Gex::CompoundNode::AddNode(Node *node)
 
 bool Gex::CompoundNode::RemoveNode(Node *node)
 {
-    if (!HasNode(node))
+    if (!IsEditable() || !HasNode(node))
     {
         return false;
     }
@@ -991,6 +1025,9 @@ std::string Gex::CompoundNode::UniqueName(const std::string& name) const
 
 bool Gex::CompoundNode::RemoveNode(const std::string& node)
 {
+    if (!IsEditable())
+        return false;
+
     Node* nodePtr = GetNode(node);
     if (!nodePtr)
     {
@@ -1038,7 +1075,7 @@ std::vector<std::string> Gex::CompoundNode::InternalNodeNames() const
 }
 
 
-Gex::Node* Gex::CompoundNode::CreateNode(std::string type, std::string name)
+Gex::Node* Gex::CompoundNode::CreateNode(const std::string& type, std::string name)
 {
     if (name.empty())
     {
@@ -1067,6 +1104,27 @@ Gex::Node* Gex::CompoundNode::CreateNode(std::string type, std::string name)
     }
 
     return newNode;
+}
+
+
+Gex::Node* Gex::CompoundNode::ReferenceNode(const std::string& path, std::string name)
+{
+    if (name.empty())
+        name = std::filesystem::path(name).filename().stem().string();
+
+    Node* referencedNode = NodeFactory::GetFactory()->ReferenceNode(path, name);
+    if (!referencedNode)
+    {
+        return nullptr;
+    }
+
+    if (!AddNode(referencedNode))
+    {
+        delete referencedNode;
+        return nullptr;
+    }
+
+    return referencedNode;
 }
 
 
@@ -1162,6 +1220,15 @@ void Gex::CompoundNode::Serialize(rapidjson::Value& dict,
                                   const
 {
 	Gex::Node::Serialize(dict, json);
+
+    // Referenced nodes does not need to store all
+    // internal data as it is already stored in
+    // graph file. Instead, serialize all parent
+    // node attributes and connections, and leave
+    // all the internal data as it is described in
+    // the graph file.
+    if (IsReferenced())
+        return;
 
     Config conf = Config::GetConfig();
 
@@ -1269,25 +1336,37 @@ void Gex::CompoundNode::Serialize(rapidjson::Value& dict,
                             json.GetAllocator());
     }
 
-    rapidjson::Value& nodesKey = rapidjson::Value().SetString(
-            conf.compoundNodesKey.c_str(), json.GetAllocator());
-    dict.AddMember(nodesKey.Move(), internalNodesDict,
-                   json.GetAllocator());
+    if (internalNodesDict.MemberCount())
+    {
+        rapidjson::Value& nodesKey = rapidjson::Value().SetString(
+                conf.compoundNodesKey.c_str(), json.GetAllocator());
+        dict.AddMember(nodesKey.Move(), internalNodesDict,
+                       json.GetAllocator());
+    }
 
-    rapidjson::Value& connectionsKey = rapidjson::Value().SetString(
-            conf.compoundConnectionsKey.c_str(), json.GetAllocator());
-    dict.AddMember(connectionsKey.Move(), connections,
-                   json.GetAllocator());
+    if (connections.Size())
+    {
+        rapidjson::Value& connectionsKey = rapidjson::Value().SetString(
+                conf.compoundConnectionsKey.c_str(), json.GetAllocator());
+        dict.AddMember(connectionsKey.Move(), connections,
+                       json.GetAllocator());
+    }
 
-    rapidjson::Value& graphPluginsKey = rapidjson::Value().SetString(
-            conf.compoundPluginsKey.c_str(), json.GetAllocator());
-    dict.AddMember(graphPluginsKey.Move(), pluginsValue,
-                   json.GetAllocator());
+    if (pluginsValue.Size())
+    {
+        rapidjson::Value& graphPluginsKey = rapidjson::Value().SetString(
+                conf.compoundPluginsKey.c_str(), json.GetAllocator());
+        dict.AddMember(graphPluginsKey.Move(), pluginsValue,
+                       json.GetAllocator());
+    }
 
-    rapidjson::Value& graphNodeTypes = rapidjson::Value().SetString(
-            conf.compoundNodeTypes.c_str(), json.GetAllocator());
-    dict.AddMember(graphNodeTypes.Move(), typesValue,
-                   json.GetAllocator());
+    if (typesValue.Size())
+    {
+        rapidjson::Value& graphNodeTypes = rapidjson::Value().SetString(
+                conf.compoundNodeTypes.c_str(), json.GetAllocator());
+        dict.AddMember(graphNodeTypes.Move(), typesValue,
+                       json.GetAllocator());
+    }
 }
 
 
@@ -1806,4 +1885,40 @@ Gex::CompoundNode* Gex::CompoundNode::FromNode(Node* node)
     // meaning that declaring a standard node as a
     // compound will cause a crash.
     return static_cast<CompoundNode*>(node);
+}
+
+
+
+void Gex::TraverseNodes(Gex::Node* root, Gex::TraversalCallback callback)
+{
+    if (!callback(root))
+    {
+        return;
+    }
+
+    if (root->IsCompound())
+    {
+        auto* cmp = CompoundNode::FromNode(root);
+        for (auto* internal : cmp->InternalNodes())
+        {
+            TraverseNodes(internal, callback);
+        }
+    }
+}
+
+
+Gex::Node* Gex::TraverseParents(Gex::Node* root, TraversalCallback callback)
+{
+    if (callback(root))
+    {
+        return root;
+    }
+
+    auto* parent = root->Parent();
+    if (!parent)
+    {
+        return nullptr;
+    }
+
+    return TraverseParents(parent, callback);
 }

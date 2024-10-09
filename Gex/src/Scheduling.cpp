@@ -5,6 +5,67 @@
 #include <set>
 
 
+Gex::ScheduledNode::ScheduledNode(Node* node_)
+{
+    node = node_;
+}
+
+
+bool Gex::ScheduledNode::ShouldBeEvaluated() const
+{
+    for (ScheduledNode* n : previousNodes)
+    {
+        if (!n->Evaluated())
+        {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+bool Gex::ScheduledNode::Evaluate(Gex::GraphContext &context,
+                                  Gex::NodeProfiler& profiler)
+{
+    return node->Compute(context, profiler);
+}
+
+bool Gex::ScheduledNode::Compute(Gex::GraphContext &context,
+                                 Gex::NodeProfiler& profiler)
+{
+    bool result = Evaluate(context, profiler);
+    evaluated = true;
+    return result;
+}
+
+bool Gex::ScheduledNode::Evaluated() const
+{
+    return evaluated;
+}
+
+bool Gex::ScheduledNode::operator==(const ScheduledNode& other) const
+{
+    return (other.node == node);
+}
+
+bool Gex::ScheduledNode::operator==(const Gex::Node* other) const
+{
+    return (node == other);
+}
+
+
+bool Gex::ScheduledNode::operator==(const Gex::Node& other) const
+{
+    return (node == &other);
+}
+
+
+bool Gex::ScheduledNode::operator==(const ScheduledNode* other) const
+{
+    return (node == other->node);
+}
+
+
 
 std::vector<Gex::ScheduledNode*> _SortScheduledNodes(std::vector<Gex::ScheduledNode*> toSort)
 {
@@ -248,3 +309,50 @@ Gex::ScheduleNodeList Gex::ScheduleNodes(NodeList nodes, bool expand)
 
     return scheduledNodes;
 }
+
+
+Gex::ScheduleNodeList::iterator Gex::FindScheduledNode(
+        Gex::ScheduleNodeList scheduled,
+        const Gex::Node* node)
+{
+    auto pred = [node](ScheduledNode* n){return (*n == node);};
+
+    return std::find_if(scheduled.begin(), scheduled.end(), pred);
+}
+
+
+Gex::ScheduleNodeList Gex::SubScheduledNodes(ScheduleNodeList list, Gex::Node* node)
+{
+    ScheduleNodeList subGraph;
+
+    auto pred = [node](ScheduledNode* s)
+    {
+        return (s->node == node);
+    };
+
+    auto iter = std::find_if(list.begin(), list.end(), pred);
+    if (iter == list.end())
+        return subGraph;
+
+    std::set<ScheduledNode*> search = {*iter};
+
+    subGraph.push_back(*iter);
+
+    for (;iter != list.end(); iter++)
+    {
+        auto currentNode = (*iter);
+        auto previousNodes = currentNode->previousNodes;
+        for (auto previousNode : previousNodes)
+        {
+            if (search.find(previousNode) != search.end())
+            {
+                subGraph.push_back(currentNode);
+                search.insert(currentNode);
+                break;
+            }
+        }
+    }
+
+    return subGraph;
+}
+

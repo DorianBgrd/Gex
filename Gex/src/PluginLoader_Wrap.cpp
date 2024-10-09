@@ -12,7 +12,7 @@ bool Gex_PluginLoader_LoadPlugin(boost::python::tuple args,
 //    const Gex::PluginType type = boost::python::extract<const Gex::PluginType>(args[1]);
     int type = boost::python::extract<int>(args[1]);
 
-    return Gex::PluginLoader::LoadPlugin(name, Gex::PluginType(type));
+    return Gex::PluginLoader::LoadPlugin(name);
 }
 
 

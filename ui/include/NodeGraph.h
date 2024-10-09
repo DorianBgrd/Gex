@@ -282,10 +282,17 @@ namespace Gex
             NodePlugItem* destPlug;
             NodeNameItem* title;
             QGraphicsTextItem* internalTitle;
+            NodeGraphScene* graphScene;
             bool showInternal = false;
             QColor customBorderColor;
             bool userCustomBorderColor = false;
             qreal attributesY;
+
+            unsigned int cbIndex;
+            bool cbConnected = false;
+
+            bool savePosition = true;
+            bool positionChanged = false;
 
         public:
             static qreal defaultCompTitleOffset;
@@ -336,7 +343,14 @@ namespace Gex
 
         public:
             explicit
-            NodeItem(Gex::Node* node, QGraphicsItem* parent=nullptr);
+            NodeItem(Gex::Node* node, NodeGraphScene* scene,
+                     QGraphicsItem* parent=nullptr);
+
+            void ConnectToNode();
+
+            void DisconnectFromNode();
+
+            ~NodeItem();
 
             void TitleChanged(const QString& text);
 
@@ -363,6 +377,14 @@ namespace Gex
             void AdjustSize();
 
             QRectF boundingRect() const override;
+
+            void SavePosition(QPointF pos);
+
+            void RestorePosition();
+
+            void mousePressEvent(QGraphicsSceneMouseEvent *event) override;
+
+            void mouseReleaseEvent(QGraphicsSceneMouseEvent *event) override;
 
             QVariant itemChange(GraphicsItemChange change, const QVariant &value) override;
 
@@ -474,8 +496,6 @@ namespace Gex
             QString name;
             Gex::CompoundNode* node;
 
-            QMap<Gex::Node*, QPointF> nodePositions;
-
         public:
             NodeGraphContext(const QString& name, Gex::CompoundNode* node);
 
@@ -487,13 +507,11 @@ namespace Gex
 
             Gex::Node* CreateNode(std::string, std::string);
 
+            Gex::Node* ReferenceNode(std::string, std::string);
+
             void DeleteNode(Gex::Node*);
 
             Gex::NodeList DuplicateNodes(Gex::NodeList nodes, bool copyLinks);
-
-            void StorePositions(QMap<Gex::Node*, QPointF> positions);
-
-            QMap<Gex::Node*, QPointF> GetPositions() const;
         };
 
 
@@ -527,12 +545,16 @@ namespace Gex
 
             Q_SIGNAL void CompoundNodeDoubleClicked(Gex::CompoundNode*);
 
+            Q_SIGNAL void NodeModified(Gex::Node* node);
+
             void StartPlugLinking(PlugItem* source);
 
         public:
             void OnItemDoubleClicked(QGraphicsItem* item);
 
             void UpdateNode(Gex::Node* node);
+
+            void OnNodeModified(Gex::Node* node);
 
             void UpdateNodeAttribute(Gex::Node* node,
                                      QString attribute);
@@ -565,6 +587,8 @@ namespace Gex
 
             void CreateNode(QString type, QString name);
 
+            void ReferenceNode(QString type, QString name);
+
             void NodeEvaluationStarted(Gex::Node* node);
 
             void NodeEvaluationDone(Gex::Node* node, bool success);
@@ -583,6 +607,8 @@ namespace Gex
 
         class GEX_UI_API NodeGraphView: public BaseGraphView
         {
+            Q_OBJECT
+
             NodeGraphScene* graphScene;
         public:
             explicit
@@ -692,6 +718,8 @@ namespace Gex
             QList<NodeGraphContext*> contexts;
             ContextsWidget* contextsWidget;
             QSpinBox* threadsSpinBox;
+            Gex::NodeEvaluator* interactiveEval = nullptr;
+            bool interactiveEvalEnabled = true;
 
             static QEvent::Type scheduleEventType;
 
@@ -735,6 +763,8 @@ namespace Gex
 
             void RunGraph();
 
+            void RunFromNode(Gex::Node* node);
+
             void InteractiveRun();
 
             void AutoLayoutNodes();
@@ -742,6 +772,8 @@ namespace Gex
             void ShowMessage(Gex::Ui::UiFeedback feedback);
 
             Q_SIGNAL void GraphEvaluated(const Gex::Profiler profiler);
+
+            Q_SIGNAL void SelectedNodeChanged(const std::vector<Gex::Node*> nodes);
         };
     }
 }

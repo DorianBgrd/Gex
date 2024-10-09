@@ -44,6 +44,31 @@ boost::python::object Python_LoadGraph(boost::python::tuple args,
 }
 
 
+boost::python::object Python_ReloadNode(
+        boost::python::tuple args,
+        boost::python::dict kwargs)
+{
+    Gex::Node* node = boost::python::extract<Gex::Node*>(args[0]);
+
+    return boost::python::object(Gex::ReloadNode(node));
+}
+
+
+//boost::python::object Python_ListAvailableReferences(
+//        boost::python::tuple args,
+//        boost::python::dict kwargs)
+//{
+//    boost::python::list refs;
+//
+//    for (const auto& r : Gex::ListAvailableReferences())
+//    {
+//        refs.append(r);
+//    }
+//
+//    return refs;
+//}
+
+
 bool Gex::Python::IO::RegisterPythonWrapper()
 {
     if (pythonRegistered)
@@ -53,6 +78,8 @@ bool Gex::Python::IO::RegisterPythonWrapper()
 
     boost::python::def("SaveGraph", boost::python::raw_function(&Python_SaveGraph, 1));
     boost::python::def("LoadGraph", boost::python::raw_function(&Python_LoadGraph, 1));
+    boost::python::def("ReloadNode", boost::python::raw_function(&Python_ReloadNode, 1));
+//    boost::python::def("ListAvailableReferences", boost::python::raw_function(&Python_ListAvailableReferences, 0));
 
     pythonRegistered = true;
     return true;

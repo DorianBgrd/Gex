@@ -27,6 +27,10 @@ namespace Gex
     GEX_API NodeList ImportNodes(const std::string& filepath,
                                  CompoundNode* destination,
                                  Feedback* success=nullptr);
+
+    GEX_API bool ReloadNode(Gex::Node* node);
+
+//    GEX_API std::vector<std::string> ListAvailableReferences();
 }
 
 #endif //GEX_IO_H

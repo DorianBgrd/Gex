@@ -28,6 +28,7 @@ namespace Gex
         std::string nodeMetadataKey = "Metadata";
         std::string nodeAttributesKey = "Attributes";
         std::string nodeCustomAttributesKey = "CustomAttributes";
+        std::string nodeReferencePathKey = "ReferencePath";
 
         std::string compoundNodesKey = "Nodes";
         std::string compoundConnectionsKey = "Connections";
@@ -37,7 +38,11 @@ namespace Gex
         std::string thisKey = "This";
 
         // Plugin config.
-        std::string pluginConfEnvKey = "plugin-env";
+        std::string pluginConfTypeKey = "type";
+        std::string pluginConfPlugKey = "plugin";
+        std::string pluginConfEnvKey = "env";
+        std::string pluginConfPyEnvKey = "python-env";
+        std::string pluginConfPyPathKey = "python-path";
 
         static Config GetConfig();
     };

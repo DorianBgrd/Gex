@@ -28,11 +28,27 @@ namespace Gex
                      NodeProfiler &profiler);
 
         bool Evaluated() const;
+
+        bool operator==(const ScheduledNode& other) const;
+
+        bool operator==(const Gex::Node* other) const;
+
+        bool operator==(const Gex::Node& other) const;
+
+        bool operator==(const ScheduledNode* other) const;
     };
 
 
     GEX_API
     ScheduleNodeList ScheduleNodes(NodeList nodes, bool expand = true);
+
+    GEX_API
+    ScheduleNodeList::iterator FindScheduledNode(ScheduleNodeList list,
+                                                 const Gex::Node* node);
+
+    GEX_API
+    ScheduleNodeList SubScheduledNodes(ScheduleNodeList list,
+                                       Gex::Node* node);
 }
 
 #endif //GEX_SCHEDULING_H

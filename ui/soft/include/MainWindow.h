@@ -5,6 +5,8 @@
 #include <QAction>
 #include "ui/include/ui.h"
 
+#include "PythonInterpreter.h"
+
 
 namespace Gex::Editor
 {
@@ -16,6 +18,8 @@ namespace Gex::Editor
         Gex::Ui::GraphView* graphView;
         std::string currentFile;
         QAction* saveAction;
+        GexSoftware::PythonInterpreter* interpreter;
+        Gex::Ui::ViewerDock* dock;
 
     public:
         MainWindow(Gex::CompoundNode* graph, std::string file="",

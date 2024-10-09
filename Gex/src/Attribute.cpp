@@ -1222,6 +1222,18 @@ void Gex::Attribute::SerializeAttribute(rapidjson::Value& value, rapidjson::Docu
                 doc.GetAllocator());
 		resultValue.AddMember(attrChildrenKey.Move(), childAttributes.Move(), doc.GetAllocator());
 	}
+
+    if (IsInternal())
+    {
+        rapidjson::Value& attrInternalKey = rapidjson::Value().SetString(
+                Config::GetConfig().attributeInternalKey.c_str(),
+                doc.GetAllocator());
+
+        rapidjson::Value& attrInternalValue = rapidjson::Value().SetBool(true);
+        resultValue.AddMember(attrInternalKey.Move(), attrInternalValue.Move(),
+                              doc.GetAllocator());
+    }
+
 	rapidjson::Value& attributeNameKey = rapidjson::Value().SetString(
             attributeName.c_str(), doc.GetAllocator());
 	value.AddMember(attributeNameKey.Move(), resultValue.Move(), doc.GetAllocator());
@@ -1275,6 +1287,11 @@ Gex::Attribute* Gex::Attribute::DeserializeAttribute(
                                  valuetype, type, userDefined,
                                  node, parent);
 
+    if (serialValues.HasMember(Config::GetConfig().attributeInternalKey.c_str()))
+    {
+        result->SetInternal(serialValues[Config::GetConfig().attributeInternalKey.c_str()].GetBool());
+    }
+
 	if (serialValues.HasMember(Config::GetConfig().attributeChildrenKey.c_str()))
 	{
 		rapidjson::Value& childAttributes = serialValues[Config::GetConfig().attributeChildrenKey.c_str()];
@@ -1311,7 +1328,7 @@ void Gex::Attribute::Serialize(rapidjson::Value& value, rapidjson::Document& doc
     if (!IsMulti())
     {
         /*
-         * Only serialize attribute that arenot on default.
+         * Only serialize attribute that are not on default.
          */
         if (!IsDefault())
         {
@@ -1345,10 +1362,14 @@ void Gex::Attribute::Serialize(rapidjson::Value& value, rapidjson::Document& doc
             multiValue.AddMember(index.Move(), subValue, doc.GetAllocator());
         }
 
-        rapidjson::Value& multiValueKey = rapidjson::Value().SetString(
-                Config::GetConfig().attributeMultiValueKey.c_str(),
-                doc.GetAllocator());
-        value.AddMember(multiValueKey, multiValue, doc.GetAllocator());
+        // Only save if some value were stored.
+        if (multiValue.MemberCount())
+        {
+            rapidjson::Value& multiValueKey = rapidjson::Value().SetString(
+                    Config::GetConfig().attributeMultiValueKey.c_str(),
+                    doc.GetAllocator());
+            value.AddMember(multiValueKey, multiValue, doc.GetAllocator());
+        }
     }
 
 	if (HasChildAttributes())
@@ -1362,11 +1383,11 @@ void Gex::Attribute::Serialize(rapidjson::Value& value, rapidjson::Document& doc
                         subAttributesValues, doc.GetAllocator());
 	}
 
-    rapidjson::Value& internal = rapidjson::Value().SetBool(isInternal);
-    rapidjson::Value& internalKey = rapidjson::Value().SetString(
-            Config::GetConfig().attributeInternalKey.c_str(),
-            doc.GetAllocator());
-    value.AddMember(internalKey, internal, doc.GetAllocator());
+//    rapidjson::Value& internal = rapidjson::Value().SetBool(isInternal);
+//    rapidjson::Value& internalKey = rapidjson::Value().SetString(
+//            Config::GetConfig().attributeInternalKey.c_str(),
+//            doc.GetAllocator());
+//    value.AddMember(internalKey, internal, doc.GetAllocator());
 }
 
 
@@ -1428,11 +1449,11 @@ void Gex::Attribute::Deserialize(rapidjson::Value& value)
 		}
 	}
 
-    if  (value.HasMember(Config::GetConfig().attributeInternalKey.c_str()))
-    {
-        bool internal = value[Config::GetConfig().attributeInternalKey.c_str()].GetBool();
-        SetInternal(internal);
-    }
+//    if  (value.HasMember(Config::GetConfig().attributeInternalKey.c_str()))
+//    {
+//        bool internal = value[Config::GetConfig().attributeInternalKey.c_str()].GetBool();
+//        SetInternal(internal);
+//    }
 }
 
 

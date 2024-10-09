@@ -60,7 +60,8 @@ namespace Gex
         friend NodeEvaluator;
 
         bool initializing;
-        unsigned int nextId = 0;
+        bool isEditable = true;
+        CallbackId nextId = 0;
 
         /**
          * Starts node initialization.
@@ -93,7 +94,31 @@ namespace Gex
         AttributeChangedCallbacks attrCallbacks;
         NodeMetadata metadata;
 
+        std::string referencePath;
+
 	public:
+        /**
+         * Returns whether this node
+         * is referenced.
+         * @return is referenced.
+         */
+        bool IsReferenced() const;
+
+        /**
+         * Returns reference path.
+         * @return path.
+         */
+        std::string ReferencePath() const;
+
+    protected:
+        /**
+         * Sets current node reference path.
+         * @param path: ref path.
+         */
+        void SetReferencePath(const std::string& path);
+
+    public:
+
         /**
          * Returns node's type name.
          * @return std::string type.
@@ -248,13 +273,15 @@ namespace Gex
           */
          virtual bool IsEditable() const;
 
+    protected:
          /**
           * Sets node editable.
           * @param bool editable: set editable state.
           * @return bool editable.
           */
-         virtual bool SetEditable(bool editable);
+         virtual void SetEditable(bool editable);
 
+    public:
          /**
           * Returns whether current node is a
           * compound node.
@@ -554,7 +581,14 @@ namespace Gex
          * @param name: node name.
          * @return node pointer.
          */
-        virtual Node* CreateNode(std::string type, std::string name= std::string());
+        virtual Node* CreateNode(const std::string& type, std::string name= std::string());
+
+        /**
+         * References a new internal node.
+         * @param path: reference path.
+         * @return referenced node.
+         */
+        virtual Node* ReferenceNode(const std::string& path, std::string name=std::string());
 
         /**
          * Adds node pointer as internal node.
@@ -738,6 +772,11 @@ namespace Gex
         static CompoundNode* FromNode(Node* node);
 	};
 
+    typedef std::function<bool(Gex::Node* node)> TraversalCallback;
+
+    void TraverseNodes(Gex::Node* root, TraversalCallback callback);
+
+    Gex::Node* TraverseParents(Gex::Node* root, TraversalCallback callback);
 }
 
 #endif // GEX_NODE
