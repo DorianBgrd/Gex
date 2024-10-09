@@ -85,12 +85,12 @@ namespace ImageManip::Types
 
         std::string PythonName() const override
         {
-            return "QColor";
+            return "Resolution";
         }
 
         std::string ApiName() const override
         {
-            return "QColor";
+            return "Resolution";
         }
 
         size_t ValueHash(std::any val) const override

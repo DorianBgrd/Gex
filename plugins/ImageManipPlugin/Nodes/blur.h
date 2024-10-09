@@ -9,6 +9,11 @@ namespace ImageManip::Nodes
 {
     class Plugin_API BoxBlurNode: public Gex::Node
     {
+        std::string Description() const override
+        {
+            return "Blurs the image using box algorithm.";
+        }
+
         void InitAttributes() override;
 
         bool Evaluate(Gex::NodeAttributeData &context,

@@ -9,6 +9,11 @@ namespace ImageManip::Nodes
 {
     class Plugin_API RectangleNode: public Gex::Node
     {
+        std::string Description() const override
+        {
+            return "Generate a rectangle.";
+        }
+
         void InitAttributes() override;
 
         bool Evaluate(Gex::NodeAttributeData &context,
@@ -22,6 +27,11 @@ namespace ImageManip::Nodes
 
     class Plugin_API EllipseNode: public Gex::Node
     {
+        std::string Description() const override
+        {
+            return "Generate an ellipse.";
+        }
+
         void InitAttributes() override;
 
         bool Evaluate(Gex::NodeAttributeData &context,

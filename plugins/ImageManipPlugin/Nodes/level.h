@@ -8,6 +8,11 @@ namespace ImageManip::Nodes
 {
     class Plugin_API LevelNode: public Gex::Node
     {
+        std::string Description() const override
+        {
+            return "Adjusts image levels.";
+        }
+
         void InitAttributes() override;
 
         bool Evaluate(Gex::NodeAttributeData &context,

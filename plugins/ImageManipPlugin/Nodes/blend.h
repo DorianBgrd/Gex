@@ -8,6 +8,11 @@ namespace ImageManip::Nodes
 {
     class Plugin_API BlendImages: public Gex::Node
     {
+        std::string Description() const override
+        {
+            return "Blends 2 images.";
+        }
+
         void InitAttributes() override;
 
         bool Evaluate(Gex::NodeAttributeData &context,
@@ -21,6 +26,12 @@ namespace ImageManip::Nodes
 
     class Plugin_API LayerBlend: public Gex::Node
     {
+        std::string Description() const override
+        {
+            return "Blends 2 images with "
+                   "layer using blend modes.";
+        }
+
         void InitAttributes() override;
 
         bool Evaluate(Gex::NodeAttributeData &context,

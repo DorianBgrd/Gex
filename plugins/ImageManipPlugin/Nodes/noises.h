@@ -9,6 +9,11 @@ namespace ImageManip::Nodes
 {
     class Plugin_API RandomNoise: public Gex::Node
     {
+        std::string Description() const override
+        {
+            return "Generate a random noise.";
+        }
+
         void InitAttributes() override;
 
         bool Evaluate(Gex::NodeAttributeData &context,

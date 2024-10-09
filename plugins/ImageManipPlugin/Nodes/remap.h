@@ -11,6 +11,11 @@ namespace ImageManip::Nodes
 
     class Plugin_API ColorRemapNode: public Gex::Node
     {
+        std::string Description() const override
+        {
+            return "Remaps image colors.";
+        }
+
         void InitAttributes() override;
 
         bool Evaluate(Gex::NodeAttributeData &context,
