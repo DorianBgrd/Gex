@@ -6,6 +6,12 @@
 #include "pxr/usd/usdGeom/primvarsAPI.h"
 
 
+UsdPlugin::UsdGeom::UsdGeomMeshType::UsdGeomMeshType(): UnsavableHandler()
+{
+    RegisterConverter<UsdTriangulatedMesh, UsdTriangulatedMeshToMesh>();
+}
+
+
 std::any UsdPlugin::UsdGeom::UsdGeomMeshType::InitValue() const
 {
     return pxr::UsdGeomMesh();
@@ -63,6 +69,22 @@ size_t UsdPlugin::UsdGeom::UsdGeomMeshType::ValueHash(std::any val) const
 }
 
 
+UsdPlugin::UsdGeom::Triangle::Triangle(const Triangle& other)
+{
+    pointsIndices = other.pointsIndices;
+    pointsFaceIndices = other.pointsFaceIndices;
+    points = other.points;
+    uvs = other.uvs;
+    uvMap = other.uvMap;
+}
+
+
+std::string UsdPlugin::UsdGeom::Triangle::UVMapName() const
+{
+    return uvMap;
+}
+
+
 bool UsdPlugin::UsdGeom::Triangle::ComputeUvs(const pxr::UsdGeomPrimvarsAPI& api,
                                               const std::string& uvPrimvarName)
 {
@@ -82,7 +104,113 @@ bool UsdPlugin::UsdGeom::Triangle::ComputeUvs(const pxr::UsdGeomPrimvarsAPI& api
     uvs = {primvarUvs[pointsFaceIndices[0]],
            primvarUvs[pointsFaceIndices[1]],
            primvarUvs[pointsFaceIndices[2]]};
+
+    uvMap = uvPrimvarName;
     return true;
+}
+
+
+float Vec2DLength(pxr::GfVec2f p1, pxr::GfVec2f p2)
+{
+    return std::sqrt((p1[0] - p2[0]) * (p1[0] - p2[0]) +
+                     (p1[1] - p2[1]) * (p1[1] - p2[1]));
+}
+
+
+float TArea2D(pxr::GfVec2f p1, pxr::GfVec2f p2, pxr::GfVec2f p3)
+{
+    float a = Vec2DLength(p1, p2);
+    float b = Vec2DLength(p2, p3);
+    float c = Vec2DLength(p3, p1);
+    float d = (a + b + c) / 2.0f;
+
+    return std::sqrt(d * (d - a) * (d - b) * (d - c));
+}
+
+
+pxr::GfVec3f BCoord2D(pxr::GfVec2f point, pxr::GfVec2f p1, pxr::GfVec2f p2, pxr::GfVec2f p3)
+{
+    float mainArea = TArea2D(p1, p2, p3);
+
+    float area1 = TArea2D(point, p2, p3);
+    float area2 = TArea2D(p1, point, p3);
+    float area3 = TArea2D(p1, p2, point);
+
+    float darea1 = area1 / mainArea;
+    float darea2 = area2 / mainArea;
+    float darea3 = area3 / mainArea;
+
+    return {darea1, darea2, darea3};
+}
+
+
+pxr::GfVec3f FromBCoord2D(pxr::GfVec3f bary, pxr::GfVec3f p1, pxr::GfVec3f p2, pxr::GfVec3f p3)
+{
+    return {
+            (bary[0] * p1[0]) + (bary[1] * p2[0]) + (bary[2] * p3[0]),
+            (bary[0] * p1[1]) + (bary[1] * p2[1]) + (bary[2] * p3[1]),
+            (bary[0] * p1[2]) + (bary[1] * p2[2]) + (bary[2] * p3[2])
+    };
+}
+
+
+pxr::GfVec3f UsdPlugin::UsdGeom::Triangle::UVsBaryCentricCoord(pxr::GfVec2f uv) const
+{
+    return BCoord2D(uv, uvs[0], uvs[1], uvs[2]);
+}
+
+
+float Round(float value, unsigned int decimals)
+{
+    int exp = std::pow(10, decimals);
+    return std::round(value * exp) / exp;
+}
+
+
+bool IsIn2DTriangle(pxr::GfVec3f bary)
+{
+    return (bary[0] >= 0 && bary[0] <= 1 &&
+            bary[1] >= 0 && bary[1] <= 1 &&
+            bary[2] >= 0 && bary[2] <= 1 &&
+            Round(bary[0] + bary[1] + bary[2], 3) == 1.0);
+}
+
+
+bool UsdPlugin::UsdGeom::Triangle::IsInUVsTriangle(pxr::GfVec2f uv) const
+{
+    return IsIn2DTriangle(UVsBaryCentricCoord(uv));
+}
+
+
+pxr::GfVec3f UsdPlugin::UsdGeom::Triangle::FromBaryCentricCoord(
+        pxr::GfVec3f barycentric) const
+{
+    return FromBCoord2D(barycentric, points[0],
+                        points[1], points[2]);
+}
+
+
+pxr::GfVec3f UsdPlugin::UsdGeom::Triangle::UvToMesh(pxr::GfVec2f uv) const
+{
+    return FromBaryCentricCoord(UVsBaryCentricCoord(uv));
+}
+
+
+pxr::GfVec3f UsdPlugin::UsdGeom::Triangle::GetNormal() const
+{
+    /*
+    Nx = Ay * Bz - Az * By
+    Ny = Az * Bx - Ax * Bz
+    Nz = Ax * By - Ay * Bx
+    */
+    pxr::GfVec3f A = points[1] - points[0];
+    pxr::GfVec3f B = points[2] - points[0];
+
+    pxr::GfVec3f nrml = {(A[1] * B[2]) - (A[2] * B[1]),
+                         (A[2] * B[0]) - (A[0] * B[2]),
+                         (A[0] * B[1]) - (A[1] * B[0])};
+
+    return nrml.GetNormalized();
 }
 
 
@@ -117,6 +245,7 @@ UsdPlugin::UsdGeom::UsdTriangulatedMesh::UsdTriangulatedMesh(
     msh = other.msh;
     triangles = other.triangles;
     isValid = other.isValid;
+    uvMap = other.uvMap;
 }
 
 
@@ -183,6 +312,12 @@ pxr::UsdGeomMesh UsdPlugin::UsdGeom::UsdTriangulatedMesh::GetMesh() const
 }
 
 
+std::string UsdPlugin::UsdGeom::UsdTriangulatedMesh::UVMapName() const
+{
+    return uvMap;
+};
+
+
 bool UsdPlugin::UsdGeom::UsdTriangulatedMesh::IsValid() const
 {
     return isValid;
@@ -196,19 +331,31 @@ UsdPlugin::UsdGeom::UsdTriangulatedMesh::operator bool()
 
 
 bool UsdPlugin::UsdGeom::UsdTriangulatedMesh::ComputeUvs(
-        const pxr::UsdGeomPrimvarsAPI& api,
         const std::string& uvPrimvarName)
 {
     bool success = true;
-    for (auto t : triangles)
+
+    if (!msh)
+        return false;
+
+    pxr::UsdGeomPrimvarsAPI api(msh);
+    for (auto& t : triangles)
     {
         if (!t.ComputeUvs(api, uvPrimvarName))
             success = false;
     }
 
+    if (success)
+        uvMap = uvPrimvarName;
+
     return success;
 }
 
+
+std::vector<UsdPlugin::UsdGeom::Triangle> UsdPlugin::UsdGeom::UsdTriangulatedMesh::GetTriangles() const
+{
+    return triangles;
+}
 
 
 std::any UsdPlugin::UsdGeom::MeshToUsdTriangulatedMesh::Convert(
@@ -216,6 +363,15 @@ std::any UsdPlugin::UsdGeom::MeshToUsdTriangulatedMesh::Convert(
 {
     return std::make_any<UsdTriangulatedMesh>(
             std::any_cast<pxr::UsdGeomMesh>(from));
+}
+
+
+std::any UsdPlugin::UsdGeom::UsdTriangulatedMeshToMesh::Convert(
+        std::any from, std::any to) const
+{
+    return std::make_any<pxr::UsdGeomMesh>(
+            std::any_cast<UsdTriangulatedMesh>(from)
+                    .GetMesh());
 }
 
 
@@ -318,8 +474,7 @@ bool UsdPlugin::UsdGeom::UsdGeomMakeTriangulatedMesh::Evaluate(
     UsdTriangulatedMesh tmesh(mesh);
     if (!uvmap.empty())
     {
-        pxr::UsdGeomPrimvarsAPI api(mesh);
-        tmesh.ComputeUvs(api, uvmap);
+        tmesh.ComputeUvs(uvmap);
     }
 
     return context.GetAttribute("TriangulatedMesh").SetValue(tmesh);
@@ -632,62 +787,11 @@ void UsdPlugin::UsdGeom::UsdGeomUvToPoint::InitAttributes()
                            Gex::AttrType::Input);
     CreateAttribute<std::string>("UVPrimvar", Gex::AttrValueType::Single,
                                   Gex::AttrType::Input);
-    CreateAttribute<pxr::UsdGeomMesh>("Mesh", Gex::AttrValueType::Single,
+    CreateAttribute<UsdTriangulatedMesh>("Mesh", Gex::AttrValueType::Single,
                                       Gex::AttrType::Static);
     CreateAttribute<pxr::GfVec3f>("Position", Gex::AttrValueType::Single,
                                   Gex::AttrType::Output);
 
-}
-
-
-struct Face
-{
-    std::vector<pxr::GfVec3f> points;
-    std::vector<pxr::GfVec2f> uvs;
-};
-
-
-float Vec2DLength(pxr::GfVec2f p1, pxr::GfVec2f p2)
-{
-    return std::sqrt((p1[0] - p2[0]) * (p1[0] - p2[0]) +
-                     (p1[1] - p2[1]) * (p1[1] - p2[1]));
-}
-
-
-float TArea2D(pxr::GfVec2f p1, pxr::GfVec2f p2, pxr::GfVec2f p3)
-{
-    float a = Vec2DLength(p1, p2);
-    float b = Vec2DLength(p2, p3);
-    float c = Vec2DLength(p3, p1);
-    float d = (a + b + c) / 2.0f;
-
-    return std::sqrt(d * (d - a) * (d - b) * (d - c));
-}
-
-
-pxr::GfVec3f BCoord2D(pxr::GfVec2f point, pxr::GfVec2f p1, pxr::GfVec2f p2, pxr::GfVec2f p3)
-{
-    float mainArea = TArea2D(p1, p2, p3);
-
-    float area1 = TArea2D(point, p2, p3);
-    float area2 = TArea2D(p1, point, p3);
-    float area3 = TArea2D(p1, p2, point);
-
-    float darea1 = area1 / mainArea;
-    float darea2 = area2 / mainArea;
-    float darea3 = area3 / mainArea;
-
-    return {darea1, darea2, darea3};
-}
-
-
-pxr::GfVec3f FromBCoord2D(pxr::GfVec3f bary, pxr::GfVec3f p1, pxr::GfVec3f p2, pxr::GfVec3f p3)
-{
-    return {
-        (bary[0] * p1[0]) + (bary[1] * p2[0]) + (bary[2] * p3[0]),
-        (bary[0] * p1[1]) + (bary[1] * p2[1]) + (bary[2] * p3[1]),
-        (bary[0] * p1[2]) + (bary[1] * p2[2]) + (bary[2] * p3[2])
-    };
 }
 
 
@@ -697,98 +801,42 @@ float Vec2DAngle(pxr::GfVec2f v1, pxr::GfVec2f v2)
 }
 
 
-bool IsIn2DTriangle(pxr::GfVec2f point, pxr::GfVec2f p1,
-                    pxr::GfVec2f p2, pxr::GfVec2f p3)
-{
-    pxr::GfVec2f pp1 = p1 - point;
-    pxr::GfVec2f pp2 = p2 - point;
-    pxr::GfVec2f pp3 = p3 - point;
-
-    float vecAngles = Vec2DAngle(pp1, pp2) +
-                      Vec2DAngle(pp2, pp3) +
-                      Vec2DAngle(pp3, pp1);
-
-    return vecAngles == (float)(2 * M_PI);
-}
-
-
-float Round(float value, unsigned int decimals)
-{
-    int exp = std::pow(10, decimals);
-    return std::round(value * exp) / exp;
-}
-
-
 bool UsdPlugin::UsdGeom::UsdGeomUvToPoint::Evaluate(
         Gex::NodeAttributeData &context,
         Gex::GraphContext &graphContext,
         Gex::NodeProfiler &profiler)
 {
-    auto mesh = context.GetAttribute("Mesh").GetValue<pxr::UsdGeomMesh>();
+    auto mesh = context.GetAttribute("Mesh").GetValue<UsdTriangulatedMesh>();
     auto u = context.GetAttribute("U").GetValue<float>();
     auto v = context.GetAttribute("V").GetValue<float>();
     pxr::GfVec2f uvPoint(u, v);
 
-    std::vector<Face> matchingFaces;
-
-    pxr::VtArray<pxr::GfVec3f> meshPoints;
-    mesh.GetPointsAttr().Get(&meshPoints);
-
-    pxr::VtArray<int> faceLength;
-    mesh.GetFaceVertexCountsAttr().Get(&faceLength);
-
-    pxr::VtArray<int> faceVertices;
-    mesh.GetFaceVertexIndicesAttr().Get(&faceVertices);
-
-    pxr::UsdGeomPrimvarsAPI primvars(mesh.GetPrim());
-    pxr::VtArray<pxr::GfVec2f> uvPts;
-
     auto uvmap = context.GetAttribute("UVPrimvar").GetValue<std::string>();
-    pxr::UsdGeomPrimvar uvPrimVar = primvars.GetPrimvar(pxr::TfToken(uvmap));
-    uvPrimVar.Get(&uvPts);
+
+    // Compute uv only if the uvmap is not the same.
+    // TODO : Add a 'force' parameter ?
+    if (mesh.UVMapName() != uvmap)
+        mesh.ComputeUvs(uvmap);
 
     // Check for each faces if it contains the uv point.
-    unsigned int index = 0;
-    for (auto length : faceLength)
+    for (const Triangle& triangle : mesh.GetTriangles())
     {
-        unsigned int stop = index + length;
-
-        std::vector<pxr::GfVec3f> points;
-        std::vector<pxr::GfVec2f> uvs;
-        for (; index < stop; index++)
+        if (triangle.IsInUVsTriangle(uvPoint))
         {
-            points.push_back(meshPoints[faceVertices[index]]);
-            uvs.push_back(uvPts[index]);
-        }
-
-        if (points.size() != 3)
-        {
-            continue;
-        }
-
-        pxr::GfVec3f bary = BCoord2D(uvPoint, uvs[0], uvs[1], uvs[2]);
-
-        if (bary[0] >= 0 && bary[0] <= 1 &&
-            bary[1] >= 0 && bary[1] <= 1 &&
-            bary[2] >= 0 && bary[2] <= 1 &&
-            Round(bary[0] + bary[1] + bary[2], 3) == 1.0)
-        {
-            pxr::GfVec3f pos = FromBCoord2D(bary, points[0], points[1], points[2]);
-            context.GetAttribute("Position").SetValue(pos);
+            context.GetAttribute("Position").SetValue(
+                    triangle.UvToMesh(uvPoint));
             return true;
         }
     }
 
-    // For each matching faces, check the ratio point on
-    // the triangle plane.
-
+    context.GetAttribute("Position").SetValue(pxr::GfVec3f(0, 0, 0));
     return true;
 }
 
 
 void UsdPlugin::UsdGeom::UsdGeomUVNormal::InitAttributes()
 {
-    CreateAttribute<pxr::UsdGeomMesh>("Mesh", Gex::AttrValueType::Single,
+    CreateAttribute<UsdTriangulatedMesh>("Mesh", Gex::AttrValueType::Single,
                                       Gex::AttrType::Static);
 
     CreateAttribute<float>("U", Gex::AttrValueType::Single,
@@ -833,75 +881,35 @@ bool UsdPlugin::UsdGeom::UsdGeomUVNormal::Evaluate(
         Gex::GraphContext &graphContext,
         Gex::NodeProfiler &profiler)
 {
-    auto mesh = context.GetAttribute("Mesh").GetValue<pxr::UsdGeomMesh>();
+    auto mesh = context.GetAttribute("Mesh").GetValue<UsdTriangulatedMesh>();
     auto u = context.GetAttribute("U").GetValue<float>();
     auto v = context.GetAttribute("V").GetValue<float>();
     pxr::GfVec2f uvPoint(u, v);
 
-    pxr::VtArray<pxr::GfVec3f> points;
-    mesh.GetPointsAttr().Get(&points);
-
-    pxr::VtArray<pxr::GfVec3f> meshNormals;
-    mesh.GetNormalsAttr().Get(&meshNormals);
-
-    pxr::VtArray<int> faceLength;
-    mesh.GetFaceVertexCountsAttr().Get(&faceLength);
-
-    pxr::VtArray<int> faceVertices;
-    mesh.GetFaceVertexIndicesAttr().Get(&faceVertices);
-
-    pxr::UsdGeomPrimvarsAPI primvars(mesh.GetPrim());
-    pxr::VtArray<pxr::GfVec2f> uvPts;
-
     auto uvmap = context.GetAttribute("UVPrimvar").GetValue<std::string>();
-    pxr::UsdGeomPrimvar uvPrimVar = primvars.GetPrimvar(pxr::TfToken(uvmap));
-    uvPrimVar.Get(&uvPts);
+
+    if (mesh.UVMapName() != uvmap)
+        mesh.ComputeUvs(uvmap);
 
     // Check for each faces if it contains the uv point,
     // if it does, then store the normal vector of the
     // analysed face.
-    unsigned int index = 0;
-    unsigned int face = 0;
     std::vector<pxr::GfVec3f> normals;
-    std::vector<std::vector<pxr::GfVec3f>> actpts;
-    for (auto length : faceLength)
+    auto triangles = mesh.GetTriangles();
+    for (auto triangle : triangles)
     {
-        unsigned int stop = index + length;
-
-        std::vector<pxr::GfVec2f> uvs;
-        std::vector<pxr::GfVec3f> fpts;
-        for (; index < stop; index++)
+        if (triangle.IsInUVsTriangle(uvPoint))
         {
-            fpts.push_back(points[faceVertices[index]]);
-            uvs.push_back(uvPts[index]);
+            normals.push_back(triangle.GetNormal());
         }
-
-        if (uvs.size() == 3)
-        {
-            pxr::GfVec3f bary = BCoord2D(uvPoint, uvs[0], uvs[1], uvs[2]);
-
-            if (bary[0] >= 0 && bary[0] <= 1 &&
-                bary[1] >= 0 && bary[1] <= 1 &&
-                bary[2] >= 0 && bary[2] <= 1 &&
-                Round(bary[0] + bary[1] + bary[2], 3) == 1.0)
-            {
-                normals.push_back(meshNormals[face]);
-                actpts.push_back(fpts);
-            }
-        }
-
-        face++;
     }
 
     if (normals.empty())
     {
-        context.GetAttribute("Normal").SetValue(pxr::GfVec3f(0, 0, 0));
+        context.GetAttribute("Normal").SetValue(
+                pxr::GfVec3f(0, 0, 0));
         return true;
     }
-
-    std::vector<pxr::GfVec3f> n;
-    for (const auto& vec  : normals)
-        n.push_back(vec);
 
     // Once the normals were stored, make an average
     // of those normals.

@@ -42,6 +42,8 @@ namespace UsdPlugin
     {
         struct UsdGeomMeshType: public UnsavableHandler
         {
+            UsdGeomMeshType();
+
             // Initializes the value to an invalid Geom
             // mesh prim api.
             std::any InitValue() const override;
@@ -71,6 +73,10 @@ namespace UsdPlugin
 
         struct Triangle
         {
+            Triangle() = default;
+
+            Triangle(const Triangle& other);
+
             // Point index in the mesh points definitions.
             std::array<int, 3> pointsIndices;
 
@@ -86,8 +92,42 @@ namespace UsdPlugin
             // Points uvs values.
             std::array<pxr::GfVec2f, 3> uvs;
 
+        private:
+            std::string uvMap;
+
+        public:
+            // Returns the uv map name used for last uvs coord
+            // calculation that was launched on this mesh.
+            std::string UVMapName() const;
+
+            // Computes triangle uvs based on provided mesh
+            // map name. This computation is manual as the
+            // uv map primvar name could be different as DCC
+            // defaults (UVMap) and some other map could exist.
             bool ComputeUvs(const pxr::UsdGeomPrimvarsAPI& api,
                             const std::string& uvPrimvarName);
+
+            // Compute barycentric coordinates from specified
+            // uv point. Note that uvs must have been computed
+            // to get a valid result.
+            pxr::GfVec3f UVsBaryCentricCoord(pxr::GfVec2f uv) const;
+
+            // Check whether specified uv point is in current
+            // uv coordinates triangle. Note that uvs must
+            // have been computed to get a valid result.
+            bool IsInUVsTriangle(pxr::GfVec2f uv) const;
+
+            // Projects bary centric coordinates to actual
+            // triangle point in 3D space.
+            pxr::GfVec3f FromBaryCentricCoord(
+                    pxr::GfVec3f barycentric) const;
+
+            // Project uv point to actual 3D mesh point based
+            // on bary centric coordinates.
+            pxr::GfVec3f UvToMesh(pxr::GfVec2f uv) const;
+
+            // Computes the normal of the triangle.
+            pxr::GfVec3f GetNormal() const;
         };
 
 
@@ -96,6 +136,7 @@ namespace UsdPlugin
             pxr::UsdGeomMesh msh;
             std::vector<Triangle> triangles;
             bool isValid;
+            std::string uvMap;
 
         public:
             UsdTriangulatedMesh();
@@ -112,16 +153,25 @@ namespace UsdPlugin
         public:
             pxr::UsdGeomMesh GetMesh() const;
 
+            std::string UVMapName() const;
+
             bool IsValid() const;
 
             operator bool();
 
-            bool ComputeUvs(const pxr::UsdGeomPrimvarsAPI& api,
-                            const std::string& uvPrimvarName);
+            bool ComputeUvs(const std::string& uvPrimvarName);
+
+            std::vector<Triangle> GetTriangles() const;
         };
 
 
         struct MeshToUsdTriangulatedMesh: public TSys::TypeConverter
+        {
+            std::any Convert(std::any from, std::any to) const;
+        };
+
+
+        struct UsdTriangulatedMeshToMesh: public TSys::TypeConverter
         {
             std::any Convert(std::any from, std::any to) const;
         };
