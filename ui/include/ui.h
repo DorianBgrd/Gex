@@ -8,5 +8,6 @@
 #include "commands.h"
 #include "ProfileViewer.h"
 #include "GraphView.h"
+#include "NodeViewer.h"
 
 #endif //GEX_UI_H
