@@ -911,13 +911,32 @@ void Gex::Ui::NodeItem::ConnectToNode()
         return;
     }
 
+    // Add a callback attached to the node so that its
+    // graphic item receives attribute changes and make
+    // it possible to update both ways.
     auto callback = [this](Attribute* attribute,
                            const AttributeChange& change)
     {
         this->graphScene->OnNodeModified(this->node);
     };
-
     cbIndex = node->RegisterAttributeCallback(callback);
+
+    // This callback will be launched when the node is
+    // deleted before its graphical representation, then
+    // the about to be deleted callback will not have to
+    // be removed.
+    // Setting cbConnected to false makes it possible to
+    // avoid disconnection when the graphical item will
+    // be deleted.
+    auto delCallback = [this](){
+        if (this->cbConnected)
+        {
+            this->node->DeregisterAttributeCallback(this->cbIndex);
+            this->cbConnected = false;
+        }
+    };
+    delIndex = node->RegisterAboutToBeDeletedCallback(delCallback);
+
     cbConnected = true;
 }
 
@@ -927,6 +946,7 @@ void Gex::Ui::NodeItem::DisconnectFromNode()
     if (cbConnected)
     {
         node->DeregisterAttributeCallback(cbIndex);
+        node->DeregisterAboutToBeDeletedCallback(delIndex);
         cbConnected = false;
     }
 }
@@ -1817,9 +1837,9 @@ Gex::Node* Gex::Ui::NodeGraphContext::ReferenceNode(std::string path, std::strin
 }
 
 
-void Gex::Ui::NodeGraphContext::DeleteNode(Gex::Node* node_)
+bool Gex::Ui::NodeGraphContext::DeleteNode(Gex::Node* node_)
 {
-    node->RemoveNode(node_);
+    return node->RemoveNode(node_);
 }
 
 
@@ -2582,12 +2602,16 @@ void Gex::Ui::NodeGraphScene::SwitchGraphContext(NodeGraphContext* context)
 void Gex::Ui::NodeGraphScene::DeleteNode(NodeItem* item)
 {
     Gex::Node* node = item->Node();
+
+    if (!graphContext->DeleteNode(node))
+    {
+        return;
+    }
+
     nodeItems.remove(item->Node());
 
     removeItem(item);
     delete item;
-
-    graphContext->DeleteNode(node);
 }
 
 
@@ -2710,7 +2734,11 @@ void Gex::Ui::NodeGraphScene::DeleteLink(LinkItem* item)
     AttributeItem* source = item->Source();
     AttributeItem* dest = item->Dest();
 
-    dest->Attribute()->DisconnectSource(source->Attribute());
+    if (!dest->Attribute()->DisconnectSource(source->Attribute()))
+    {
+        return;
+    }
+
     removeItem(item);
     delete item;
 }

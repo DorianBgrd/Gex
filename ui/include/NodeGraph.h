@@ -288,7 +288,8 @@ namespace Gex
             bool userCustomBorderColor = false;
             qreal attributesY;
 
-            unsigned int cbIndex;
+            Gex::CallbackId cbIndex;
+            Gex::CallbackId delIndex;
             bool cbConnected = false;
 
             bool savePosition = true;
@@ -509,7 +510,7 @@ namespace Gex
 
             Gex::Node* ReferenceNode(std::string, std::string);
 
-            void DeleteNode(Gex::Node*);
+            bool DeleteNode(Gex::Node*);
 
             Gex::NodeList DuplicateNodes(Gex::NodeList nodes, bool copyLinks);
         };
