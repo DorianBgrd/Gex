@@ -89,9 +89,12 @@ namespace Gex
 
         CallbackId invalidCbId = 0;
         CallbackId scheduleCbId = 0;
+        CallbackId deleteCbId = 0;
         InvalidateCallbacks invalidateCallbacks;
         ScheduleCallbacks scheduleCallbacks;
         AttributeChangedCallbacks attrCallbacks;
+        AboutToBeDeletedCallbacks deleteCallbacks;
+
         NodeMetadata metadata;
 
         std::string referencePath;
@@ -203,9 +206,16 @@ namespace Gex
          */
 		std::string SetName(const std::string& p);
 
-        unsigned int RegisterAttributeCallback(AttributeChangeCallback cb);
+        CallbackId RegisterAttributeCallback(
+                AttributeChangeCallback cb);
 
-        bool DeregisterAttributeCallback(unsigned int index);
+        bool DeregisterAttributeCallback(CallbackId index);
+
+        CallbackId RegisterAboutToBeDeletedCallback(
+                AboutToBeDeletedCallback cb);
+
+        bool DeregisterAboutToBeDeletedCallback(
+                CallbackId id);
 
     protected:
 		// Adds attribute to node.

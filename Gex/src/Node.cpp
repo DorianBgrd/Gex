@@ -11,6 +11,7 @@
 #include "Tsys/include/tsys.h"
 #include "Tsys/include/defaultTypes.h"
 
+#include <iterator>
 #include <filesystem>
 #include <map>
 #include <any>
@@ -57,6 +58,16 @@ void Gex::Node::SetParent(Node* parent_)
 
 Gex::Node::~Node()
 {
+    if (!deleteCallbacks.empty())
+    {
+        for (auto iter = deleteCallbacks.rbegin();
+             iter != deleteCallbacks.rend();
+             iter++)
+        {
+            iter->second();
+        }
+    }
+
 	for (std::pair<std::string, Attribute*> p : attributes)
 	{
 		delete p.second;
@@ -283,10 +294,10 @@ std::string Gex::Node::SetName(const std::string& p)
 }
 
 
-unsigned int Gex::Node::RegisterAttributeCallback(
+Gex::CallbackId Gex::Node::RegisterAttributeCallback(
         AttributeChangeCallback cb)
 {
-    unsigned int id = nextId;
+    CallbackId id = nextId;
     attrCallbacks[id] = std::move(cb);
 
     nextId++;
@@ -305,6 +316,32 @@ bool Gex::Node::DeregisterAttributeCallback(
         return false;
 
     attrCallbacks.erase(idx);
+    return true;
+}
+
+
+Gex::CallbackId Gex::Node::RegisterAboutToBeDeletedCallback(
+        AboutToBeDeletedCallback cb)
+{
+    CallbackId id = deleteCbId;
+    deleteCallbacks[deleteCbId] = std::move(cb);
+
+    deleteCbId++;
+    return id;
+}
+
+
+bool Gex::Node::DeregisterAboutToBeDeletedCallback(
+        CallbackId index)
+{
+    if (deleteCallbacks.empty())
+        return false;
+
+    auto idx = deleteCallbacks.find(index);
+    if (idx == deleteCallbacks.end())
+        return false;
+
+    deleteCallbacks.erase(idx);
     return true;
 }
 
@@ -922,7 +959,7 @@ bool Gex::CompoundNode::AddNode(Node *node)
 
 bool Gex::CompoundNode::RemoveNode(Node *node)
 {
-    if (!IsEditable() || !HasNode(node))
+    if (IsReferenced() || !IsEditable() || !HasNode(node))
     {
         return false;
     }
