@@ -22,11 +22,13 @@ namespace Gex
 
     typedef std::function<void()> InvalidateCallback;
     typedef std::function<void()> ScheduleCallback;
+    typedef std::function<void()> AboutToBeDeletedCallback;
     typedef std::function<void(Attribute* attribute, const AttributeChange& change)> AttributeChangeCallback;
     typedef std::function<void(std::string)> PluginLoadedCallback;
     typedef std::map<unsigned int, InvalidateCallback> InvalidateCallbacks;
-    typedef std::map<unsigned int, InvalidateCallback> ScheduleCallbacks;
+    typedef std::map<unsigned int, ScheduleCallback> ScheduleCallbacks;
     typedef std::map<unsigned int, AttributeChangeCallback> AttributeChangedCallbacks;
+    typedef std::map<unsigned int, AboutToBeDeletedCallback> AboutToBeDeletedCallbacks;
     typedef std::function<void(Node*)> NodeCallback;
     typedef std::function<void(Node*, bool)> NodeResCallback;
     typedef std::function<void(const GraphContext& context)> GraphCtxCallback;
