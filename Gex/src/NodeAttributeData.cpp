@@ -2,21 +2,21 @@
 #include "Gex/include/NodeAttributeData.h"
 
 
-Gex::NodeAttributeData::NodeAttributeData(Node* n)
+Gex::NodeAttributeData::NodeAttributeData(const NodePtr& n)
 {
     node = n;
     attribute = nullptr;
 }
 
 
-Gex::NodeAttributeData::NodeAttributeData(Attribute* attr)
+Gex::NodeAttributeData::NodeAttributeData(const AttributePtr& attr)
 {
-    node = attr->Node();
+    node = attr->Node().lock();
     attribute = attr;
 }
 
 
-Gex::Node* Gex::NodeAttributeData::GetNode() const
+Gex::NodePtr Gex::NodeAttributeData::GetNode() const
 {
     return node;
 }
@@ -87,7 +87,7 @@ Gex::NodeAttributeData Gex::NodeAttributeData::GetAttribute(std::string name, Fe
             return NodeAttributeData(node);
         }
 
-        return NodeAttributeData(node->GetAttribute(name));
+        return NodeAttributeData(node->GetAttribute(name).ToShared());
     }
 
     if (!attribute->HasChildAttribute(name))

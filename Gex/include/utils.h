@@ -9,6 +9,8 @@ namespace Gex::Utils
     std::string ValidateName(const std::string& name);
 
     std::string UniqueName(const std::string& name, const NodeList& nodes);
+
+    std::string GetEnv(const std::string& name);
 }
 
 #endif //GEX_UTILS_H

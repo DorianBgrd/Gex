@@ -46,7 +46,7 @@ add_custom_command(
         COMMAND
         python $ENV{BUILD_UTILS_DIR}/BuildUtils/build_package.py --directory ${BUILD_PACKAGE_DIR}
         --name Gex --search_directories ${BUILD_PACKAGE_DEPENDENCIES_DIRS} ${Boost_LIBRARY_DIRS}
-        ${CMAKE_BINARY_DIR} ${CMAKE_CURRENT_BINARY_DIR} ${TSYS_LIBRARY_DIR}
+        ${CMAKE_BINARY_DIR} ${CMAKE_CURRENT_BINARY_DIR} ${TSYS_LIBRARY_DIR} ${CMAKE_BINARY_DIR}/Gex
         --library ${CMAKE_CURRENT_BINARY_DIR}/Gex_Python.dll
         --dependencies Gex.dll
 )

@@ -152,7 +152,7 @@ namespace Gex
             friend NodeItem;
             friend NodeGraphScene;
 
-            Gex::Attribute* attribute;
+            Gex::AttributeWkPtr attribute;
             PlugItem* input;
             PlugItem* output;
             QGraphicsTextItem* text;
@@ -180,14 +180,14 @@ namespace Gex
                 return Type;
             }
 
-            AttributeItem(Gex::Attribute* attr,
+            AttributeItem(Gex::AttributeWkPtr attr,
                           AttributeItem* parent,
                           NodeItem* node=nullptr);
 
-            AttributeItem(Gex::Attribute* attr,
+            AttributeItem(Gex::AttributeWkPtr attr,
                           NodeItem* node=nullptr);
 
-            void Initialize(Gex::Attribute* attr,
+            void Initialize(Gex::AttributeWkPtr attr,
                             AttributeItem* parent,
                             NodeItem* node);
 
@@ -212,9 +212,9 @@ namespace Gex
 
             bool TextVisibility() const;
 
-            Gex::Attribute* Attribute() const;
+            Gex::AttributeWkPtr Attribute() const;
 
-            AttributeItem* GetSubAttribute(Gex::Attribute* attr) const;
+            AttributeItem* GetSubAttribute(Gex::AttributeWkPtr attr) const;
 
 //        void Adjust();
             void CreateAttributes();
@@ -277,7 +277,7 @@ namespace Gex
         {
             QVector<LinkItem*> links;
             QVector<AttributeItem*> attributes;
-            Gex::Node* node;
+            Gex::NodePtr node;
             NodePlugItem* sourcePlug;
             NodePlugItem* destPlug;
             NodeNameItem* title;
@@ -344,7 +344,7 @@ namespace Gex
 
         public:
             explicit
-            NodeItem(Gex::Node* node, NodeGraphScene* scene,
+            NodeItem(Gex::NodePtr node, NodeGraphScene* scene,
                      QGraphicsItem* parent=nullptr);
 
             void ConnectToNode();
@@ -355,7 +355,7 @@ namespace Gex
 
             void TitleChanged(const QString& text);
 
-            Gex::Node* Node() const;
+            Gex::NodePtr Node() const;
 
             void SetAttributeVisibility(AttributeVisibilityMode mode);
 
@@ -369,7 +369,7 @@ namespace Gex
 
             AttributeItem* FindAttribute(std::string longname) const;
 
-            AttributeItem* GetAttribute(Gex::Attribute* attr) const;
+            AttributeItem* GetAttribute(Gex::AttributeWkPtr attr) const;
 
             void InitializeLinks();
 
@@ -484,7 +484,7 @@ namespace Gex
 
             PlugItem* SourcePlug() const;
 
-            Gex::Attribute* Attribute() const;
+            Gex::AttributeWkPtr Attribute() const;
 
             void SetState(State);
 
@@ -495,22 +495,22 @@ namespace Gex
         class NodeGraphContext
         {
             QString name;
-            Gex::CompoundNode* node;
+            Gex::CompoundNodePtr node;
 
         public:
-            NodeGraphContext(const QString& name, Gex::CompoundNode* node);
+            NodeGraphContext(const QString& name, Gex::CompoundNodePtr node);
 
             QString Name() const;
 
-            Gex::CompoundNode* Compound() const;
+            Gex::CompoundNodePtr Compound() const;
 
             Gex::NodeList GetNodes() const;
 
-            Gex::Node* CreateNode(std::string, std::string);
+            Gex::NodePtr CreateNode(std::string, std::string);
 
-            Gex::Node* ReferenceNode(std::string, std::string);
+            Gex::NodePtr ReferenceNode(std::string, std::string);
 
-            bool DeleteNode(Gex::Node*);
+            bool DeleteNode(Gex::NodePtr);
 
             Gex::NodeList DuplicateNodes(Gex::NodeList nodes, bool copyLinks);
         };
@@ -526,7 +526,7 @@ namespace Gex
             QPointF mouseZoomingPos;
 
             NodeGraphContext* graphContext;
-            QMap<Gex::Node*, NodeItem*> nodeItems;
+            QMap<Gex::NodePtr, NodeItem*> nodeItems;
             NodeItem* input = nullptr;
             NodeItem* output = nullptr;
             LinkItem* pressedLink = nullptr;
@@ -544,20 +544,20 @@ namespace Gex
 
             Q_SIGNAL void NodePlugClicked(NodePlugItem* clickedPlug);
 
-            Q_SIGNAL void CompoundNodeDoubleClicked(Gex::CompoundNode*);
+            Q_SIGNAL void CompoundNodeDoubleClicked(Gex::CompoundNodePtr);
 
-            Q_SIGNAL void NodeModified(Gex::Node* node);
+            Q_SIGNAL void NodeModified(Gex::NodePtr node);
 
             void StartPlugLinking(PlugItem* source);
 
         public:
             void OnItemDoubleClicked(QGraphicsItem* item);
 
-            void UpdateNode(Gex::Node* node);
+            void UpdateNode(Gex::NodePtr node);
 
-            void OnNodeModified(Gex::Node* node);
+            void OnNodeModified(Gex::NodePtr node);
 
-            void UpdateNodeAttribute(Gex::Node* node,
+            void UpdateNodeAttribute(Gex::NodePtr node,
                                      QString attribute);
 
             void Clear();
@@ -566,11 +566,11 @@ namespace Gex
 
             void DeleteNode(NodeItem* item);
 
-            void DuplicateNodes(std::vector<Gex::Node*> nodes, bool copyLinks);
+            void DuplicateNodes(std::vector<Gex::NodePtr> nodes, bool copyLinks);
 
             QList<NodeItem*> SelectedNodeItems() const;
 
-            std::vector<Gex::Node*> SelectedNodes() const;
+            std::vector<Gex::NodePtr> SelectedNodes() const;
 
             NodeGraphContext* CurrentContext() const;
 
@@ -590,9 +590,9 @@ namespace Gex
 
             void ReferenceNode(QString type, QString name);
 
-            void NodeEvaluationStarted(Gex::Node* node);
+            void NodeEvaluationStarted(Gex::NodePtr node);
 
-            void NodeEvaluationDone(Gex::Node* node, bool success);
+            void NodeEvaluationDone(Gex::NodePtr node, bool success);
 
             void ClearNodeEvaluation();
 
@@ -612,6 +612,8 @@ namespace Gex
 
             NodeGraphScene* graphScene;
         public:
+//            NodeGraphView(const NodeGraphView& other);
+
             explicit
             NodeGraphView(NodeGraphScene* scene, QWidget* parent=nullptr);
 
@@ -635,8 +637,8 @@ namespace Gex
             void SetSelectedNodesVisConnected();
 
             QList<QGraphicsItem*> FilterSelectedItems(
-                    const QList<QGraphicsItem*> items) const
-            override;
+                    const QList<QGraphicsItem*> items)
+                    const override;
 
             void ExportSelectedNodes();
 
@@ -711,7 +713,7 @@ namespace Gex
         {
             Q_OBJECT
 
-            Gex::CompoundNode* graph;
+            Gex::CompoundNodePtr graph;
             Gex::Profiler profiler;
             NodeGraphScene* scene = nullptr;
             NodeGraphView* view = nullptr;
@@ -725,7 +727,7 @@ namespace Gex
             static QEvent::Type scheduleEventType;
 
         public:
-            GraphWidget(Gex::CompoundNode* graph,
+            GraphWidget(Gex::CompoundNodePtr graph,
                         QWidget* parent=nullptr);
 
             ~GraphWidget() override;
@@ -734,11 +736,11 @@ namespace Gex
 
             void OnNodeSelected();
 
-            void RegisterContext(Gex::CompoundNode* compound);
+            void RegisterContext(Gex::CompoundNodePtr compound);
 
             void SwitchContext(unsigned int index);
 
-            void SwitchGraph(Gex::CompoundNode* graph);
+            void SwitchGraph(Gex::CompoundNodePtr graph);
 
         protected:
             void ClearContexts();
@@ -751,9 +753,9 @@ namespace Gex
 
 //        void mouseReleaseEvent(QMouseEvent* event) override;
 
-            void UpdateNode(Gex::Node* node);
+            void UpdateNode(Gex::NodePtr node);
 
-            void UpdateNodeAttribute(Gex::Node* node,
+            void UpdateNodeAttribute(Gex::NodePtr node,
                                      QString attribute);
 
             void DisableInteraction();
@@ -764,7 +766,7 @@ namespace Gex
 
             void RunGraph();
 
-            void RunFromNode(Gex::Node* node);
+            void RunFromNode(Gex::NodePtr node);
 
             void InteractiveRun();
 
@@ -774,7 +776,7 @@ namespace Gex
 
             Q_SIGNAL void GraphEvaluated(const Gex::Profiler profiler);
 
-            Q_SIGNAL void SelectedNodeChanged(const std::vector<Gex::Node*> nodes);
+            Q_SIGNAL void SelectedNodeChanged(const std::vector<Gex::NodeWkPtr> nodes);
         };
     }
 }

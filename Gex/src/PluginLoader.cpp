@@ -318,6 +318,9 @@ std::string ToAbsolutePath(const std::string& path,
     std::string st = path.substr(0, 2);
 
     std::filesystem::path p(path);
+    if (path == ".")
+        return start;
+
     if (st == "./" || st == ".\\")
     {
         std::filesystem::path relPath(
@@ -403,7 +406,8 @@ Gex::PluginLoader* Gex::PluginLoader::LoadPlugin(
             const char* current = std::getenv(env.c_str());
             if (current)
             {
-                value = std::string(current) + ";" + value;
+                std::string cur = std::string(current) + ";";
+                value.insert(value.begin(), cur.begin(), cur.end());
             }
 
             if (!SetEnvironmentVariableA(env.c_str(), value.c_str()))

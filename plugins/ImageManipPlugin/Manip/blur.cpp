@@ -18,9 +18,13 @@ struct Point
 
     bool operator < (const Point& other) const
     {
-        return ((x + y) < (other.x + other.y));
+        if (y == other.y)
+            return (x < other.x);
+
+        return (y < other.y);
     }
 };
+
 
 
 void GrowSelection(std::set<Point> &points)
@@ -47,58 +51,72 @@ void GrowSelection(std::set<Point> &points)
 }
 
 
+QColor Average(std::vector<QColor> colors)
+{
+    size_t sumR = 0;
+    size_t sumG = 0;
+    size_t sumB = 0;
+    size_t sumA = 0;
+    for (auto c : colors)
+    {
+        sumR += c.red();
+        sumG += c.green();
+        sumB += c.blue();
+        sumA += c.alpha();
+    }
+
+    size_t size = colors.size();
+    return QColor(sumR / size, sumG / size,
+                  sumB / size, sumA / size);
+}
+
+
 QImage ImageManip::Manip::BoxBlurPixmap(const QImage& image, int steps)
 {
     int width = image.width();
     int height = image.height();
 
     QImage blurred(width, height, image.format());
-    for (int x = 0; x < width; x++)
-    {
-        for (int y = 0; y < height; y++)
-        {
-            std::set<Point> points = {
-                    Point(x, y)
-            };
+    std::map<int, const QRgba64*> scanLines;
 
+    for (int y = 0; y < height; y++)
+    {
+        auto* editScanLine = reinterpret_cast<QRgba64*>(blurred.scanLine(y));
+
+        for (int x = 0; x < width; x++)
+        {
+            std::set<Point> points = {Point(x, y)};
             for (int s = 0; s < steps; s++)
             {
                 GrowSelection(points);
             }
 
-            int sumR = 0;
-            int sumG = 0;
-            int sumB = 0;
-            int sumA = 0;
-            int n = 0;
-
-            for (const Point& p : points)
+            std::vector<QColor> colors = {reinterpret_cast<const QRgba64*>(
+                    image.constScanLine(y))[x]};
+            for (auto p : points)
             {
-                if (p.x < 0 || p.x >= width)
-                {
+                if (p.x < 0 || p.x >= width || p.y < 0 || p.y >= height)
                     continue;
+
+                auto msl = scanLines.find(p.y);
+                const QRgba64* line;
+
+                if (msl == scanLines.end())
+                {
+                    const auto* ssl = reinterpret_cast<const QRgba64*>(
+                            image.constScanLine(p.y));
+                    scanLines[p.y] = ssl;
+                    line = ssl;
                 }
-                if (p.y < 0 || p.y >= height)
+                else
                 {
-                    continue;
+                    line = msl->second;
                 }
 
-                QColor c = image.pixelColor(p.x, p.y);
-
-                sumR += c.red();
-                sumG += c.green();
-                sumB += c.blue();
-                sumA += c.alpha();
-                n++;
+                colors.emplace_back(line[p.x]);
             }
 
-            QColor newColor(
-                    sumR / n, sumG / n,
-                    sumB / n, sumA / n
-                    );
-
-            blurred.setPixelColor(
-                    x, y, newColor);
+            editScanLine[x] = Average(colors).rgba64();
         }
     }
 

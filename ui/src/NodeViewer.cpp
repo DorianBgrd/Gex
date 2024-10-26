@@ -13,17 +13,21 @@ Gex::Ui::NodeViewer::NodeViewer():
 }
 
 
-Gex::Node* Gex::Ui::NodeViewer::CurrentNode() const
+Gex::NodeWkPtr Gex::Ui::NodeViewer::CurrentNode() const
 {
     return node;
 }
 
 
-void Gex::Ui::NodeViewer::SetCurrentNode(Gex::Node* n)
+void Gex::Ui::NodeViewer::SetCurrentNode(Gex::NodeWkPtr n)
 {
-    if (node)
+    if (node && connected)
     {
         DisconnectFromNode(node);
+
+        if (deleteCallbackIndex)
+            node->DeregisterAboutToBeDeletedCallback(
+                    deleteCallbackIndex);
     }
 
     node = n;
@@ -36,37 +40,54 @@ void Gex::Ui::NodeViewer::SetCurrentNode(Gex::Node* n)
 
 void Gex::Ui::NodeViewer::closeEvent(QCloseEvent *event)
 {
-    DisconnectFromNode(node);
+    if (connected && node)
+        DisconnectFromNode(node);
 
     QWidget::closeEvent(event);
 }
 
 
-void Gex::Ui::NodeViewer::ConnectToNode(Gex::Node* n)
+void Gex::Ui::NodeViewer::ConnectToNode(Gex::NodeWkPtr n)
 {
-    if (!node)
+    if (!node || connected)
+    {
         return;
+    }
 
-    if (callbackIndex != -1)
-        DisconnectFromNode(node);
-
-    auto cb = [this](Gex::Attribute* attribute,
-           const Gex::AttributeChange& change)
+    auto cb = [this](
+            const Gex::AttributePtr& attribute,
+            const Gex::AttributeChange& change
+            )
     {
         this->OnAttributeUpdated(attribute, change);
     };
 
     callbackIndex = n->RegisterAttributeCallback(cb);
+    connected = true;
+
+    auto dcb = [this]()
+    {
+        if (this->node && this->connected)
+            this->DisconnectFromNode(this->node);
+    };
+
+    deleteCallbackIndex = node->RegisterAboutToBeDeletedCallback(dcb);
 }
 
 
-void Gex::Ui::NodeViewer::DisconnectFromNode(Gex::Node* n)
+void Gex::Ui::NodeViewer::DisconnectFromNode(Gex::NodeWkPtr n)
 {
+    if (!connected)
+        return;
+
     if (callbackIndex == -1)
         return;
 
-    n->DeregisterAttributeCallback(callbackIndex);
+    if (n)
+        n->DeregisterAttributeCallback(callbackIndex);
+
     callbackIndex = -1;
+    connected = false;
 }
 
 
@@ -149,7 +170,7 @@ Gex::Ui::ViewerDock::ViewerDock(QWidget* parent):
 }
 
 
-void Gex::Ui::ViewerDock::OnNodeSelected(Gex::Node* node)
+void Gex::Ui::ViewerDock::OnNodeSelected(Gex::NodeWkPtr node)
 {
     if (viewer)
     {
@@ -187,13 +208,17 @@ void Gex::Ui::ViewerDock::OnNodeSelected(Gex::Node* node)
 
 
 void Gex::Ui::ViewerDock::NodeSelectionChanged(
-        const std::vector<Gex::Node*> nodes)
+        const std::vector<Gex::NodeWkPtr> nodes)
 {
-    Gex::Node* node;
-    if (nodes.empty())
-        node = nullptr;
-    else
-        node = *nodes.begin();
+    Gex::NodeWkPtr node;
+    for (const NodeWkPtr& n : nodes)
+    {
+        if (!n)
+            continue;
+
+        node = n;
+        break;
+    }
 
     OnNodeSelected(node);
 }

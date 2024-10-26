@@ -38,7 +38,7 @@ void Gex::ExportToFile(const std::string& filepath,
 }
 
 
-Gex::Feedback Gex::SaveGraph(Gex::Node *graph, const std::string& filepath)
+Gex::Feedback Gex::SaveGraph(Gex::NodePtr graph, const std::string& filepath)
 {
     std::string str;
     Feedback result = ExportToString(graph, str);
@@ -59,7 +59,7 @@ Gex::Feedback Gex::SaveGraph(Gex::Node *graph, const std::string& filepath)
 
 
 template<typename Writer>
-Gex::Feedback _ExportToString(Gex::Node* graph, std::string& str)
+Gex::Feedback _ExportToString(Gex::NodePtr graph, std::string& str)
 {
     Gex::Feedback result;
 
@@ -86,7 +86,7 @@ Gex::Feedback _ExportToString(Gex::Node* graph, std::string& str)
 }
 
 
-Gex::Feedback Gex::ExportToString(Node* graph, std::string& str, bool pretty)
+Gex::Feedback Gex::ExportToString(NodePtr graph, std::string& str, bool pretty)
 {
     if (pretty)
     {
@@ -137,7 +137,7 @@ bool LoadJsonFile(const std::string& filepath, rapidjson::Document& json,
 }
 
 
-Gex::Node* Gex::LoadGraph(const std::string& filepath, Feedback* success)
+Gex::NodePtr Gex::LoadGraph(const std::string& filepath, Feedback* success)
 {
     rapidjson::Document doc;
     if (!LoadJsonFile(filepath, doc, success))
@@ -145,10 +145,9 @@ Gex::Node* Gex::LoadGraph(const std::string& filepath, Feedback* success)
         return nullptr;
     }
 
-    auto* graph = NodeFactory::GetFactory()->LoadNode(doc.GetObject());
+    auto graph = NodeFactory::GetFactory()->LoadNode(doc.GetObject());
     if (!graph)
     {
-        delete graph;
         if (success)
             success->Set(Status::Failed, "Failed deserializing graph.");
         return nullptr;
@@ -160,7 +159,7 @@ Gex::Node* Gex::LoadGraph(const std::string& filepath, Feedback* success)
 }
 
 
-Gex::Node* Gex::LoadGraphString(const std::string& content, Feedback* success)
+Gex::NodePtr Gex::LoadGraphString(const std::string& content, Feedback* success)
 {
     rapidjson::Document doc;
     if (!LoadJsonString(content, doc, success))
@@ -168,10 +167,9 @@ Gex::Node* Gex::LoadGraphString(const std::string& content, Feedback* success)
         return nullptr;
     }
 
-    auto* graph = NodeFactory::GetFactory()->LoadNode(doc.GetObject());
+    auto graph = NodeFactory::GetFactory()->LoadNode(doc.GetObject());
     if (!graph)
     {
-        delete graph;
         if (success)
             success->Set(Status::Failed, "Failed deserializing graph.");
         return nullptr;
@@ -182,10 +180,10 @@ Gex::Node* Gex::LoadGraphString(const std::string& content, Feedback* success)
     return graph;
 }
 
-Gex::Feedback Gex::ExportAsCompound(NodeList nodes, Node* graph, const std::string& directory,
+Gex::Feedback Gex::ExportAsCompound(NodeList nodes, NodePtr graph, const std::string& directory,
                                     const std::string& name, bool force)
 {
-    CompoundNode* graphCmp = CompoundNode::FromNode(graph);
+    CompoundNodePtr graphCmp = CompoundNode::FromNode(graph);
 
     Feedback success;
     if (!graphCmp)
@@ -196,7 +194,7 @@ Gex::Feedback Gex::ExportAsCompound(NodeList nodes, Node* graph, const std::stri
         return success;
     }
 
-    Node* compound = graphCmp->ToCompound(nodes, true, false);
+    NodePtr compound = graphCmp->ToCompound(nodes, true, false);
 
     rapidjson::Document json;
     rapidjson::Value& dict = json.SetObject();
@@ -248,37 +246,40 @@ Gex::NodeList Gex::ImportNodes(const std::string& filepath,
 {
     rapidjson::Document json;
 
-    auto* importGraph = LoadGraph(filepath);
+    auto importGraph = LoadGraph(filepath);
 
-    auto* importCompound = CompoundNode::FromNode(importGraph);
+    auto importCompound = CompoundNode::FromNode(importGraph);
 
-    for (auto* node : importCompound->GetNodes())
+    for (auto node : importCompound->GetNodes())
     {
         destinationNode->AddNode(node);
     }
 
     auto res = importCompound->GetNodes();
 
-    delete importGraph;
 
     return res;
 }
 
 
-typedef std::pair<Gex::Attribute*, std::string> AttrStr;
-typedef std::pair<std::string, Gex::Attribute*> StrAttr;
+typedef std::pair<Gex::AttributePtr, std::string> AttrStr;
+typedef std::pair<std::string, Gex::AttributePtr> StrAttr;
 
 
-bool Gex::ReloadNode(Gex::Node* node)
+bool Gex::ReloadNode(Gex::NodePtr node)
 {
     if (!node->IsReferenced())
         return false;
 
+    auto nodeParent = node->Parent();
+    if (nodeParent.expired())
+        return false;
+
     auto referencePath = node->ReferencePath();
 
-    std::vector<Gex::Node*> refNodes;
+    std::vector<Gex::NodePtr> refNodes;
 
-    auto ptc = [referencePath, &refNodes](Gex::Node* n)
+    auto ptc = [referencePath, &refNodes](const Gex::NodePtr& n)
     {
         if (n->ReferencePath() == referencePath)
         {
@@ -299,60 +300,70 @@ bool Gex::ReloadNode(Gex::Node* node)
         return false;
     }
 
-    auto* topNode = *(refNodes.end()--);
-    auto* parent = topNode->Parent();
+    auto topNode = *(refNodes.end()--);
+    auto parent = topNode->Parent();
     std::string name = topNode->Name();
 
     std::vector<AttrStr> inCnx;
     std::vector<StrAttr> outCnx;
 
     // Save input connections and output connections.
-    for (auto* attribute : topNode->GetAllAttributes())
+    for (auto attribute : topNode->GetAllAttributes())
     {
-        if (attribute->IsInput() && attribute->HasSource())
+        if (!attribute)
+            continue;
+
+        auto sharedAttribute = attribute.ToShared();
+        if (sharedAttribute->IsInput() && sharedAttribute->HasSource())
         {
-            auto* source = attribute->Source();
-            inCnx.emplace_back(source, attribute->Longname());
-            attribute->DisconnectSource(source);
+            auto source = sharedAttribute->Source();
+            if (source.expired())
+                continue;
+
+            inCnx.emplace_back(source, sharedAttribute->Longname());
+            sharedAttribute->DisconnectSource(source.lock());
         }
 
-        if (attribute->IsOutput() && attribute->HasDests())
+        if (sharedAttribute->IsOutput() && sharedAttribute->HasDests())
         {
-            for (auto* dest : attribute->Dests())
+            for (const auto& dest : sharedAttribute->Dests())
             {
-                outCnx.emplace_back(dest->Longname(), attribute);
-                attribute->DisconnectDest(dest);
+                if (dest.expired())
+                    continue;
+
+                auto lockedDest = dest.lock();
+                outCnx.emplace_back(lockedDest->Longname(), attribute);
+                sharedAttribute->DisconnectDest(lockedDest);
             }
         }
 
     }
 
-    // Delete node.
-    delete topNode;
-
     // Recreate node.
-    auto* cmpParent = CompoundNode::FromNode(parent);
+    auto cmpParent = CompoundNode::FromNode(parent.lock());
 
-    auto* reloadedNode = cmpParent->ReferenceNode(referencePath, name);
+    cmpParent->RemoveNode(node);
+
+    auto reloadedNode = cmpParent->ReferenceNode(referencePath, name);
 
     // Recreate input connections.
-    for (auto inCn : inCnx)
+    for (const auto& inCn : inCnx)
     {
-        auto* attr = reloadedNode->GetAttribute(inCn.second);
+        auto attr = reloadedNode->GetAttribute(inCn.second);
         if (!attr)
             continue;
 
-        attr->ConnectSource(inCn.first);
+        attr.ToShared()->ConnectSource(inCn.first);
     }
 
     // Recreate output connections.
-    for (auto outCn : outCnx)
+    for (const auto& outCn : outCnx)
     {
-        auto* attr = reloadedNode->GetAttribute(outCn.first);
+        auto attr = reloadedNode->GetAttribute(outCn.first);
         if (!attr)
             continue;
 
-        attr->ConnectSource(outCn.second);
+        attr.ToShared()->ConnectSource(outCn.second);
     }
 
     return true;

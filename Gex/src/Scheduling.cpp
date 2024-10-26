@@ -5,7 +5,7 @@
 #include <set>
 
 
-Gex::ScheduledNode::ScheduledNode(Node* node_)
+Gex::ScheduledNode::ScheduledNode(const NodeWkPtr& node_)
 {
     node = node_;
 }
@@ -27,7 +27,10 @@ bool Gex::ScheduledNode::ShouldBeEvaluated() const
 bool Gex::ScheduledNode::Evaluate(Gex::GraphContext &context,
                                   Gex::NodeProfiler& profiler)
 {
-    return node->Compute(context, profiler);
+    if (node.expired())
+        return false;
+
+    return node.lock()->Compute(context, profiler);
 }
 
 bool Gex::ScheduledNode::Compute(Gex::GraphContext &context,
@@ -43,26 +46,42 @@ bool Gex::ScheduledNode::Evaluated() const
     return evaluated;
 }
 
+
 bool Gex::ScheduledNode::operator==(const ScheduledNode& other) const
 {
-    return (other.node == node);
+    if (node.expired() || other.node.expired())
+    {
+        return false;
+    }
+
+    return (other.node.lock() == node.lock());
 }
 
-bool Gex::ScheduledNode::operator==(const Gex::Node* other) const
+
+bool Gex::ScheduledNode::operator==(const Gex::NodePtr& other) const
 {
-    return (node == other);
+    if (node.expired())
+        return false;
+
+    return (node.lock() == other);
 }
 
 
-bool Gex::ScheduledNode::operator==(const Gex::Node& other) const
+bool Gex::ScheduledNode::operator==(const Gex::NodeWkPtr& other) const
 {
-    return (node == &other);
+    if (node.expired() || other.expired())
+        return false;
+
+    return (node.lock() == other.lock());
 }
 
 
 bool Gex::ScheduledNode::operator==(const ScheduledNode* other) const
 {
-    return (node == other->node);
+    if (node.expired() || other->node.expired())
+        return false;
+
+    return (node.lock() == other->node.lock());
 }
 
 
@@ -89,10 +108,10 @@ std::vector<Gex::ScheduledNode*> _SortScheduledNodes(std::vector<Gex::ScheduledN
 }
 
 
-typedef std::unordered_map<Gex::Node*, Gex::ScheduledNode*> ScheduledNodesDict;
+typedef std::unordered_map<Gex::NodePtr, Gex::ScheduledNode*> ScheduledNodesDict;
 
 
-Gex::ScheduledNode* _GetScheduledNode(Gex::Node* node,
+Gex::ScheduledNode* _GetScheduledNode(Gex::NodePtr node,
                                       ScheduledNodesDict& scheduledNodes)
 {
     Gex::ScheduledNode* scheduledNode;
@@ -110,12 +129,12 @@ Gex::ScheduledNode* _GetScheduledNode(Gex::Node* node,
 }
 
 
-std::vector<Gex::ScheduledNode*> _GetScheduledNodes(std::vector<Gex::Node*> nodes,
+std::vector<Gex::ScheduledNode*> _GetScheduledNodes(std::vector<Gex::NodePtr> nodes,
                                                     ScheduledNodesDict& scheduledNodes,
-                                                    std::vector<Gex::Node*> graphNodes)
+                                                    std::vector<Gex::NodePtr> graphNodes)
 {
     std::vector<Gex::ScheduledNode*> results;
-    std::vector<Gex::Node*> acceptedNodes;
+    std::vector<Gex::NodePtr> acceptedNodes;
 
     std::set nodesSet(nodes.begin(), nodes.end());
     std::set graphSet(graphNodes.begin(), graphNodes.end());
@@ -202,15 +221,15 @@ void ResolveNodesLevels(SchelNode* node, SchelNodeDict& nodes, unsigned int leve
 
 Gex::ScheduleNodeList Gex::ScheduleNodes(NodeList nodes, bool expand)
 {
-    std::map<Gex::Node*, ScheduledNode*> schelNodes;
+    std::map<Gex::NodePtr, ScheduledNode*> schelNodes;
 
     std::vector<Gex::ScheduledNode*> roots;
-    for (auto* node : nodes)
+    for (const auto& node : nodes)
     {
         schelNodes[node] = node->ToScheduledNode();
     }
 
-    for (auto sn: schelNodes)
+    for (const auto& sn: schelNodes)
     {
         auto sources = sn.first->UpstreamNodes();
 
@@ -219,9 +238,12 @@ Gex::ScheduleNodeList Gex::ScheduleNodes(NodeList nodes, bool expand)
             roots.push_back(sn.second);
         }
 
-        for (auto src : sources)
+        for (const auto& src : sources)
         {
-            auto indx = schelNodes.find(src);
+            if (!src)
+                continue;
+
+            auto indx = schelNodes.find(src.ToShared());
             if (indx == schelNodes.end())
             {
                 continue;
@@ -259,11 +281,15 @@ Gex::ScheduleNodeList Gex::ScheduleNodes(NodeList nodes, bool expand)
         {
             auto* n = p;
 
+            if (!n->node.expired())
+                continue;
+
+            NodePtr lockedNode = n->node.lock();
             // If it is a compound, expand it.
-            if (expand && n->node->IsCompound())
+            if (expand && lockedNode->IsCompound())
             {
                 // Transform the compound to a series of scheduled nodes.
-                auto cmpSchels = n->node->ToScheduledNodes();
+                auto cmpSchels = lockedNode->ToScheduledNodes();
 
                 // Append resulting scheduled nodes from resulting scheduled.
                 scheduledNodes.insert(scheduledNodes.end(), cmpSchels.begin(), cmpSchels.end());
@@ -313,7 +339,7 @@ Gex::ScheduleNodeList Gex::ScheduleNodes(NodeList nodes, bool expand)
 
 Gex::ScheduleNodeList::iterator Gex::FindScheduledNode(
         Gex::ScheduleNodeList scheduled,
-        const Gex::Node* node)
+        const Gex::NodePtr node)
 {
     auto pred = [node](ScheduledNode* n){return (*n == node);};
 
@@ -321,13 +347,13 @@ Gex::ScheduleNodeList::iterator Gex::FindScheduledNode(
 }
 
 
-Gex::ScheduleNodeList Gex::SubScheduledNodes(ScheduleNodeList list, Gex::Node* node)
+Gex::ScheduleNodeList Gex::SubScheduledNodes(ScheduleNodeList list, Gex::NodePtr node)
 {
     ScheduleNodeList subGraph;
 
     auto pred = [node](ScheduledNode* s)
     {
-        return (s->node == node);
+        return (!s->node.expired() && s->node.lock() == node);
     };
 
     auto iter = std::find_if(list.begin(), list.end(), pred);

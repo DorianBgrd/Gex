@@ -10,9 +10,12 @@ bool Gex_PluginLoader_LoadPlugin(boost::python::tuple args,
 {
     const std::string name = boost::python::extract<const std::string>(args[0]);
 //    const Gex::PluginType type = boost::python::extract<const Gex::PluginType>(args[1]);
-    int type = boost::python::extract<int>(args[1]);
 
-    return Gex::PluginLoader::LoadPlugin(name);
+    Gex::Feedback* res = nullptr;
+    if (boost::python::len(args) > 1)
+        res = boost::python::extract<Gex::Feedback*>(args[1]);
+
+    return Gex::PluginLoader::LoadPlugin(name, res);
 }
 
 

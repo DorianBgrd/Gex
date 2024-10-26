@@ -9,9 +9,11 @@
 #include "Attribute.h"
 #include "Profiler.h"
 #include "Scheduling.h"
+
 #include <map>
 #include <vector>
 #include <string>
+#include <memory>
 
 #include "rapidjson/document.h"
 
@@ -46,9 +48,9 @@ namespace Gex
     };
 
 
-	class GEX_API Node
+	class GEX_API Node: public std::enable_shared_from_this<Node>
 	{
-	protected:
+    protected:
         friend CompoundNode;
         friend Attribute;
 		friend NodeFactory;
@@ -76,13 +78,13 @@ namespace Gex
 		std::string nodeName;
         std::string typeName;
         std::string pluginName;
-		std::map<std::string, Attribute*> attributes;
+		std::map<std::string, AttributePtr> attributes;
 
         std::vector<std::string> resources;
 
-        Node* parent = nullptr;
-        Attribute* previous = nullptr;
-        Attribute* next = nullptr;
+        NodeWkPtr parent;
+        AttributePtr previous;
+        AttributePtr next;
 
         ScheduleNodeList scheduledNodes;
         bool isScheduled = false;
@@ -224,16 +226,18 @@ namespace Gex
          * @param Attribute attr: attribute.
          * @return bool success.
          */
-		bool AddAttribute(Attribute* attr);
+		bool AddAttribute(const AttributePtr& attr);
 
-        bool RemoveAttribute(Attribute* attr);
+        bool RemoveAttribute(const AttributePtr& attr);
 
         /**
          * Default constructor.
          */
-		Node(Node* parent=nullptr);
+    public:
+		Node(const NodePtr& parent=nullptr);
 
-        void SetParent(Node* parent);
+    protected:
+        void SetParent(const NodePtr& parent);
 
         /**
          * Creates builtins attributes :
@@ -257,23 +261,29 @@ namespace Gex
          * @param attribute: attribure ptr.
          * @param change: change that occured.
          */
-        void SignalAttributeChange(Attribute* attribute, AttributeChange change);
+        void SignalAttributeChange(const AttributePtr& attribute,
+                                   const AttributeChange& change);
 
         /**
          * Member function called when an attribute changes.
          * @param Attribute attribute: attribute that changed.
          */
-        virtual void AttributeChanged(Attribute* attribute, AttributeChange change);
+        virtual void AttributeChanged(const AttributePtr& attribute,
+                                      const AttributeChange& change);
 
 	public:
 		// Destructor.
 		virtual ~Node();
 
-        Node* Parent();
+        NodeWkPtr Parent();
 
 		bool operator ==(const Node& other);
 
 		bool operator ==(const Node* other);
+
+        bool operator ==(const NodePtr& other);
+
+        bool operator ==(const NodeWkPtr& other);
 
 	public:
 
@@ -314,8 +324,8 @@ namespace Gex
          * @return Attribute* created attribute.
          */
 		template<class T>
-		Attribute* CreateAttribute(std::string name, AttrValueType valueType = AttrValueType::Single,
-			AttrType type = AttrType::Static, Attribute* parent=nullptr)
+		AttributePtr CreateAttribute(const std::string& name, const AttrValueType& valueType = AttrValueType::Single,
+			const AttrType& type = AttrType::Static, const AttributePtr& parent=nullptr)
 		{
             Feedback status;
             std::any initValue = InitValueFromHash(typeid(T).hash_code(),
@@ -325,29 +335,29 @@ namespace Gex
                 return nullptr;
             }
 
-            return CreateAttributeFromValue(std::move(name), initValue, valueType,
+            return CreateAttributeFromValue(name, initValue, valueType,
                                             type, parent);
 		}
 
 
-		Attribute* CreateAttributeFromValue(std::string name, std::any v, AttrValueType valueType = AttrValueType::Single,
-                                            AttrType type = AttrType::Static, Attribute* parent = nullptr);
+		AttributePtr CreateAttributeFromValue(const std::string& name, const std::any& v, const AttrValueType& valueType = AttrValueType::Single,
+                                            const AttrType& type = AttrType::Static, const AttributePtr& parent = nullptr);
 
 
-        Attribute* CreateAttributeFromTypeName(const std::string& name, const std::string& apiName,
-                                               AttrValueType valueType = AttrValueType::Single,
-                                               AttrType type = AttrType::Static,
-                                               Attribute* parent = nullptr);
+        AttributePtr CreateAttributeFromTypeName(const std::string& name, const std::string& apiName,
+                                                 const AttrValueType& valueType = AttrValueType::Single,
+                                                 const AttrType& type = AttrType::Static,
+                                                 const AttributePtr& parent = nullptr);
 
 
-        Attribute* CreateAttribute(const std::string& name, AttrType type = AttrType::Static,
-                                   bool multi=false, Attribute* parent = nullptr);
+        AttributePtr CreateAttribute(const std::string& name, const AttrType& type = AttrType::Static,
+                                     bool multi=false, const AttributePtr& parent = nullptr);
 
 		/**
 		 * Returns whether attribute with name exists.
 		 * @returns bool exists.
 		 */
-		bool HasAttribute(std::string name) const;
+		bool HasAttribute(const std::string& name) const;
 
         /**
          * Gets Attribute pointer from name,
@@ -355,13 +365,13 @@ namespace Gex
          * @param std::string name: attribute name.
          * @return Attribute* attribute.
          */
-		Attribute* GetAttribute(std::string name) const;
+		AttributeWkPtr GetAttribute(const std::string& name) const;
 
         /**
          * Returns all attributes pointers.
          * @return std::vector<Attribute*> attributes.
          */
-        AttributeList GetAttributes() const;
+        AttributeWkList GetAttributes() const;
 
         /**
          * Returns all attributes pointers, including
@@ -371,25 +381,25 @@ namespace Gex
          * pointers
          * @return std::vector<Attribute*> attributes.
          */
-        AttributeList GetAllAttributes() const;
+        AttributeWkList GetAllAttributes() const;
 
         /**
          * Returns all user defined attributes pointers.
          * @return std::vector<Attribute*> attributes.
          */
-        AttributeList ExtraAttributes();
+        AttributeWkList ExtraAttributes();
 
         /**
          * Returns input node pointers, if materialized.
          * @return std::vector<Node**> nodes.
          */
-		NodeList UpstreamNodes();
+        NodeWkList UpstreamNodes();
 
         /**
          * Returns Output node pointers, if materialized.
          * @return std::vector<Node**> nodes.
          */
-		NodeList DownstreamNodes();
+        NodeWkList DownstreamNodes();
 
 		/**
 		 * Serializes node to json values.
@@ -483,7 +493,7 @@ namespace Gex
          * @return bool success.
          */
         virtual bool Evaluate(NodeAttributeData &context,
-                              GraphContext &graphContext,
+                              GraphContext& graphContext,
                               NodeProfiler& profiler);
 
     public:
@@ -531,10 +541,10 @@ namespace Gex
     public:
 
 		template<class T>
-		static T* ConvertTo(Node* node)
-		{
-			return dynamic_cast<T*>(node);
-		}
+        static std::shared_ptr<T> ConvertTo(const NodePtr& node)
+        {
+            return std::dynamic_pointer_cast<T>(node);
+        }
 	};
 
 
@@ -558,7 +568,7 @@ namespace Gex
     };
 
 
-	class GEX_API CompoundNode : public Node
+class GEX_API CompoundNode : public Node
 	{
 	private:
 		friend CompoundNodeBuilder;
@@ -591,28 +601,28 @@ namespace Gex
          * @param name: node name.
          * @return node pointer.
          */
-        virtual Node* CreateNode(const std::string& type, std::string name= std::string());
+        virtual NodePtr CreateNode(const std::string& type, std::string name= std::string());
 
         /**
          * References a new internal node.
          * @param path: reference path.
          * @return referenced node.
          */
-        virtual Node* ReferenceNode(const std::string& path, std::string name=std::string());
+        virtual NodePtr ReferenceNode(const std::string& path, std::string name=std::string());
 
         /**
          * Adds node pointer as internal node.
          * @param node: node pointer.
          * @return success.
          */
-        virtual bool AddNode(Node* node);
+        virtual bool AddNode(const NodePtr& node);
 
         /**
          * Removes internal node.
          * @param node: node to remove.
          * @return success.
          */
-        virtual bool RemoveNode(Node* node);
+        virtual bool RemoveNode(const NodePtr& node);
 
         /**
          * Removes internal node using its name.
@@ -626,13 +636,13 @@ namespace Gex
          * @param node: node name.
          * @return node pointer.
          */
-        virtual Node* GetNode(const std::string& node) const;
+        virtual NodeWkPtr GetNode(const std::string& node) const;
 
         NodeList GetNodes() const;
 
         std::vector<std::string> GetNodeNames() const;
 
-        Attribute* FindAttribute(std::string attr) const;
+        AttributeWkPtr FindAttribute(const std::string& attr) const;
 
         /**
          * Returns whether specified node pointer is an internal
@@ -640,7 +650,9 @@ namespace Gex
          * @param node: node pointer.
          * @return is internal node.
          */
-        virtual bool HasNode(Node* node) const;
+        virtual bool HasNode(const NodePtr& node) const;
+
+        virtual bool HasNode(const NodeWkPtr& node) const;
 
         /**
          * Returns whether specified node name is an internal node.
@@ -722,7 +734,7 @@ namespace Gex
         void PullInternalOutputs();
 
     public:
-        void AttributeChanged(Attribute* attr, AttributeChange change) override;
+        void AttributeChanged(const AttributePtr& attr, const AttributeChange& change) override;
 
         ScheduleNodeList ToScheduledNodes() override;
 
@@ -766,8 +778,8 @@ namespace Gex
          * @param keepExternalConnections: Keep external connections.
          * @return resulting compound node.
          */
-        Gex::Node* ToCompound(NodeList sources, bool duplicate=false,
-                              bool keepExternalConnections=true);
+        NodePtr ToCompound(NodeList sources, bool duplicate=false,
+                           bool keepExternalConnections=true);
 
 
         /**
@@ -779,14 +791,16 @@ namespace Gex
          * @param node: node pointer.
          * @return CompoundNode pointer.
          */
-        static CompoundNode* FromNode(Node* node);
+        static CompoundNodePtr FromNode(const NodePtr& node);
+
+        static CompoundNodePtr FromNode(const NodeWkPtr& node);
 	};
 
-    typedef std::function<bool(Gex::Node* node)> TraversalCallback;
+    typedef std::function<bool(Gex::NodePtr node)> TraversalCallback;
 
-    void TraverseNodes(Gex::Node* root, TraversalCallback callback);
+    void TraverseNodes(const Gex::NodePtr& root, TraversalCallback callback);
 
-    Gex::Node* TraverseParents(Gex::Node* root, TraversalCallback callback);
+    Gex::NodePtr TraverseParents(const Gex::NodePtr& root, TraversalCallback callback);
 }
 
 #endif // GEX_NODE

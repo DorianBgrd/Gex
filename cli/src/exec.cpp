@@ -38,11 +38,11 @@ int Exec::ExecuteGraph(int argc, char** argv, int start) {
         return 4;
     }
 
-    std::vector<Gex::Node *> gexGraphs;
+    std::vector<Gex::NodePtr> gexGraphs;
     for (auto filepath: files)
     {
         Gex::Feedback result;
-        auto *graph = Gex::LoadGraph(filepath, &result);
+        auto graph = Gex::LoadGraph(filepath, &result);
 
         if (!result)
         {
@@ -59,8 +59,8 @@ int Exec::ExecuteGraph(int argc, char** argv, int start) {
         std::cerr << "No valid file specified." << std::endl;
     }
 
-    std::function<void(Gex::Node*)> startCallback;
-    std::function<void(Gex::Node*, bool)> endCallback;
+    std::function<void(const Gex::NodePtr&)> startCallback;
+    std::function<void(const Gex::NodePtr&, bool)> endCallback;
 
     if (verbose)
     {
@@ -69,7 +69,7 @@ int Exec::ExecuteGraph(int argc, char** argv, int start) {
     }
 
     bool globalSuccess = true;
-    for (auto *graph: gexGraphs)
+    for (auto graph: gexGraphs)
     {
         std::string attrValues = parser.FlagResult("-iv");
         if (!attrValues.empty())
@@ -83,7 +83,7 @@ int Exec::ExecuteGraph(int argc, char** argv, int start) {
                 for (auto member = obj.MemberBegin(); member != obj.MemberEnd(); member++)
                 {
                     std::string attributeName = member->name.GetString();
-                    auto* attr = graph->GetAttribute(attributeName);
+                    auto attr = graph->GetAttribute(attributeName);
                     if (!attr)
                     {
                         std::cout << "Warning: could not find attribute "
@@ -92,7 +92,7 @@ int Exec::ExecuteGraph(int argc, char** argv, int start) {
                         continue;
                     }
 
-                    ResolveJsonValue(attr, member->value);
+                    ResolveJsonValue(attr.ToShared(), member->value);
                 }
             }
             else
@@ -117,7 +117,7 @@ int Exec::ExecuteGraph(int argc, char** argv, int start) {
 }
 
 
-void Exec::VerboseNodeEnd(Gex::Node* node, bool success)
+void Exec::VerboseNodeEnd(Gex::NodePtr node, bool success)
 {
     std::string msg = "Successfully evaluated";
     if (!success)
@@ -127,13 +127,13 @@ void Exec::VerboseNodeEnd(Gex::Node* node, bool success)
 }
 
 
-void Exec::VerboseNodeStart(Gex::Node* node)
+void Exec::VerboseNodeStart(Gex::NodePtr node)
 {
     std::cout << "Starting evaluating " << node->Name() << std::endl;
 }
 
 
-bool Exec::ResolveJsonValue(Gex::Attribute* attr, rapidjson::Value& value)
+bool Exec::ResolveJsonValue(Gex::AttributePtr attr, rapidjson::Value& value)
 {
     if (value.IsArray())
     {
@@ -141,7 +141,7 @@ bool Exec::ResolveJsonValue(Gex::Attribute* attr, rapidjson::Value& value)
         for (auto iter = value.Begin(); iter != value.End(); iter++)
         {
             attr->CreateIndex(i);
-            auto* indexAttribute = attr->GetIndexAttribute(i);
+            auto indexAttribute = attr->GetIndexAttribute(i);
 
             ResolveJsonValue(indexAttribute, *iter);
 

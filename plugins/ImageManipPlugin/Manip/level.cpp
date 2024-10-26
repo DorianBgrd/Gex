@@ -26,29 +26,18 @@ QImage ImageManip::Manip::AdjustLevel(
 {
     QImage dest(source);
 
-    double destRange = lm.High() - lm.Low();
-    double cmin = lm.ClampLow();
-    double cmax = lm.ClampHigh();
-
-    for (int x = 0; x < dest.width(); x++)
+    for (int y = 0; y < dest.height(); y++)
     {
-        for (int y = 0; y < dest.height(); y++)
+        auto* scanLine = reinterpret_cast<QRgba64*>(dest.scanLine(y));
+
+        for (int x = 0; x < dest.width(); x++)
         {
-            QColor color = dest.pixelColor(x, y);
+            QColor pixelColor(scanLine[x]);
+            pixelColor.setRedF(ApplyLevel(pixelColor.redF(), lm));
+            pixelColor.setGreenF(ApplyLevel(pixelColor.greenF(), lm));
+            pixelColor.setBlueF(ApplyLevel(pixelColor.blueF(), lm));
 
-//            double red = lm.Low() + (color.redF() * destRange);
-//            CLAMP_VALUE(red, cmin, cmax)
-            color.setRedF(ApplyLevel(color.redF(), lm));
-
-//            double green = lm.Low() + (color.greenF() * destRange);
-//            CLAMP_VALUE(green, cmin, cmax)
-            color.setGreenF(ApplyLevel(color.greenF(), lm));
-
-//            double blue = lm.Low() + (color.blueF() * destRange);
-//            CLAMP_VALUE(blue, cmin, cmax)
-            color.setBlueF(ApplyLevel(color.blueF(), lm));
-
-            dest.setPixelColor(x, y, color);
+            scanLine[x] = pixelColor.rgba64();
         }
     }
 

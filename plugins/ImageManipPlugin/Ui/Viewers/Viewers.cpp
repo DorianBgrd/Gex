@@ -11,9 +11,9 @@ void ImageManip::Viewers::ImageNodeViewer::Setup()
     layout->addWidget(viewer);
 }
 
-void ImageManip::Viewers::ImageNodeViewer::OnNodeUpdated(Gex::Node* node)
+void ImageManip::Viewers::ImageNodeViewer::OnNodeUpdated(Gex::NodeWkPtr node)
 {
-    auto* imageAttr = node->GetAttribute("Image");
+    auto imageAttr = node->GetAttribute("Image");
     if (!imageAttr)
     {
         viewer->SetImage(QImage());
@@ -26,7 +26,7 @@ void ImageManip::Viewers::ImageNodeViewer::OnNodeUpdated(Gex::Node* node)
 
 
 void ImageManip::Viewers::ImageNodeViewer::OnAttributeUpdated(
-        Gex::Attribute* attribute,
+        const Gex::AttributePtr& attribute,
         const Gex::AttributeChange& change)
 {
     OnNodeUpdated(CurrentNode());

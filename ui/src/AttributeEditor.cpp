@@ -8,7 +8,7 @@
 
 
 Gex::Ui::MultiAttributeWidget::MultiAttributeWidget(
-        Gex::Attribute* attr,
+        const Gex::AttributePtr& attr,
         GraphWidget* graphWidget,
         QWidget* parent): QFrame(parent)
 {
@@ -38,7 +38,7 @@ Gex::Ui::MultiAttributeWidget::MultiAttributeWidget(
 //    newIndexButton->setFixedSize(QSize(25, 25));
     subLayout->addWidget(newIndexButton);
 
-    newIndexButton->setVisible(attribute->IsMulti());
+    newIndexButton->setVisible(attr->IsMulti());
 
     subAttributeWidget = new QWidget(this);
     mainLayout->addWidget(subAttributeWidget);
@@ -64,13 +64,20 @@ Gex::Ui::MultiAttributeWidget::MultiAttributeWidget(
 
 void Gex::Ui::MultiAttributeWidget::AddMultiIndex(bool)
 {
-    attribute->CreateIndex(NextMultiAttributeIndex(attribute));
+    if (!attribute)
+        return;
 
-    graph->UpdateNodeAttribute(attribute->Node(),
-                               attribute->Longname().c_str()
-    );
+    auto attr = attribute.lock();
+    attr->CreateIndex(NextMultiAttributeIndex(attr));
 
-    RebuildAttributes();
+    if (auto wkNode = attr->Node())
+    {
+        graph->UpdateNodeAttribute(attr->Node().lock(),
+                                   attr->Longname().c_str()
+        );
+
+        RebuildAttributes();
+    }
 }
 
 
@@ -102,9 +109,13 @@ void Gex::Ui::MultiAttributeWidget::FlushAttributes()
 
 void Gex::Ui::MultiAttributeWidget::CreateAttributes()
 {
-    for (auto index : attribute->ValidIndices())
+    if (!attribute)
+        return;
+
+    auto attr = attribute.lock();
+    for (auto index : attr->ValidIndices())
     {
-        auto* indexAttr = attribute->GetIndexAttribute(index);
+        auto indexAttr = attr->GetIndexAttribute(index);
         if (indexAttr->IsMulti() || indexAttr->HasChildAttributes())
         {
             auto* multiWidget = new MultiAttributeWidget(indexAttr, graph, this);
@@ -128,7 +139,7 @@ void Gex::Ui::MultiAttributeWidget::RebuildAttributes()
 }
 
 
-Gex::Ui::AttributeWidget::AttributeWidget(Gex::Attribute* attr,
+Gex::Ui::AttributeWidget::AttributeWidget(const Gex::AttributePtr& attr,
                                           GraphWidget* graphWidget,
                                           QWidget* parent): QWidget(parent)
 {
@@ -142,9 +153,9 @@ Gex::Ui::AttributeWidget::AttributeWidget(Gex::Attribute* attr,
             attr->TypeHash(), attr->Name());
     mainLayout->addWidget(widget);
 
-    widget->SetValue(attribute->GetAnyValue());
-    widget->ShowConnected(attribute->HasSource());
-    widget->ShowDisabled(attribute->IsOutput() && !attribute->IsStatic());
+    widget->SetValue(attr->GetAnyValue());
+    widget->ShowConnected(attr->HasSource());
+    widget->ShowDisabled(attr->IsOutput() && !attr->IsStatic());
 
     QObject::connect(widget, &UiTSys::TypedWidget::valueChanged,
                      this, &AttributeWidget::OnValueChanged);
@@ -153,14 +164,17 @@ Gex::Ui::AttributeWidget::AttributeWidget(Gex::Attribute* attr,
 
 void Gex::Ui::AttributeWidget::OnValueChanged(std::any value)
 {
-    attribute->SetAnyValue(value);
+    if (!attribute)
+        return;
+
+    attribute.lock()->SetAnyValue(value);
 }
 
 
 
 
 Gex::Ui::ExtraAttributeDialog::ExtraAttributeDialog(
-        Gex::Node* node, GraphWidget* _graphWidget,
+        Gex::NodePtr node, GraphWidget* _graphWidget,
         QWidget* parent, QWidget* _updateWidget):
         QDialog(parent)
 {
@@ -306,9 +320,9 @@ void Gex::Ui::ExtraAttributeDialog::CreateAttribute()
 
     if (targetNode->IsCompound() && internal->isChecked())
     {
-        auto* compound = Gex::Node::ConvertTo<Gex::CompoundNode>(targetNode);
-        auto* at = compound->CreateAttributeFromValue(attributeName->text().toStdString(),
-                                                      value, valueType, attrType);
+        auto compound = Gex::CompoundNode::FromNode(targetNode);
+        auto at = compound->CreateAttributeFromValue(attributeName->text().toStdString(),
+                                                     value, valueType, attrType);
         at->SetInternal(true);
 
     }
@@ -371,19 +385,19 @@ Gex::Ui::AttributeTypeTitle::AttributeTypeTitle(
 
 
 Gex::Ui::AttributeTab::AttributeTab(
-        Gex::Node* node_,
+        Gex::NodePtr node_,
         GraphWidget* graphWidget,
         QWidget* parent): QWidget(parent)
 {
     node = node_;
     graph = graphWidget;
 
-    Setup();
+    Setup(node_);
     UpdateAttributes();
 }
 
 
-void Gex::Ui::AttributeTab::Setup()
+void Gex::Ui::AttributeTab::Setup(const Gex::NodePtr& node_)
 {
     QVBoxLayout* mainLayout = new QVBoxLayout();
     mainLayout->setAlignment(Qt::AlignTop);
@@ -391,18 +405,18 @@ void Gex::Ui::AttributeTab::Setup()
 
     QLabel* title = new QLabel(this);
     title->setObjectName("AttributeTitle");
-    title->setText(node->Name().c_str());
+    title->setText(node_->Name().c_str());
     mainLayout->addWidget(title);
 
     QLabel* type = new QLabel(this);
     type->setObjectName("AttributeType");
-    type->setText(node->Type().c_str());
+    type->setText(node_->Type().c_str());
     mainLayout->addWidget(type);
 
     QLabel* description = new QLabel(this);
     description->setWordWrap(true);
     description->setObjectName("AttributeDescription");
-    description->setText(node->Description().c_str());
+    description->setText(node_->Description().c_str());
     mainLayout->addWidget(description);
 
     QFrame* separator = new QFrame(this);
@@ -473,7 +487,7 @@ void Gex::Ui::AttributeTab::Clear()
 }
 
 
-void CreateTabWidget(Gex::Attribute* attr,
+void CreateTabWidget(Gex::AttributePtr attr,
                      QVBoxLayout* widgetsLayout,
                      QList<QWidget*>& widgets,
                      Gex::Ui::GraphWidget* graph,
@@ -499,24 +513,30 @@ void Gex::Ui::AttributeTab::UpdateAttributes()
 {
     Clear();
 
-    std::vector<Gex::Attribute*> inputs;
-    std::vector<Gex::Attribute*> outputs;
+    if (!IsWkValid(node))
+        return;
 
-    for (auto* attr : node->GetAttributes())
+    auto lockedNode = node.lock();
+
+    std::vector<Gex::AttributePtr> inputs;
+    std::vector<Gex::AttributePtr> outputs;
+
+    for (const auto& attr : lockedNode->GetAttributes())
     {
-        if (attr->IsInput())
-            inputs.push_back(attr);
+        auto sharedAttr = ToSharedPtr(attr);
+        if (sharedAttr->IsInput())
+            inputs.push_back(sharedAttr);
         else
-            outputs.push_back(attr);
+            outputs.push_back(sharedAttr);
     }
 
-    for (auto* attr : inputs)
+    for (const auto& attr : inputs)
     {
         CreateTabWidget(attr, inputWidgetsLayout,
                         widgets, graph, this);
     }
 
-    for (auto* attr : outputs)
+    for (const auto& attr : outputs)
     {
         CreateTabWidget(attr, outputWidgetsLayout,
                         widgets, graph, this);
@@ -532,7 +552,11 @@ void Gex::Ui::AttributeTab::RebuildAttributes()
 
 void Gex::Ui::AttributeTab::CreateExtraAttribute()
 {
-    auto* window = new Gex::Ui::ExtraAttributeDialog(node, graph, this);
+    if (!node)
+        return;
+
+    auto* window = new Gex::Ui::ExtraAttributeDialog(
+            node.lock(), graph, this);
     window->exec();
     window->deleteLater();
 }
@@ -567,15 +591,20 @@ Gex::Ui::AttributeEditor::AttributeEditor(GraphWidget* parent): QWidget(parent)
 }
 
 
-void Gex::Ui::AttributeEditor::SetNodes(std::vector<Gex::Node*> nodes)
+void Gex::Ui::AttributeEditor::SetNodes(Gex::NodeWkList nodes)
 {
     currentNodes.clear();
     tab->clear();
 
     currentNodes = nodes;
-    for (auto* node : nodes)
+    for (const auto& wkNode : nodes)
     {
-        AttributeTab* widget = new AttributeTab(node, graph, this);
+        if (!wkNode)
+            continue;
+
+        auto node = ToSharedPtr(wkNode);
+
+        auto* widget = new AttributeTab(node, graph, this);
         tab->addTab(widget, node->Name().c_str());
     }
 

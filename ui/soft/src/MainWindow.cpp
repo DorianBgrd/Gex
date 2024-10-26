@@ -6,7 +6,7 @@
 #include "UiRes/include/uires.h"
 
 
-Gex::Editor::MainWindow::MainWindow(Gex::CompoundNode* graph_, std::string file,
+Gex::Editor::MainWindow::MainWindow(Gex::CompoundNodePtr graph_, std::string file,
                                     QWidget* parent): QMainWindow(parent)
 {
     auto* widget = new QWidget(this);
@@ -67,16 +67,13 @@ Gex::Feedback Gex::Editor::MainWindow::New()
     feedback.status = Gex::Status::Success;
     feedback.message = "New file";
 
-    auto* delGraph = graph;
-
-    graph = new Gex::CompoundNode();
+    graph = Gex::CompoundNode::FromNode(
+            Gex::NodeFactory::GetFactory()->CreateNode(
+                    "Compound", "Graph")
+    );
     graph->SetName("Graph");
     graphView->SwitchGraph(graph);
 
-    if (delGraph)
-    {
-        delete delGraph;
-    }
 
     ShowMessage(feedback);
 
@@ -87,24 +84,18 @@ Gex::Feedback Gex::Editor::MainWindow::New()
 Gex::Feedback Gex::Editor::MainWindow::Open(std::string file)
 {
     Gex::Feedback feedback;
-    Gex::Node* graph_ = Gex::LoadGraph(file, &feedback);
+    Gex::NodePtr graph_ = Gex::LoadGraph(file, &feedback);
 
     currentFile = file;
     if ((feedback.status == Gex::Status::Failed) || (feedback.status == Gex::Status::Error))
     {
-        graph_ = new Gex::CompoundNode();
+        graph_ = Gex::NodeFactory::GetFactory()->CreateNode(
+                "CompoundNode", "Graph");
         currentFile = "";
     }
 
-    auto* delGraph = graph;
-
     graph = CompoundNode::FromNode(graph_);
     graphView->SwitchGraph(graph);
-
-    if (delGraph)
-    {
-        delete delGraph;
-    }
 
     ShowMessage(feedback);
 

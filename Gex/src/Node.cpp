@@ -41,7 +41,7 @@ std::vector<std::string> Gex::GraphContext::Resources() const
 }
 
 
-Gex::Node::Node(Node* parent_)
+Gex::Node::Node(const NodePtr& parent_)
 {
     previous = nullptr;
     next = nullptr;
@@ -50,7 +50,7 @@ Gex::Node::Node(Node* parent_)
 }
 
 
-void Gex::Node::SetParent(Node* parent_)
+void Gex::Node::SetParent(const NodePtr& parent_)
 {
     parent = parent_;
 }
@@ -68,16 +68,11 @@ Gex::Node::~Node()
         }
     }
 
-	for (std::pair<std::string, Attribute*> p : attributes)
-	{
-		delete p.second;
-	}
-
 	attributes.clear();
 }
 
 
-Gex::Node* Gex::Node::Parent()
+Gex::NodeWkPtr Gex::Node::Parent()
 {
     return parent;
 }
@@ -91,6 +86,19 @@ bool Gex::Node::operator ==(const Node& other)
 bool Gex::Node::operator ==(const Node* other)
 {
     return (other->nodeName == nodeName);
+}
+
+bool Gex::Node::operator ==(const NodePtr& other)
+{
+    return (other.get() == this);
+}
+
+bool Gex::Node::operator ==(const NodeWkPtr& other)
+{
+    if (other.expired())
+        return false;
+
+    return (other.ToShared().get() == this);
 }
 
 
@@ -166,12 +174,13 @@ std::any Gex::Node::InitValueFromHash(size_t hash, Feedback* success)
 }
 
 
-Gex::Attribute* Gex::Node::CreateAttributeFromValue(std::string name, std::any v, AttrValueType valueType,
-                                                    AttrType type, Attribute* parent)
+Gex::AttributePtr Gex::Node::CreateAttributeFromValue(
+        const std::string& name, const std::any& v, const AttrValueType& valueType,
+        const AttrType& type, const AttributePtr& parent)
 {
-    auto* attribute = new Attribute(name, v, valueType,
-                                    type, !IsInitializing(),
-                                    this, parent);
+    auto attribute = std::make_shared<Attribute>(
+            name, v, valueType, type, !IsInitializing(),
+            shared_from_this(), parent);
 
     bool success = false;
     if (!parent)
@@ -183,19 +192,14 @@ Gex::Attribute* Gex::Node::CreateAttributeFromValue(std::string name, std::any v
         success = parent->AddChildAttribute(attribute);
     }
 
-    if (!success)
-    {
-        delete attribute;
-        return nullptr;
-    }
-
     return attribute;
 }
 
 
-Gex::Attribute* Gex::Node::CreateAttributeFromTypeName(const std::string& name, const std::string& apiName,
-                                                       AttrValueType valueType, AttrType type,
-                                                       Attribute* parent)
+Gex::AttributePtr Gex::Node::CreateAttributeFromTypeName(
+        const std::string& name, const std::string& apiName,
+        const AttrValueType& valueType, const AttrType& type,
+        const AttributePtr& parent)
 {
     auto* registry = TSys::TypeRegistry::GetRegistry();
     auto* handler = registry->GetTypeHandleFromApiName(apiName);
@@ -209,10 +213,13 @@ Gex::Attribute* Gex::Node::CreateAttributeFromTypeName(const std::string& name, 
 }
 
 
-Gex::Attribute* Gex::Node::CreateAttribute(const std::string& name, AttrType type,
-                                           bool multi, Attribute* parent)
+Gex::AttributePtr Gex::Node::CreateAttribute(
+        const std::string& name, const AttrType& type,
+        bool multi, const AttributePtr& parent)
 {
-    Attribute* attribute = new Attribute(name, type, multi, !IsInitializing(), this, parent);
+    AttributePtr attribute = std::make_shared<Attribute>(
+            name, type, multi, !IsInitializing(),
+            shared_from_this(), parent);
     bool success = false;
     if (!parent)
     {
@@ -221,11 +228,6 @@ Gex::Attribute* Gex::Node::CreateAttribute(const std::string& name, AttrType typ
     else
     {
         success = parent->AddChildAttribute(attribute);
-    }
-
-    if (!success)
-    {
-        delete attribute;
     }
 
     return attribute;
@@ -284,9 +286,9 @@ std::string Gex::Node::Description() const
 std::string Gex::Node::SetName(const std::string& p)
 {
     std::string name = Gex::Utils::ValidateName(p);
-    if (parent)
+    if (!parent.expired())
     {
-        name = parent->UniqueName(p);
+        name = parent.ToShared()->UniqueName(p);
     }
 
     nodeName = Gex::Utils::ValidateName(name);
@@ -346,7 +348,7 @@ bool Gex::Node::DeregisterAboutToBeDeletedCallback(
 }
 
 
-bool Gex::Node::AddAttribute(Attribute* attr)
+bool Gex::Node::AddAttribute(const AttributePtr& attr)
 {
 	std::string _name = attr->Longname();
 
@@ -355,7 +357,7 @@ bool Gex::Node::AddAttribute(Attribute* attr)
 		return false;
 	}
 
-	attr->SetParentNode(this);
+	attr->SetParentNode(shared_from_this());
 	attributes[_name] = attr;
 
     SignalAttributeChange(attr, AttributeChange::AttributeAdded);
@@ -364,7 +366,7 @@ bool Gex::Node::AddAttribute(Attribute* attr)
 }
 
 
-bool Gex::Node::RemoveAttribute(Attribute* attr)
+bool Gex::Node::RemoveAttribute(const AttributePtr& attr)
 {
     std::string _name = attr->Longname();
 
@@ -375,27 +377,25 @@ bool Gex::Node::RemoveAttribute(Attribute* attr)
     }
 
     SignalAttributeChange(idx->second, AttributeChange::AttributeRemoved);
-
-    delete idx->second;
     attributes.erase(idx);
     return true;
 }
 
 
-bool Gex::Node::HasAttribute(std::string name) const
+bool Gex::Node::HasAttribute(const std::string& name) const
 {
 	return (attributes.find(name) != attributes.end());
 }
 
 
-Gex::Attribute* Gex::Node::GetAttribute(std::string name) const
+Gex::AttributeWkPtr Gex::Node::GetAttribute(const std::string& name) const
 {
 	size_t delimiter = name.find(Config::GetConfig().attributeSeparator);
 	std::string shortname = name.substr(0, delimiter);
 
 	if (!HasAttribute(shortname))
 	{
-		return nullptr;
+		return {};
 	}
 
 	if (delimiter == std::string::npos)
@@ -404,15 +404,16 @@ Gex::Attribute* Gex::Node::GetAttribute(std::string name) const
 	}
 
 	delimiter++;
-	std::string subname = name.erase(0, delimiter);
+    std::string cname = name;
+	std::string subname = cname.erase(0, delimiter);
 	return attributes.at(shortname)->GetAttribute(subname);
 }
 
 
-Gex::AttributeList Gex::Node::ExtraAttributes()
+Gex::AttributeWkList Gex::Node::ExtraAttributes()
 {
-	AttributeList extraAttrs;
-	for (std::pair<std::string, Attribute*> a : attributes)
+	AttributeWkList extraAttrs;
+	for (std::pair<std::string, AttributePtr> a : attributes)
 	{
 		if (!a.second->IsUserDefined())
 		{
@@ -426,26 +427,26 @@ Gex::AttributeList Gex::Node::ExtraAttributes()
 }
 
 
-Gex::AttributeList Gex::Node::GetAttributes() const
+Gex::AttributeWkList Gex::Node::GetAttributes() const
 {
-	AttributeList attrs;
-	for (std::pair<std::string, Attribute*> n : attributes)
+	AttributeWkList attrs;
+	for (std::pair<std::string, AttributePtr> n : attributes)
 	{
-		attrs.push_back(n.second);
+		attrs.emplace_back(n.second);
 	}
 
 	return attrs;
 }
 
 
-Gex::AttributeList Gex::Node::GetAllAttributes() const
+Gex::AttributeWkList Gex::Node::GetAllAttributes() const
 {
-    AttributeList attrs;
-    for (std::pair<std::string, Attribute*> n : attributes)
+    AttributeWkList attrs;
+    for (std::pair<std::string, AttributePtr> n : attributes)
     {
         attrs.push_back(n.second);
 
-        for (Attribute* at : n.second->GetAllAttributes())
+        for (const AttributePtr& at : n.second->GetAllAttributes())
         {
             attrs.push_back(at);
         }
@@ -455,21 +456,30 @@ Gex::AttributeList Gex::Node::GetAllAttributes() const
 }
 
 
-Gex::NodeList Gex::Node::UpstreamNodes()
+Gex::NodeWkList Gex::Node::UpstreamNodes()
 {
-	NodeList sources;
-	for (Attribute* a : GetAttributes())
+	NodeWkList sources;
+	for (const AttributeWkPtr& a : GetAttributes())
 	{
-		Gex::AttributeList srcs = a->Sources();
+        if (!a)
+            continue;
+
+		Gex::AttributeWkList srcs = a->Sources();
         if (srcs.empty())
         {
             continue;
         }
 
-        for (auto src : srcs)
+        for (const auto& src : srcs)
         {
-            Node* srcNode = src->Node();
-            if (srcNode == Parent())
+            if (src.expired())
+                continue;
+
+            NodeWkPtr srcNode = src->Node();
+            if (!srcNode)
+                continue;
+
+            if (AreWkEqual(srcNode, Parent()))
             {
                 continue;
             }
@@ -479,7 +489,7 @@ Gex::NodeList Gex::Node::UpstreamNodes()
                 sources.push_back(srcNode);
             }
 
-            if (std::find(sources.begin(), sources.end(), srcNode) == sources.end())
+            if (!WkInVector(sources, srcNode))
             {
                 sources.push_back(srcNode);
             }
@@ -498,7 +508,7 @@ Gex::NodeList IterUpstreamNodes(Gex::Node* node)
 {
     Gex::NodeList list;
 
-    Gex::NodeList analyse = node->UpstreamNodes();
+    Gex::NodeWkList analyse = node->UpstreamNodes();
 
     size_t i = 0;
     while (i < analyse.size())
@@ -520,19 +530,26 @@ Gex::NodeList IterUpstreamNodes(Gex::Node* node)
 }
 
 
-Gex::NodeList Gex::Node::DownstreamNodes()
+Gex::NodeWkList Gex::Node::DownstreamNodes()
 {
-	NodeList destinations;
-	for (Attribute* a : GetAttributes())
+	NodeWkList destinations;
+	for (const AttributeWkPtr& a : GetAttributes())
 	{
-		if (!a->HasDests())
+        if (!a)
+            continue;
+
+        auto sharedAttr = a.ToShared();
+		if (!sharedAttr->HasDests())
 		{
 			continue;
 		}
 
-		AttributeList attrDests = a->Dests();
-		for (Attribute* attrDest : attrDests)
+        AttributeWkList attrDests = sharedAttr->Dests();
+		for (const AttributeWkPtr& attrDest : attrDests)
 		{
+            if (attrDest.expired())
+                continue;
+
 			destinations.push_back(attrDest->Node());
 		}
 	}
@@ -547,20 +564,23 @@ void Gex::Node::Serialize(rapidjson::Value& dict, rapidjson::Document& json) con
 
     rapidjson::Value& attrValues = rapidjson::Value(rapidjson::kObjectType).SetObject();
     rapidjson::Value& customAttrs = rapidjson::Value(rapidjson::kObjectType).SetObject();
-    for (Attribute* attr : GetAttributes())
+    for (const AttributeWkPtr& wkattr : GetAttributes())
     {
+        if (!wkattr)
+            continue;
+
         rapidjson::Value& attrValue = rapidjson::Value(rapidjson::kObjectType).SetObject();
-        if (attr->IsUserDefined())
+        if (wkattr->IsUserDefined())
         {
-            attr->SerializeAttribute(customAttrs, json);
+            wkattr->SerializeAttribute(customAttrs, json);
         }
 
-        attr->Serialize(attrValue, json);
+        wkattr->Serialize(attrValue, json);
 
         // Only add attribute if some data was serialized.
         if (attrValue.MemberCount())
         {
-            attrValues.AddMember(rapidjson::Value().SetString(attr->Name().c_str(), json.GetAllocator()).Move(),
+            attrValues.AddMember(rapidjson::Value().SetString(wkattr->Name().c_str(), json.GetAllocator()).Move(),
                                  attrValue, json.GetAllocator());
         }
     }
@@ -601,8 +621,9 @@ bool Gex::Node::Deserialize(rapidjson::Value& dict)
         rapidjson::Value& custAttrs = dict[conf.nodeCustomAttributesKey.c_str()];
         for (auto itr = custAttrs.MemberBegin(); itr != custAttrs.MemberEnd(); ++itr)
         {
-            Attribute* cust = Attribute::DeserializeAttribute(itr->name.GetString(), itr->value.GetObject(),
-                                                              this, nullptr, true);
+            AttributePtr cust = Attribute::DeserializeAttribute(
+                    itr->name.GetString(), itr->value.GetObject(),
+                    shared_from_this(), nullptr, true);
             AddAttribute(cust);
         }
     }
@@ -613,7 +634,7 @@ bool Gex::Node::Deserialize(rapidjson::Value& dict)
         for (auto itr = attrValues.MemberBegin(); itr != attrValues.MemberEnd(); ++itr)
         {
             std::string name = itr->name.GetString();
-            Attribute* attr = GetAttribute(name);
+            AttributeWkPtr attr = GetAttribute(name);
             if (!attr)
             {
                 continue;
@@ -641,9 +662,9 @@ bool Gex::Node::Deserialize(rapidjson::Value& dict)
 
 void Gex::Node::FactoryReset()
 {
-    for (auto attribute : GetAttributes())
+    for (const auto& attribute : attributes)
     {
-        attribute->FactoryReset();
+        attribute.second->FactoryReset();
     }
 }
 
@@ -651,9 +672,9 @@ void Gex::Node::FactoryReset()
 bool Gex::Node::PullAttributes()
 {
     bool result = true;
-    for (Attribute* attr : GetAttributes())
+    for (const auto& attr : attributes)
     {
-        if (!attr->Pull())
+        if (!attr.second->Pull())
             result = false;
     }
 
@@ -698,8 +719,8 @@ void Gex::Node::InitAttributes()
 }
 
 
-void Gex::Node::SignalAttributeChange(Attribute* attribute,
-                                      AttributeChange change)
+void Gex::Node::SignalAttributeChange(const AttributePtr& attribute,
+                                      const AttributeChange& change)
 {
     AttributeChanged(attribute, change);
 
@@ -736,7 +757,8 @@ void Gex::Node::SignalAttributeChange(Attribute* attribute,
 }
 
 
-void Gex::Node::AttributeChanged(Attribute* attribute, AttributeChange change)
+void Gex::Node::AttributeChanged(const AttributePtr& attribute,
+                                 const AttributeChange& change)
 {
 
 }
@@ -744,7 +766,7 @@ void Gex::Node::AttributeChanged(Attribute* attribute, AttributeChange change)
 
 Gex::NodeAttributeData Gex::Node::createEvalContext()
 {
-    return NodeAttributeData(this);
+    return NodeAttributeData(shared_from_this());
 }
 
 
@@ -838,7 +860,7 @@ void Gex::Node::ValidateScheduling()
 
 void Gex::Node::Schedule()
 {
-    scheduledNodes = ScheduleNodes({this}, true);
+    scheduledNodes = ScheduleNodes({shared_from_this()}, true);
 
     ValidateScheduling();
 }
@@ -846,7 +868,7 @@ void Gex::Node::Schedule()
 
 Gex::ScheduledNode* Gex::Node::ToScheduledNode()
 {
-    return new ScheduledNode(this);
+    return new ScheduledNode(shared_from_this());
 }
 
 
@@ -908,7 +930,10 @@ void Gex::Node::ClearScheduleCallbacks()
 bool Gex::CompoundPreScheduledNode::Evaluate(Gex::GraphContext &context,
                                              Gex::NodeProfiler &profiler)
 {
-    auto* cmp = Gex::CompoundNode::FromNode(node);
+    if (node.expired())
+        return false;
+
+    auto cmp = Gex::CompoundNode::FromNode(node);
     cmp->Pull();
 
     return cmp->PreCompute(context, profiler);
@@ -918,7 +943,10 @@ bool Gex::CompoundPreScheduledNode::Evaluate(Gex::GraphContext &context,
 bool Gex::CompoundPostScheduledNode::Evaluate(Gex::GraphContext &context,
                                              Gex::NodeProfiler &profiler)
 {
-    auto* cmp = Gex::CompoundNode::FromNode(node);
+    if (node.expired())
+        return false;
+
+    auto cmp = Gex::CompoundNode::FromNode(node);
     cmp->PullInternalOutputs();
 
     return cmp->PostCompute(context, profiler);
@@ -927,11 +955,6 @@ bool Gex::CompoundPostScheduledNode::Evaluate(Gex::GraphContext &context,
 
 Gex::CompoundNode::~CompoundNode()
 {
-    for (auto* node : nodes)
-    {
-        delete node;
-    }
-
     nodes.clear();
 }
 
@@ -942,14 +965,14 @@ bool Gex::CompoundNode::IsCompound() const
 }
 
 
-bool Gex::CompoundNode::AddNode(Node *node)
+bool Gex::CompoundNode::AddNode(const NodePtr& node)
 {
     if (!IsEditable() || HasNode(node))
     {
         return false;
     }
 
-    node->SetParent(this);
+    node->SetParent(shared_from_this());
     node->SetName(node->Name());
 
     nodes.push_back(node);
@@ -957,7 +980,7 @@ bool Gex::CompoundNode::AddNode(Node *node)
 }
 
 
-bool Gex::CompoundNode::RemoveNode(Node *node)
+bool Gex::CompoundNode::RemoveNode(const NodePtr& node)
 {
     if (IsReferenced() || !IsEditable() || !HasNode(node))
     {
@@ -966,7 +989,6 @@ bool Gex::CompoundNode::RemoveNode(Node *node)
 
     nodes.erase(std::find(nodes.begin(), nodes.end(), node));
 
-    delete node;
     return true;
 }
 
@@ -975,14 +997,14 @@ struct MatchingNode
 {
     std::string match;
 
-    bool operator()(Gex::Node* node) const
+    bool operator()(const Gex::NodePtr& node) const
     {
         return(node->Name() == match);
     }
 };
 
 
-Gex::Node* Gex::CompoundNode::GetNode(const std::string& node) const
+Gex::NodeWkPtr Gex::CompoundNode::GetNode(const std::string& node) const
 {
 
     size_t pos = node.find(Config::GetConfig().nodePathSeparator);
@@ -997,16 +1019,17 @@ Gex::Node* Gex::CompoundNode::GetNode(const std::string& node) const
     MatchingNode search;
     search.match = n;
 
-    auto result = std::find_if(nodes.begin(), nodes.end(), search);
+    auto result = std::find_if(
+            nodes.begin(), nodes.end(), search);
 
     if (result == nodes.end())
-        return nullptr;
+        return {};
 
     if (sn.empty())
         return *result;
 
     if (!(*result)->IsCompound())
-        return nullptr;
+        return {};
 
     if (pos != std::string::npos)
         return CompoundNode::FromNode(*result)->GetNode(sn);
@@ -1024,7 +1047,7 @@ Gex::NodeList Gex::CompoundNode::GetNodes() const
 std::vector<std::string> Gex::CompoundNode::GetNodeNames() const
 {
     std::vector<std::string> names;
-    for (auto* node : nodes)
+    for (const auto& node : nodes)
     {
         names.push_back(node->Name());
     }
@@ -1033,7 +1056,7 @@ std::vector<std::string> Gex::CompoundNode::GetNodeNames() const
 }
 
 
-Gex::Attribute* Gex::CompoundNode::FindAttribute(std::string attr) const
+Gex::AttributeWkPtr Gex::CompoundNode::FindAttribute(const std::string& attr) const
 {
     size_t pos  = attr.find(Config::GetConfig().attributeSeparator.c_str());
     if (pos == std::string::npos)
@@ -1044,10 +1067,10 @@ Gex::Attribute* Gex::CompoundNode::FindAttribute(std::string attr) const
     std::string nodePath = attr.substr(0, pos);
     std::string attrPath = attr.substr(pos + 1, std::string::npos);
 
-    auto* node = GetNode(nodePath);
+    auto node = GetNode(nodePath);
     if (!node)
     {
-        return nullptr;
+        return {};
     }
 
     return node->GetAttribute(attrPath);
@@ -1065,32 +1088,36 @@ bool Gex::CompoundNode::RemoveNode(const std::string& node)
     if (!IsEditable())
         return false;
 
-    Node* nodePtr = GetNode(node);
-    if (!nodePtr)
+    NodeWkPtr nodePtr = GetNode(node);
+    if (nodePtr.expired())
     {
         return false;
     }
 
-    nodes.erase(std::find(nodes.begin(), nodes.end(), nodePtr));
+    nodes.erase(std::find(nodes.begin(), nodes.end(), nodePtr.ToShared()));
 
-    delete nodePtr;
     return true;
 }
 
 
-bool Gex::CompoundNode::HasNode(Node* node) const
+bool Gex::CompoundNode::HasNode(const NodePtr& node) const
 {
     return (std::find(nodes.begin(), nodes.end(), node) != nodes.end());
 }
 
 
-bool Gex::CompoundNode::HasNode(const std::string& node) const
+bool Gex::CompoundNode::HasNode(const NodeWkPtr& node) const
 {
-    Node* nodePtr = GetNode(node);
-    if (!nodePtr)
+    if (!node)
         return false;
 
-    return HasNode(nodePtr);
+    return HasNode(node);
+}
+
+
+bool Gex::CompoundNode::HasNode(const std::string& node) const
+{
+    return (!GetNode(node).expired());
 }
 
 
@@ -1103,7 +1130,7 @@ Gex::NodeList Gex::CompoundNode::InternalNodes() const
 std::vector<std::string> Gex::CompoundNode::InternalNodeNames() const
 {
     std::vector<std::string> names;
-    for (auto* node : nodes)
+    for (const auto& node : nodes)
     {
         names.push_back(node->Name());
     }
@@ -1112,7 +1139,7 @@ std::vector<std::string> Gex::CompoundNode::InternalNodeNames() const
 }
 
 
-Gex::Node* Gex::CompoundNode::CreateNode(const std::string& type, std::string name)
+Gex::NodePtr Gex::CompoundNode::CreateNode(const std::string& type, std::string name)
 {
     if (name.empty())
     {
@@ -1128,7 +1155,7 @@ Gex::Node* Gex::CompoundNode::CreateNode(const std::string& type, std::string na
         counter++;
     }
 
-    Node* newNode = NodeFactory::GetFactory()->CreateNode(type, uniqueName);
+    NodePtr newNode = NodeFactory::GetFactory()->CreateNode(type, uniqueName);
     if (!newNode)
     {
         return nullptr;
@@ -1136,7 +1163,6 @@ Gex::Node* Gex::CompoundNode::CreateNode(const std::string& type, std::string na
 
     if (!AddNode(newNode))
     {
-        delete newNode;
         return nullptr;
     }
 
@@ -1144,12 +1170,12 @@ Gex::Node* Gex::CompoundNode::CreateNode(const std::string& type, std::string na
 }
 
 
-Gex::Node* Gex::CompoundNode::ReferenceNode(const std::string& path, std::string name)
+Gex::NodePtr Gex::CompoundNode::ReferenceNode(const std::string& path, std::string name)
 {
     if (name.empty())
         name = std::filesystem::path(name).filename().stem().string();
 
-    Node* referencedNode = NodeFactory::GetFactory()->ReferenceNode(path, name);
+    NodePtr referencedNode = NodeFactory::GetFactory()->ReferenceNode(path, name);
     if (!referencedNode)
     {
         return nullptr;
@@ -1157,7 +1183,6 @@ Gex::Node* Gex::CompoundNode::ReferenceNode(const std::string& path, std::string
 
     if (!AddNode(referencedNode))
     {
-        delete referencedNode;
         return nullptr;
     }
 
@@ -1168,7 +1193,7 @@ Gex::Node* Gex::CompoundNode::ReferenceNode(const std::string& path, std::string
 Gex::AttributeList Gex::CompoundNode::InternalAttributes() const
 {
     AttributeList internals;
-    for (auto attribute : attributes)
+    for (const auto& attribute : attributes)
     {
         if (attribute.second->IsInternal())
             internals.push_back(attribute.second);
@@ -1181,10 +1206,13 @@ Gex::AttributeList Gex::CompoundNode::InternalAttributes() const
 Gex::AttributeList Gex::CompoundNode::AllInternalAttributes() const
 {
     AttributeList internals;
-    for (auto* attribute : GetAllAttributes())
+    for (const auto& attribute : GetAllAttributes())
     {
+        if (!attribute)
+            continue;
+
         if (attribute->IsInternal())
-            internals.push_back(attribute);
+            internals.push_back(attribute.ToShared());
     }
 
     return internals;
@@ -1196,8 +1224,8 @@ Gex::AttributeList Gex::CompoundNode::AllInternalAttributes() const
 #define THIS "This"
 
 
-std::string _JsonNodeName(const Gex::Node* node,
-                          const Gex::Node* root)
+std::string _JsonNodeName(const Gex::NodePtr& node,
+                          const Gex::NodePtr& root)
 {
     if (node == root)
     {
@@ -1208,36 +1236,36 @@ std::string _JsonNodeName(const Gex::Node* node,
 }
 
 
-void _JsonPushAttributeConnection(const Gex::Node* root,
+void _JsonPushAttributeConnection(const Gex::NodePtr root,
                                   rapidjson::Value& connections,
-                                  Gex::Attribute* attr,
+                                  Gex::AttributePtr attr,
                                   rapidjson::Document& json,
-                                  std::function<bool(Gex::Node*)> validate=nullptr)
+                                  std::function<bool(Gex::NodePtr)> validate=nullptr)
 {
-    Gex::Attribute* src = attr->Source();
-    if (!src)
+    Gex::AttributeWkPtr src = attr->Source();
+    if (src.expired())
     {
         return;
     }
 
-    Gex::Node* srcNode = src->Node();
-    if (validate && !validate(srcNode))
+    Gex::NodeWkPtr srcNode = src->Node();
+    if (validate && !validate(srcNode.ToShared()))
         return;
 
     rapidjson::Value& connection = rapidjson::Value(rapidjson::kArrayType).GetArray();
 
-    std::string cnx1Name = _JsonNodeName(srcNode, root);
+    std::string cnx1Name = _JsonNodeName(srcNode.ToShared(), root);
     rapidjson::Value& cnx1 = rapidjson::Value().SetString(
             rapidjson::StringRef(cnx1Name.c_str()),
             json.GetAllocator());
     connection.PushBack(cnx1.Move(), json.GetAllocator());
 
     rapidjson::Value& cnx2 = rapidjson::Value().SetString(
-            rapidjson::StringRef(src->Name().c_str()),
+            rapidjson::StringRef(src.ToShared()->Name().c_str()),
             json.GetAllocator());
     connection.PushBack(cnx2.Move(), json.GetAllocator());
 
-    std::string cnx3Name = _JsonNodeName(attr->Node(), root);
+    std::string cnx3Name = _JsonNodeName(attr->Node().ToShared(), root);
     rapidjson::Value& cnx3 = rapidjson::Value().SetString(
             rapidjson::StringRef(cnx3Name.c_str()),
             json.GetAllocator());
@@ -1273,7 +1301,7 @@ void Gex::CompoundNode::Serialize(rapidjson::Value& dict,
     std::set<std::string> nodeTypes;
 
     rapidjson::Value& internalNodesDict = rapidjson::Value().SetObject();
-    for (Node* node : nodes)
+    for (const NodePtr& node : nodes)
     {
         std::string plugin = node->Plugin();
         if (!plugin.empty())
@@ -1294,19 +1322,24 @@ void Gex::CompoundNode::Serialize(rapidjson::Value& dict,
     rapidjson::Value& connections = rapidjson::Value(rapidjson::kArrayType).GetArray();
     for (auto node : nodes)
     {
-        AttributeList attributes = node->GetAllAttributes();
-        for (auto* attr : attributes)
+        AttributeWkList attributes = node->GetAllAttributes();
+        for (const auto& attr : attributes)
         {
-            Attribute* src = attr->Source();
+            if (!attr)
+                continue;
+
+            AttributeWkPtr src = attr->Source();
             if (!src)
             {
                 continue;
             }
 
-            Node* srcNode = src->Node();
+            NodeWkPtr srcNode = src->Node();
+            if (!srcNode)
+                continue;
 
-            std::string srcNodeValue = srcNode->Name();
-            if (srcNode == this)
+            std::string srcNodeValue = srcNode.ToShared()->Name();
+            if (srcNode.ToShared().get() == this)
             {
                 srcNodeValue = conf.thisKey;
             }
@@ -1325,15 +1358,22 @@ void Gex::CompoundNode::Serialize(rapidjson::Value& dict,
         }
     }
 
-    for (auto* attr : AllInternalAttributes())
+    for (const auto& attr : AllInternalAttributes())
     {
         if (!attr->HasSource())
         {
             continue;
         }
 
-        auto* source = attr->Source();
-        if (!HasNode(source->Node()))
+        AttributeWkPtr source = attr->Source();
+        if (!source)
+            continue;
+
+        NodeWkPtr sourceNode = source->Node();
+        if (!sourceNode)
+            continue;
+
+        if (!HasNode(sourceNode))
         {
             continue;
         }
@@ -1341,7 +1381,7 @@ void Gex::CompoundNode::Serialize(rapidjson::Value& dict,
         rapidjson::Value& connection = rapidjson::Value(rapidjson::kArrayType).GetArray();
 
         rapidjson::Value& srcNode = rapidjson::Value().SetString(
-                source->Node()->Name().c_str(), json.GetAllocator());
+                sourceNode->Name().c_str(), json.GetAllocator());
         connection.PushBack(srcNode.Move(), json.GetAllocator());
 
         rapidjson::Value& srcAttr = rapidjson::Value().SetString(
@@ -1416,13 +1456,13 @@ bool Gex::CompoundNode::Deserialize(rapidjson::Value& dict)
 
     Config conf = Config::GetConfig();
 
-    std::map<std::string, Node*> createdNodes;
+    std::map<std::string, NodePtr> createdNodes;
     if (dict.HasMember(conf.compoundNodesKey.c_str()))
     {
         rapidjson::Value& nodes_ = dict[conf.compoundNodesKey.c_str()];
         for (auto iter = nodes_.MemberBegin(); iter != nodes_.MemberEnd(); iter++)
         {
-            Node* node = NodeFactory::GetFactory()->LoadNode(iter->value);
+            NodePtr node = NodeFactory::GetFactory()->LoadNode(iter->value);
             if (!node)
             {
                 success = false;
@@ -1446,10 +1486,10 @@ bool Gex::CompoundNode::Deserialize(rapidjson::Value& dict)
             std::string dstname = list[2].GetString();
             std::string dstattr = list[3].GetString();
 
-            Node* src = nullptr;
+            NodePtr src = nullptr;
             if (srcname == conf.thisKey)
             {
-                src = this;
+                src = shared_from_this();
             }
             else
             {
@@ -1461,10 +1501,10 @@ bool Gex::CompoundNode::Deserialize(rapidjson::Value& dict)
                 src = createdNodes.at(srcname);
             }
 
-            Node* dst = nullptr;
+            NodePtr dst = nullptr;
             if (dstname == conf.thisKey)
             {
-                dst = this;
+                dst = shared_from_this();
             }
             else
             {
@@ -1476,19 +1516,23 @@ bool Gex::CompoundNode::Deserialize(rapidjson::Value& dict)
                 dst = createdNodes.at(dstname);
             }
 
-            Attribute* srcat = src->GetAttribute(srcnattr);
+            AttributeWkPtr srcat = src->GetAttribute(srcnattr);
             if (!srcat)
             {
                 continue;
             }
 
-            Attribute* dstat = dst->GetAttribute(dstattr);
+            auto sharedSrc = ToSharedPtr(srcat);
+
+            AttributeWkPtr dstat = dst->GetAttribute(dstattr);
             if (!dstat)
             {
                 continue;
             }
 
-            if (!dstat->ConnectSource(srcat))
+            auto sharedDst = ToSharedPtr(dstat);
+
+            if (!sharedDst->ConnectSource(sharedSrc))
             {
                 continue;
             }
@@ -1567,7 +1611,7 @@ bool Gex::CompoundNode::Evaluate(NodeAttributeData &ctx,
 }
 
 
-void Gex::CompoundNode::AttributeChanged(Attribute* attr, AttributeChange change)
+void Gex::CompoundNode::AttributeChanged(const AttributePtr& attr, const AttributeChange& change)
 {
     Node::AttributeChanged(attr, change);
 
@@ -1585,22 +1629,23 @@ Gex::ScheduleNodeList Gex::CompoundNode::ToScheduledNodes()
 {
     auto schelNodes = Gex::ScheduleNodes(nodes);
 
-    auto* preScheduleNode = new CompoundPreScheduledNode(this);
-    auto* postScheduleNode = new CompoundPostScheduledNode(this);
+    auto* preScheduleNode = new CompoundPreScheduledNode(shared_from_this());
+    auto* postScheduleNode = new CompoundPostScheduledNode(shared_from_this());
 
     // For scheduled nodes, if any has the current compound as input,
     // replace it with preScheduled. Use postScheduled if they have
     // output.
+    NodeWkPtr weakThis =weak_from_this();
     for (auto* schel : schelNodes)
     {
         auto srcs = schel->node->UpstreamNodes();
-        if (std::find(srcs.begin(), srcs.end(), this) != srcs.end())
+        if (WkInVector(srcs, weakThis))
         {
             schel->previousNodes.push_back(preScheduleNode);
         }
 
         auto dsts = schel->node->DownstreamNodes();
-        if (std::find(dsts.begin(), dsts.end(), this) != dsts.end())
+        if (WkInVector(dsts, weakThis))
         {
             schel->futureNodes.push_back(postScheduleNode);
         }
@@ -1647,7 +1692,7 @@ bool Gex::CompoundNode::PostCompute(GraphContext &context,
 
 void Gex::CompoundNode::PullInternalOutputs()
 {
-    for (auto* attribute : InternalAttributes())
+    for (const auto& attribute : InternalAttributes())
     {
         if (attribute->IsOutput() && !attribute->IsStatic())
         {
@@ -1677,9 +1722,9 @@ bool Gex::CompoundNode::Compute(GraphContext &context,
 
 
 
-Gex::Node* Duplicate(std::map<Gex::Node*, Gex::Node*>& res,
-                     Gex::Node* source, const std::string& name,
-                     Gex::CompoundNode* parent)
+Gex::NodePtr Duplicate(std::map<Gex::NodePtr, Gex::NodePtr>& res,
+                       const Gex::NodePtr& source, const std::string& name,
+                       Gex::CompoundNodePtr parent)
 {
     std::string type = source->Type();
     std::string sourceName = source->Name();
@@ -1688,19 +1733,29 @@ Gex::Node* Duplicate(std::map<Gex::Node*, Gex::Node*>& res,
     if (newName.empty())
         newName = sourceName + "1";
 
-    Gex::Node* new_ = Gex::NodeFactory::GetFactory()->CreateNode(type, newName);
+    Gex::NodePtr new_ = Gex::NodeFactory::GetFactory()->CreateNode(type, newName);
 
     parent->AddNode(new_);
 
-    for (auto attribute : source->GetAllAttributes())
+    for (const auto& wkAttribute : source->GetAllAttributes())
     {
+        if (!wkAttribute)
+        {
+            continue;
+        }
+
+        auto attribute = wkAttribute.ToShared();
         std::string atpath = attribute->Longname();
 
-        Gex::Attribute* destAttribute = nullptr;
+        Gex::AttributePtr destAttribute = nullptr;
         if (attribute->IsUserDefined())
         {
-            Gex::Attribute* newParent_ = new_->GetAttribute(
+            Gex::AttributeWkPtr newWkParent = new_->GetAttribute(
                     attribute->ParentAttribute()->Longname());
+            if (!newWkParent)
+                continue;
+
+            auto newParent_ = newWkParent.ToShared();
 
             if (destAttribute->IsHolder())
             {
@@ -1720,7 +1775,7 @@ Gex::Node* Duplicate(std::map<Gex::Node*, Gex::Node*>& res,
         }
         else
         {
-            destAttribute = new_->GetAttribute(atpath);
+            destAttribute = new_->GetAttribute(atpath).ToShared();
         }
 
         if (attribute->IsMulti())
@@ -1736,9 +1791,9 @@ Gex::Node* Duplicate(std::map<Gex::Node*, Gex::Node*>& res,
 
     if (source->IsCompound())
     {
-        auto* compound = Gex::CompoundNode::FromNode(source);
-        auto* newCompound = Gex::CompoundNode::FromNode(new_);
-        for (auto* cmpn : compound->InternalNodes())
+        auto compound = Gex::CompoundNode::FromNode(source);
+        auto newCompound = Gex::CompoundNode::FromNode(new_);
+        for (const auto& cmpn : compound->InternalNodes())
         {
             Duplicate(res, cmpn, "", newCompound);
         }
@@ -1752,13 +1807,18 @@ Gex::Node* Duplicate(std::map<Gex::Node*, Gex::Node*>& res,
 
 Gex::NodeList Gex::CompoundNode::DuplicateNodes(NodeList sources, bool copyLinks)
 {
-    std::map<Gex::Node*, Gex::Node*> nmap;
+    std::map<Gex::NodePtr, Gex::NodePtr> nmap;
 
     Gex::NodeList result;
 
-    for (auto* source : sources)
+    auto thisSharedCompound = CompoundNode::FromNode(shared_from_this());
+
+    for (const auto& source : sources)
     {
-        Gex::Node* dup = Duplicate(nmap, source, "", this);
+        Gex::NodePtr dup = Duplicate(
+                nmap, source, "",
+                thisSharedCompound);
+
         result.push_back(dup);
     }
 
@@ -1768,25 +1828,42 @@ Gex::NodeList Gex::CompoundNode::DuplicateNodes(NodeList sources, bool copyLinks
         for (auto m : nmap)
         {
             // Get the new node.
-            auto* source = m.first;
-            auto* new_ = m.second;
-            for (auto* attribute : source->GetAllAttributes())
+            auto source = m.first;
+            auto new_ = m.second;
+            for (const auto& wkAttribute : source->GetAllAttributes())
             {
+                if (!wkAttribute)
+                    continue;
+
+                auto attribute = ToSharedPtr(wkAttribute);
+
                 // Get New node attribute.
-                auto* destAttribute = new_->GetAttribute(attribute->Longname());
-                if (Attribute* atsource = attribute->Source())
+                auto wkDestAttribute = new_->GetAttribute(attribute->Longname());
+                if (!wkDestAttribute)
+                    continue;
+
+                auto destAttribute = ToSharedPtr(wkDestAttribute);
+
+                AttributeWkPtr atsource = attribute->Source();
+                if (atsource)
                 {
                     // Find original attribute source node.
-                    Node* nsource = atsource->Node();
+                    NodeWkPtr nsource = atsource->Node();
+                    if (!nsource)
+                        continue;
+
+                    NodePtr lockedNSource = nsource.ToShared();
 
                     // If source node has been duplicated, find the duplicated
                     // node attribute and connect it to preserve internal graph.
-                    if (nmap.count(nsource))
+                    if (nmap.count(lockedNSource))
                     {
-                        Node*  duplicatedSource = nmap.at(nsource);
-                        Attribute* duplicatedAttr = duplicatedSource->GetAttribute(atsource->Longname());
+                        NodePtr  duplicatedSource = nmap.at(lockedNSource);
+                        AttributeWkPtr duplicatedAttr = duplicatedSource->GetAttribute(
+                                atsource->Longname());
 
-                        destAttribute->ConnectSource(duplicatedAttr);
+                        if (duplicatedAttr)
+                            destAttribute->ConnectSource(ToSharedPtr(duplicatedAttr));
                     }
                     // Else connect to original source.
 //                    else if (copyExternal)
@@ -1802,10 +1879,10 @@ Gex::NodeList Gex::CompoundNode::DuplicateNodes(NodeList sources, bool copyLinks
 }
 
 
-Gex::Node* Gex::CompoundNode::ToCompound(NodeList sources, bool duplicate,
+Gex::NodePtr Gex::CompoundNode::ToCompound(NodeList sources, bool duplicate,
                                          bool keepExternalConnections)
 {
-    auto* compound = new CompoundNode();
+    auto compound = std::make_shared<CompoundNode>();
 
     compound->SetName("Compound");
 
@@ -1815,91 +1892,114 @@ Gex::Node* Gex::CompoundNode::ToCompound(NodeList sources, bool duplicate,
         extract = DuplicateNodes(sources, true);
     }
 
-    for (auto* node : sources) {
+    for (const auto& node : sources) {
         compound->AddNode(node);
         std::remove(nodes.begin(), nodes.end(), node);
 
-        for (auto *attribute: node->GetAllAttributes())
+        for (const auto& wkAttribute: node->GetAllAttributes())
         {
-            if (auto *src = attribute->Source())
+            auto attribute = ToSharedPtr(wkAttribute);
+
+            auto src = attribute->Source();
+            if (!src.expired())
             {
-                if (std::find(sources.begin(), sources.end(), src->Node()) != sources.end())
+                auto lockedSource = ToSharedPtr(src);
+                if (lockedSource->Node().expired())
+                    continue;
+
+                auto lockedSourceNode = ToSharedPtr(lockedSource->Node());
+
+                if (std::find(sources.begin(), sources.end(), lockedSourceNode) != sources.end())
                 {
                     continue;
                 }
 
-                std::string pname = src->Node()->Name() + "_" + src->Name();
+                std::string pname = lockedSourceNode->Name() + "_" + lockedSource->Name();
 
-                Attribute* proxy = compound->GetAttribute(pname);
+                AttributeWkPtr proxy = compound->GetAttribute(pname);
+                AttributePtr sharedProxy;
                 if (!proxy)
                 {
+                    sharedProxy = ToSharedPtr(proxy);
+
                     AttrType type = AttrType::Static;
-                    if (src->GetAttrType() == AttrType::Output)
+                    if (lockedSource->GetAttrType() == AttrType::Output)
                     {
                         type = AttrType::Input;
                     }
 
-                    if (src->IsHolder())
+                    if (lockedSource->IsHolder())
                     {
-                        proxy = compound->CreateAttribute(
+                        sharedProxy = compound->CreateAttribute(
                                 pname, type,
-                                proxy->IsMulti());
+                                sharedProxy->IsMulti());
                     }
                     else
                     {
-                        proxy = compound->CreateAttributeFromValue(
-                                pname, src->GetAnyValue(),
-                                src->GetAttrValueType(),
+                        sharedProxy = compound->CreateAttributeFromValue(
+                                pname, lockedSource->GetAnyValue(),
+                                lockedSource->GetAttrValueType(),
                                 type);
                     }
 
-                    proxy->SetInternal(true);
+                    sharedProxy->SetInternal(true);
                 }
 
-                attribute->DisconnectSource(src);
+                attribute->DisconnectSource(lockedSource);
                 attribute->ConnectSource(proxy);
 
                 if (keepExternalConnections)
-                    proxy->ConnectSource(src);
+                    sharedProxy->ConnectSource(lockedSource);
 
             }
 
-            for (Attribute *dst: attribute->Dests())
+            for (const AttributeWkPtr& dst: attribute->Dests())
             {
-                if (std::find(sources.begin(), sources.end(), dst->Node()) != sources.end())
+                if (dst.expired())
+                    continue;
+
+                auto lockedDest = ToSharedPtr(dst);
+                if (lockedDest->Node().expired())
+                    continue;
+
+                auto lockedDestNode = lockedDest->Node().ToShared();
+                if (std::find(sources.begin(), sources.end(), lockedDestNode) != sources.end())
                 {
                     continue;
                 }
 
-                std::string pname = dst->Node()->Name() + "_" + dst->Name();
-                Attribute* proxy = compound->GetAttribute(pname);
+                std::string pname = lockedDestNode->Name() + "_" + lockedDest->Name();
+                AttributeWkPtr proxy = compound->GetAttribute(pname);
 
+                AttributePtr sharedProxy;
                 if (!proxy)
                 {
+                    sharedProxy = ToSharedPtr(proxy);
+
                     AttrType type = AttrType::Static;
-                    if (dst->GetAttrType() == AttrType::Input)
+                    if (lockedDest->GetAttrType() == AttrType::Input)
                     {
                         type = AttrType::Output;
                     }
 
-                    if (dst->IsHolder())
+                    if (lockedDest->IsHolder())
                     {
-                        bool multi = proxy->IsMulti();
+                        bool multi = sharedProxy->IsMulti();
 
-                        proxy = compound->CreateAttribute(pname, dst->GetAttrType(), multi);
+                        sharedProxy = compound->CreateAttribute(pname, lockedDest->GetAttrType(), multi);
                     }
                     else
                     {
-                        proxy = compound->CreateAttributeFromValue(pname, dst->GetAnyValue(),
-                                                                   dst->GetAttrValueType(),
-                                                                   dst->GetAttrType());
+                        sharedProxy = compound->CreateAttributeFromValue(pname, lockedDest->GetAnyValue(),
+                                                                   lockedDest->GetAttrValueType(),
+                                                                   lockedDest->GetAttrType());
                     }
                 }
 
-                dst->DisconnectSource(attribute);
-                proxy->ConnectSource(attribute);
+                lockedDest->DisconnectSource(attribute);
+                sharedProxy->ConnectSource(attribute);
                 if (keepExternalConnections)
-                    dst->ConnectSource(proxy);
+                    lockedDest->ConnectSource(proxy);
             }
         }
     }
@@ -1911,7 +2011,7 @@ Gex::Node* Gex::CompoundNode::ToCompound(NodeList sources, bool duplicate,
 
 
 
-Gex::CompoundNode* Gex::CompoundNode::FromNode(Node* node)
+Gex::CompoundNodePtr Gex::CompoundNode::FromNode(const NodePtr& node)
 {
     if (!node->IsCompound())
         return nullptr;
@@ -1921,12 +2021,26 @@ Gex::CompoundNode* Gex::CompoundNode::FromNode(Node* node)
     // faster here. Still, no further check is applied
     // meaning that declaring a standard node as a
     // compound will cause a crash.
-    return static_cast<CompoundNode*>(node);
+    return std::static_pointer_cast<CompoundNode>(node);
+}
+
+
+Gex::CompoundNodePtr Gex::CompoundNode::FromNode(const NodeWkPtr& node)
+{
+    if (!node->IsCompound() || !node)
+        return nullptr;
+
+    // As node->IsCompound() already declares whether
+    // this cast is possible, static_cast should be
+    // faster here. Still, no further check is applied
+    // meaning that declaring a standard node as a
+    // compound will cause a crash.
+    return std::static_pointer_cast<CompoundNode>(node.ToShared());
 }
 
 
 
-void Gex::TraverseNodes(Gex::Node* root, Gex::TraversalCallback callback)
+void Gex::TraverseNodes(const Gex::NodePtr& root, Gex::TraversalCallback callback)
 {
     if (!callback(root))
     {
@@ -1935,8 +2049,8 @@ void Gex::TraverseNodes(Gex::Node* root, Gex::TraversalCallback callback)
 
     if (root->IsCompound())
     {
-        auto* cmp = CompoundNode::FromNode(root);
-        for (auto* internal : cmp->InternalNodes())
+        auto cmp = CompoundNode::FromNode(root);
+        for (const auto& internal : cmp->InternalNodes())
         {
             TraverseNodes(internal, callback);
         }
@@ -1944,18 +2058,18 @@ void Gex::TraverseNodes(Gex::Node* root, Gex::TraversalCallback callback)
 }
 
 
-Gex::Node* Gex::TraverseParents(Gex::Node* root, TraversalCallback callback)
+Gex::NodePtr Gex::TraverseParents(const Gex::NodePtr& root, TraversalCallback callback)
 {
     if (callback(root))
     {
         return root;
     }
 
-    auto* parent = root->Parent();
-    if (!parent)
+    auto parent = root->Parent();
+    if (parent.expired())
     {
         return nullptr;
     }
 
-    return TraverseParents(parent, callback);
+    return TraverseParents(parent.ToShared(), callback);
 }

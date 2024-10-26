@@ -23,6 +23,8 @@ add_library(
         Manip/remap.cpp
         Manip/shapes.cpp
         Manip/level.cpp
+        Manip/tile.cpp
+        Manip/channels.cpp
 
         Types/image.cpp
         Types/color.cpp
@@ -37,6 +39,8 @@ add_library(
         Nodes/remap.cpp
         Nodes/shapes.cpp
         Nodes/level.cpp
+        Nodes/tile.cpp
+        Nodes/channels.cpp
 
         plugin.cpp
 

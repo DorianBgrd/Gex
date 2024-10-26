@@ -230,8 +230,7 @@ namespace MayaNodes
         {
             std::string command = "import maya.standalone\nmaya.standalone.initialize(\"python\")\nfrom maya import cmds\n";
 
-            Gex::Attribute *commandsAttr = GetAttribute("Commands");
-            std::vector<std::string> subCommands = commandsAttr->GetArrayValues<std::string>();
+            std::vector<std::string> subCommands = ctx.GetAttribute("Commands").GetArrayValues<std::string>();
             std::cout << "Commands size : " + std::to_string(subCommands.size());
             if (!subCommands.empty())
             {

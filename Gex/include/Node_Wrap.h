@@ -36,7 +36,8 @@ namespace  Gex
             override;
 
 
-            void AttributeChanged(Attribute* attribute, AttributeChange change) override;
+            void AttributeChanged(const AttributePtr& attribute,
+                                  const AttributeChange& change) override;
 
 
             static void RegisterPythonWrapper();

@@ -40,13 +40,13 @@ namespace Gex
             Q_OBJECT
             QVBoxLayout* mainLayout;
             QVBoxLayout* subAttributeLayout;
-            Gex::Attribute* attribute;
+            Gex::AttributeWkPtr attribute;
             QPushButton* newIndexButton;
             QPushButton* title;
             QWidget* subAttributeWidget;
             GraphWidget* graph;
         public:
-            MultiAttributeWidget(Gex::Attribute* attr,
+            MultiAttributeWidget(const Gex::AttributePtr& attr,
                                  GraphWidget* graphWidget,
                                  QWidget* parent=nullptr);
 
@@ -65,11 +65,11 @@ namespace Gex
         class GEX_UI_API AttributeWidget: public QWidget
         {
         Q_OBJECT
-            Gex::Attribute* attribute;
+            Gex::AttributeWkPtr attribute;
             QHBoxLayout* mainLayout;
             GraphWidget* graph;
         public:
-            AttributeWidget(Gex::Attribute* attr,
+            AttributeWidget(const Gex::AttributePtr& attr,
                             GraphWidget* graphWidget,
                             QWidget* parent=nullptr);
 
@@ -80,7 +80,7 @@ namespace Gex
         class GEX_UI_API ExtraAttributeDialog: public QDialog
         {
         Q_OBJECT
-            Gex::Node* targetNode;
+            Gex::NodePtr targetNode;
             QWidget* updateWidget;
             QLineEdit* attributeName;
             QVBoxLayout* initWidgetLayout;
@@ -93,7 +93,7 @@ namespace Gex
             QCheckBox* internal;
 
         public:
-            ExtraAttributeDialog(Gex::Node* node,
+            ExtraAttributeDialog(Gex::NodePtr node,
                                  GraphWidget* graphWidget,
                                  QWidget* parent=nullptr,
                                  QWidget* updateWidget=nullptr);
@@ -117,13 +117,13 @@ namespace Gex
         class GEX_UI_API AttributeTab: public QWidget
         {
         Q_OBJECT
-            Gex::Node* node;
+            Gex::NodeWkPtr node;
             GraphWidget* graph;
             QVBoxLayout* inputWidgetsLayout;
             QVBoxLayout* outputWidgetsLayout;
             QVector<QWidget*> widgets;
         public:
-            AttributeTab(Gex::Node* node,
+            AttributeTab(Gex::NodePtr node,
                          GraphWidget* graphWidget,
                          QWidget* parent=nullptr);
 
@@ -135,7 +135,8 @@ namespace Gex
 
             void CreateExtraAttribute();
 
-            void Setup();
+        private:
+            void Setup(const Gex::NodePtr& node);
         };
 
 
@@ -146,12 +147,12 @@ namespace Gex
             QTabWidget* tab;
             GraphWidget* graph;
             QWidget* emptyWidget;
-            std::vector<Gex::Node*> currentNodes;
+            Gex::NodeWkList currentNodes;
 
         public:
             AttributeEditor(GraphWidget* parent=nullptr);
 
-            void SetNodes(std::vector<Gex::Node*> nodes);
+            void SetNodes(Gex::NodeWkList nodes);
 
             void Update();
         };

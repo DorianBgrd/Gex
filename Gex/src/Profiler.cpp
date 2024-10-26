@@ -150,7 +150,8 @@ void Gex::EvaluationProfiler::Reset()
 }
 
 
-Gex::EvaluationNodeProfiler::EvaluationNodeProfiler(Profiler profiler_, Node* node_,
+Gex::EvaluationNodeProfiler::EvaluationNodeProfiler(Profiler profiler_,
+                                                    const NodePtr& node_,
                                                     unsigned int thread_)
 {
     node = node_->Path();

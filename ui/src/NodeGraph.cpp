@@ -221,9 +221,9 @@ Gex::Ui::TitleDoc* Gex::Ui::NodeNameItem::TitleDocument() const
 }
 
 
-Gex::Ui::AttributeItem::AttributeItem(Gex::Attribute* attr,
-                                                AttributeItem* parent,
-                                                NodeItem* node):
+Gex::Ui::AttributeItem::AttributeItem(Gex::AttributeWkPtr attr,
+                                      AttributeItem* parent,
+                                      NodeItem* node):
         QGraphicsRectItem(parent)
 {
     Initialize(attr, parent, node);
@@ -276,19 +276,21 @@ void Gex::Ui::AttributeItem::SetTextIndent(qreal indent)
 }
 
 
-Gex::Ui::AttributeItem::AttributeItem(Gex::Attribute* attr,
-                                                NodeItem* node):
+Gex::Ui::AttributeItem::AttributeItem(Gex::AttributeWkPtr attr,
+                                      NodeItem* node):
         QGraphicsRectItem(node)
 {
     Initialize(attr, nullptr, node);
 }
 
 
-void Gex::Ui::AttributeItem::Initialize(Gex::Attribute* attr,
+void Gex::Ui::AttributeItem::Initialize(Gex::AttributeWkPtr attr,
                                         AttributeItem* parent,
                                         NodeItem* node)
 {
     QFont textFont("sans", 8);
+
+    auto sharedPtr = attr.ToShared();
 
     defaultHeight = QFontMetrics(textFont).boundingRect(
             attr->Name().c_str()).height();
@@ -439,13 +441,13 @@ bool Gex::Ui::AttributeItem::TextVisibility() const
 
 
 
-Gex::Attribute* Gex::Ui::AttributeItem::Attribute() const
+Gex::AttributeWkPtr Gex::Ui::AttributeItem::Attribute() const
 {
     return attribute;
 }
 
 
-Gex::Ui::AttributeItem* Gex::Ui::AttributeItem::GetSubAttribute(Gex::Attribute* attr) const
+Gex::Ui::AttributeItem* Gex::Ui::AttributeItem::GetSubAttribute(Gex::AttributeWkPtr attr) const
 {
     for (auto ca : childAttributes)
     {
@@ -473,7 +475,7 @@ void Gex::Ui::AttributeItem::CreateAttributes()
 
     for (unsigned int index : attribute->ValidIndices())
     {
-        auto* attr = attribute->GetIndexAttribute(index);
+        auto attr = attribute->GetIndexAttribute(index);
         AttributeItem* indexAttr = new AttributeItem(attr, this, parentNode);
         indexAttr->SetTextIndent(textIndent + 14);
         indexedAttributes.push_back(indexAttr);
@@ -481,7 +483,7 @@ void Gex::Ui::AttributeItem::CreateAttributes()
 
     childAttributes.clear();
 
-    for (auto* attr : attribute->GetChildAttributes())
+    for (auto attr : attribute->GetChildAttributes())
     {
 
         AttributeItem* childAttr = new AttributeItem(attr, this, parentNode);
@@ -534,7 +536,7 @@ void Gex::Ui::AttributeItem::InitializeLinks()
     }
 
     QList<QGraphicsItem*> items = scene()->items();
-    std::unordered_map<Gex::Node*, NodeItem*> nodesItems;
+    std::unordered_map<Gex::NodePtr, NodeItem*> nodesItems;
     for (auto* item : items)
     {
         NodeItem* nodeitem = qgraphicsitem_cast<NodeItem*>(item);
@@ -546,14 +548,19 @@ void Gex::Ui::AttributeItem::InitializeLinks()
         nodesItems[nodeitem->Node()] = nodeitem;
     }
 
-    auto* attr = attribute->Source();
+    auto attr = attribute->Source();
     if (attr)
     {
-        auto* node = attr->Node();
-        if (nodesItems.find(node) != nodesItems.end())
+        auto node = attr.lock()->Node();
+        if (!node)
+            return;
+
+        auto lockedNode = node.lock();
+        auto lockedAttr = attr.lock();
+        if (nodesItems.find(lockedNode) != nodesItems.end())
         {
-            NodeItem* nodeItem = nodesItems.at(node);
-            AttributeItem* attrItem = nodeItem->FindAttribute(attr->Longname());
+            NodeItem* nodeItem = nodesItems.at(lockedNode);
+            AttributeItem* attrItem = nodeItem->FindAttribute(lockedAttr->Longname());
 
             LinkItem* link = new LinkItem(attrItem, this);
             if (links.contains(link))
@@ -833,7 +840,7 @@ void Gex::Ui::NodeItem::SetDefaultFooter(qreal footer)
 
 
 
-Gex::Ui::NodeItem::NodeItem(Gex::Node* node_,
+Gex::Ui::NodeItem::NodeItem(Gex::NodePtr node_,
                             NodeGraphScene* sc,
                             QGraphicsItem* parent):
         QObject(), QGraphicsItem(parent)
@@ -914,8 +921,9 @@ void Gex::Ui::NodeItem::ConnectToNode()
     // Add a callback attached to the node so that its
     // graphic item receives attribute changes and make
     // it possible to update both ways.
-    auto callback = [this](Attribute* attribute,
-                           const AttributeChange& change)
+    auto callback = [this](
+            const AttributePtr& attribute,
+            const AttributeChange& change)
     {
         this->graphScene->OnNodeModified(this->node);
     };
@@ -968,7 +976,7 @@ void Gex::Ui::NodeItem::TitleChanged(const QString& text)
 }
 
 
-Gex::Node* Gex::Ui::NodeItem::Node() const
+Gex::NodePtr Gex::Ui::NodeItem::Node() const
 {
     return node;
 }
@@ -991,7 +999,7 @@ Gex::Ui::NodeItem::AttributeVisibilityMode Gex::Ui::NodeItem::AttributeVisibilit
 
 void Gex::Ui::NodeItem::CreateAttributes()
 {
-    for (auto* attr : node->GetAttributes())
+    for (auto attr : node->GetAttributes())
     {
         AttributeItem* item = new AttributeItem(attr, this);
         attributes.push_back(item);
@@ -1220,15 +1228,16 @@ void Gex::Ui::NodeItem::PlaceAttributes()
 }
 
 
-std::vector<Gex::Attribute*> AttributeHierarchy(Gex::Attribute* at)
+std::vector<Gex::AttributeWkPtr> AttributeHierarchy(const Gex::AttributeWkPtr& at)
 {
-    std::vector<Gex::Attribute*> hierarchy = {at};
+    std::vector<Gex::AttributeWkPtr> hierarchy = {at};
 
-    Gex::Attribute* attr = at;
-    while(attr->ParentAttribute())
+    Gex::AttributeWkPtr attr = at;
+    while(!attr->ParentAttribute().expired())
     {
-        hierarchy.insert(hierarchy.begin(), attr->ParentAttribute());
-        attr = attr->ParentAttribute();
+        auto lockedAttr = attr->ParentAttribute().lock();
+        hierarchy.insert(hierarchy.begin(), lockedAttr);
+        attr = lockedAttr;
     }
 
     return hierarchy;
@@ -1238,11 +1247,11 @@ std::vector<Gex::Attribute*> AttributeHierarchy(Gex::Attribute* at)
 // TODO : Optimize this.
 Gex::Ui::AttributeItem* Gex::Ui::NodeItem::FindAttribute(std::string longname) const
 {
-    Gex::Attribute* coreAttribute = node->GetAttribute(longname);
+    Gex::AttributeWkPtr coreAttribute = node->GetAttribute(longname);
     auto hierarchy = AttributeHierarchy(coreAttribute);
 
     AttributeItem* current = nullptr;
-    for (Gex::Attribute* attr : hierarchy)
+    for (const Gex::AttributeWkPtr& attr : hierarchy)
     {
         AttributeItem* item = nullptr;
         if (current)
@@ -1262,7 +1271,7 @@ Gex::Ui::AttributeItem* Gex::Ui::NodeItem::FindAttribute(std::string longname) c
 }
 
 
-Gex::Ui::AttributeItem* Gex::Ui::NodeItem::GetAttribute(Gex::Attribute* searched) const
+Gex::Ui::AttributeItem* Gex::Ui::NodeItem::GetAttribute(Gex::AttributeWkPtr searched) const
 {
     for (auto* at : attributes)
     {
@@ -1646,16 +1655,21 @@ Gex::Ui::LinkItem::LinkItem(AttributeItem *source, AttributeItem *dest): QGraphi
 
     src = source;
     dst = dest;
-
-    if (auto* cmp = Gex::CompoundNode::FromNode(src->Attribute()->Node()))
+    if (src && src->Attribute())
     {
-        if (cmp->HasNode(dst->Attribute()->Node()))
+        if (Gex::NodeWkPtr srcNode = src->Attribute()->Node())
         {
-            sourceInternal = true;
+            if (auto cmp = Gex::CompoundNode::FromNode(srcNode))
+            {
+                if (cmp->HasNode(dst->Attribute()->Node()))
+                {
+                    sourceInternal = true;
+                }
+            }
         }
     }
 
-    if (auto* cmp = Gex::CompoundNode::FromNode(dst->Attribute()->Node()))
+    if (auto cmp = Gex::CompoundNode::FromNode(dst->Attribute()->Node()))
     {
         if (cmp->HasNode(src->Attribute()->Node()))
         {
@@ -1760,7 +1774,7 @@ Gex::Ui::PlugItem* Gex::Ui::PreviewLinkItem::SourcePlug() const
 }
 
 
-Gex::Attribute* Gex::Ui::PreviewLinkItem::Attribute() const
+Gex::AttributeWkPtr Gex::Ui::PreviewLinkItem::Attribute() const
 {
     return anchorPlug->Attribute()->Attribute();
 }
@@ -1801,7 +1815,7 @@ void Gex::Ui::PreviewLinkItem::Draw(QPointF dest)
 
 
 Gex::Ui::NodeGraphContext::NodeGraphContext(const QString& name_,
-                                            Gex::CompoundNode* node_)
+                                            Gex::CompoundNodePtr node_)
 {
     name = name_;
     node = node_;
@@ -1814,7 +1828,7 @@ QString Gex::Ui::NodeGraphContext::Name() const
 }
 
 
-Gex::CompoundNode* Gex::Ui::NodeGraphContext::Compound() const
+Gex::CompoundNodePtr Gex::Ui::NodeGraphContext::Compound() const
 {
     return node;
 }
@@ -1825,19 +1839,19 @@ Gex::NodeList Gex::Ui::NodeGraphContext::GetNodes() const
 }
 
 
-Gex::Node* Gex::Ui::NodeGraphContext::CreateNode(std::string type, std::string name)
+Gex::NodePtr Gex::Ui::NodeGraphContext::CreateNode(std::string type, std::string name)
 {
     return node->CreateNode(type, name);
 }
 
 
-Gex::Node* Gex::Ui::NodeGraphContext::ReferenceNode(std::string path, std::string name)
+Gex::NodePtr Gex::Ui::NodeGraphContext::ReferenceNode(std::string path, std::string name)
 {
     return node->ReferenceNode(path, name);
 }
 
 
-bool Gex::Ui::NodeGraphContext::DeleteNode(Gex::Node* node_)
+bool Gex::Ui::NodeGraphContext::DeleteNode(Gex::NodePtr node_)
 {
     return node->RemoveNode(node_);
 }
@@ -2049,7 +2063,7 @@ void Gex::Ui::NodeGraphScene::mouseReleaseEvent(QGraphicsSceneMouseEvent* mouseE
                     unsigned int maxIndex = 0;
                     for (unsigned int index : destItem->Attribute()->ValidIndices())
                     {
-                        Gex::Attribute* indexAttr = destItem->Attribute()->GetIndexAttribute(index);
+                        Gex::AttributePtr indexAttr = destItem->Attribute()->GetIndexAttribute(index);
                         if (!indexAttr)
                         {
                             continue;
@@ -2068,7 +2082,7 @@ void Gex::Ui::NodeGraphScene::mouseReleaseEvent(QGraphicsSceneMouseEvent* mouseE
                         unsigned int newIndex = Gex::Ui::NextMultiAttributeIndex(destItem->Attribute());
                         if (destItem->Attribute()->CreateIndex(newIndex))
                         {
-                            auto *indexAttr = destItem->Attribute()->GetIndexAttribute(newIndex);
+                            auto indexAttr = destItem->Attribute()->GetIndexAttribute(newIndex);
                             indexAttr->ConnectSource(sourceItem->Attribute());
 
                             // TODO : Rebuilding attributes should be available from attribute !
@@ -2151,7 +2165,7 @@ void Gex::Ui::NodeGraphScene::OnItemDoubleClicked(QGraphicsItem* item)
     if (!nodeItem)
         return;
 
-    auto* node = Gex::CompoundNode::FromNode(nodeItem->Node());
+    auto node = Gex::CompoundNode::FromNode(nodeItem->Node());
     if (!node || nodeItem->IsShowingInternal())
     {
         return;
@@ -2161,7 +2175,7 @@ void Gex::Ui::NodeGraphScene::OnItemDoubleClicked(QGraphicsItem* item)
 }
 
 
-void Gex::Ui::NodeGraphScene::UpdateNode(Gex::Node* node)
+void Gex::Ui::NodeGraphScene::UpdateNode(Gex::NodePtr node)
 {
     NodeItem* nodeItem = nodeItems.value(node, nullptr);
     if (nodeItem)
@@ -2179,14 +2193,14 @@ void Gex::Ui::NodeGraphScene::UpdateNode(Gex::Node* node)
 }
 
 
-void Gex::Ui::NodeGraphScene::OnNodeModified(Gex::Node* node)
+void Gex::Ui::NodeGraphScene::OnNodeModified(Gex::NodePtr node)
 {
     Q_EMIT NodeModified(node);
 }
 
 
-void Gex::Ui::NodeGraphScene::UpdateNodeAttribute(Gex::Node* node,
-                                                            QString attribute)
+void Gex::Ui::NodeGraphScene::UpdateNodeAttribute(
+        Gex::NodePtr node, QString attribute)
 {
     NodeItem* nodeItem = nodeItems.value(node, nullptr);
     if (!nodeItem)
@@ -2198,6 +2212,13 @@ void Gex::Ui::NodeGraphScene::UpdateNodeAttribute(Gex::Node* node,
 
     attributeItem->RebuildAttributes();
 }
+
+
+//Gex::Ui::NodeGraphView::NodeGraphView(const NodeGraphView& other):
+//        NodeGraphView(other.graphScene, nullptr)
+//{
+//
+//}
 
 
 Gex::Ui::NodeGraphView::NodeGraphView(NodeGraphScene* scene, QWidget* parent):
@@ -2558,7 +2579,7 @@ void Gex::Ui::NodeGraphScene::SwitchGraphContext(NodeGraphContext* context)
     Clear();  // Clear all content.
 
     graphContext = context;
-    for (Gex::Node* node : graphContext->GetNodes())
+    for (Gex::NodePtr node : graphContext->GetNodes())
     {
         auto* item = new NodeItem(node, this);
         addItem(item);
@@ -2570,7 +2591,7 @@ void Gex::Ui::NodeGraphScene::SwitchGraphContext(NodeGraphContext* context)
 
     if (context->Compound())
     {
-        auto* cmpd = context->Compound();
+        auto cmpd = context->Compound();
 
         input = new NodeItem(cmpd, this);
         addItem(input);
@@ -2601,7 +2622,7 @@ void Gex::Ui::NodeGraphScene::SwitchGraphContext(NodeGraphContext* context)
 
 void Gex::Ui::NodeGraphScene::DeleteNode(NodeItem* item)
 {
-    Gex::Node* node = item->Node();
+    Gex::NodePtr node = item->Node();
 
     if (!graphContext->DeleteNode(node))
     {
@@ -2632,11 +2653,11 @@ QList<Gex::Ui::NodeItem*> Gex::Ui::NodeGraphScene::SelectedNodeItems() const
 }
 
 
-std::vector<Gex::Node*>  Gex::Ui::NodeGraphScene::SelectedNodes() const
+std::vector<Gex::NodePtr>  Gex::Ui::NodeGraphScene::SelectedNodes() const
 {
     auto items  = selectedItems();
 
-    std::vector<Gex::Node*> core;
+    std::vector<Gex::NodePtr> core;
     for (auto* item : items)
     {
         if (auto* node = qgraphicsitem_cast<NodeItem*>(item))
@@ -2655,12 +2676,12 @@ Gex::Ui::NodeGraphContext* Gex::Ui::NodeGraphScene::CurrentContext() const
 }
 
 
-void Gex::Ui::NodeGraphScene::DuplicateNodes(std::vector<Node*> nodes, bool copyLinks)
+void Gex::Ui::NodeGraphScene::DuplicateNodes(std::vector<NodePtr> nodes, bool copyLinks)
 {
-    std::vector<Gex::Node*> duplicateds = graphContext->DuplicateNodes(nodes, copyLinks);
+    std::vector<Gex::NodePtr> duplicateds = graphContext->DuplicateNodes(nodes, copyLinks);
 
     QList<NodeItem*> newItems;
-    for (auto* dupnode : duplicateds)
+    for (auto dupnode : duplicateds)
     {
         auto* nodeItem = new NodeItem(dupnode, this);
         addItem(nodeItem);
@@ -2710,13 +2731,13 @@ void Gex::Ui::NodeGraphScene::ConvertSelectedNodesToCompound()
 {
     auto extract = SelectedNodeItems();
 
-    std::vector<Gex::Node*> nodes;
+    std::vector<Gex::NodePtr> nodes;
     for (auto n : extract)
     {
         nodes.push_back(n->Node());
     }
 
-    auto* cmp = graphContext->Compound()->ToCompound(nodes);
+    auto cmp = graphContext->Compound()->ToCompound(nodes);
 
     for (auto* item : extract)
     {
@@ -2780,7 +2801,7 @@ void Gex::Ui::NodeGraphScene::DeleteSelection()
 
 void Gex::Ui::NodeGraphScene::CreateNode(QString type, QString name)
 {
-    Gex::Node* node = graphContext->CreateNode(
+    Gex::NodePtr node = graphContext->CreateNode(
             type.toStdString(), name.toStdString());
 
     auto* item = new NodeItem(node, this);
@@ -2793,7 +2814,7 @@ void Gex::Ui::NodeGraphScene::CreateNode(QString type, QString name)
 
 void Gex::Ui::NodeGraphScene::ReferenceNode(QString type, QString name)
 {
-    Gex::Node* node = graphContext->ReferenceNode(
+    Gex::NodePtr node = graphContext->ReferenceNode(
             type.toStdString(), name.toStdString());
 
     if (!node)
@@ -2807,7 +2828,7 @@ void Gex::Ui::NodeGraphScene::ReferenceNode(QString type, QString name)
 }
 
 
-void Gex::Ui::NodeGraphScene::NodeEvaluationStarted(Gex::Node* node)
+void Gex::Ui::NodeGraphScene::NodeEvaluationStarted(Gex::NodePtr node)
 {
     auto* nodeItem = nodeItems.value(node, nullptr);
     if (!nodeItem)
@@ -2817,7 +2838,7 @@ void Gex::Ui::NodeGraphScene::NodeEvaluationStarted(Gex::Node* node)
 
 }
 
-void Gex::Ui::NodeGraphScene::NodeEvaluationDone(Gex::Node* node, bool success)
+void Gex::Ui::NodeGraphScene::NodeEvaluationDone(Gex::NodePtr node, bool success)
 {
     auto* nodeItem = nodeItems.value(node, nullptr);
     if (!nodeItem)
@@ -2915,13 +2936,13 @@ void Gex::Ui::NodeGraphScene::AutoLayoutNodes(const QPointF& destination,
 {
     auto nodes = nodeItems.keys();
 
-    std::vector<Gex::Node*> nodeVec;
-    for (auto* node : nodes)
+    std::vector<Gex::NodePtr> nodeVec;
+    for (auto node : nodes)
         nodeVec.push_back(node);
 
     auto schelNodes = Gex::ScheduleNodes(nodeVec, false);
 
-    std::map<int, std::vector<Gex::Node*>> nodeLevels;
+    std::map<int, std::vector<Gex::NodePtr>> nodeLevels;
     for (auto schel : schelNodes)
     {
         int i = 0;
@@ -2929,7 +2950,7 @@ void Gex::Ui::NodeGraphScene::AutoLayoutNodes(const QPointF& destination,
         {
             for (auto nl : nodeLevels)
             {
-                if (std::find(nl.second.begin(), nl.second.end(), node->node) != nl.second.end())
+                if (std::find(nl.second.begin(), nl.second.end(), node->node.lock()) != nl.second.end())
                 {
                     if (nl.first > i)
                         i = nl.first;
@@ -2939,11 +2960,11 @@ void Gex::Ui::NodeGraphScene::AutoLayoutNodes(const QPointF& destination,
 
         if (nodeLevels.find(i + 1) == nodeLevels.end())
         {
-            nodeLevels[i + 1] = {schel->node};
+            nodeLevels[i + 1] = {schel->node.lock()};
         }
         else
         {
-            nodeLevels[i + 1].push_back(schel->node);
+            nodeLevels[i + 1].push_back(schel->node.lock());
         }
     }
 
@@ -3071,7 +3092,7 @@ void Gex::Ui::ContextsWidget::ClearContexts()
 QEvent::Type Gex::Ui::GraphWidget::scheduleEventType = QEvent::Type(QEvent::registerEventType());
 
 
-Gex::Ui::GraphWidget::GraphWidget(Gex::CompoundNode* graph_,
+Gex::Ui::GraphWidget::GraphWidget(Gex::CompoundNodePtr graph_,
                                   QWidget* parent): QWidget(parent)
 {
     graph = graph_;
@@ -3206,14 +3227,14 @@ void Gex::Ui::GraphWidget::OnNodeSelected()
 {
     QList<QGraphicsItem*> items = scene->selectedItems();
 
-    std::vector<Gex::Node*> nodes;
+    std::vector<Gex::NodeWkPtr> nodes;
     for (auto* item : items)
     {
         auto* nodeItem = qgraphicsitem_cast<NodeItem*>(item);
         if (!nodeItem)
             continue;
 
-        nodes.push_back(nodeItem->Node());
+        nodes.emplace_back(nodeItem->Node());
     }
 
     editor->SetNodes(nodes);
@@ -3222,7 +3243,7 @@ void Gex::Ui::GraphWidget::OnNodeSelected()
 }
 
 
-void Gex::Ui::GraphWidget::RegisterContext(Gex::CompoundNode* compound)
+void Gex::Ui::GraphWidget::RegisterContext(Gex::CompoundNodePtr compound)
 {
     auto *context = new NodeGraphContext(compound->Name().c_str(), compound);
 
@@ -3273,7 +3294,7 @@ bool Gex::Ui::GraphWidget::event(QEvent *event)
 }
 
 
-void Gex::Ui::GraphWidget::SwitchGraph(Gex::CompoundNode* graph_)
+void Gex::Ui::GraphWidget::SwitchGraph(Gex::CompoundNodePtr graph_)
 {
     graph = graph_;
 
@@ -3286,13 +3307,13 @@ void Gex::Ui::GraphWidget::SwitchGraph(Gex::CompoundNode* graph_)
 
 
 
-void Gex::Ui::GraphWidget::UpdateNode(Gex::Node* node)
+void Gex::Ui::GraphWidget::UpdateNode(Gex::NodePtr node)
 {
     scene->UpdateNode(node);
 }
 
 
-void Gex::Ui::GraphWidget::UpdateNodeAttribute(Gex::Node* node,
+void Gex::Ui::GraphWidget::UpdateNodeAttribute(Gex::NodePtr node,
                                                          QString attribute)
 {
     scene->UpdateNodeAttribute(node, attribute);
@@ -3341,9 +3362,9 @@ void Gex::Ui::GraphWidget::RunGraph()
     scene->ClearNodeEvaluation();
 
     graph->Run(profiler, threadsSpinBox->value(),
-               [this](Gex::Node* node)
+               [this](Gex::NodePtr node)
                {this->scene->NodeEvaluationStarted(node);},
-               [this](Gex::Node* node, bool success)
+               [this](Gex::NodePtr node, bool success)
                {if (success) this->scene->NodeEvaluationDone(node, success);},
                [this, prevState](const Gex::GraphContext& ctx)
                {EmitProfiler(this, ctx);this->interactiveEvalEnabled = prevState;}
@@ -3351,7 +3372,7 @@ void Gex::Ui::GraphWidget::RunGraph()
 }
 
 
-void Gex::Ui::GraphWidget::RunFromNode(Gex::Node* node)
+void Gex::Ui::GraphWidget::RunFromNode(Gex::NodePtr node)
 {
 //    if (!interactiveEvalEnabled)
     return;
@@ -3380,9 +3401,9 @@ void Gex::Ui::GraphWidget::RunFromNode(Gex::Node* node)
     interactiveEval = new Gex::NodeEvaluator(
             subGraph, context, profiler,
             false, threadsSpinBox->value(),
-            [this](Gex::Node* node)
+            [this](Gex::NodePtr node)
             {this->scene->NodeEvaluationStarted(node);},
-            [this](Gex::Node* node, bool success)
+            [this](Gex::NodePtr node, bool success)
             {if (success) this->scene->NodeEvaluationDone(node, success);},
             [this](const Gex::GraphContext& ctx)
             {EmitProfiler(this, ctx);this->interactiveEvalEnabled = true;}

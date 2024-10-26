@@ -19,18 +19,18 @@ namespace Gex
         friend Node;
 
     protected:
-        Node* node;
-        Attribute* attribute;
+        NodePtr node;
+        AttributePtr attribute;
 
 
-        explicit NodeAttributeData(Node* n);
+        explicit NodeAttributeData(const NodePtr& n);
 
 
-        explicit NodeAttributeData(Attribute* attr);
+        explicit NodeAttributeData(const AttributePtr& attr);
 
 
     public:
-        Node* GetNode() const;
+        NodePtr GetNode() const;
 
 
         std::any GetAnyValue(Feedback* success=nullptr);
@@ -102,7 +102,7 @@ namespace Gex
             if (!attribute->HasIndex(index))
                 return false;
 
-            Attribute* indexAttr = attribute->GetIndexAttribute(index);
+            AttributePtr indexAttr = attribute->GetIndexAttribute(index);
             if (!indexAttr)
                 return false;
 
@@ -154,7 +154,7 @@ namespace Gex
                 return T();
             }
 
-            Attribute* indexAttr = attribute->GetIndexAttribute(index);
+            AttributePtr indexAttr = attribute->GetIndexAttribute(index);
             if (!indexAttr)
             {
                 if (stat)

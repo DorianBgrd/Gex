@@ -2,6 +2,8 @@
 #define GEX_GEX_H
 
 #include "api.h"
+#include "ptrs.h"
+#include "defs.h"
 #include "Attribute.h"
 #include "Config.h"
 #include "Evaluation.h"

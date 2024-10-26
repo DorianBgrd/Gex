@@ -58,5 +58,6 @@ add_custom_command(
         --executable Gex-cli.exe --name Gex-cli --depth 2
         --directory ${CMAKE_CURRENT_BINARY_DIR}
         --search_directories ${CMAKE_BINARY_DIR} ${CMAKE_CURRENT_BINARY_DIR} ${TSYS_LIBRARY_DIR}
+        ${CMAKE_BINARY_DIR}/Gex
         --dependencies TSys.dll Gex.dll
 )

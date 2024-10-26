@@ -19,9 +19,9 @@ void Gex::NodeBuilder::SetPlugin(std::string plugin)
 }
 
 
-Gex::Node* Gex::NodeBuilder::InitNode() const
+Gex::NodePtr Gex::NodeBuilder::InitNode() const
 {
-    Node* node = CreateNode();
+    NodePtr node(CreateNode());
 
     node->SetPlugin(Plugin());
 
@@ -30,21 +30,23 @@ Gex::Node* Gex::NodeBuilder::InitNode() const
 }
 
 
-void Gex::NodeBuilder::SerializeNode(Node *node, rapidjson::Value &dict, rapidjson::Document &json) const
+void Gex::NodeBuilder::SerializeNode(const NodePtr& node, rapidjson::Value &dict,
+                                     rapidjson::Document &json) const
 {
     node->Serialize(dict, json);
 }
 
 
-void Gex::NodeBuilder::DeserializeNode(rapidjson::Value& dict, Node* node) const
+void Gex::NodeBuilder::DeserializeNode(rapidjson::Value& dict,
+                                       const NodePtr& node) const
 {
     node->Deserialize(dict);
 }
 
 
-Gex::Node* Gex::NodeBuilder::LoadNode(rapidjson::Value& dict) const
+Gex::NodePtr Gex::NodeBuilder::LoadNode(rapidjson::Value& dict) const
 {
-    Node* node = InitNode();
+    NodePtr node = InitNode();
 
     DeserializeNode(dict, node);
 
@@ -52,7 +54,8 @@ Gex::Node* Gex::NodeBuilder::LoadNode(rapidjson::Value& dict) const
 }
 
 
-void Gex::NodeBuilder::SaveNode(Node *node, rapidjson::Value &dict, rapidjson::Document &json) const
+void Gex::NodeBuilder::SaveNode(const NodePtr& node, rapidjson::Value &dict,
+                                rapidjson::Document &json) const
 {
     SerializeNode(node, dict, json);
 }
@@ -106,7 +109,7 @@ bool Gex::NodeFactory::HasBuilder(const std::string& type) const
 }
 
 
-bool Gex::NodeFactory::RegisterNodeBuilder(const std::string type, NodeBuilder* builder, bool default_, bool force)
+bool Gex::NodeFactory::RegisterNodeBuilder(const std::string& type, NodeBuilder* builder, bool default_, bool force)
 {
 	if (!force && HasBuilder(type))
 	{
@@ -138,7 +141,7 @@ Gex::NodeBuilder* Gex::NodeFactory::GetBuilder(const std::string& type) const
 }
 
 
-Gex::Node* Gex::NodeFactory::LoadNode(rapidjson::Value& dict) const
+Gex::NodePtr Gex::NodeFactory::LoadNode(rapidjson::Value& dict) const
 {
     if (dict.HasMember(Config::GetConfig().nodeReferencePathKey.c_str()))
     {
@@ -166,7 +169,7 @@ Gex::Node* Gex::NodeFactory::LoadNode(rapidjson::Value& dict) const
 		return nullptr;
 	}
 
-    Node* node = builder->LoadNode(dict);
+    NodePtr node = builder->LoadNode(dict);
 
     node->SetType(nodeType);
 
@@ -174,7 +177,8 @@ Gex::Node* Gex::NodeFactory::LoadNode(rapidjson::Value& dict) const
 }
 
 
-bool Gex::NodeFactory::SaveNode(Node* node, rapidjson::Value& dict, rapidjson::Document& json) const
+bool Gex::NodeFactory::SaveNode(const NodePtr& node, rapidjson::Value& dict,
+                                rapidjson::Document& json) const
 {
     NodeBuilder* builder = GetBuilder(node->Type());
     if (!builder)
@@ -223,7 +227,7 @@ bool Gex::NodeFactory::TypeExists(std::string typeName) const
 }
 
 
-Gex::Node* Gex::NodeFactory::CreateNode(const std::string& type, const std::string& name) const
+Gex::NodePtr Gex::NodeFactory::CreateNode(const std::string& type, const std::string& name) const
 {
     NodeBuilder* builder = GetBuilder(type);
     if (!builder)
@@ -231,7 +235,7 @@ Gex::Node* Gex::NodeFactory::CreateNode(const std::string& type, const std::stri
         return nullptr;
     }
 
-    Node* node = builder->InitNode();
+    NodePtr node = builder->InitNode();
     node->SetName(name);
     node->SetType(type);
 
@@ -239,20 +243,20 @@ Gex::Node* Gex::NodeFactory::CreateNode(const std::string& type, const std::stri
 }
 
 
-Gex::Node* Gex::NodeFactory::ReferenceNode(const std::string& path, const std::string& name) const
+Gex::NodePtr Gex::NodeFactory::ReferenceNode(const std::string& path, const std::string& name) const
 {
     std::string referencePath = Gex::References::GetLoader()->ResolvePath(path);
     if (referencePath.empty())
         return nullptr;
 
-    auto* result = Gex::LoadGraph(referencePath);
+    NodePtr result = Gex::LoadGraph(referencePath);
     if (!result)
         return nullptr;
 
     if (!name.empty())
         result->SetName(name);
 
-    auto tc = [path, result](Gex::Node* n){
+    auto tc = [path, result](const Gex::NodePtr& n){
         n->SetReferencePath(path);
         n->SetEditable(n == result);
         return true;

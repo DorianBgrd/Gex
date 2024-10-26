@@ -14,7 +14,7 @@ namespace Gex::Editor
     {
         Q_OBJECT
 
-        Gex::CompoundNode* graph;
+        Gex::CompoundNodePtr graph;
         Gex::Ui::GraphView* graphView;
         std::string currentFile;
         QAction* saveAction;
@@ -22,7 +22,7 @@ namespace Gex::Editor
         Gex::Ui::ViewerDock* dock;
 
     public:
-        MainWindow(Gex::CompoundNode* graph, std::string file="",
+        MainWindow(Gex::CompoundNodePtr graph, std::string file="",
                    QWidget* parent=nullptr);
 
         Gex::Feedback New();

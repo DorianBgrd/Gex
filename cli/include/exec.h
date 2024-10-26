@@ -7,13 +7,13 @@
 
 namespace Exec
 {
-    bool ResolveJsonValue(Gex::Attribute* attr, rapidjson::Value& value);
+    bool ResolveJsonValue(Gex::AttributePtr attr, rapidjson::Value& value);
 
 
-    void VerboseNodeStart(Gex::Node* node);
+    void VerboseNodeStart(Gex::NodePtr node);
 
 
-    void VerboseNodeEnd(Gex::Node* node, bool success);
+    void VerboseNodeEnd(Gex::NodePtr node, bool success);
 
 
     int ExecuteGraph(int argc, char** argv, int start);

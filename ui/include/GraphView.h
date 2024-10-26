@@ -15,19 +15,19 @@ namespace Gex::Ui
         Q_OBJECT
 
     private:
-        Gex::CompoundNode* graph;
+        Gex::CompoundNodePtr graph;
         GraphWidget* graphView;
         ProfileView* profileView;
 
     public:
-        GraphView(Gex::CompoundNode* graph,
+        GraphView(Gex::CompoundNodePtr graph,
                   QWidget* parent=nullptr);
 
         GraphWidget* GetGraphWidget() const;
 
         ProfileView* GetProfileWidget() const;
 
-        void SwitchGraph(Gex::CompoundNode* graph);
+        void SwitchGraph(Gex::CompoundNodePtr graph);
     };
 }
 

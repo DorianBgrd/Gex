@@ -13,10 +13,10 @@ namespace ImageManip::Viewers
     public:
         void Setup() override;
 
-        void OnNodeUpdated(Gex::Node* node) override;
+        void OnNodeUpdated(Gex::NodeWkPtr node) override;
 
         void OnAttributeUpdated(
-                Gex::Attribute* attribute,
+                const Gex::AttributePtr& attribute,
                 const Gex::AttributeChange& change)
                 override;
     };

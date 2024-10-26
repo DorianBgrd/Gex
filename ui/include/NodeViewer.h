@@ -19,28 +19,30 @@ namespace Gex::Ui
     {
         friend ViewerCreator;
 
-        Gex::Node* node = nullptr;
+        Gex::NodeWkPtr node;
+        bool connected = false;
         int callbackIndex;
+        int deleteCallbackIndex;
 
     protected:
         NodeViewer();
 
     protected:
-        void ConnectToNode(Gex::Node* node);
+        void ConnectToNode(Gex::NodeWkPtr node);
 
-        void DisconnectFromNode(Gex::Node* node);
+        void DisconnectFromNode(Gex::NodeWkPtr node);
 
     public:
-        Gex::Node* CurrentNode() const;
+        Gex::NodeWkPtr CurrentNode() const;
 
-        void SetCurrentNode(Gex::Node* node);
+        void SetCurrentNode(Gex::NodeWkPtr node);
 
         virtual void Setup() = 0;
 
-        virtual void OnNodeUpdated(Gex::Node* node) = 0;
+        virtual void OnNodeUpdated(Gex::NodeWkPtr node) = 0;
 
         virtual void OnAttributeUpdated(
-                Attribute* attribute,
+                const AttributePtr& attribute,
                 const AttributeChange& change) = 0;
 
         void closeEvent(QCloseEvent *event) override;
@@ -96,9 +98,9 @@ namespace Gex::Ui
     public:
         ViewerDock(QWidget* parent=nullptr);
 
-        void OnNodeSelected(Gex::Node* node);
+        void OnNodeSelected(Gex::NodeWkPtr node);
 
-        void NodeSelectionChanged(const std::vector<Gex::Node*> nodes);
+        void NodeSelectionChanged(const std::vector<Gex::NodeWkPtr> nodes);
 
         void Extract() const;
     };

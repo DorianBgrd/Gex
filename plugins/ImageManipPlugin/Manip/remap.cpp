@@ -7,16 +7,18 @@ QImage ImageManip::Manip::GradientRemapImage(
 {
 
     QImage remapped(source);
-    for (unsigned int x = 0; x < source.width(); x++)
+    for (unsigned int y = 0; y < source.height(); y++)
     {
-        for (unsigned int y = 0; y < source.height(); y++)
+        const auto* sourceScanLine = reinterpret_cast<const QRgba64*>(source.scanLine(y));
+        auto* scanLine = reinterpret_cast<QRgba64*>(remapped.scanLine(y));
+        for (unsigned int x = 0; x < source.width(); x++)
         {
-            QColor color = source.pixelColor(x, y);
+            QColor color(sourceScanLine[x]);
 
             double m = (color.redF() + color.greenF() + color.blueF()) / 3.0;
 
             QColor newColor = gradient.ColorAtStep(m);
-            remapped.setPixelColor(x, y, newColor);
+            scanLine[x] = newColor.rgba64();
         }
     }
 

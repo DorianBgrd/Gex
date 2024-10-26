@@ -55,14 +55,14 @@ namespace Gex
          * @param name: node name.
          * @return Node ptr.
          */
-        virtual Node* InitNode() const;
+        virtual NodePtr InitNode() const;
 
         /**
          * Deserializes node data.
          * @param dict node data.
          * @param node Node ptr.
          */
-        virtual void DeserializeNode(rapidjson::Value& dict, Node* node) const;
+        virtual void DeserializeNode(rapidjson::Value& dict, const NodePtr& node) const;
 
         /**
          * Load node from serialized values.
@@ -70,7 +70,7 @@ namespace Gex
          * @param dict: data.
          * @return Node ptr.
          */
-        virtual Node* LoadNode(rapidjson::Value& dict) const;
+        virtual NodePtr LoadNode(rapidjson::Value& dict) const;
 
         /**
          * Serializes node.
@@ -78,7 +78,7 @@ namespace Gex
          * @param dict: node data.
          * @param doc: json file.
          */
-        virtual void SaveNode(Node* node, rapidjson::Value& dict, rapidjson::Document& json) const;
+        virtual void SaveNode(const NodePtr& node, rapidjson::Value& dict, rapidjson::Document& json) const;
 
         /**
          * Serializes node data.
@@ -86,7 +86,7 @@ namespace Gex
          * @param dict: data.
          * @param json: document.
          */
-        virtual void SerializeNode(Node* node, rapidjson::Value& dict, rapidjson::Document& json) const;
+        virtual void SerializeNode(const NodePtr& node, rapidjson::Value& dict, rapidjson::Document& json) const;
 	};
 
 
@@ -117,7 +117,7 @@ namespace Gex
 		bool HasBuilder(const std::string& type) const;
 
 	public:
-		bool RegisterNodeBuilder(const std::string type, NodeBuilder* builder,
+		bool RegisterNodeBuilder(const std::string& type, NodeBuilder* builder,
                                  bool default_ = false,  bool force = false);
 
 		NodeBuilder* DefaultBuilder() const;
@@ -126,13 +126,13 @@ namespace Gex
 
 	public:
 
-		Node* CreateNode(const std::string& type, const std::string& name) const;
+		NodePtr CreateNode(const std::string& type, const std::string& name) const;
 
-        Node* ReferenceNode(const std::string& path, const std::string& name) const;
+        NodePtr ReferenceNode(const std::string& path, const std::string& name) const;
 
-        Node* LoadNode(rapidjson::Value& dict) const;
+        NodePtr LoadNode(rapidjson::Value& dict) const;
 
-        bool SaveNode(Node* node, rapidjson::Value& dict, rapidjson::Document& json) const;
+        bool SaveNode(const NodePtr& node, rapidjson::Value& dict, rapidjson::Document& json) const;
 
         bool TypeExists(std::string typeName) const;
 

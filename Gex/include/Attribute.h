@@ -1,14 +1,15 @@
 #ifndef NODELIBRARY_ATTRIBUTE
 #define NODELIBRARY_ATTRIBUTE
 
+#include <memory>
 #include <vector>
 #include <string>
 #include <map>
 #include <any>
 
+#include "defs.h"
 #include "Status.h"
 
-#include "SafePtrs/safeptr.h"
 #include "rapidjson/document.h"
 
 #include <regex>
@@ -55,7 +56,9 @@ namespace Gex
 	class CompoundNode;
     class NodeAttributeData;
 
-	class GEX_API Attribute: USING_SAFE_PTR(Attribute)
+    class Attribute;
+
+	class GEX_API Attribute: public std::enable_shared_from_this<Attribute>
 	{
 		friend Node;
 		friend CompoundNode;
@@ -72,17 +75,16 @@ namespace Gex
         std::any defaultValue;
 		std::any attributeAnyValue;
 
-		Node* attributeNode;
+		NodeWkPtr attributeNode;
 
-		Attribute* parentAttribute;
-		std::map<std::string, Attribute*> subAttributes;
-		std::map<unsigned int, Attribute*> multiValues;
+		AttributeWkPtr parentAttribute;
+		std::map<std::string, AttributePtr> subAttributes;
+		std::map<unsigned int, AttributePtr> multiValues;
 
-        SafePtr<Attribute> source;
-        std::vector<SafePtr<Attribute>> dests;
+        AttributeWkPtr source;
+        std::vector<AttributeWkPtr> dests;
 
 	public:
-
         /**
          * Default constructor.
          */
@@ -107,7 +109,8 @@ namespace Gex
          * @param Attribute* parent: parent Attribute ptr.
          * @return Result Attribute ptr.
          */
-        Attribute* Copy(std::string name, Node* node, Attribute* parent=nullptr) const;
+        AttributePtr Copy(const std::string& name, const NodePtr& node,
+                          const AttributePtr& parent=nullptr) const;
 
     private:
         /**
@@ -116,7 +119,7 @@ namespace Gex
          * @param Attribute* ref: attribute ptr to copy.
          * @return Attribute* resulting attribute.
          */
-        Attribute* CopyAsChild(Attribute* ref);
+        AttributePtr CopyAsChild(const AttributePtr& ref);
 
         /**
          * Initializes default value.
@@ -134,9 +137,10 @@ namespace Gex
          * @param Node* node: parent node ptr.
          * @param Attribute* parent: parent attribute ptr.
          */
-        explicit Attribute(std::string name, std::any v, AttrValueType valueType = AttrValueType::Single,
-			AttrType type = AttrType::Static, bool userDefined = false,
-			Node* node = nullptr, Attribute* parent=nullptr);
+        explicit Attribute(const std::string& name, const std::any& v,
+                           const AttrValueType& valueType = AttrValueType::Single,
+			               const AttrType& type = AttrType::Static, bool userDefined = false,
+			               const NodePtr& node = nullptr, const AttributePtr& parent=nullptr);
 
         /**
          * Creates new attribute using specified type.
@@ -149,15 +153,15 @@ namespace Gex
          * @param Attribute* parent: parent attribute ptr.
          */
 		template<typename T>
-		explicit Attribute(const std::string& name, AttrValueType valueType = AttrValueType::Single,
-			AttrType type = AttrType::Static, bool userDefined = false,
-			Node* node = nullptr, Attribute* parent=nullptr):
+		explicit Attribute(const std::string& name, const AttrValueType& valueType = AttrValueType::Single,
+			const AttrType& type = AttrType::Static, bool userDefined = false,
+			const NodePtr& node = nullptr, const AttributePtr& parent=nullptr):
             Attribute(name, typeid(T).hash_code(), valueType,
                       type, userDefined, node, parent){}
 
-        explicit Attribute(const std::string& name, size_t hash, AttrValueType valueType = AttrValueType::Single,
-                           AttrType type = AttrType::Static, bool userDefined = false,
-                           Node* node = nullptr, Attribute* parent=nullptr);
+        explicit Attribute(const std::string& name, size_t hash, const AttrValueType& valueType = AttrValueType::Single,
+                           const AttrType& type = AttrType::Static, bool userDefined = false,
+                           const NodePtr& node = nullptr, const AttributePtr& parent=nullptr);
 
     public:
         /**
@@ -169,9 +173,10 @@ namespace Gex
          * @param Node* node: attribute parent Node ptr.
          * @param Attribute* parent: attribute parent Attribute ptr.
          */
-        explicit Attribute(const std::string& name, AttrType type = AttrType::Static, bool multi=false,
-			bool userDefined = false, Node* node = nullptr,
-			Attribute* parent = nullptr);
+        explicit Attribute(const std::string& name,
+                           const AttrType& type = AttrType::Static, bool multi=false,
+                           bool userDefined = false, const NodePtr& node = nullptr,
+                           const AttributePtr& parent = nullptr);
 
         /**
          * Sets current attribute default value.
@@ -196,20 +201,20 @@ namespace Gex
          * Sets parent node.
          * @param Node* node ptr.
          */
-		void SetParentNode(Node* node);
+		void SetParentNode(const NodePtr& node);
 
 	public:
         /**
          * Returns attribute parent Node.
          * @return Node* parent node ptr.
          */
-		Node* Node() const;
+		NodeWkPtr Node() const;
 
         /**
          * Returns attribute parent.
          * @return Attribute* parent.
          */
-        Attribute* ParentAttribute() const;
+        AttributeWkPtr ParentAttribute() const;
 
         /**
          * Returns attribute short name.
@@ -376,20 +381,20 @@ namespace Gex
          * Returns children attributes.
          * @return std::vector<Attribute*> child attributes.
          */
-		std::vector<Attribute*> GetChildAttributes() const;
+		std::vector<AttributePtr> GetChildAttributes() const;
 
         /**
          * Return child attribute with specified name.
          * @param std::string name: child name.
          * @return child Attribute ptr.
          */
-		Attribute* GetAttribute(std::string name) const;
+		AttributePtr GetAttribute(std::string name) const;
 
         /**
          * Returns all sub attributes.
          * @return sub Attributes ptrs.
          */
-        std::vector<Attribute*> GetAllAttributes() const;
+        std::vector<AttributePtr> GetAllAttributes() const;
 
 	public:
         /**
@@ -397,32 +402,38 @@ namespace Gex
          * @param Attribute* child: attribute ptr.
          * @return bool success.
          */
-		bool AddChildAttribute(Attribute* child);
+		bool AddChildAttribute(const AttributePtr& child);
 
 		template<typename Type>
-		Attribute* CreateChildAttribute(const std::string& name, AttrValueType vType = AttrValueType::Single,
-                                        AttrType type = AttrType::Static, bool userdefined = false)
+		AttributeWkPtr CreateChildAttribute(const std::string& name, const AttrValueType& vType = AttrValueType::Single,
+                                        const AttrType& type = AttrType::Static, bool userDefined = false)
 		{
-			auto child = new Attribute<Type>(name, vType, type, userdefined, userdefined, attributeNode, parentAttribute);
+			auto* rawChild = new Attribute<Type>(name, vType, type, userDefined, attributeNode, parentAttribute);
+
+            AttributePtr child = rawChild;
 
 			bool success = AddChildAttribute(child);
 			if (!success)
 			{
-				delete child;
-				return nullptr;
+				return {};
 			}
 
 			return child;
 		}
 
-		Attribute* CreateChildAttribute(std::string name, std::any value, AttrValueType vType = AttrValueType::Single, AttrType type = AttrType::Static, bool userdefined = false)
+		AttributeWkPtr CreateChildAttribute(const std::string& name, const std::any& value,
+                                        const AttrValueType& vType = AttrValueType::Single,
+                                        const AttrType& type = AttrType::Static,
+                                        bool userdefined = false)
 		{
-			Attribute* child = new Attribute(name, value, vType, type, userdefined, attributeNode, parentAttribute);
+			auto child = std::make_shared<Attribute>(
+                    name, value, vType, type, userdefined,
+                    attributeNode.lock(), parentAttribute.lock());
+
 			bool success = AddChildAttribute(child);
 			if (!success)
 			{
-				delete child;
-				return nullptr;
+				return {};
 			}
 
 			return child;
@@ -506,18 +517,21 @@ namespace Gex
          * @param sub index attribute.
          * @return index.
          */
-        unsigned int AttributeIndex(Attribute* sub, Feedback* status=nullptr);
+        unsigned int AttributeIndex(const AttributePtr& sub, Feedback* status=nullptr);
 
     private:
-        bool _CanConnectSource(Attribute* source);
+        bool _CanConnectSource(const AttributePtr& source);
 
 	public:
+
+        bool CanConnectSource(const AttributeWkPtr& source);
+
 		/**
 		 * @brief Checks whether two plugs can be connected.
 		 * @param Attribute* source: source attribute.
 		 * @return bool: can be connected.
 		*/
-		bool CanConnectSource(Attribute* source);
+		bool CanConnectSource(const AttributePtr& source);
 
         /**
          * Checks whether specified attribute can be connected
@@ -525,19 +539,24 @@ namespace Gex
          * @param Attribute* source: source attribute.
          * @return bool: can be connected to multi index.
          */
-        bool CanConnectSourceToIndex(Attribute* source);
+        bool CanConnectSourceToIndex(const AttributePtr& source);
+
+
+        bool ConnectSource(const AttributeWkPtr& attribute);
 
 		/**
 		 * @brief Connects source.
 		 * @param Attribute* attribute: attribute. 
 		 * @return bool: success.
 		*/
-		bool ConnectSource(Attribute* attribute);
+		bool ConnectSource(const AttributePtr& attribute);
 
     private:
-        bool _ConnectSource(Attribute* attribute);
+        bool _ConnectSource(const AttributePtr& attribute);
 
     public:
+
+        bool ConnectSource(unsigned int index, const AttributeWkPtr& attribute);
 
 		/**
 		 * @brief Connects source at multi index.
@@ -545,24 +564,24 @@ namespace Gex
 		 * @param Attribute* attribute: attribute.
 		 * @return bool: success.
 		*/
-		bool ConnectSource(unsigned int index, Attribute* attribute);
+		bool ConnectSource(unsigned int index, const AttributePtr& attribute);
 
 		/**
 		 * @brief Connects as source of specified attribute.
 		 * @param Attribute* attribute: destination attribute. 
 		 * @return bool: success.
 		*/
-		bool ConnectDest(Attribute* attribute);
+		bool ConnectDest(const AttributePtr& attribute);
 
     private:
 
-        bool _ConnectDest(Attribute* attribute);
+        bool _ConnectDest(const AttributePtr& attribute);
 
     private:
         /**
          * Cleans invalids destinations.
          */
-        std::vector<Attribute*> _ValidateDests();
+        std::vector<AttributeWkPtr> _ValidateDests();
 
     public:
 
@@ -572,38 +591,46 @@ namespace Gex
 		 * @param Attribute* attribute: destination attribute.
 		 * @return bool: success.
 		*/
-		bool ConnectDest(unsigned int index, Attribute* attribute);
+		bool ConnectDest(unsigned int index, const AttributePtr& attribute);
+
+        bool DisconnectSource(const AttributeWkPtr& attribute);
 
 		/**
 		 * @brief Disconnects source.
 		 * @param Attribute* attribute: attribute. 
 		 * @return bool: success.
 		*/
-		bool DisconnectSource(Attribute* attribute);
+		bool DisconnectSource(const AttributePtr& attribute);
 
     private:
-        bool _DisconnectSource(Attribute* attribute);
+        bool _DisconnectSource(const AttributePtr& attribute);
 
     public:
+        bool DisconnectSource(unsigned int index, const AttributeWkPtr& attribute);
+
 		/**
 		 * @brief Disconnects multi index source.
 		 * @param unsigned int index: multi index.
 		 * @param Attribute* attribute: attribute.
 		 * @return bool: success.
 		*/
-		bool DisconnectSource(unsigned int index, Attribute* attribute);
+		bool DisconnectSource(unsigned int index, const AttributePtr& attribute);
+
+        bool DisconnectDest(const AttributeWkPtr& attribute);
 
 		/**
 		 * @brief Disconnects from destination attribute.
 		 * @param Attribute* attribute: destination attribute. 
 		 * @return bool: success.
 		*/
-		bool DisconnectDest(Attribute* attribute);
+		bool DisconnectDest(const AttributePtr& attribute);
 
     private:
-        bool _DisconnectDest(Attribute* attribute);
+        bool _DisconnectDest(const AttributePtr& attribute);
 
     public:
+
+        bool DisconnectDest(unsigned int index, const AttributeWkPtr& attribute);
 
 		/**
 		 * @brief Disconnect from destination at multi index.
@@ -611,14 +638,14 @@ namespace Gex
 		 * @param Attribute* attribute: attribute. 
 		 * @return bool: success.
 		*/
-		bool DisconnectDest(unsigned int index, Attribute* attribute);
+		bool DisconnectDest(unsigned int index, const AttributePtr& attribute);
 
 	public:
-		Attribute* Source() const;
+		AttributeWkPtr Source() const;
 
-		std::vector<Attribute*> Sources() const;
+		std::vector<AttributeWkPtr> Sources() const;
 
-        std::vector<Attribute*> Dests();
+        std::vector<AttributeWkPtr> Dests();
 
     private:
         std::any Convert(std::any value, size_t destHash,
@@ -654,10 +681,10 @@ namespace Gex
 			return std::any_cast<T>(attributeAnyValue);
 		}
 
-		std::vector<Attribute*> GetArray() const;
+		std::vector<AttributePtr> GetArray() const;
 
 	public:
-		Attribute* GetIndexAttribute(unsigned int index) const;
+		AttributePtr GetIndexAttribute(unsigned int index) const;
 
 	public:
 		template<class T>
@@ -666,7 +693,7 @@ namespace Gex
 			std::vector<T> arr;
 
 			size_t h = typeid(T).hash_code();
-			for (std::pair<unsigned int, Attribute*> p : multiValues)
+			for (std::pair<unsigned int, AttributePtr> p : multiValues)
 			{
 				if (p.second->TypeHash() != h)
 				{
@@ -710,9 +737,9 @@ namespace Gex
 		// Serialize / Deserializes Construction.
 		void SerializeAttribute(rapidjson::Value& value, rapidjson::Document& doc);
 
-		static Attribute* DeserializeAttribute(const std::string& name,
-			rapidjson::Value& value, Gex::Node* node=nullptr,
-            Attribute* parent=nullptr, bool userDefined=false);
+		static AttributePtr DeserializeAttribute(const std::string& name,
+			rapidjson::Value& value, const Gex::NodePtr& node=nullptr,
+            const AttributePtr& parent=nullptr, bool userDefined=false);
 
         void SerializeConnections(rapidjson::Value& dict, rapidjson::Document& json);
 
@@ -732,7 +759,6 @@ namespace Gex
 		bool Pull();
 
 	};
-
 }
 
 #endif // NODELIBRARY_ATTRIBUTE

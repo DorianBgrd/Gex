@@ -63,6 +63,7 @@ target_include_directories(
         Gex_ui
         PUBLIC
         ${CMAKE_SOURCE_DIR}
+        ${CMAKE_SOURCE_DIR}/Gex
         ${Qt6Widgets_INCLUDE_DIRS}
         ${Qt6Core_INCLUDE_DIRS}
         ${Qt6Gui_INCLUDE_DIRS}

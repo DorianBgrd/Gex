@@ -28,18 +28,18 @@ namespace iter
             CreateAttribute<TSys::AnyValue>(
                     "input", Gex::AttrValueType::Multi);
 
-            auto* idxat = CreateAttribute<int>(
+            auto idxat = CreateAttribute<int>(
                     "index", Gex::AttrValueType::Single,
                     Gex::AttrType::Input);
             idxat->SetInternal(true);
 
-            auto* in = CreateAttribute<TSys::AnyValue>(
+            auto in = CreateAttribute<TSys::AnyValue>(
                     "in", Gex::AttrValueType::Single,
                     Gex::AttrType::Input);
             in->SetInternal(true);
             in->SetExternal(false);
 
-            auto* out = CreateAttribute<TSys::AnyValue>(
+            auto out = CreateAttribute<TSys::AnyValue>(
                     "out", Gex::AttrValueType::Single,
                      Gex::AttrType::Output);
             out->SetInternal(true);
@@ -54,7 +54,7 @@ namespace iter
         void Prepare(Gex::NodeAttributeData &ctx)
         {
             ctx.GetAttribute("output").ClearMultiIndices();
-            indices = GetAttribute("input")->ValidIndices();
+            indices = GetAttribute("input").ToShared()->ValidIndices();
             length = indices.size();
         }
 
@@ -147,13 +147,13 @@ namespace iter
             CreateAttribute<TSys::AnyValue>(
                     "Array", Gex::AttrValueType::Multi);
 
-            auto* v = CreateAttribute<TSys::AnyValue>(
+            auto v = CreateAttribute<TSys::AnyValue>(
                     "Value", Gex::AttrValueType::Single,
                     Gex::AttrType::Input);
             v->SetInternal(true);
             v->SetExternal(false);
 
-            auto* ov = CreateAttribute<TSys::AnyValue>(
+            auto ov = CreateAttribute<TSys::AnyValue>(
                     "OutValue", Gex::AttrValueType::Single,
                     Gex::AttrType::Output);
             ov->SetInternal(true);
@@ -257,32 +257,32 @@ namespace iter
             space.AddValue(0, "Object");
             space.AddValue(1, "World");
 
-            auto* p = CreateAttribute<int>("Position", Gex::AttrValueType::Single,
+            auto p = CreateAttribute<int>("Position", Gex::AttrValueType::Single,
                                               Gex::AttrType::Input);
             p->SetInternal(true);
             p->SetExternal(false);
 
-            auto* s = CreateAttributeFromValue("Space", std::make_any<TSys::Enum>(space),
+            auto s = CreateAttributeFromValue("Space", std::make_any<TSys::Enum>(space),
                                                Gex::AttrValueType::Single, Gex::AttrType::Input);
             s->SetInternal(true);
             s->SetExternal(false);
 
-            auto* n = CreateAttribute<int>("Normale", Gex::AttrValueType::Single,
+            auto n = CreateAttribute<int>("Normale", Gex::AttrValueType::Single,
                                               Gex::AttrType::Input);
             n->SetInternal(true);
             n->SetExternal(false);
 
-            auto* w = CreateAttribute<float>("Weight",  Gex::AttrValueType::Single,
+            auto w = CreateAttribute<float>("Weight",  Gex::AttrValueType::Single,
                                              Gex::AttrType::Input);
             w->SetInternal(true);
             w->SetExternal(false);
 
-            auto* m = CreateAttribute<int>("Matrix",  Gex::AttrValueType::Single,
+            auto m = CreateAttribute<int>("Matrix",  Gex::AttrValueType::Single,
                                                Gex::AttrType::Input);
             m->SetInternal(true);
             m->SetExternal(false);
 
-            auto* op = CreateAttribute<int>("OutPosition",  Gex::AttrValueType::Single,
+            auto op = CreateAttribute<int>("OutPosition",  Gex::AttrValueType::Single,
                                                Gex::AttrType::Output);
             op->SetInternal(true);
             m->SetExternal(false);
@@ -309,7 +309,7 @@ namespace iter
                                  Gex::AttrType::Input);
             CreateAttribute<int>("End", Gex::AttrValueType::Single,
                                  Gex::AttrType::Input);
-            auto* c = CreateAttribute<int>("Current", Gex::AttrValueType::Single,
+            auto c = CreateAttribute<int>("Current", Gex::AttrValueType::Single,
                                  Gex::AttrType::Input);
             c->SetInternal(true);
             c->SetExternal(false);

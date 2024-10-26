@@ -125,7 +125,7 @@ add_custom_command(
         --library ${TSYS_LIBRARY_DIR}/TSys.dll
         --library $ENV{UI_RES_DIR}/UiRes/cmake-build-${BUILD_TYPE}/UiRes.dll
         --library $ENV{UI_TSYS_DIR}/UiTSys/cmake-build-${BUILD_TYPE}/UiTSys.dll
-        --library ${CMAKE_BINARY_DIR}/Gex.dll
+        --library ${CMAKE_BINARY_DIR}/Gex/Gex.dll
         --library ${QT_AWESOME_LIBRARY_DIR}/QtAwesome.dll
         --library ${CMAKE_BINARY_DIR}/ui/SoftPython.dll
 

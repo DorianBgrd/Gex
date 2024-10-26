@@ -51,42 +51,67 @@ bool Attribute_Python_Set(boost::python::tuple args,
 }
 
 
+boost::python::object MakeSharedRef(boost::python::tuple args,
+                                    boost::python::dict kwargs)
+{
+    Gex::AttributeWkPtr wkself = boost::python::extract<Gex::AttributeWkPtr>(args[0]);
+    if (!wkself)
+        return {};
+
+    return boost::python::object(wkself.ToShared());
+}
+
+
 bool Gex::Python::Attribute_Wrap::RegisterPythonWrapper()
 {
     bool (Gex::Attribute::* ProxyAttr_SimpleHasSource)() const = &Gex::Attribute::HasSource;
     bool (Gex::Attribute::* ProxyAttr_HasIndexSource)(unsigned int) = &Gex::Attribute::HasSource;
-    Gex::Attribute* (Gex::Attribute::* ProxyAttr_Source)() const = &Gex::Attribute::Source;
-    bool (Gex::Attribute::* ProxyAttr_ConnectSimpleSource)(Gex::Attribute* a) =
+    Gex::AttributeWkPtr (Gex::Attribute::* ProxyAttr_Source)() const = &Gex::Attribute::Source;
+    bool (Gex::Attribute::* ProxyAttr_ConnectSimpleSource)(const Gex::AttributePtr& a) =
     &Gex::Attribute::ConnectSource;
-    bool (Gex::Attribute::* ProxyAttr_ConnectIndexSource)(unsigned int u, Gex::Attribute* a) =
+    bool (Gex::Attribute::* ProxyAttr_ConnectWkSource)(const Gex::AttributeWkPtr& a) =
     &Gex::Attribute::ConnectSource;
-    boost::python::class_<Gex::Python::Attribute_Wrap, boost::noncopyable>("Attribute", boost::python::no_init)
+    bool (Gex::Attribute::* ProxyAttr_ConnectIndexSource)(unsigned int u, const Gex::AttributePtr& a) =
+    &Gex::Attribute::ConnectSource;
+    bool (Gex::Attribute::* ProxyAttr_ConnectIndexWkSource)(unsigned int u, const Gex::AttributeWkPtr& a) =
+    &Gex::Attribute::ConnectSource;
+    bool (Gex::Attribute::* ProxyAttr_CanConnectWkSource)(const Gex::AttributeWkPtr& a) =
+    &Gex::Attribute::CanConnectSource;
+    bool (Gex::Attribute::* ProxyAttr_CanConnectSource)(const Gex::AttributePtr& a) =
+    &Gex::Attribute::CanConnectSource;
+
+    boost::python::class_<Gex::Python::Attribute_Wrap, Gex::AttributePtr>("Attribute", boost::python::no_init)
             .def("Name", &Gex::Attribute::Name)
             .def("Get", boost::python::raw_function(&Attribute_Python_Get))
             .def("Set", boost::python::raw_function(&Attribute_Python_Set, 1))
-            .def("GetIndex", &Gex::Attribute::GetIndexAttribute,
-                 boost::python::return_internal_reference())
-            .def("Node", &Gex::Attribute::Node,
-                 boost::python::return_internal_reference())
+            .def("GetIndex", &Gex::Attribute::GetIndexAttribute)
+            .def("Node", &Gex::Attribute::Node)
             .def("HasSource", ProxyAttr_SimpleHasSource)
             .def("HasSourceAtIndex", ProxyAttr_HasIndexSource)
-            .def("Source", ProxyAttr_Source, boost::python::return_internal_reference())
+            .def("Source", ProxyAttr_Source)
             .def("ConnectSource", ProxyAttr_ConnectSimpleSource)
+            .def("ConnectSource", ProxyAttr_ConnectWkSource)
             .def("ConnectSource", ProxyAttr_ConnectIndexSource)
-//            .def("ConnectDest", &Gex::Attribute::ConnectDest)
-            .def("CanConnectSource", &Gex::Attribute::CanConnectSource)
+            .def("ConnectSource", ProxyAttr_ConnectIndexWkSource)
+            .def("CanConnectSource", ProxyAttr_CanConnectSource)
+            .def("CanConnectSource", ProxyAttr_CanConnectWkSource)
             .def("CreateIndex", &Gex::Attribute::CreateIndex)
             .def("IsMulti", &Gex::Attribute::IsMulti)
             .def("ValueHash", &Gex::Attribute::ValueHash)
             .def("ValidIndices", &Gex::Attribute::ValidIndices)
-            .def("GetIndexAttribute", &Gex::Attribute::GetIndexAttribute,
-                 boost::python::return_internal_reference())
+            .def("GetIndexAttribute", &Gex::Attribute::GetIndexAttribute)
             .def("HasChildAttributes", &Gex::Attribute::HasChildAttributes)
             .def("ChildAttributeNames", &Gex::Attribute::ChildAttributesNames)
-            .def("GetAttribute", &Gex::Attribute::GetAttribute,
-                 boost::python::return_internal_reference())
+            .def("GetAttribute", &Gex::Attribute::GetAttribute)
+            .def("ToWeakRef", boost::python::raw_function(&MakeSharedRef, 1))
             ;
 
+    boost::python::class_<Gex::AttributeWkPtr>("AttributeWk", boost::python::no_init)
+            .def("IsWkValid", &Gex::AttributeWkPtr::expired)
+            .def("ToAttribute", &Gex::AttributeWkPtr::lock)
+            .def("__call__", &Gex::AttributeWkPtr::lock)
+            .def("__bool__", &Gex::AttributeWkPtr::operator bool)
+            ;
 
     boost::python::enum_<Gex::AttrValueType>("AttrValueType")
             .value("Single", Gex::AttrValueType::Single)

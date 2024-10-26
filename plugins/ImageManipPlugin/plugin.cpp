@@ -21,6 +21,8 @@
 #include "Nodes/remap.h"
 #include "Nodes/shapes.h"
 #include "Nodes/level.h"
+#include "Nodes/tile.h"
+#include "Nodes/channels.h"
 
 
 extern EXPORT RegisterPlugin(Gex::PluginLoader* loader)
@@ -58,6 +60,12 @@ extern EXPORT RegisterPlugin(Gex::PluginLoader* loader)
     loader->RegisterNode<ImageManip::Nodes::ColorMapNodeBuilder>("Image/Modifiers/ColorMap");
 
     loader->RegisterNode<ImageManip::Nodes::LevelNodeBuilder>("Image/Modifiers/Level");
+
+    loader->RegisterNode<ImageManip::Nodes::TileNodeBuilder>("Image/Modifiers/Tile");
+
+    loader->RegisterNode<ImageManip::Nodes::DecomposeChannelsNodeBuilder>("Image/Modifiers/DecomposeChannels");
+
+    loader->RegisterNode<ImageManip::Nodes::ComposeChannelsNodeBuilder>("Image/Modifiers/ComposeChannels");
 
     loader->RegisterNode<ImageManip::Nodes::RectangleNodeBuilder>("Image/Shapes/Rectangle");
 

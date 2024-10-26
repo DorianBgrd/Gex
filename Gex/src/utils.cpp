@@ -2,6 +2,8 @@
 #include "Gex/include/Config.h"
 #include "Gex/include/Node.h"
 
+#include <stdlib.h>
+
 
 std::string Gex::Utils::ValidateName(const std::string& name)
 {
@@ -24,7 +26,7 @@ std::string Gex::Utils::UniqueName(const std::string &name, const Gex::NodeList&
 
     int counter = 1;
     std::vector<std::string> nodeNames;
-    for (auto n : nodes)
+    for (const auto& n : nodes)
     {
         nodeNames.push_back(n->Name());
     }
@@ -37,3 +39,20 @@ std::string Gex::Utils::UniqueName(const std::string &name, const Gex::NodeList&
 
     return uniqueName;
 }
+
+
+std::string Gex::Utils::GetEnv(const std::string& name)
+{
+    size_t envSize;
+    const char* envName = name.c_str();
+
+    getenv_s( &envSize, nullptr, 0, envName);
+    if (!envSize)
+        return {};
+
+    char* envResult = (char*) malloc(envSize * sizeof(char));
+    getenv_s(&envSize, envResult, envSize, envName);
+
+    return envResult;
+}
+

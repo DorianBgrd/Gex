@@ -1590,7 +1590,7 @@ namespace UsdPlugin
                                          Gex::AttrType::Input);
             CreateAttribute<pxr::UsdStageRefPtr>("Stage", Gex::AttrValueType::Single,
                                                  Gex::AttrType::Static);
-*
+
             CreateAttribute<pxr::UsdPrim>("Prim", Gex::AttrValueType::Single,
                                           Gex::AttrType::Output);
         }
@@ -1699,15 +1699,15 @@ namespace UsdPlugin
     public:
         void InitAttributes() override
         {
-            auto* primat = CreateAttribute<pxr::UsdPrim>("Prim", Gex::AttrValueType::Single,
+            auto primat = CreateAttribute<pxr::UsdPrim>("Prim", Gex::AttrValueType::Single,
                                                          Gex::AttrType::Static);
             primat->SetInternal(true);
 
-            auto* variantsetat = CreateAttribute<std::string>("VariantSet", Gex::AttrValueType::Single,
+            auto variantsetat = CreateAttribute<std::string>("VariantSet", Gex::AttrValueType::Single,
                                                                   Gex::AttrType::Input);
             variantsetat->SetInternal(true);
 
-            auto* variantat = CreateAttribute<std::string>("Variant", Gex::AttrValueType::Single,
+            auto variantat = CreateAttribute<std::string>("Variant", Gex::AttrValueType::Single,
                                                       Gex::AttrType::Input);
             variantat->SetInternal(true);
         }

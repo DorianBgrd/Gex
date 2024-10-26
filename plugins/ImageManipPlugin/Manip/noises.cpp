@@ -22,9 +22,11 @@ QImage ImageManip::Manip::RandomNoise(
 
     NormalDist dist(0, 255);
 
-    for (int x = 0; x < width; x++)
+    for (int y = 0; y < height; y++)
     {
-        for (int y = 0; y < height; y++)
+        auto* scanLine = reinterpret_cast<QRgba64*>(img.scanLine(y));
+
+        for (int x = 0; x < width; x++)
         {
             QColor pixelColor;
             if (blackAndWhite)
@@ -49,7 +51,7 @@ QImage ImageManip::Manip::RandomNoise(
                 pixelColor.setAlpha(dist(gen));
             }
 
-            img.setPixelColor(x, y, pixelColor);
+            scanLine[x] = pixelColor.rgba64();
         }
     }
 

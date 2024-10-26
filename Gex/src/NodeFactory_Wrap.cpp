@@ -62,13 +62,13 @@ boost::python::object NF_CreateNode(boost::python::tuple args,
     std::string type = boost::python::extract<std::string>(args[0]);
     std::string name = boost::python::extract<std::string>(args[1]);
 
-    auto* node = Gex::NodeFactory::GetFactory()->CreateNode(type, name);
+    auto node = Gex::NodeFactory::GetFactory()->CreateNode(type, name);
     if (!node)
     {
         return {};
     }
 
-    return boost::python::object(boost::python::ptr(node));
+    return boost::python::object(node);
 }
 
 

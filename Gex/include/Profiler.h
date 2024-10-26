@@ -95,7 +95,8 @@ namespace Gex
         Profiler profiler;
         std::string node;
     public:
-        EvaluationNodeProfiler(Profiler profiler, Node* node, unsigned int thread);
+        EvaluationNodeProfiler(Profiler profiler, const NodePtr& node,
+                               unsigned int thread);
 
         EvaluationNodeProfiler(const EvaluationNodeProfiler& other);
 

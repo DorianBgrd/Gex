@@ -6,9 +6,31 @@
 #include <QWidget>
 #include <QFile>
 #include <QDir>
+#include "ui/include/PluginLoader.h"
 #include "ui/soft/include/MainWindow.h"
 
 #include "ArgParse/ArgParse.h"
+
+#include "Python.h"
+
+#include <windows.h>
+#include "libloaderapi.h"
+
+
+void InitializePython()
+{
+    PyConfig config;
+    PyConfig_InitPythonConfig(&config);
+
+    WCHAR p[MAX_PATH];
+    GetModuleFileNameW(nullptr, p, MAX_PATH);
+
+    std::filesystem::path path(p);
+    PyWideStringList_Append(&config.module_search_paths, path.parent_path().parent_path()
+        .append("python").wstring().c_str());
+
+    Py_InitializeFromConfig(&config);
+}
 
 
 int main(int argc, char** argv)
@@ -20,12 +42,14 @@ int main(int argc, char** argv)
 
     parser.Parse(argc, argv);
 
-    Gex::CompoundNode* graph;
+    InitializePython();
+
+    Gex::CompoundNodePtr graph;
 
     Gex::Feedback feedback;
     if (parser.FlagFound("-f"))
     {
-        auto* g = Gex::LoadGraph(parser.FlagResult("-f"), &feedback);
+        auto g = Gex::LoadGraph(parser.FlagResult("-f"), &feedback);
         if (g)
             graph = Gex::CompoundNode::FromNode(g);
         else
@@ -50,14 +74,24 @@ int main(int argc, char** argv)
 
     QString pluginsDirectory = "plugins";
     // Iter file directories.
-    QDir pluginsDir(pluginsDirectory);
+    QDir pluginsDirs(pluginsDirectory);
 
-    Gex::PluginLoader::AddSearchPath(pluginsDir.absolutePath().toStdString());
+    auto cb = [](std::string p)
+            {Gex::Ui::UiPluginLoader::LoadPlugin(p);};
 
-    QStringList filters = {"*.dll"}; // {"*.dll", "*.py"};
-    for (auto plugin : pluginsDir.entryList(filters))
+    Gex::PluginLoader::RegisterPluginCallback(cb);
+
+    Gex::PluginLoader::AddSearchPath(pluginsDirs.absolutePath().toStdString());
+
+    QStringList filters = {"*.json"};
+    for (const auto& pluginDir : pluginsDirs.entryList(QDir::Dirs))
     {
-        Gex::PluginLoader::LoadPlugin(plugin.toStdString());
+        std::filesystem::path dirPath = pluginsDirs.filesystemAbsolutePath().append(
+                pluginDir.toStdString());
+        for (const auto& file : QDir(dirPath).entryList(filters))
+        {
+            Gex::PluginLoader::LoadPlugin(dirPath.append(file.toStdString()).string());
+        }
     }
 
     app.setStyleSheet(style);

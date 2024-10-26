@@ -6,8 +6,8 @@
 
 
 Gex::EvaluatorThread::EvaluatorThread(Gex::NodeEvaluator* eval, unsigned int index_,
-                                      std::function<void(Node*)> onNodeStart,
-                                      std::function<void(Node*, bool)> onNodeEnd)
+                                      std::function<void(const NodePtr&)> onNodeStart,
+                                      std::function<void(const NodePtr&, bool)> onNodeEnd)
 {
     index = index_;
     _evaluator = eval;
@@ -34,7 +34,13 @@ bool Gex::EvaluatorThread::AcquireNode()
 
 bool Gex::EvaluatorThread::ComputeNode()
 {
-    auto nodeProfiler = NodeProfiler(_evaluator->GetProfiler(), node->node, index);
+    if (node->node.expired())
+        return false;
+
+    auto lockedNode = node->node.lock();
+
+    auto nodeProfiler = NodeProfiler(_evaluator->GetProfiler(),
+                                     lockedNode, index);
 
     auto wn = nodeProfiler.StartEvent("Waiting previous nodes");
     while (!node->ShouldBeEvaluated())
@@ -45,7 +51,7 @@ bool Gex::EvaluatorThread::ComputeNode()
 
     if (nodeStart)
     {
-        nodeStart(node->node);
+        nodeStart(lockedNode);
     }
 
     bool result = node->Compute(_evaluator->Context(), nodeProfiler);
@@ -54,7 +60,7 @@ bool Gex::EvaluatorThread::ComputeNode()
     {
         auto ne = nodeProfiler.StartEvent("NodeEnd");
 
-        nodeEnd(node->node, result);
+        nodeEnd(lockedNode, result);
 
         nodeProfiler.StopEvent(ne);
     }
@@ -123,8 +129,8 @@ void StartThread(Gex::EvaluatorThread* th)
 Gex::NodeEvaluator::NodeEvaluator(ScheduleNodeList nodes, GraphContext& ctx,
                                   Profiler profiler_, bool detached_,
                                   unsigned int threads_,
-                                  std::function<void(Node*)> onNodeStarted,
-                                  std::function<void(Node*, bool)> onNodeDone,
+                                  std::function<void(const std::shared_ptr<Node> &)> onNodeStarted,
+                                  std::function<void(const std::shared_ptr<Node> &, bool)> onNodeDone,
                                   std::function<void(const GraphContext&)> postEvaluation):
                                   context(ctx)
 {

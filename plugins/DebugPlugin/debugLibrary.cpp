@@ -34,7 +34,8 @@ namespace Debug
             return true;
         }
 
-        void AttributeChanged(Gex::Attribute* attribute, Gex::AttributeChange change) override
+        void AttributeChanged(const Gex::AttributePtr& attribute,
+                              const Gex::AttributeChange& change) override
         {
             std::cout << "[DEBUG][Print] : AttributeChanged " << attribute->Name() << " " << (int)change << std::endl;
         }

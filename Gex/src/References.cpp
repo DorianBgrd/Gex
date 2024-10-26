@@ -1,4 +1,5 @@
 #include "Gex/include/References.h"
+#include "Gex/include/utils.h"
 
 #include <filesystem>
 
@@ -12,11 +13,12 @@ Gex::References* Gex::References::instance = nullptr;
 
 Gex::References::References()
 {
-    char* env = std::getenv(GEX_REFERENCES_PATH_ENV);
-    if (env)
-    {
-        std::string envStr = env;
+    size_t resSize = 0;
+    char* envResult = nullptr;
+    std::string envStr = Utils::GetEnv(GEX_REFERENCES_PATH_ENV);
 
+    if (!envStr.empty())
+    {
         std::vector<std::string> envDirs;
         while(!envStr.empty())
         {
