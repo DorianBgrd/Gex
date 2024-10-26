@@ -11,8 +11,8 @@ void ImageManip::Nodes::BoxBlurNode::InitAttributes()
     CreateAttribute<int>("Steps", Gex::AttrValueType::Single,
                          Gex::AttrType::Input)->SetDefaultValue(1);
 
-    CreateAttribute<QImage>("Output", Gex::AttrValueType::Single,
-                             Gex::AttrType::Output);
+    CreateAttribute<QImage>("Image", Gex::AttrValueType::Single,
+                            Gex::AttrType::Output);
 }
 
 
