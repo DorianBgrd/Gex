@@ -281,7 +281,7 @@ Gex::ScheduleNodeList Gex::ScheduleNodes(NodeList nodes, bool expand)
         {
             auto* n = p;
 
-            if (!n->node.expired())
+            if (!n->node)
                 continue;
 
             NodePtr lockedNode = n->node.lock();

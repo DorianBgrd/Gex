@@ -1111,7 +1111,7 @@ bool Gex::CompoundNode::HasNode(const NodeWkPtr& node) const
     if (!node)
         return false;
 
-    return HasNode(node);
+    return HasNode(node.ToShared());
 }
 
 

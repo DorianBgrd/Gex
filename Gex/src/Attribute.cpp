@@ -852,7 +852,7 @@ bool Gex::Attribute::ConnectSource(const AttributeWkPtr& attribute)
     if (!attribute)
         return false;
 
-    return ConnectSource(attribute);
+    return ConnectSource(attribute.ToShared());
 }
 
 
