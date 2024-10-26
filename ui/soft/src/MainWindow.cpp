@@ -69,7 +69,7 @@ Gex::Feedback Gex::Editor::MainWindow::New()
 
     graph = Gex::CompoundNode::FromNode(
             Gex::NodeFactory::GetFactory()->CreateNode(
-                    "Compound", "Graph")
+                    "CompoundNode", "Graph")
     );
     graph->SetName("Graph");
     graphView->SwitchGraph(graph);
