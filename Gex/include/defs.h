@@ -31,7 +31,15 @@ namespace Gex
     typedef std::vector<AttributeWkPtr> AttributeWkList;
     typedef std::vector<NodePtr> NodeList;
     typedef std::vector<NodeWkPtr> NodeWkList;
-    typedef std::vector<ScheduledNode*> ScheduleNodeList;
+    typedef std::shared_ptr<ScheduledNode> ScheduledNodePtr;
+    typedef std::shared_ptr<ScheduledNode> ScheduledNodeWkPtr;
+    typedef std::vector<std::shared_ptr<ScheduledNode>> ScheduleNodePtrList;
+    typedef std::vector<ScheduledNodeWkPtr> ScheduleNodeWkPtrList;
+
+    class EvaluatorThread;
+    typedef std::shared_ptr<EvaluatorThread> EvaluatorThreadPtr;
+    typedef std::vector<EvaluatorThreadPtr> EvaluatorThreadPtrList;
+
 
     typedef EvaluationNodeProfiler NodeProfiler;
 

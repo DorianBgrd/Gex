@@ -866,13 +866,13 @@ void Gex::Node::Schedule()
 }
 
 
-Gex::ScheduledNode* Gex::Node::ToScheduledNode()
+Gex::ScheduledNodePtr Gex::Node::ToScheduledNode()
 {
-    return new ScheduledNode(shared_from_this());
+    return std::make_shared<ScheduledNode>(shared_from_this());
 }
 
 
-Gex::ScheduleNodeList Gex::Node::ToScheduledNodes()
+Gex::ScheduleNodePtrList Gex::Node::ToScheduledNodes()
 {
     return {ToScheduledNode()};
 }
@@ -1625,7 +1625,7 @@ void Gex::CompoundNode::AttributeChanged(const AttributePtr& attr, const Attribu
 }
 
 
-Gex::ScheduleNodeList Gex::CompoundNode::ToScheduledNodes()
+Gex::ScheduleNodePtrList Gex::CompoundNode::ToScheduledNodes()
 {
     auto schelNodes = Gex::ScheduleNodes(nodes);
 
@@ -1636,23 +1636,23 @@ Gex::ScheduleNodeList Gex::CompoundNode::ToScheduledNodes()
     // replace it with preScheduled. Use postScheduled if they have
     // output.
     NodeWkPtr weakThis =weak_from_this();
-    for (auto* schel : schelNodes)
+    for (const auto& schel : schelNodes)
     {
         auto srcs = schel->node->UpstreamNodes();
         if (WkInVector(srcs, weakThis))
         {
-            schel->previousNodes.push_back(preScheduleNode);
+            schel->previousNodes.emplace_back(preScheduleNode);
         }
 
         auto dsts = schel->node->DownstreamNodes();
         if (WkInVector(dsts, weakThis))
         {
-            schel->futureNodes.push_back(postScheduleNode);
+            schel->futureNodes.emplace_back(postScheduleNode);
         }
     }
 
-    schelNodes.insert(schelNodes.begin(), preScheduleNode);
-    schelNodes.push_back(postScheduleNode);
+    schelNodes.emplace(schelNodes.begin(), preScheduleNode);
+    schelNodes.emplace_back(postScheduleNode);
 
     return schelNodes;
 }

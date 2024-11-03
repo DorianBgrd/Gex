@@ -12,12 +12,16 @@ namespace Gex
     struct GEX_API ScheduledNode
     {
         NodeWkPtr node;
-        ScheduleNodeList previousNodes;
-        ScheduleNodeList futureNodes;
+        ScheduleNodeWkPtrList previousNodes;
+        ScheduleNodeWkPtrList futureNodes;
         bool evaluated = false;
         bool success = false;
 
         explicit ScheduledNode(const NodeWkPtr& node);
+
+        explicit ScheduledNode(const ScheduledNode& other);
+
+        explicit ScheduledNode(const ScheduledNodePtr& other);
 
         bool ShouldBeEvaluated() const;
 
@@ -36,19 +40,25 @@ namespace Gex
         bool operator==(const Gex::NodeWkPtr& other) const;
 
         bool operator==(const ScheduledNode* other) const;
+
+        operator bool() const;
+
+        ScheduledNodePtr CopyShared() const;
     };
 
+    GEX_API
+    ScheduleNodePtrList ScheduleNodes(const NodeList& nodes, bool expand = true);
 
     GEX_API
-    ScheduleNodeList ScheduleNodes(NodeList nodes, bool expand = true);
+    ScheduleNodePtrList::iterator FindScheduledNode(ScheduleNodePtrList list,
+                                                    const Gex::NodePtr& node);
 
     GEX_API
-    ScheduleNodeList::iterator FindScheduledNode(ScheduleNodeList list,
-                                                 const Gex::NodePtr node);
+    ScheduleNodePtrList CopyScheduledNodes(const ScheduleNodePtrList& nodes);
 
     GEX_API
-    ScheduleNodeList SubScheduledNodes(ScheduleNodeList list,
-                                       Gex::NodePtr node);
+    ScheduleNodePtrList SubScheduledNodes(const ScheduleNodePtrList& list,
+                                          const Gex::NodePtr& node);
 }
 
 #endif //GEX_SCHEDULING_H

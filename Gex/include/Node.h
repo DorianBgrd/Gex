@@ -86,7 +86,7 @@ namespace Gex
         AttributePtr previous;
         AttributePtr next;
 
-        ScheduleNodeList scheduledNodes;
+        ScheduleNodePtrList scheduledNodes;
         bool isScheduled = false;
 
         CallbackId invalidCbId = 0;
@@ -521,9 +521,9 @@ namespace Gex
         virtual void Schedule();
 
     public:
-        ScheduledNode* ToScheduledNode();
+        ScheduledNodePtr ToScheduledNode();
 
-        virtual ScheduleNodeList ToScheduledNodes();
+        virtual ScheduleNodePtrList ToScheduledNodes();
 
     public:
         CallbackId AddInvalidateCallback(InvalidateCallback callback);
@@ -736,7 +736,7 @@ class GEX_API CompoundNode : public Node
     public:
         void AttributeChanged(const AttributePtr& attr, const AttributeChange& change) override;
 
-        ScheduleNodeList ToScheduledNodes() override;
+        ScheduleNodePtrList ToScheduledNodes() override;
 
         /**
          * Launches compound computing.

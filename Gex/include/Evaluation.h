@@ -19,7 +19,7 @@ namespace Gex
 
     class EvaluatorThread
     {
-        ScheduledNode* node = nullptr;
+        ScheduledNodePtr node = nullptr;
         NodeEvaluator* _evaluator = nullptr;
         bool stop = false;
         std::function<void(const NodePtr&)> nodeStart=nullptr;
@@ -62,30 +62,27 @@ namespace Gex
         };
 
     private:
-        int numberOfThreads;
-        int runningThreads;
-        std::vector<EvaluatorThread*> threads;
-        std::vector<ScheduledNode*> schelNodes;
+        unsigned int numberOfThreads;
+        unsigned int runningThreads;
+        EvaluatorThreadPtrList threads;
+        ScheduleNodePtrList schelNodes;
         GraphContext context;
         Profiler profiler;
         bool detached;
         int n = -1;
 
         EvaluationStatus status = EvaluationStatus::Preparing;
-        std::function<void(const NodePtr&)> evalStart = nullptr;
-        std::function<void(const NodePtr&, bool)> evalEnd = nullptr;
-        std::function<void(const GraphContext&)> postEval = nullptr;
-
-    protected:
-        static void StartEvalThread(EvaluatorThread* thread);
+        std::function<void(const NodePtr&)> evalStart;
+        std::function<void(const NodePtr&, bool)> evalEnd;
+        std::function<void(const GraphContext&)> postEval;
 
     public:
-        NodeEvaluator(ScheduleNodeList nodes, GraphContext& context,
-                      Gex::Profiler profiler, bool detached=false,
+        NodeEvaluator(const ScheduleNodePtrList& nodes, GraphContext& context,
+                      const Gex::Profiler& profiler, bool detached=false,
                       unsigned int threads=1,
-                      std::function<void(const NodePtr&)> onNodeStart=nullptr,
-                      std::function<void(const NodePtr&, bool)> onNodeEnd=nullptr,
-                      std::function<void(const GraphContext&)> postEvaluation=nullptr);
+                      const std::function<void(const NodePtr&)>& onNodeStart=nullptr,
+                      const std::function<void(const NodePtr&, bool)>& onNodeEnd=nullptr,
+                      const std::function<void(const GraphContext&)>& postEvaluation=nullptr);
 
         ~NodeEvaluator();
 
@@ -93,7 +90,7 @@ namespace Gex
 
         void Run();
 
-        ScheduledNode* NextNode();
+        ScheduledNodePtr NextNode();
 
         GraphContext& Context();
 

@@ -113,25 +113,18 @@ void Gex::EvaluatorThread::Terminate()
 
 
 
-void Gex::NodeEvaluator::StartEvalThread(EvaluatorThread* thread)
-{
-    thread->Start();
-}
-
-
-
-void StartThread(Gex::EvaluatorThread* th)
+void StartThread(const Gex::EvaluatorThreadPtr& th)
 {
     return th->Start();
 }
 
 
-Gex::NodeEvaluator::NodeEvaluator(ScheduleNodeList nodes, GraphContext& ctx,
-                                  Profiler profiler_, bool detached_,
+Gex::NodeEvaluator::NodeEvaluator(const ScheduleNodePtrList& nodes, GraphContext& ctx,
+                                  const Profiler& profiler_, bool detached_,
                                   unsigned int threads_,
-                                  std::function<void(const std::shared_ptr<Node> &)> onNodeStarted,
-                                  std::function<void(const std::shared_ptr<Node> &, bool)> onNodeDone,
-                                  std::function<void(const GraphContext&)> postEvaluation):
+                                  const std::function<void(const std::shared_ptr<Node> &)>& onNodeStarted,
+                                  const std::function<void(const std::shared_ptr<Node> &, bool)>& onNodeDone,
+                                  const std::function<void(const GraphContext&)>& postEvaluation):
                                   context(ctx)
 {
     profiler = profiler_;
@@ -156,7 +149,7 @@ Gex::NodeEvaluator::NodeEvaluator(ScheduleNodeList nodes, GraphContext& ctx,
 void Gex::NodeEvaluator::Reset()
 {
     n = -1;
-    for (auto schelNode: schelNodes)
+    for (const auto& schelNode: schelNodes)
     {
         schelNode->evaluated = false;
     }
@@ -177,7 +170,7 @@ void Gex::NodeEvaluator::Run()
         unsigned int threadStart = profiler->StartEvent("Prepare", "Starting threads");
         for (unsigned int i = 0; i < numberOfThreads; i++)
         {
-            auto* nodeThread = new EvaluatorThread(this, i, evalStart, evalEnd);
+            auto nodeThread = std::make_shared<EvaluatorThread>(this, i, evalStart, evalEnd);
 
             threads.push_back(nodeThread);
 
@@ -206,16 +199,11 @@ void Gex::NodeEvaluator::Run()
 
 Gex::NodeEvaluator::~NodeEvaluator()
 {
-    for (auto* thread : threads)
-    {
-        delete thread;
-    }
-
     threads.clear();
 }
 
 
-Gex::ScheduledNode* Gex::NodeEvaluator::NextNode()
+Gex::ScheduledNodePtr Gex::NodeEvaluator::NextNode()
 {
     n += 1;
     if (n >= schelNodes.size())
@@ -263,7 +251,7 @@ void Gex::NodeEvaluator::ThreadsStopped()
 
 void Gex::NodeEvaluator::Terminate()
 {
-    for (EvaluatorThread* thread : threads)
+    for (const EvaluatorThreadPtr& thread : threads)
     {
         thread->Terminate();
     }
@@ -276,7 +264,7 @@ void Gex::NodeEvaluator::Terminate()
 
 void Gex::NodeEvaluator::Stop()
 {
-    for (EvaluatorThread* thread : threads)
+    for (const EvaluatorThreadPtr& thread : threads)
     {
         thread->Terminate();
     }
