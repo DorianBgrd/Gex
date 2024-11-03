@@ -135,7 +135,7 @@ namespace iter
 
     class Plugin_API ForRangeLoop: public Gex::CompoundNode
     {
-        Gex::ScheduleNodeList compoundScheduledNodes;
+        Gex::ScheduleNodePtrList compoundScheduledNodes;
 
     protected:
         std::vector<unsigned int> indices;
@@ -235,7 +235,7 @@ namespace iter
             return true;
         }
 
-        Gex::ScheduleNodeList ToScheduledNodes() override
+        Gex::ScheduleNodePtrList ToScheduledNodes() override
         {
             compoundScheduledNodes = Gex::ScheduleNodes(GetNodes());
 
@@ -298,7 +298,7 @@ namespace iter
             return "Performs a for loop using a counter.";
         }
 
-        Gex::ScheduleNodeList ToScheduledNodes() override
+        Gex::ScheduleNodePtrList ToScheduledNodes() override
         {
             return {ToScheduledNode()};
         }
