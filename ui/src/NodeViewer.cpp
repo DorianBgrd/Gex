@@ -1,7 +1,10 @@
 #include "ui/include/NodeViewer.h"
 
 #include <QLabel>
+#include <QPushButton>
 #include <QVBoxLayout>
+
+#include "UiRes/include/uires.h"
 
 Gex::Ui::ViewerRegistry* Gex::Ui::ViewerRegistry::instance;
 
@@ -68,7 +71,10 @@ void Gex::Ui::NodeViewer::ConnectToNode(Gex::NodeWkPtr n)
     auto dcb = [this]()
     {
         if (this->node && this->connected)
+        {
             this->DisconnectFromNode(this->node);
+            this->connected = false;
+        }
     };
 
     deleteCallbackIndex = node->RegisterAboutToBeDeletedCallback(dcb);
@@ -141,12 +147,13 @@ Gex::Ui::NodeViewer* Gex::Ui::ViewerRegistry::CreateViewer(
 }
 
 
-Gex::Ui::ViewerWindow::ViewerWindow(NodeViewer* viewer, QWidget* parent): QDialog(parent)
+Gex::Ui::ViewerWindow::ViewerWindow(NodeViewer* viewer, QWidget* parent): QDockWidget(parent)
 {
-    QVBoxLayout* layout = new QVBoxLayout();
-    setLayout(layout);
+    setWindowTitle(("Viewer [" + viewer->CurrentNode()->Path() + "]").c_str());
 
-    layout->addWidget(viewer);
+    viewer->setParent(this);
+    viewer->setVisible(true);
+    setWidget(viewer);
 }
 
 
@@ -156,6 +163,39 @@ Gex::Ui::ViewerDock::ViewerDock(QWidget* parent):
 //    emptyWidget = new QWidget(this);
 //    auto* emptyWidgetLayout = new QVBoxLayout();
 //    emptyWidgetLayout->setAlignment(Qt::AlignCenter);
+    auto* mainWidget = new QWidget(this);
+    setWidget(mainWidget);
+
+    auto* mainLayout  = new QVBoxLayout();
+    mainLayout->setAlignment(Qt::AlignTop);
+    mainWidget->setLayout(mainLayout);
+
+    auto* buttonsLayout = new QHBoxLayout();
+    buttonsLayout->setAlignment(Qt::AlignTop | Qt::AlignRight);
+    mainLayout->addLayout(buttonsLayout);
+
+    syncBtn = new QPushButton(this);
+    syncBtn->setCheckable(true);
+    syncBtn->setChecked(true);
+    syncBtn->setFlat(true);
+    syncBtn->setObjectName("ViewerSyncBtn");
+    syncBtn->setIcon(Res::UiRes::GetRes()->GetQtAwesome()->icon(
+            fa::fa_solid, fa::fa_sync));
+    buttonsLayout->addWidget(syncBtn);
+
+    selBtn = new QPushButton(this);
+    selBtn->setFlat(true);
+    selBtn->setObjectName("ViewerSelBtn");
+    selBtn->setIcon(Res::UiRes::GetRes()->GetQtAwesome()->icon(
+            fa::fa_solid, fa::fa_mouse_pointer));
+    buttonsLayout->addWidget(selBtn);
+
+    extractBtn = new QPushButton(this);
+    extractBtn->setFlat(true);
+    extractBtn->setObjectName("ViewerSelBtn");
+    extractBtn->setIcon(Res::UiRes::GetRes()->GetQtAwesome()->icon(
+            fa::fa_solid, fa::fa_up_right_from_square));
+    buttonsLayout->addWidget(extractBtn);
 
     auto* emptyLabel = new QLabel(this);
     emptyLabel->setAlignment(Qt::AlignCenter);
@@ -164,14 +204,34 @@ Gex::Ui::ViewerDock::ViewerDock(QWidget* parent):
     emptyLabel->setText("No viewer attached to\ncurrent selected node.");
 
     stacked = new QStackedWidget(this);
-    setWidget(stacked);
+    mainLayout->addWidget(stacked);
 
     stacked->addWidget(emptyLabel);
+
+    QObject::connect(syncBtn, &QPushButton::toggled,
+                     this, &ViewerDock::SetAutoUpdates);
+    QObject::connect(extractBtn, &QPushButton::clicked,
+                     this, &ViewerDock::Extract);
+}
+
+
+void Gex::Ui::ViewerDock::SetAutoUpdates(bool updates)
+{
+    autoUpdate = updates;
+}
+
+
+bool Gex::Ui::ViewerDock::AutoUpdates() const
+{
+    return autoUpdate;
 }
 
 
 void Gex::Ui::ViewerDock::OnNodeSelected(Gex::NodeWkPtr node)
 {
+    if (!autoUpdate)
+        return;
+
     if (viewer)
     {
         viewer->close();
@@ -210,6 +270,9 @@ void Gex::Ui::ViewerDock::OnNodeSelected(Gex::NodeWkPtr node)
 void Gex::Ui::ViewerDock::NodeSelectionChanged(
         const std::vector<Gex::NodeWkPtr> nodes)
 {
+    if (!autoUpdate)
+        return;
+
     Gex::NodeWkPtr node;
     for (const NodeWkPtr& n : nodes)
     {
@@ -224,17 +287,21 @@ void Gex::Ui::ViewerDock::NodeSelectionChanged(
 }
 
 
-void Gex::Ui::ViewerDock::Extract() const
+Gex::Ui::ViewerWindow* Gex::Ui::ViewerDock::Extract()
 {
     if (!viewer)
-        return;
+        return nullptr;
 
-    auto* registry = ViewerRegistry::GetRegistry();
-
-    auto* extracted = registry->CreateViewer(viewer->CurrentNode()->Type());
-    extracted->SetCurrentNode(viewer->CurrentNode());
+    stacked->removeWidget(viewer);
 
     auto* window = new ViewerWindow(viewer, parentWidget());
     window->show();
+
+    auto curNode = viewer->CurrentNode();
+    viewer = nullptr;
+
+    OnNodeSelected(curNode);
+
+    return window;
 }
 

@@ -5,7 +5,7 @@
 #include "UiRes/include/uires.h"
 
 #include "ui/include/AttributeEditor.h"
-#include "ui/include/commands.h"
+#include "ui/include/Commands.h"
 
 #include <QGridLayout>
 #include <QSplitter>
@@ -26,8 +26,8 @@
 
 #include "Gex/include/Evaluation.h"
 
-Gex::Ui::PlugItem::PlugItem(AttributeItem* attribute,
-                                      bool input): QGraphicsEllipseItem(attribute)
+Gex::Ui::PlugItem::PlugItem(AttributeItem* attribute, bool input):
+    QGraphicsEllipseItem(attribute)
 {
     attr = attribute;
     isInput = input;
@@ -68,7 +68,7 @@ bool Gex::Ui::MultiAttributeItem::Collapsed() const
 
 QRectF Gex::Ui::MultiAttributeItem::boundingRect() const
 {
-    return QRectF(0, 0, size, size);
+    return {0, 0, size, size};
 }
 
 
@@ -925,7 +925,7 @@ void Gex::Ui::NodeItem::ConnectToNode()
             const AttributePtr& attribute,
             const AttributeChange& change)
     {
-        this->graphScene->OnNodeModified(this->node);
+        this->graphScene->OnNodeModified(this->node, change);
     };
     cbIndex = node->RegisterAttributeCallback(callback);
 
@@ -2193,9 +2193,9 @@ void Gex::Ui::NodeGraphScene::UpdateNode(Gex::NodePtr node)
 }
 
 
-void Gex::Ui::NodeGraphScene::OnNodeModified(Gex::NodePtr node)
+void Gex::Ui::NodeGraphScene::OnNodeModified(Gex::NodePtr node, const Gex::AttributeChange& change)
 {
-    Q_EMIT NodeModified(node);
+    Q_EMIT NodeModified(node, change);
 }
 
 
@@ -2937,16 +2937,16 @@ void Gex::Ui::NodeGraphScene::AutoLayoutNodes(const QPointF& destination,
     auto nodes = nodeItems.keys();
 
     std::vector<Gex::NodePtr> nodeVec;
-    for (auto node : nodes)
+    for (const auto& node : nodes)
         nodeVec.push_back(node);
 
     auto schelNodes = Gex::ScheduleNodes(nodeVec, false);
 
     std::map<int, std::vector<Gex::NodePtr>> nodeLevels;
-    for (auto schel : schelNodes)
+    for (const auto& schel : schelNodes)
     {
         int i = 0;
-        for (auto* node : schel->previousNodes)
+        for (const auto& node : schel->previousNodes)
         {
             for (auto nl : nodeLevels)
             {
@@ -2968,13 +2968,9 @@ void Gex::Ui::NodeGraphScene::AutoLayoutNodes(const QPointF& destination,
         }
     }
 
-    // Clean Scheduled nodes.
-    for (auto* schelnode : schelNodes)
-        delete schelnode;
-
     schelNodes.clear();
 
-    qreal len = nodeLevels.size();
+    size_t len = nodeLevels.size();
 
     qreal rectHeight = 0;
     qreal rectWidth = 0;
@@ -2986,7 +2982,7 @@ void Gex::Ui::NodeGraphScene::AutoLayoutNodes(const QPointF& destination,
         size_t columnHeight = 0;
 
         QList<Gex::Ui::NodeItem*> items;
-        for (auto node : levelNodes.second)
+        for (const auto& node : levelNodes.second)
         {
             if (!nodeItems.contains(node))
                 continue;
@@ -3103,19 +3099,19 @@ Gex::Ui::GraphWidget::GraphWidget(Gex::CompoundNodePtr graph_,
     setWindowFlag(Qt::WindowMaximizeButtonHint, true);
     setWindowFlag(Qt::WindowMinimizeButtonHint, true);
 
-    QGridLayout* mainLayout = new QGridLayout();
+    auto* mainLayout = new QGridLayout();
     mainLayout->setContentsMargins(0, 0, 0, 0);
     setLayout(mainLayout);
 
-    QSplitter* splitter = new QSplitter(this);
+    auto* splitter = new QSplitter(this);
     splitter->setContentsMargins(0, 0, 0, 0);
     splitter->setOrientation(Qt::Horizontal);
     mainLayout->addWidget(splitter);
 
-    QVBoxLayout* viewLayout = new QVBoxLayout();
+    auto* viewLayout = new QVBoxLayout();
     viewLayout->setContentsMargins(0, 0, 0, 0);
 
-    QWidget* viewWidget = new QWidget(this);
+    auto* viewWidget = new QWidget(this);
     viewWidget->setLayout(viewLayout);
     splitter->addWidget(viewWidget);
 
@@ -3133,7 +3129,7 @@ Gex::Ui::GraphWidget::GraphWidget(Gex::CompoundNodePtr graph_,
                      this, &GraphWidget::RegisterContext);
 
     QObject::connect(scene, &NodeGraphScene::NodeModified,
-                     this, &GraphWidget::RunFromNode);
+                     this, &GraphWidget::OnNodeChanged);
 
     QObject::connect(contextsWidget, &ContextsWidget::ContextRequested,
                      this, &GraphWidget::SwitchContext);
@@ -3365,17 +3361,28 @@ void Gex::Ui::GraphWidget::RunGraph()
                [this](Gex::NodePtr node)
                {this->scene->NodeEvaluationStarted(node);},
                [this](Gex::NodePtr node, bool success)
-               {if (success) this->scene->NodeEvaluationDone(node, success);},
+               {this->scene->NodeEvaluationDone(node, success);},
                [this, prevState](const Gex::GraphContext& ctx)
                {EmitProfiler(this, ctx);this->interactiveEvalEnabled = prevState;}
                );
 }
 
 
-void Gex::Ui::GraphWidget::RunFromNode(Gex::NodePtr node)
+void Gex::Ui::GraphWidget::OnNodeChanged(
+        const Gex::NodePtr& node,
+        const Gex::AttributeChange& change)
 {
-//    if (!interactiveEvalEnabled)
-    return;
+    if (change == AttributeChange::Connected ||
+        change == AttributeChange::Disconnected ||
+        change == AttributeChange::ValueChanged)
+        RunFromNode(node);
+}
+
+
+void Gex::Ui::GraphWidget::RunFromNode(const Gex::NodePtr& node)
+{
+    if (!interactiveEvalEnabled)
+        return;
 
     interactiveEvalEnabled = false;
 

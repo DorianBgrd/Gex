@@ -546,7 +546,7 @@ namespace Gex
 
             Q_SIGNAL void CompoundNodeDoubleClicked(Gex::CompoundNodePtr);
 
-            Q_SIGNAL void NodeModified(Gex::NodePtr node);
+            Q_SIGNAL void NodeModified(Gex::NodePtr node, const Gex::AttributeChange& change);
 
             void StartPlugLinking(PlugItem* source);
 
@@ -555,7 +555,7 @@ namespace Gex
 
             void UpdateNode(Gex::NodePtr node);
 
-            void OnNodeModified(Gex::NodePtr node);
+            void OnNodeModified(Gex::NodePtr node, const Gex::AttributeChange& change);
 
             void UpdateNodeAttribute(Gex::NodePtr node,
                                      QString attribute);
@@ -766,7 +766,9 @@ namespace Gex
 
             void RunGraph();
 
-            void RunFromNode(Gex::NodePtr node);
+            void OnNodeChanged(const Gex::NodePtr& node, const Gex::AttributeChange& change);
+
+            void RunFromNode(const Gex::NodePtr& node);
 
             void InteractiveRun();
 

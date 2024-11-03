@@ -81,7 +81,7 @@ namespace Gex::Ui
     };
 
 
-    class GEX_UI_API ViewerWindow: public QDialog
+    class GEX_UI_API ViewerWindow: public QDockWidget
     {
         NodeViewer* v;
     public:
@@ -94,15 +94,24 @@ namespace Gex::Ui
         NodeViewer* viewer = nullptr;
         QWidget* emptyWidget;
         QStackedWidget* stacked;
+        QPushButton* syncBtn;
+        QPushButton* selBtn;
+        QPushButton* extractBtn;
+
+        bool autoUpdate = true;
 
     public:
         ViewerDock(QWidget* parent=nullptr);
 
+        bool AutoUpdates() const;
+
+        void SetAutoUpdates(bool updates);
+
         void OnNodeSelected(Gex::NodeWkPtr node);
 
-        void NodeSelectionChanged(const std::vector<Gex::NodeWkPtr> nodes);
+        void NodeSelectionChanged(const Gex::NodeWkList nodes);
 
-        void Extract() const;
+        ViewerWindow* Extract();
     };
 }
 
