@@ -83,6 +83,13 @@ void Gex::Ui::Message::Hide(int duration)
 }
 
 
+void Gex::Ui::Message::Reset()
+{
+    animation->stop();
+    SetOpacity(255);
+}
+
+
 Gex::Ui::Toolbar::Toolbar(QWidget* parent): QFrame(parent)
 {
     QVBoxLayout* l = new QVBoxLayout();
@@ -636,6 +643,7 @@ void Gex::Ui::BaseGraphView::ShowMessage(Gex::Ui::UiFeedback feedback,
     messageTimer->start();
 
     message->SetFeedback(feedback);
+    message->Reset();
     message->adjustSize();
 
     QRect r = rect();
