@@ -7,6 +7,7 @@
 #include "Gex/include/Config.h"
 #include "Gex/include/utils.h"
 #include "Gex/include/PluginLoader.h"
+#include "Gex/include/UndoCommands.h"
 
 #include "Tsys/include/tsys.h"
 #include "Tsys/include/defaultTypes.h"
@@ -352,13 +353,13 @@ bool Gex::Node::AddAttribute(const AttributePtr& attr)
 {
 	std::string _name = attr->Longname();
 
-	if (attributes.find(_name) != attributes.end())
+	if (ContainsAttributeByName(attributes, _name))
 	{
 		return false;
 	}
 
 	attr->SetParentNode(shared_from_this());
-	attributes[_name] = attr;
+	attributes.push_back(attr);
 
     SignalAttributeChange(attr, AttributeChange::AttributeAdded);
 
@@ -370,13 +371,13 @@ bool Gex::Node::RemoveAttribute(const AttributePtr& attr)
 {
     std::string _name = attr->Longname();
 
-    auto idx = attributes.find(_name);
+    auto idx = FindAttributeItByName(attributes, _name);
     if (idx == attributes.end())
     {
         return false;
     }
 
-    SignalAttributeChange(idx->second, AttributeChange::AttributeRemoved);
+    SignalAttributeChange(*idx, AttributeChange::AttributeRemoved);
     attributes.erase(idx);
     return true;
 }
@@ -384,7 +385,7 @@ bool Gex::Node::RemoveAttribute(const AttributePtr& attr)
 
 bool Gex::Node::HasAttribute(const std::string& name) const
 {
-	return (attributes.find(name) != attributes.end());
+	return ContainsAttributeByName(attributes, name);
 }
 
 
@@ -400,27 +401,27 @@ Gex::AttributeWkPtr Gex::Node::GetAttribute(const std::string& name) const
 
 	if (delimiter == std::string::npos)
 	{
-		return attributes.at(name);
+		return FindAttributeByName(attributes, name);
 	}
 
 	delimiter++;
     std::string cname = name;
 	std::string subname = cname.erase(0, delimiter);
-	return attributes.at(shortname)->GetAttribute(subname);
+	return FindAttributeByName(attributes, shortname)->GetAttribute(subname);
 }
 
 
 Gex::AttributeWkList Gex::Node::ExtraAttributes()
 {
 	AttributeWkList extraAttrs;
-	for (std::pair<std::string, AttributePtr> a : attributes)
+	for (const auto& a : attributes)
 	{
-		if (!a.second->IsUserDefined())
+		if (!a->IsUserDefined())
 		{
 			continue;
 		}
 
-		extraAttrs.push_back(a.second);
+		extraAttrs.push_back(a);
 	}
 
 	return extraAttrs;
@@ -430,9 +431,9 @@ Gex::AttributeWkList Gex::Node::ExtraAttributes()
 Gex::AttributeWkList Gex::Node::GetAttributes() const
 {
 	AttributeWkList attrs;
-	for (std::pair<std::string, AttributePtr> n : attributes)
+	for (const auto& n : attributes)
 	{
-		attrs.emplace_back(n.second);
+		attrs.emplace_back(n);
 	}
 
 	return attrs;
@@ -442,11 +443,11 @@ Gex::AttributeWkList Gex::Node::GetAttributes() const
 Gex::AttributeWkList Gex::Node::GetAllAttributes() const
 {
     AttributeWkList attrs;
-    for (std::pair<std::string, AttributePtr> n : attributes)
+    for (const auto& n : attributes)
     {
-        attrs.push_back(n.second);
+        attrs.push_back(n);
 
-        for (const AttributePtr& at : n.second->GetAllAttributes())
+        for (const AttributePtr& at : n->GetAllAttributes())
         {
             attrs.push_back(at);
         }
@@ -664,7 +665,7 @@ void Gex::Node::FactoryReset()
 {
     for (const auto& attribute : attributes)
     {
-        attribute.second->FactoryReset();
+        attribute->FactoryReset();
     }
 }
 
@@ -674,7 +675,7 @@ bool Gex::Node::PullAttributes()
     bool result = true;
     for (const auto& attr : attributes)
     {
-        if (!attr.second->Pull())
+        if (!attr->Pull())
             result = false;
     }
 
@@ -705,9 +706,9 @@ void Gex::Node::Initialize()
 {
     StartInitialization();
 
-    CreateBuiltinsAttributes();
-
     InitAttributes();
+
+    CreateBuiltinsAttributes();
 
     EndInitialization();
 }
@@ -987,6 +988,12 @@ bool Gex::CompoundNode::RemoveNode(const NodePtr& node)
         return false;
     }
 
+    for (const auto& attribute : node->GetAllAttributes())
+    {
+        attribute->ClearSource();
+        attribute->ClearDests();
+    }
+
     nodes.erase(std::find(nodes.begin(), nodes.end(), node));
 
     return true;
@@ -1166,6 +1173,11 @@ Gex::NodePtr Gex::CompoundNode::CreateNode(const std::string& type, std::string 
         return nullptr;
     }
 
+    Undo::UndoStack::AddUndo(
+            Undo::CreateUndo<Undo::CreateNode>(
+                    shared_from_this(), newNode)
+    );
+
     return newNode;
 }
 
@@ -1186,6 +1198,11 @@ Gex::NodePtr Gex::CompoundNode::ReferenceNode(const std::string& path, std::stri
         return nullptr;
     }
 
+    Undo::UndoStack::AddUndo(
+            Undo::CreateUndo<Undo::CreateNode>(
+                    shared_from_this(), referencedNode)
+    );
+
     return referencedNode;
 }
 
@@ -1195,8 +1212,8 @@ Gex::AttributeList Gex::CompoundNode::InternalAttributes() const
     AttributeList internals;
     for (const auto& attribute : attributes)
     {
-        if (attribute.second->IsInternal())
-            internals.push_back(attribute.second);
+        if (attribute->IsInternal())
+            internals.push_back(attribute);
     }
 
     return internals;
@@ -2073,3 +2090,7 @@ Gex::NodePtr Gex::TraverseParents(const Gex::NodePtr& root, TraversalCallback ca
 
     return TraverseParents(parent.ToShared(), callback);
 }
+
+
+
+

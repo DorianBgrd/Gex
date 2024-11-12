@@ -10,6 +10,8 @@
 
 #include <boost/container_hash/hash.hpp>
 
+#include "Gex/include/UndoCommands.h"
+
 
 #define CHECK_EDITABLE_SKIP() if(!IsEditable()){return;}
 #define CHECK_EDITABLE_BOOL() if(!IsEditable()){return false;}
@@ -871,8 +873,16 @@ bool Gex::Attribute::_ConnectSource(const AttributePtr& attribute)
 		return false;
 	}
 
+    auto prev = source;
 	source = attribute;
     SignalChange(AttributeChange::Connected);
+
+    if (!Undo::UndoStack::IsDoing())
+        Undo::UndoStack::AddUndo(
+                Undo::CreateUndo<Undo::ConnectAttr>(
+                    attribute, shared_from_this(),
+                    prev.ToShared()));
+
 	return true;
 }
 
@@ -974,8 +984,14 @@ bool Gex::Attribute::_DisconnectSource(const AttributePtr& attribute)
     source.reset();
 
 	attribute->DisconnectDest(shared_from_this());
-
     SignalChange(AttributeChange::Disconnected);
+
+    if (!Undo::UndoStack::IsDoing())
+        Undo::UndoStack::AddUndo(
+            Undo::CreateUndo<Undo::DisconnectAttr>(
+                    attribute, shared_from_this())
+                );
+
 	return true;
 }
 
@@ -1000,6 +1016,31 @@ bool Gex::Attribute::DisconnectSource(unsigned int index, const AttributePtr& at
     }
 
 	return attribute->_DisconnectSource(indexAttribute);
+}
+
+
+bool Gex::Attribute::ClearSource()
+{
+    if (!HasSource())
+        return false;
+
+    auto src = Source();
+    if (!src)
+        return false;
+
+    return DisconnectSource(src.ToShared());
+}
+
+bool Gex::Attribute::ClearSource(unsigned int index)
+{
+    if (!HasSource(index))
+        return false;
+
+    auto src = GetIndexAttribute(index)->Source();
+    if (!src)
+        return false;
+
+    return DisconnectSource(src.ToShared());
 }
 
 
@@ -1052,6 +1093,21 @@ bool Gex::Attribute::DisconnectDest(unsigned int index, const AttributePtr& attr
 	}
 
 	return attribute->DisconnectDest(indexAttribute);
+}
+
+
+bool Gex::Attribute::ClearDests()
+{
+    auto destinations = Dests();
+
+    bool success = true;
+    for (const auto& destination : destinations)
+    {
+        if (!DisconnectDest(destination))
+            success = false;
+    }
+
+    return success;
 }
 
 
@@ -1224,8 +1280,16 @@ bool Gex::Attribute::SetAnyValue(std::any value)
         value = dstval;
     }
 
+    auto prev = attributeAnyValue;
     attributeAnyValue = value;
     SignalChange(AttributeChange::ValueChanged);
+
+    if (!Undo::UndoStack::IsDoing())
+        Undo::UndoStack::AddUndo(
+            Undo::CreateUndo<Undo::SetAttr>(
+                shared_from_this(), value,
+                prev));
+
     return true;
 }
 
@@ -1578,4 +1642,62 @@ bool Gex::Attribute::Pull()
     }
 
     return true;
+}
+
+
+Gex::AttributeList::const_iterator Gex::FindAttributeItByName(const AttributeList& l,  const std::string& n)
+{
+    auto pred = [n](const Gex::AttributePtr& a)
+    {
+        return (a && a->Name() == n);
+    };
+
+    return std::find_if(l.begin(), l.end(), pred);
+}
+
+
+Gex::AttributeList::const_iterator Gex::FindAttributeItByPath(const AttributeList& l,  const std::string& n)
+{
+    auto pred = [n](const Gex::AttributePtr& a)
+    {
+        return (a && a->Longname() == n);
+    };
+
+    return std::find_if(l.begin(), l.end(), pred);
+}
+
+
+Gex::AttributePtr Gex::FindAttributeByName(const AttributeList& l,  const std::string& n)
+{
+    auto iter = FindAttributeItByName(l, n);
+    if (iter == l.end())
+        return {};
+
+    return *iter;
+}
+
+
+Gex::AttributePtr Gex::FindAttributeByPath(const AttributeList& l,  const std::string& n)
+{
+    auto iter = FindAttributeItByPath(l, n);
+    if (iter == l.end())
+        return {};
+
+    return *iter;
+}
+
+
+bool Gex::ContainsAttributeByName(
+        const AttributeList& list,
+        const std::string& name)
+{
+    return (FindAttributeItByName(list, name) != list.end());
+}
+
+
+bool Gex::ContainsAttributeByPath(
+        const AttributeList& list,
+        const std::string& name)
+{
+    return (FindAttributeItByPath(list, name) != list.end());
 }

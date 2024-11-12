@@ -15,5 +15,7 @@
 #include "References.h"
 #include "io.h"
 #include "Profiler.h"
+#include "UndoStack.h"
+#include "UndoCommands.h"
 
 #endif //GEX_GEX_H

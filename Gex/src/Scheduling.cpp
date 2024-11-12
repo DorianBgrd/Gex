@@ -316,8 +316,10 @@ Gex::ScheduleNodePtrList Gex::SubScheduledNodes(const ScheduleNodePtrList& list,
         return (s->node && s->node == node);
     };
 
+    // Make a full copy of the list.
     ScheduleNodePtrList workList = CopyScheduledNodes(list);
 
+    // Find iterator at where our start node is placed.
     auto iter = std::find_if(workList.begin(), workList.end(), pred);
     if (iter == workList.end())
         return subGraph;
@@ -331,28 +333,19 @@ Gex::ScheduleNodePtrList Gex::SubScheduledNodes(const ScheduleNodePtrList& list,
     {
         auto currentNode = (*iter);
         auto previousNodes = currentNode->previousNodes;
-        ScheduledNodePtr copiedNode = nullptr;
 
         ScheduleNodePtrList newPreviousNodes;
         for (const auto& previousNode : previousNodes)
         {
             if (search.find(previousNode) != search.end())
             {
-                if (!copiedNode)
-                {
-                    copiedNode = std::make_shared<ScheduledNode>(currentNode);
-                    search.insert(copiedNode);
-                }
-
                 newPreviousNodes.push_back(previousNode);
             }
         }
 
-        if (copiedNode)
-        {
-            copiedNode->previousNodes = newPreviousNodes;
-            subGraph.push_back(copiedNode);
-        }
+        currentNode->previousNodes = newPreviousNodes;
+        subGraph.push_back(currentNode);
+        search.insert(currentNode);
     }
 
     return subGraph;

@@ -30,6 +30,11 @@ set(
         include/Metadatas.h
         src/Metadatas.cpp
         src/References.cpp
+        include/UndoStack.h
+        src/UndoStack.cpp
+        src/UndoStack_Wrap.cpp
+        include/UndoCommands.h
+        src/UndoCommands.cpp
 
         # Python wrapping file.
         include/Attribute_Wrap.h

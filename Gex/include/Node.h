@@ -78,7 +78,8 @@ namespace Gex
 		std::string nodeName;
         std::string typeName;
         std::string pluginName;
-		std::map<std::string, AttributePtr> attributes;
+//		std::map<std::string, AttributePtr> attributes;
+        std::vector<AttributePtr> attributes;
 
         std::vector<std::string> resources;
 

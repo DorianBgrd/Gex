@@ -36,7 +36,9 @@ namespace Gex
 
         std::shared_ptr<T> ToShared() const
         {
-            return this->lock();
+            if (!this->expired())
+                return this->lock();
+            return invalid;
         }
 
         std::shared_ptr<T> operator->()

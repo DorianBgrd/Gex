@@ -180,6 +180,7 @@ Gex::NodePtr Gex::LoadGraphString(const std::string& content, Feedback* success)
     return graph;
 }
 
+
 Gex::Feedback Gex::ExportAsCompound(NodeList nodes, NodePtr graph, const std::string& directory,
                                     const std::string& name, bool force)
 {

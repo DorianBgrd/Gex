@@ -616,6 +616,10 @@ namespace Gex
 		*/
 		bool DisconnectSource(unsigned int index, const AttributePtr& attribute);
 
+        bool ClearSource();
+
+        bool ClearSource(unsigned int index);
+
         bool DisconnectDest(const AttributeWkPtr& attribute);
 
 		/**
@@ -640,6 +644,7 @@ namespace Gex
 		*/
 		bool DisconnectDest(unsigned int index, const AttributePtr& attribute);
 
+        bool ClearDests();
 	public:
 		AttributeWkPtr Source() const;
 
@@ -759,6 +764,34 @@ namespace Gex
 		bool Pull();
 
 	};
+
+    AttributeList::const_iterator FindAttributeItByName(
+            const AttributeList& list,
+            const std::string& name);
+
+    AttributeList::const_iterator FindAttributeItByPath(
+            const AttributeList& list,
+            const std::string& path);
+
+    GEX_API
+    AttributePtr FindAttributeByName(
+            const AttributeList& list,
+            const std::string& name);
+
+    GEX_API
+    AttributePtr FindAttributeByPath(
+            const AttributeList& list,
+            const std::string& path);
+
+    GEX_API
+    bool ContainsAttributeByName(
+            const AttributeList& list,
+            const std::string& name);
+
+    GEX_API
+    bool ContainsAttributeByPath(
+            const AttributeList& list,
+            const std::string& name);
 }
 
 #endif // NODELIBRARY_ATTRIBUTE
