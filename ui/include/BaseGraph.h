@@ -87,6 +87,8 @@ namespace Gex::Ui
         void SetOpacity(QVariant opacity);
 
         void Hide(int duration);
+
+        void Reset();
     };
 
     class GEX_UI_API BaseGraphView: public QGraphicsView
