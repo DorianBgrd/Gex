@@ -574,6 +574,10 @@ namespace Gex
 
             NodeGraphContext* CurrentContext() const;
 
+            NodeItem* ItemFromNode(const Gex::NodeWkPtr& node) const;
+
+            NodeItem* ItemFromNode(const Gex::NodePtr& node) const;
+
             void DuplicateSelectedNodes(bool copyLinks);
 
             void DuplicateSelectedNodesNoLinks();

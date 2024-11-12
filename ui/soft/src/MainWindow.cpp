@@ -2,8 +2,11 @@
 
 #include <QMenuBar>
 #include <QFileDialog>
+#include <QShortcut>
 
 #include "UiRes/include/uires.h"
+
+#include "Gex/include/Gex.h"
 
 
 Gex::Editor::MainWindow::MainWindow(Gex::CompoundNodePtr graph_, std::string file,
@@ -55,6 +58,20 @@ Gex::Editor::MainWindow::MainWindow(Gex::CompoundNodePtr graph_, std::string fil
     pluginMenu->addAction("Load plugin", this, &MainWindow::LoadPlugin);
 
     setMenuBar(menu);
+
+    auto* undo = new QShortcut(
+            QKeySequence::fromString("Ctrl+Z"),
+            this);
+
+    QObject::connect(undo, &QShortcut::activated,
+                     this, &MainWindow::Undo);
+
+    auto* redo = new QShortcut(
+            QKeySequence::fromString("Ctrl+Y"),
+            this);
+
+    QObject::connect(redo, &QShortcut::activated,
+                     this, &MainWindow::Redo);
 }
 
 
@@ -77,6 +94,8 @@ Gex::Feedback Gex::Editor::MainWindow::New()
 
     ShowMessage(feedback);
 
+    Gex::Undo::UndoStack::Clear();
+
     return feedback;
 }
 
@@ -96,6 +115,8 @@ Gex::Feedback Gex::Editor::MainWindow::Open(std::string file)
 
     graph = CompoundNode::FromNode(graph_);
     graphView->SwitchGraph(graph);
+
+    Gex::Undo::UndoStack::Clear();
 
     ShowMessage(feedback);
 
@@ -176,7 +197,7 @@ void Gex::Editor::MainWindow::SaveCallback()
 
 
 
-void Gex::Editor::MainWindow::ShowMessage(Gex::Feedback feedback)
+void Gex::Editor::MainWindow::ShowMessage(const Gex::Feedback& feedback) const
 {
     auto uifeed = Gex::Ui::MakeFeedback(feedback);
 
@@ -207,5 +228,27 @@ void Gex::Editor::MainWindow::LoadPlugin()
         {
             PluginLoader::LoadPlugin(f.toStdString());
         }
+    }
+}
+
+
+void Gex::Editor::MainWindow::Undo() const
+{
+    if (!Gex::Undo::UndoStack::Undo())
+    {
+        ShowMessage(Gex::Feedback::New(
+                Gex::Status::Failed,
+                "Undo stack is empty."));
+    }
+}
+
+
+void Gex::Editor::MainWindow::Redo() const
+{
+    if (!Gex::Undo::UndoStack::Redo())
+    {
+        ShowMessage(Gex::Feedback::New(
+                Gex::Status::Failed,
+                "Redo stack is empty."));
     }
 }

@@ -41,9 +41,13 @@ namespace Gex::Editor
 
         void SaveCallback();
 
-        void ShowMessage(Gex::Feedback feedback);
+        void ShowMessage(const Gex::Feedback& feedback) const;
 
         void LoadPlugin();
+
+        void Undo() const;
+
+        void Redo() const;
     };
 }
 

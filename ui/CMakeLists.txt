@@ -31,8 +31,8 @@ add_library(
         src/AttributeEditor.cpp
         include/BaseGraph.h
         src/BaseGraph.cpp
-        include/commands.h
-        src/commands.cpp
+        include/Commands.h
+        src/Commands.cpp
         include/NodeGraph.h
         src/NodeGraph.cpp
         include/UiStatus.h

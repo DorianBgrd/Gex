@@ -525,6 +525,14 @@ void Gex::Ui::AttributeItem::RebuildAttributes()
 
 void Gex::Ui::AttributeItem::InitializeLinks()
 {
+    for (const auto& link : links)
+    {
+        if (link)
+            delete link;
+    }
+
+    links.clear();
+
     for (auto* attrItem : indexedAttributes)
     {
         attrItem->InitializeLinks();
@@ -539,7 +547,7 @@ void Gex::Ui::AttributeItem::InitializeLinks()
     std::unordered_map<Gex::NodePtr, NodeItem*> nodesItems;
     for (auto* item : items)
     {
-        NodeItem* nodeitem = qgraphicsitem_cast<NodeItem*>(item);
+        auto* nodeitem = qgraphicsitem_cast<NodeItem*>(item);
         if (!nodeitem)
         {
             continue;
@@ -562,7 +570,7 @@ void Gex::Ui::AttributeItem::InitializeLinks()
             NodeItem* nodeItem = nodesItems.at(lockedNode);
             AttributeItem* attrItem = nodeItem->FindAttribute(lockedAttr->Longname());
 
-            LinkItem* link = new LinkItem(attrItem, this);
+            auto* link = new LinkItem(attrItem, this);
             if (links.contains(link))
             {
                 delete link;
@@ -925,6 +933,11 @@ void Gex::Ui::NodeItem::ConnectToNode()
             const AttributePtr& attribute,
             const AttributeChange& change)
     {
+
+        if (change == AttributeChange::Connected ||
+            change == AttributeChange::Disconnected)
+            InitializeLinks();
+
         this->graphScene->OnNodeModified(this->node, change);
     };
     cbIndex = node->RegisterAttributeCallback(callback);
@@ -1991,10 +2004,7 @@ void Connect(Gex::Ui::AttributeItem* source,
         delete l;
     }
 
-    if (dest->Attribute()->ConnectSource(source->Attribute()))
-    {
-        dest->InitializeLinks();
-    }
+    dest->Attribute()->ConnectSource(source->Attribute());
 }
 
 
@@ -2019,8 +2029,6 @@ void Gex::Ui::NodeGraphScene::mouseReleaseEvent(QGraphicsSceneMouseEvent* mouseE
                     if (previewLink->SourcePlug()->IsInputAnchor() &&
                         sourceItem->Attribute()->CanConnectSource(destItem->Attribute()))
                     {
-//                        sourceItem->Attribute()->ConnectSource(destItem->Attribute());
-//                        sourceItem->InitializeLinks();
                         Connect(destItem, sourceItem);
                     }
                         // If source plug is an output, check if the destination attribute can
@@ -2028,8 +2036,6 @@ void Gex::Ui::NodeGraphScene::mouseReleaseEvent(QGraphicsSceneMouseEvent* mouseE
                     else if (previewLink->SourcePlug()->IsOutputAnchor() &&
                              destItem->Attribute()->CanConnectSource(sourceItem->Attribute()))
                     {
-//                        destItem->Attribute()->ConnectSource(sourceItem->Attribute());
-//                        destItem->InitializeLinks();
                         Connect(sourceItem, destItem);
                     }
                         // If source plug is an input, is internal and belongs to the current
@@ -2040,8 +2046,6 @@ void Gex::Ui::NodeGraphScene::mouseReleaseEvent(QGraphicsSceneMouseEvent* mouseE
                              sourceItem->ParentNode() == input &&
                              destItem->Attribute()->CanConnectSource(sourceItem->Attribute()))
                     {
-//                        destItem->Attribute()->ConnectSource(sourceItem->Attribute());
-//                        destItem->InitializeLinks();
                         Connect(sourceItem, destItem);
                     }
                         // If source plug is an internal output of current compound, check if source
@@ -2051,8 +2055,6 @@ void Gex::Ui::NodeGraphScene::mouseReleaseEvent(QGraphicsSceneMouseEvent* mouseE
                              sourceItem->ParentNode() == output &&
                              sourceItem->Attribute()->CanConnectSource(destItem->Attribute()))
                     {
-//                        sourceItem->Attribute()->ConnectSource(destItem->Attribute());
-//                        sourceItem->InitializeLinks();
                         Connect(destItem, sourceItem);
                     }
                 }
@@ -2072,7 +2074,6 @@ void Gex::Ui::NodeGraphScene::mouseReleaseEvent(QGraphicsSceneMouseEvent* mouseE
                         if (!indexAttr->HasSource())
                         {
                             indexAttr->ConnectSource(sourceItem->Attribute());
-                            destItem->InitializeLinks();
                             connected = true;
                             break;
                         }
@@ -2106,7 +2107,7 @@ void Gex::Ui::NodeGraphScene::mouseReleaseEvent(QGraphicsSceneMouseEvent* mouseE
 
     else
     {
-        if (NodePlugItem* nodePlugItem = qgraphicsitem_cast<NodePlugItem*>(item))
+        if (auto* nodePlugItem = qgraphicsitem_cast<NodePlugItem*>(item))
         {
             Q_EMIT NodePlugClicked(nodePlugItem);
         }
@@ -2676,6 +2677,26 @@ Gex::Ui::NodeGraphContext* Gex::Ui::NodeGraphScene::CurrentContext() const
 }
 
 
+Gex::Ui::NodeItem* Gex::Ui::NodeGraphScene::ItemFromNode(
+        const Gex::NodeWkPtr& node) const
+{
+    if (!node)
+        return nullptr;
+
+    return ItemFromNode(node.ToShared());
+}
+
+
+Gex::Ui::NodeItem* Gex::Ui::NodeGraphScene::ItemFromNode(
+        const Gex::NodePtr& node) const
+{
+    if (!node)
+        return nullptr;
+
+    return nodeItems.value(node, nullptr);
+}
+
+
 void Gex::Ui::NodeGraphScene::DuplicateNodes(std::vector<NodePtr> nodes, bool copyLinks)
 {
     std::vector<Gex::NodePtr> duplicateds = graphContext->DuplicateNodes(nodes, copyLinks);
@@ -2771,17 +2792,17 @@ void Gex::Ui::NodeGraphScene::DeleteSelection()
     QList<QPointer<LinkItem>> deleteLinks;
     for (QGraphicsItem* item : selectedItems())
     {
-        if (NodeItem* nodeItem = qgraphicsitem_cast<NodeItem*>(item))
+        if (auto* nodeItem = qgraphicsitem_cast<NodeItem*>(item))
         {
             deleteNodes.append(nodeItem);
         }
-        else if (LinkItem* linkItem = qgraphicsitem_cast<LinkItem*>(item))
+        else if (auto* linkItem = qgraphicsitem_cast<LinkItem*>(item))
         {
             deleteLinks.append(linkItem);
         }
     }
 
-    for (auto linkItem : deleteLinks)
+    for (const auto& linkItem : deleteLinks)
     {
         if (linkItem.isNull())
             continue;
@@ -2789,7 +2810,7 @@ void Gex::Ui::NodeGraphScene::DeleteSelection()
         DeleteLink(linkItem);
     }
 
-    for (auto nodeItem : deleteNodes)
+    for (const auto& nodeItem : deleteNodes)
     {
         if (nodeItem.isNull())
             continue;

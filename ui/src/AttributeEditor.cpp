@@ -1,7 +1,8 @@
 #include "ui/include/AttributeEditor.h"
 #include "UiRes/include/uires.h"
 #include "ui/include/NodeGraph.h"
-#include "ui/include/commands.h"
+#include "ui/include/Commands.h"
+//#include "ui/include/Undo.h"
 
 #include <QWidget>
 
