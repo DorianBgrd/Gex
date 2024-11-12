@@ -21,11 +21,12 @@ Gex::Ui::Message::Message(QWidget* parent): QFrame(parent)
     QObject::connect(animation, &QVariantAnimation::valueChanged,
                      this, &Message::SetOpacity);
 
-    QVBoxLayout* layout = new QVBoxLayout();
+    auto* layout = new QVBoxLayout();
     layout->setContentsMargins(5, 5, 5, 5);
     setLayout(layout);
 
     label = new QLabel(this);
+    label->setStyleSheet("QLabel{background-color: transparent;}");
     layout->addWidget(label);
 
     setWindowFlag(Qt::FramelessWindowHint);
@@ -66,7 +67,8 @@ void Gex::Ui::Message::SetOpacity(QVariant opacity)
     setStyleSheet(stylesheet_.c_str());
 
     std::string labelStylesheet = ("QLabel {color: " +
-            ColorToStr(f.textColor, o) + ";}");
+            ColorToStr(f.textColor, o) +
+            ";background-color: transparent;}");
     label->setStyleSheet(labelStylesheet.c_str());
 
     if (o < 2)
