@@ -570,7 +570,7 @@ namespace Gex
 
             QList<NodeItem*> SelectedNodeItems() const;
 
-            std::vector<Gex::NodePtr> SelectedNodes() const;
+            Gex::NodeList SelectedNodes() const;
 
             NodeGraphContext* CurrentContext() const;
 
@@ -778,11 +778,13 @@ namespace Gex
 
             void AutoLayoutNodes();
 
-            void ShowMessage(Gex::Ui::UiFeedback feedback);
+            void ShowMessage(const Gex::Ui::UiFeedback& feedback);
 
             Q_SIGNAL void GraphEvaluated(const Gex::Profiler profiler);
 
             Q_SIGNAL void SelectedNodeChanged(const std::vector<Gex::NodeWkPtr> nodes);
+
+            Gex::NodeWkList CurrentSelection() const;
         };
     }
 }

@@ -210,6 +210,8 @@ Gex::Ui::ViewerDock::ViewerDock(QWidget* parent):
 
     QObject::connect(syncBtn, &QPushButton::toggled,
                      this, &ViewerDock::SetAutoUpdates);
+    QObject::connect(selBtn, &QPushButton::clicked,
+                     this, &ViewerDock::UpdateSelection);
     QObject::connect(extractBtn, &QPushButton::clicked,
                      this, &ViewerDock::Extract);
 }
@@ -227,11 +229,8 @@ bool Gex::Ui::ViewerDock::AutoUpdates() const
 }
 
 
-void Gex::Ui::ViewerDock::OnNodeSelected(Gex::NodeWkPtr node)
+void Gex::Ui::ViewerDock::SetCurrentNode(const Gex::NodeWkPtr& node)
 {
-    if (!autoUpdate)
-        return;
-
     if (viewer)
     {
         viewer->close();
@@ -268,11 +267,17 @@ void Gex::Ui::ViewerDock::OnNodeSelected(Gex::NodeWkPtr node)
 
 
 void Gex::Ui::ViewerDock::NodeSelectionChanged(
-        const std::vector<Gex::NodeWkPtr> nodes)
+        const Gex::NodeWkList& nodes)
 {
     if (!autoUpdate)
         return;
 
+    UpdateCurrentNode(nodes);
+}
+
+
+void Gex::Ui::ViewerDock::UpdateCurrentNode(const Gex::NodeWkList& nodes)
+{
     Gex::NodeWkPtr node;
     for (const NodeWkPtr& n : nodes)
     {
@@ -283,7 +288,7 @@ void Gex::Ui::ViewerDock::NodeSelectionChanged(
         break;
     }
 
-    OnNodeSelected(node);
+    SetCurrentNode(node);
 }
 
 
@@ -300,8 +305,29 @@ Gex::Ui::ViewerWindow* Gex::Ui::ViewerDock::Extract()
     auto curNode = viewer->CurrentNode();
     viewer = nullptr;
 
-    OnNodeSelected(curNode);
+    SetCurrentNode(curNode);
 
     return window;
+}
+
+
+void Gex::Ui::ViewerDock::SetSelectionCallback(const SelectionGetter& callback)
+{
+    selCallback = callback;
+}
+
+
+Gex::NodeWkList Gex::Ui::ViewerDock::GetSelection()
+{
+    if (!selCallback)
+        return {};
+
+    return selCallback();
+}
+
+
+void Gex::Ui::ViewerDock::UpdateSelection()
+{
+    UpdateCurrentNode(GetSelection());
 }
 

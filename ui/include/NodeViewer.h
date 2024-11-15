@@ -100,6 +100,10 @@ namespace Gex::Ui
 
         bool autoUpdate = true;
 
+        typedef std::function<Gex::NodeWkList()> SelectionGetter;
+
+        SelectionGetter selCallback;
+
     public:
         ViewerDock(QWidget* parent=nullptr);
 
@@ -107,11 +111,21 @@ namespace Gex::Ui
 
         void SetAutoUpdates(bool updates);
 
-        void OnNodeSelected(Gex::NodeWkPtr node);
+        void SetCurrentNode(const Gex::NodeWkPtr& node);
 
-        void NodeSelectionChanged(const Gex::NodeWkList nodes);
+        void NodeSelectionChanged(const Gex::NodeWkList& nodes);
 
+    protected:
+        void UpdateCurrentNode(const Gex::NodeWkList& nodes);
+
+    public:
         ViewerWindow* Extract();
+
+        void SetSelectionCallback(const SelectionGetter& callback);
+
+        Gex::NodeWkList GetSelection();
+
+        void UpdateSelection();
     };
 }
 

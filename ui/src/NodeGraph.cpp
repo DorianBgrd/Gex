@@ -3462,7 +3462,21 @@ void Gex::Ui::GraphWidget::AutoLayoutNodes()
 }
 
 
-void Gex::Ui::GraphWidget::ShowMessage(Gex::Ui::UiFeedback feedback)
+void Gex::Ui::GraphWidget::ShowMessage(const Gex::Ui::UiFeedback& feedback)
 {
     view->ShowMessage(feedback);
+}
+
+
+Gex::NodeWkList Gex::Ui::GraphWidget::CurrentSelection() const
+{
+    auto selection = scene->SelectedNodes();
+
+    Gex::NodeWkList sel;
+    for (const auto& node : selection)
+    {
+        sel.emplace_back(node);
+    }
+
+    return sel;
 }
