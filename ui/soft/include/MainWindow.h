@@ -27,9 +27,9 @@ namespace Gex::Editor
 
         Gex::Feedback New();
 
-        Gex::Feedback Open(std::string file);
+        Gex::Feedback Open(const std::string& file);
 
-        Gex::Feedback SaveAs(std::string file);
+        Gex::Feedback SaveAs(const std::string& file);
 
         Gex::Feedback Save();
 

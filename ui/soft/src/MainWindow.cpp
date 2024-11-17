@@ -32,6 +32,12 @@ Gex::Editor::MainWindow::MainWindow(Gex::CompoundNodePtr graph_, std::string fil
     dock = new Gex::Ui::ViewerDock(this);
     addDockWidget(Qt::LeftDockWidgetArea, dock);
 
+    auto selectionGetter = [this](){
+        return this->graphView->GetGraphWidget()->CurrentSelection();
+    };
+
+    dock->SetSelectionCallback(selectionGetter);
+
     QObject::connect(graphView->GetGraphWidget(),
                      &Gex::Ui::GraphWidget::SelectedNodeChanged,
                      dock, &Gex::Ui::ViewerDock::NodeSelectionChanged);
@@ -100,7 +106,7 @@ Gex::Feedback Gex::Editor::MainWindow::New()
 }
 
 
-Gex::Feedback Gex::Editor::MainWindow::Open(std::string file)
+Gex::Feedback Gex::Editor::MainWindow::Open(const std::string& file)
 {
     Gex::Feedback feedback;
     Gex::NodePtr graph_ = Gex::LoadGraph(file, &feedback);
@@ -123,7 +129,7 @@ Gex::Feedback Gex::Editor::MainWindow::Open(std::string file)
     return feedback;
 }
 
-Gex::Feedback Gex::Editor::MainWindow::SaveAs(std::string file)
+Gex::Feedback Gex::Editor::MainWindow::SaveAs(const std::string& file)
 {
     Gex::Feedback f;
     if (!std::filesystem::exists(file))
@@ -237,7 +243,7 @@ void Gex::Editor::MainWindow::Undo() const
     if (!Gex::Undo::UndoStack::Undo())
     {
         ShowMessage(Gex::Feedback::New(
-                Gex::Status::Failed,
+                Gex::Status::Warning,
                 "Undo stack is empty."));
     }
 }
@@ -248,7 +254,7 @@ void Gex::Editor::MainWindow::Redo() const
     if (!Gex::Undo::UndoStack::Redo())
     {
         ShowMessage(Gex::Feedback::New(
-                Gex::Status::Failed,
+                Gex::Status::Warning,
                 "Redo stack is empty."));
     }
 }
