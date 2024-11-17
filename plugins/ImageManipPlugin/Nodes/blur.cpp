@@ -24,6 +24,6 @@ bool ImageManip::Nodes::BoxBlurNode::Evaluate(
     auto src = context.GetAttribute("Input").GetValue<QImage>();
     auto steps = context.GetAttribute("Steps").GetValue<int>();
 
-    return context.GetAttribute("Output").SetValue(
+    return context.GetAttribute("Image").SetValue(
             ImageManip::Manip::BoxBlurPixmap(src, steps));
 }
