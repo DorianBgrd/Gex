@@ -29,9 +29,11 @@ bool ImageManip::Nodes::LoadImage::Evaluate(
 
 void ImageManip::Nodes::CreateImage::InitAttributes()
 {
+    ImageManip::Types::Resolution defaultRes = {1024, 1024};
+
     CreateAttribute<ImageManip::Types::Resolution>(
             "Resolution", Gex::AttrValueType::Single,
-            Gex::AttrType::Input);
+            Gex::AttrType::Input)->SetDefaultValue(defaultRes);
 
     CreateAttribute<QColor>("Color", Gex::AttrValueType::Single,
                             Gex::AttrType::Input);
