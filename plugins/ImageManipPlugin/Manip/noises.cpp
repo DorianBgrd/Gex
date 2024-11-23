@@ -59,6 +59,342 @@ QImage ImageManip::Manip::RandomNoise(
 }
 
 
+
+double Distance(double x1, double y1, double x2, double y2)
+{
+    return std::sqrt(std::pow(x1 - x2, 2) + std::pow(y1 - y2, 2));
+}
+
+
+double angle(ImageManip::Manip::Point p1,
+            ImageManip::Manip::Point p2,
+            ImageManip::Manip::Point p3)
+{
+//    double v1Length = Distance(p1.x, p1.y, p2.x, p2.y);
+//    double v2Length = Distance(p1.x, p1.y, p3.x, p3.y);
+
+    double v1x = p2.x - p1.x;
+    double v1y = p2.y - p1.y;
+    double v2x = p3.x - p1.x;
+    double v2y = p3.y - p1.y;
+    double v1Norm = std::sqrt(v1x * v1x + v1y * v1y);
+    double v2Norm = std::sqrt(v2x * v2x + v2y * v2y);
+
+    double scalarProduct = v1x * v2x + v1y * v2y;
+
+    double p = scalarProduct / (v1Norm * v2Norm);
+
+    double ac = std::acos(p);
+//    return std::acos((v1.x * v2.x) + (v1.y * v2.y));
+    return ac;
+}
+
+
+bool _Matches(ImageManip::Manip::Triangle t1,
+              ImageManip::Manip::Triangle t2)
+{
+    for (const ImageManip::Manip::Segment& seg : t1.Segments())
+    {
+        if (t2.HasSegment(seg))
+            return true;
+    }
+
+    return false;
+}
+
+
+bool _PointMatch(ImageManip::Manip::Triangle t1,
+                 ImageManip::Manip::Triangle t2)
+{
+    auto t1Points = t1.Points();
+    auto t2Points = t2.Points();
+    for (auto p : t1Points)
+    {
+        if (std::find(t2Points.begin(), t2Points.end(), p) != t2Points.end())
+        {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+
+struct Circle
+{
+    double x;
+    double y;
+    double radius;
+};
+
+
+bool IsInsideCircle(const Circle& circle, const ImageManip::Manip::Point& p)
+{
+    return Distance(p.x, p.y, circle.x, circle.y) <= circle.radius;
+}
+
+
+Circle CircumCircle(const ImageManip::Manip::Point& pa,
+                    const ImageManip::Manip::Point& pb,
+                    const ImageManip::Manip::Point& pc)
+{
+    double D = 2 * (pa.x * (pb.y -  pc.y) + pb.x * (pc.y - pa.y) + pc.x * (pa.y - pb.y));
+
+    double centerX = 1 / D * (
+            (std::pow(pa.x, 2) + std::pow(pa.y, 2)) * (pb.y - pc.y) +
+            (std::pow(pb.x, 2) + std::pow(pb.y, 2)) * (pc.y - pa.y) +
+            (std::pow(pc.x, 2) + std::pow(pc.y, 2)) * (pa.y - pb.y)
+    );
+
+    double centerY = 1 / D * (
+            (std::pow(pa.x, 2) + std::pow(pa.y, 2)) * (pc.x - pb.x) +
+            (std::pow(pb.x, 2) + std::pow(pb.y, 2)) * (pa.x - pc.x) +
+            (std::pow(pc.x, 2) + std::pow(pc.y, 2)) * (pb.x - pa.x)
+    );
+
+    double radius = Distance(pa.x, pa.y, centerX,centerY);
+
+    return {centerX, centerY, radius};
+}
+
+
+ImageManip::Manip::Triangle CreateSuperTriangle(
+        std::vector<ImageManip::Manip::Point> points)
+{
+    double minX = INT64_MAX;
+    double minY = INT64_MAX;
+    double maxX = INT64_MIN;
+    double maxY = INT64_MIN;
+
+    for (auto point :points)
+    {
+        if (point.x > maxX)
+            maxX = point.x;
+        if (point.x < minX)
+            minX = point.x;
+        if (point.y > maxY)
+            maxY = point.y;
+        if (point.y < minY)
+            minY = point.y;
+    }
+
+    double dx = (maxX - minX) * 10;
+    double dy = (maxY - minY) * 10;
+
+    ImageManip::Manip::Point a = {minX - dx, minY - dy * 3};
+    ImageManip::Manip::Point b = {minX - dx, maxY + dy};
+    ImageManip::Manip::Point c = {maxX + dx * 3, maxY + dy};
+
+    return {a, b ,c};
+};
+
+std::vector<ImageManip::Manip::Triangle> AddPoint(ImageManip::Manip::Point point, std::vector<ImageManip::Manip::Triangle> triangles)
+{
+    std::vector<ImageManip::Manip::Triangle> res;
+    std::vector<ImageManip::Manip::Segment> edges;
+
+    for (auto triangle : triangles)
+    {
+        auto circum = CircumCircle(triangle.a, triangle.b, triangle.c);
+        if  (IsInsideCircle(circum, point))
+        {
+            for (auto edge : triangle.Segments())
+            {
+                edges.push_back(edge);
+            }
+        }
+        else
+        {
+            res.push_back(triangle);
+        }
+    }
+
+    std::vector<ImageManip::Manip::Segment> polygon;
+    for (const auto& edge : edges)
+    {
+        if (std::count(edges.begin(), edges.end(), edge) > 1)
+            continue;
+        res.emplace_back(edge.p1, edge.p2, point);
+    }
+
+    return res;
+}
+
+
+std::vector<ImageManip::Manip::Triangle> ImageManip::Manip::DelaunayTriangulation(
+        std::vector<Point> points, const Triangle& superTriangle
+)
+{
+    std::vector<Triangle> triangles = {superTriangle};
+
+    for (const auto& point : points)
+    {
+        triangles = AddPoint(point, triangles);
+    }
+
+    std::vector<Triangle> res;
+    for (const auto& t : triangles)
+    {
+        if (_Matches(t, superTriangle))
+        {
+            continue;
+        }
+
+        if (_PointMatch(t, superTriangle))
+        {
+            continue;
+        }
+
+        res.push_back(t);
+    }
+
+    return res;
+}
+
+
+QImage ImageManip::Manip::TriangleCirconscrit(int imageWidth, int imageHeight, int seed)
+{
+    RGen gen;
+    gen.seed(seed);
+
+    std::uniform_real_distribution<double> pointDist(0, 1);
+
+    Point pa = {pointDist(gen) * imageWidth, pointDist(gen) * imageHeight};
+    Point pb = {pointDist(gen) * imageWidth, pointDist(gen) * imageHeight};
+    Point pc = {pointDist(gen) * imageWidth, pointDist(gen) * imageHeight};
+//
+//    double D = 2 * (pa.x * (pb.y -  pc.y) + pb.x * (pc.y - pa.y) + pc.x * (pa.y - pb.y));
+//
+//    double centerX = 1 / D * (
+//            (std::pow(pa.x, 2) + std::pow(pa.y, 2)) * (pb.y - pc.y) +
+//            (std::pow(pb.x, 2) + std::pow(pb.y, 2)) * (pc.y - pa.y) +
+//            (std::pow(pc.x, 2) + std::pow(pc.y, 2)) * (pa.y - pb.y)
+//            );
+//
+//    double centerY = 1 / D * (
+//            (std::pow(pa.x, 2) + std::pow(pa.y, 2)) * (pc.x - pb.x) +
+//            (std::pow(pb.x, 2) + std::pow(pb.y, 2)) * (pa.x - pc.x) +
+//            (std::pow(pc.x, 2) + std::pow(pc.y, 2)) * (pb.x - pa.x)
+//            );
+//
+//    Point circonscritCenter = {centerX, centerY};
+//
+//    int radius = Distance(pa.x, pa.y, circonscritCenter.x,
+//                          circonscritCenter.y);
+    auto circum = CircumCircle(pa, pb, pc);
+
+    QImage image(imageWidth, imageHeight, QImage::Format_RGBA64);
+
+    QPainter painter(&image);
+
+    painter.drawPoint(pa.x, pa.y);
+    painter.drawPoint(pb.x, pb.y);
+    painter.drawPoint(pc.x, pc.y);
+
+    painter.drawLine(pa.x, pa.y, pb.x, pb.y);
+    painter.drawLine(pb.x, pb.y, pc.x, pc.y);
+    painter.drawLine(pc.x, pc.y, pa.x, pa.y);
+
+    painter.drawEllipse(QPoint(circum.x, circum.y),
+                        static_cast<int>(circum.radius),
+                        static_cast<int>(circum.radius));
+
+    painter.end();
+
+    return image;
+}
+
+
+QImage  ImageManip::Manip::DelaunayNoise(
+        int imageWidth, int imageHeight,
+        int frequency, int seed,
+        bool tileable
+)
+{
+    QImage res(imageWidth, imageHeight, QImage::Format_RGBA64);
+
+    // ----------------------------------------------------------------------
+    // Generate the points first.
+
+    RGen gen;
+    gen.seed(seed);
+
+    std::uniform_real_distribution<double> pointDist(0, 1);
+
+    std::vector<Point> points;
+    for (unsigned int np = 0; np < frequency; np++)
+    {
+        points.emplace_back(pointDist(gen) * imageWidth,
+                            pointDist(gen) * imageHeight);
+    }
+
+    QPainter painter(&res);
+    painter.setRenderHint(QPainter::Antialiasing);
+
+    Triangle superTriangle = {
+            Point(-imageWidth * 2, 0),
+            Point(imageWidth * 4, 0),
+            Point(imageWidth / 2, 4 * imageHeight)
+    };
+
+    if (tileable)
+    {
+
+    }
+
+    auto triangles = DelaunayTriangulation(points, superTriangle);
+    for (const Triangle& triangle : triangles)
+    {
+        QPoint pnts[] = {QPoint(triangle.a.x, triangle.a.y),
+                         QPoint(triangle.b.x, triangle.b.y),
+                         QPoint(triangle.c.x, triangle.c.y)};
+        painter.drawPolygon(pnts, 3, Qt::OddEvenFill);
+    }
+
+    painter.save();
+
+    QPen rectPen("green");
+    rectPen.setWidth(5);
+    painter.setPen(rectPen);
+    painter.drawLine(superTriangle.a.x, superTriangle.a.y,
+                     superTriangle.b.x, superTriangle.b.y);
+    painter.drawLine(superTriangle.b.x, superTriangle.b.y,
+                     superTriangle.c.x, superTriangle.c.y);
+    painter.drawLine(superTriangle.c.x, superTriangle.c.y,
+                     superTriangle.a.x, superTriangle.a.y);
+
+    painter.restore();
+    painter.save();
+
+    for (const Point& p : points)
+    {
+        painter.setBrush(QBrush("red"));
+
+        QPen pen("red");
+        pen.setWidth(3);
+        painter.setPen(pen);
+
+        painter.drawEllipse(QPoint(p.x, p.y), 5, 5);
+    }
+    painter.restore();
+
+    painter.setBrush(QBrush("green"));
+
+    QPen pen("green");
+    pen.setWidth(5);
+    painter.setPen(pen);
+
+    painter.drawEllipse(QPoint(superTriangle.a.x, superTriangle.a.y), 5, 5);
+    painter.drawEllipse(QPoint(superTriangle.b.x, superTriangle.b.y), 5, 5);
+    painter.drawEllipse(QPoint(superTriangle.c.x, superTriangle.c.y), 5, 5);
+
+    painter.end();
+
+    return res;
+}
+
+
+
 struct GCoord
 {
     int x;
