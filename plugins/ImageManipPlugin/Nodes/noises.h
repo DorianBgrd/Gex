@@ -25,6 +25,24 @@ namespace ImageManip::Nodes
     GENERATE_DEFAULT_BUILDER(RandomNoiseBuilder, RandomNoise)
 
 
+    class Plugin_API DelaunayNoise: public Gex::Node
+    {
+        std::string Description() const override
+        {
+            return "Generate a random noise.";
+        }
+
+        void InitAttributes() override;
+
+        bool Evaluate(Gex::NodeAttributeData &context,
+                      Gex::GraphContext &graphContext,
+                      Gex::NodeProfiler &profiler)
+        override;
+    };
+
+    GENERATE_DEFAULT_BUILDER(DelaunayNoiseBuilder, DelaunayNoise)
+
+
     class Plugin_API DirtNoise: public Gex::Node
     {
         void InitAttributes() override;
@@ -50,6 +68,44 @@ namespace ImageManip::Nodes
 
     GENERATE_DEFAULT_BUILDER(VoronoiCellNoiseBuilder, VoronoiCellNoise)
 
+
+    class Plugin_API TriangleCircle: public Gex::Node
+    {
+        void InitAttributes() override;
+
+        bool Evaluate(Gex::NodeAttributeData &context,
+                      Gex::GraphContext &graphContext,
+                      Gex::NodeProfiler &profiler)
+        override;
+    };
+
+    GENERATE_DEFAULT_BUILDER(TriangleCircleBuilder, TriangleCircle)
+
+
+    class Plugin_API GridVis: public Gex::Node
+    {
+        void InitAttributes() override;
+
+        bool Evaluate(Gex::NodeAttributeData &context,
+                      Gex::GraphContext &graphContext,
+                      Gex::NodeProfiler &profiler)
+        override;
+    };
+
+    GENERATE_DEFAULT_BUILDER(GridVisBuilder, GridVis)
+
+
+    class Plugin_API CircleOrdered: public Gex::Node
+    {
+        void InitAttributes() override;
+
+        bool Evaluate(Gex::NodeAttributeData &context,
+                      Gex::GraphContext &graphContext,
+                      Gex::NodeProfiler &profiler)
+        override;
+    };
+
+    GENERATE_DEFAULT_BUILDER(CircleOrderedBuilder, CircleOrdered)
 }
 
 #endif //GEX_NOISES_NODES_H

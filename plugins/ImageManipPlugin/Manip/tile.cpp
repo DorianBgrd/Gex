@@ -5,7 +5,7 @@
 
 QImage ImageManip::Manip::TileImage(const QImage& image, int tileNumber)
 {
-    if (tileNumber < 1)
+    if (tileNumber <= 0)
         return image;
 
     int width = image.width();
@@ -15,6 +15,8 @@ QImage ImageManip::Manip::TileImage(const QImage& image, int tileNumber)
     result.fill(Qt::black);
 
     QPainter painter(&result);
+
+    tileNumber += 1;
 
     int xDelta = width / tileNumber;
     int yDelta = height / tileNumber;

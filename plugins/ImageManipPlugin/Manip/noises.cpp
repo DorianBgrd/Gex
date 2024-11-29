@@ -60,33 +60,508 @@ QImage ImageManip::Manip::RandomNoise(
 
 
 
-double Distance(double x1, double y1, double x2, double y2)
+ImageManip::Manip::Point::Point(double x_, double y_)
+{
+    x = x_;
+    y = y_;
+}
+
+
+bool ImageManip::Manip::Point::operator==(const Point& other) const
+{
+    return (x == other.x && y == other.y);
+}
+
+
+ImageManip::Manip::Point ImageManip::Manip::Point::operator-(const Point& other) const
+{
+    return {x - other.x, y - other.y};
+}
+
+
+ImageManip::Manip::Point ImageManip::Manip::Point::operator+(const Point& other) const
+{
+    return {x + other.x, y + other.y};
+}
+
+
+#define ROUND(number, decimals) std::round(number * std::pow(10, decimals)) / std::pow(10, decimals)
+
+
+ImageManip::Manip::Point ImageManip::Manip::Point::Round(unsigned int decimals) const
+{
+    return {ROUND(x, decimals), ROUND(y, decimals)};
+}
+
+
+ImageManip::Manip::Segment::Segment(Point p1_, Point p2_)
+{
+    p1 = p1_;
+    p2 = p2_;
+}
+
+
+bool ImageManip::Manip::Segment::operator==(const Segment& other) const
+{
+    return (p1 == other.p1 && p2 == other.p2) || (p1 == other.p2 && p2 == other.p1);
+}
+
+
+ImageManip::Manip::Triangle::Triangle(const Point& a_, const Point& b_, const Point& c_)
+{
+    a = a_;
+    b = b_;
+    c = c_;
+}
+
+
+bool ImageManip::Manip::Triangle::operator==(const Triangle& other) const
+{
+    auto segments = Segments();
+    auto segmentsOther = Segments();
+
+    for (const auto& seg : Segments())
+    {
+        auto iter = std::find(segmentsOther.begin(), segmentsOther.end(), seg);
+        if (iter == segmentsOther.end())
+        {
+            return false;
+        }
+
+        segmentsOther.erase(iter);
+    }
+
+    return true;
+}
+
+
+std::vector<ImageManip::Manip::Segment> ImageManip::Manip::Triangle::Segments() const
+{
+    return {
+            Segment(a, b),
+            Segment(b, c),
+            Segment(c, a)
+    };
+}
+
+
+bool ImageManip::Manip::Triangle::HasSegment(const Segment& other) const
+{
+    auto segments = Segments();
+    for (const auto& segment : segments)
+    {
+        if (segment == other)
+        {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+
+std::vector<ImageManip::Manip::Point> ImageManip::Manip::Triangle::Points() const
+{
+    return {a, b, c};
+}
+
+
+ImageManip::Manip::Cell::Cell(const Cell& other)
+{
+    px = other.px;
+    py = other.py;
+}
+
+
+ImageManip::Manip::Cell::Cell(double x, double y)
+{
+    px = x;
+    py = y;
+}
+
+
+//ImageManip::Manip::Point ImageManip::Manip::Cell::GetPoint() const
+//{
+//    return {x + px * width,
+//            y + py * height};
+//}
+//
+//
+//ImageManip::Manip::Point ImageManip::Manip::Cell::GeneratePoint(double xFactor, double yFactor)
+//{
+//    px = xFactor;
+//    py = yFactor;
+//    return GetPoint();
+//}
+//
+//
+//void ImageManip::Manip::Cell::Update(double x_, double y_)
+//{
+//    x = x_;
+//    y = y_;
+//}
+
+
+ImageManip::Manip::Grid::Grid(int w, int h, int seed)
+{
+    width = w;
+    height = h;
+
+    RGen gen;
+    gen.seed(seed);
+
+    std::uniform_real_distribution<double> pointDist(0, 1);
+
+    for (unsigned int x = 0; x < width; x++)
+    {
+        std::vector<Cell> column;
+        for (unsigned int y = 0; y < height; y++)
+        {
+            column.emplace_back(pointDist(gen), pointDist(gen));
+        }
+
+        grid.push_back(column);
+    }
+}
+
+
+ImageManip::Manip::Grid::Grid(int r, int seed): Grid(r, r, seed)
+{
+
+}
+
+
+std::vector<ImageManip::Manip::Cell> ImageManip::Manip::Grid::Cells() const
+{
+    std::vector<Cell> cells;
+    for (const std::vector<Cell>& column : grid)
+    {
+        for (const Cell& cell : column)
+        {
+            cells.push_back(cell);
+        }
+    }
+
+    return cells;
+}
+
+
+void ImageManip::Manip::Grid::Tile()
+{
+    // Prepare grid corners.
+    auto topLeft = grid.at(width - 1).at(height - 1);
+    auto topRight = grid.at(0).at(height - 1);
+    auto bottomLeft = grid.at(width - 1).at(0);
+    auto bottomRight = grid.at(0).at(0);
+
+    for (auto& column : grid)
+    {
+        auto top = column.at(0);
+        auto bottom = column.at(column.size() - 1);
+
+        column.insert(column.begin(), bottom);
+        column.push_back(top);
+    }
+
+    std::vector<Cell> columnRight = grid.at(0);
+    std::vector<Cell> columnLeft = grid.at(grid.size() - 1);
+
+    grid.insert(grid.begin(), columnLeft);
+    grid.push_back(columnRight);
+
+    width += 2;
+    height += 2;
+
+    grid[0][0] = topLeft;
+    grid[width - 1][0] = topRight;
+    grid[0][height - 1] = bottomLeft;
+    grid[width - 1][height - 1] = bottomRight;
+}
+
+
+void ImageManip::Manip::Grid::TileRepeat()
+{
+    /*
+     * [
+     *      [x, x, x, x],
+     *      [x, x, x, x],
+     *      [x, x, x, x],
+     *      [x, x, x, x]
+     * ]
+     */
+
+    /*
+     * [
+     *      [x, x, x, x]   [x, x, x, x]   [x, x, x, x],
+     *      [x, x, x, x]   [x, x, x, x]   [x, x, x, x],
+     *      [x, x, x, x]   [x, x, x, x]   [x, x, x, x],
+     *      [x, x, x, x]   [x, x, x, x]   [x, x, x, x]
+     *
+     *      [x, x, x, x]   [x, x, x, x]   [x, x, x, x],
+     *      [x, x, x, x]   [x, x, x, x]   [x, x, x, x],
+     *      [x, x, x, x]   [x, x, x, x]   [x, x, x, x],
+     *      [x, x, x, x]   [x, x, x, x]   [x, x, x, x]
+     *
+     *      [x, x, x, x]   [x, x, x, x]   [x, x, x, x],
+     *      [x, x, x, x]   [x, x, x, x]   [x, x, x, x],
+     *      [x, x, x, x]   [x, x, x, x]   [x, x, x, x],
+     *      [x, x, x, x]   [x, x, x, x]   [x, x, x, x]
+     * ]
+     */
+
+    /*
+     * [
+     *      [x, x, x, x, x, x, x, x, x, x, x, x],
+     *      [x, x, x, x, x, x, x, x, x, x, x, x],
+     *      [x, x, x, x, x, x, x, x, x, x, x, x],
+     *      [x, x, x, x, x, x, x, x, x, x, x, x],
+     * ]
+     */
+
+    /*
+     * [
+     *      [x, x, x, x, x, x, x, x, x, x, x, x],
+     *      [x, x, x, x, x, x, x, x, x, x, x, x],
+     *      [x, x, x, x, x, x, x, x, x, x, x, x],
+     *      [x, x, x, x, x, x, x, x, x, x, x, x],
+     *      [x, x, x, x, x, x, x, x, x, x, x, x],
+     *      [x, x, x, x, x, x, x, x, x, x, x, x],
+     *      [x, x, x, x, x, x, x, x, x, x, x, x],
+     *      [x, x, x, x, x, x, x, x, x, x, x, x],
+     *      [x, x, x, x, x, x, x, x, x, x, x, x],
+     *      [x, x, x, x, x, x, x, x, x, x, x, x],
+     *      [x, x, x, x, x, x, x, x, x, x, x, x],
+     *      [x, x, x, x, x, x, x, x, x, x, x, x],
+     * ]
+     */
+
+    std::vector<std::vector<Cell>> originGrid(grid);
+
+    // Start by tripling the rows.
+    for (auto& row : originGrid)
+    {
+        std::vector<Cell> copy = row;
+
+        // Copy it twice.
+        row.insert(row.end(), copy.begin(), copy.end());
+    }
+
+    std::vector<std::vector<Cell>> originCopy(originGrid);
+    originGrid.insert(originGrid.end(), originCopy.begin(), originCopy.end());
+
+    grid = originGrid;
+}
+
+
+std::vector<ImageManip::Manip::Point> ImageManip::Manip::Grid::MapPoints(
+        double x, double y, double cellWidth,
+        double cellHeight) const
+{
+    std::vector<Point> points;
+
+    int cx = 0;
+    for (const std::vector<Cell>& column : grid)
+    {
+        int cy = 0;
+        for (const Cell& cell : column)
+        {
+            double cellX = x + cx * cellWidth;
+            double cellY = y + cy * cellHeight;
+            points.emplace_back(
+                    cellX + cell.px * cellWidth,
+                    cellY + cell.py * cellHeight
+                    );
+            cy++;
+        }
+        cx++;
+    }
+
+    return points;
+}
+
+
+int ImageManip::Manip::Grid::ColumnCount() const
+{
+    return width;
+}
+
+
+int ImageManip::Manip::Grid::RowCount() const
+{
+    return height;
+}
+
+
+QImage ImageManip::Manip::GridViz(
+        int imageWidth, int imageHeight,
+        int width, int height,
+        int seed, bool tileable)
+{
+    QImage resultImage(imageWidth, imageHeight,
+                       QImage::Format_RGBA64);
+    resultImage.fill(Qt::black);
+
+    Grid grid(width, height, seed);
+    if (tileable)
+    {
+        grid.Tile();
+    }
+
+    double xStart = 0;
+    double yStart = 0;
+
+    QPainter painter(&resultImage);
+
+    QPen cellRectPen("green");
+    cellRectPen.setWidth(3);
+
+    QBrush cellPointBrush("red");
+
+    double cellWidth = imageWidth / grid.ColumnCount();
+    double cellHeight = imageHeight / grid.RowCount();
+
+    auto points = grid.MapPoints(0, 0, cellWidth, cellHeight);
+    for (int x = 0; x < grid.ColumnCount(); x++)
+    {
+        for (int y=0; y < grid.RowCount(); y++)
+        {
+            painter.setPen(cellRectPen);
+            painter.setBrush(Qt::NoBrush);
+            painter.drawRect(x * cellWidth, y * cellHeight,
+                             cellWidth, cellHeight);
+
+            painter.setPen(Qt::NoPen);
+            painter.setBrush(cellPointBrush);
+
+            auto p = points.at(x * grid.ColumnCount() + y);
+            painter.setPen(Qt::NoPen);
+            painter.setBrush(cellPointBrush);
+            painter.drawEllipse(QPoint(p.x, p.y), 5, 5);
+        }
+    }
+
+//    for (const Cell& cell : grid.Cells())
+//    {
+//        painter.setPen(cellRectPen);
+//        painter.setBrush(Qt::NoBrush);
+//        painter.drawRect(cell.x, cell.y, cell.width, cell.height);
+//
+//        auto cellPoint = cell.GetPoint();
+//
+//        painter.setPen(Qt::NoPen);
+//        painter.setBrush(cellPointBrush);
+//        painter.drawEllipse(QPoint(cellPoint.x, cellPoint.y), 5, 5);
+//    }
+
+    painter.end();
+
+    return resultImage;
+}
+
+
+double ImageManip::Manip::Distance(double x1, double y1, double x2, double y2)
 {
     return std::sqrt(std::pow(x1 - x2, 2) + std::pow(y1 - y2, 2));
 }
 
 
-double angle(ImageManip::Manip::Point p1,
-            ImageManip::Manip::Point p2,
-            ImageManip::Manip::Point p3)
+ImageManip::Manip::Point Normalized(const ImageManip::Manip::Point vector)
+{
+    double vNorm = std::sqrt(std::pow(vector.x, 2) + std::pow(vector.y, 2));
+
+    return {vector.x / vNorm, vector.y / vNorm};
+}
+
+
+double ImageManip::Manip::NormalizedAngle(
+        const ImageManip::Manip::Point& vector1,
+        const ImageManip::Manip::Point& vector2
+)
 {
 //    double v1Length = Distance(p1.x, p1.y, p2.x, p2.y);
 //    double v2Length = Distance(p1.x, p1.y, p3.x, p3.y);
 
-    double v1x = p2.x - p1.x;
-    double v1y = p2.y - p1.y;
-    double v2x = p3.x - p1.x;
-    double v2y = p3.y - p1.y;
-    double v1Norm = std::sqrt(v1x * v1x + v1y * v1y);
-    double v2Norm = std::sqrt(v2x * v2x + v2y * v2y);
+    double v1Norm = std::sqrt(std::pow(vector1.x, 2) + std::pow(vector1.y, 2));
+    double v2Norm = std::sqrt(std::pow(vector2.x, 2) + std::pow(vector2.y, 2));
 
-    double scalarProduct = v1x * v2x + v1y * v2y;
+    double scalarProduct = vector1.x * vector2.x + vector1.y * vector2.y;
 
     double p = scalarProduct / (v1Norm * v2Norm);
 
     double ac = std::acos(p);
 //    return std::acos((v1.x * v2.x) + (v1.y * v2.y));
     return ac;
+}
+
+
+double ImageManip::Manip::Angle(
+        const ImageManip::Manip::Point& vector1,
+        const ImageManip::Manip::Point& vector2
+)
+{
+//    double v1Length = Distance(p1.x, p1.y, p2.x, p2.y);
+//    double v2Length = Distance(p1.x, p1.y, p3.x, p3.y);
+
+    double v1Norm = std::sqrt(std::pow(vector1.x, 2) + std::pow(vector1.y, 2));
+    double v2Norm = std::sqrt(std::pow(vector2.x, 2) + std::pow(vector2.y, 2));
+
+    double scalarProduct = vector1.x * vector2.x + vector1.y * vector2.y;
+
+    double p = scalarProduct / (v1Norm * v2Norm);
+
+    double ac = std::acos(p);
+//    return std::acos((v1.x * v2.x) + (v1.y * v2.y));
+    return ac;
+}
+
+
+#define PI 3.14159265358979323846
+
+
+double ImageManip::Manip::TrigoAngle(
+        const Point& vector
+)
+{
+    double angle = Angle({1, 0}, vector);
+
+    if (vector.y < 0)
+    {
+        angle = (2 * PI) - angle;
+    }
+
+    return angle;
+}
+
+
+double ImageManip::Manip::TrigoAngle(
+        const Point& root, const Point& vector
+)
+{
+    double angle = Angle(root + Point(1, 0), vector);
+
+    if (vector.y < root.y)
+    {
+        angle = (2 * PI) - angle;
+    }
+
+    double deg = angle * 57.2958;
+    return angle;
+}
+
+
+double PointRootAngle(const ImageManip::Manip::Point& root,
+                      const ImageManip::Manip::Point& point)
+{
+    ImageManip::Manip::Point vector = point - root;
+    ImageManip::Manip::Point refVec = (root + ImageManip::Manip::Point(1, 0)) - root;
+
+    double angle = Angle(refVec, vector);
+    if (point.y < root.y)
+    {
+        angle = 2 * PI - angle;
+    }
+
+    return angle;
 }
 
 
@@ -120,23 +595,16 @@ bool _PointMatch(ImageManip::Manip::Triangle t1,
 }
 
 
-struct Circle
-{
-    double x;
-    double y;
-    double radius;
-};
-
-
-bool IsInsideCircle(const Circle& circle, const ImageManip::Manip::Point& p)
+bool ImageManip::Manip::IsInsideCircle(const Circle& circle, const ImageManip::Manip::Point& p)
 {
     return Distance(p.x, p.y, circle.x, circle.y) <= circle.radius;
 }
 
 
-Circle CircumCircle(const ImageManip::Manip::Point& pa,
-                    const ImageManip::Manip::Point& pb,
-                    const ImageManip::Manip::Point& pc)
+ImageManip::Manip::Circle ImageManip::Manip::CircumCircle(
+        const ImageManip::Manip::Point& pa,
+        const ImageManip::Manip::Point& pb,
+        const ImageManip::Manip::Point& pc)
 {
     double D = 2 * (pa.x * (pb.y -  pc.y) + pb.x * (pc.y - pa.y) + pc.x * (pa.y - pb.y));
 
@@ -158,47 +626,17 @@ Circle CircumCircle(const ImageManip::Manip::Point& pa,
 }
 
 
-ImageManip::Manip::Triangle CreateSuperTriangle(
-        std::vector<ImageManip::Manip::Point> points)
-{
-    double minX = INT64_MAX;
-    double minY = INT64_MAX;
-    double maxX = INT64_MIN;
-    double maxY = INT64_MIN;
-
-    for (auto point :points)
-    {
-        if (point.x > maxX)
-            maxX = point.x;
-        if (point.x < minX)
-            minX = point.x;
-        if (point.y > maxY)
-            maxY = point.y;
-        if (point.y < minY)
-            minY = point.y;
-    }
-
-    double dx = (maxX - minX) * 10;
-    double dy = (maxY - minY) * 10;
-
-    ImageManip::Manip::Point a = {minX - dx, minY - dy * 3};
-    ImageManip::Manip::Point b = {minX - dx, maxY + dy};
-    ImageManip::Manip::Point c = {maxX + dx * 3, maxY + dy};
-
-    return {a, b ,c};
-};
-
 std::vector<ImageManip::Manip::Triangle> AddPoint(ImageManip::Manip::Point point, std::vector<ImageManip::Manip::Triangle> triangles)
 {
     std::vector<ImageManip::Manip::Triangle> res;
     std::vector<ImageManip::Manip::Segment> edges;
 
-    for (auto triangle : triangles)
+    for (const ImageManip::Manip::Triangle& triangle : triangles)
     {
         auto circum = CircumCircle(triangle.a, triangle.b, triangle.c);
         if  (IsInsideCircle(circum, point))
         {
-            for (auto edge : triangle.Segments())
+            for (const ImageManip::Manip::Segment& edge : triangle.Segments())
             {
                 edges.push_back(edge);
             }
@@ -222,7 +660,7 @@ std::vector<ImageManip::Manip::Triangle> AddPoint(ImageManip::Manip::Point point
 
 
 std::vector<ImageManip::Manip::Triangle> ImageManip::Manip::DelaunayTriangulation(
-        std::vector<Point> points, const Triangle& superTriangle
+        const std::vector<Point>& points, const Triangle& superTriangle
 )
 {
     std::vector<Triangle> triangles = {superTriangle};
@@ -308,7 +746,7 @@ QImage ImageManip::Manip::TriangleCirconscrit(int imageWidth, int imageHeight, i
 QImage  ImageManip::Manip::DelaunayNoise(
         int imageWidth, int imageHeight,
         int frequency, int seed,
-        bool tileable
+        bool colored, bool tileable
 )
 {
     QImage res(imageWidth, imageHeight, QImage::Format_RGBA64);
@@ -316,31 +754,33 @@ QImage  ImageManip::Manip::DelaunayNoise(
     // ----------------------------------------------------------------------
     // Generate the points first.
 
-    RGen gen;
-    gen.seed(seed);
-
-    std::uniform_real_distribution<double> pointDist(0, 1);
-
-    std::vector<Point> points;
-    for (unsigned int np = 0; np < frequency; np++)
+    // Generate a grid with points.
+    Grid grid(frequency, seed);
+    if (tileable)
     {
-        points.emplace_back(pointDist(gen) * imageWidth,
-                            pointDist(gen) * imageHeight);
+        grid.Tile();
     }
 
     QPainter painter(&res);
     painter.setRenderHint(QPainter::Antialiasing);
 
     Triangle superTriangle = {
-            Point(-imageWidth * 2, 0),
-            Point(imageWidth * 4, 0),
-            Point(imageWidth / 2, 4 * imageHeight)
+            Point(-imageWidth * 4, -imageHeight),
+            Point(imageWidth * 5, -imageHeight),
+            Point(imageWidth / 2, 8 * imageHeight)
     };
 
+    double x = 0;
+    double y = 0;
+    double cellWidth = imageWidth / frequency;
+    double cellHeight = imageHeight / frequency;
     if (tileable)
     {
-
+        x = -cellWidth;
+        y = -cellHeight;
     }
+
+    auto points = grid.MapPoints(x, y, cellWidth, cellHeight);
 
     auto triangles = DelaunayTriangulation(points, superTriangle);
     for (const Triangle& triangle : triangles)
@@ -351,439 +791,286 @@ QImage  ImageManip::Manip::DelaunayNoise(
         painter.drawPolygon(pnts, 3, Qt::OddEvenFill);
     }
 
-    painter.save();
+    RGen gen;
+    gen.seed(seed);
+    std::uniform_int_distribution<int> colorDist(0, 255);
 
-    QPen rectPen("green");
-    rectPen.setWidth(5);
-    painter.setPen(rectPen);
-    painter.drawLine(superTriangle.a.x, superTriangle.a.y,
-                     superTriangle.b.x, superTriangle.b.y);
-    painter.drawLine(superTriangle.b.x, superTriangle.b.y,
-                     superTriangle.c.x, superTriangle.c.y);
-    painter.drawLine(superTriangle.c.x, superTriangle.c.y,
-                     superTriangle.a.x, superTriangle.a.y);
+    std::map<double, QColor> triangleColors;
 
-    painter.restore();
-    painter.save();
-
-    for (const Point& p : points)
+    painter.setPen(Qt::NoPen);
+    for (const auto& triangle : triangles)
     {
-        painter.setBrush(QBrush("red"));
+        double radius = CircumCircle(triangle.a, triangle.b, triangle.c).radius;
 
-        QPen pen("red");
-        pen.setWidth(3);
-        painter.setPen(pen);
+        double hashRadius = ROUND(radius, 5);
 
-        painter.drawEllipse(QPoint(p.x, p.y), 5, 5);
+        if (triangleColors.find(hashRadius) == triangleColors.end())
+        {
+            QColor color;
+            if (colored)
+            {
+
+                color = {
+                        colorDist(gen),
+                        colorDist(gen),
+                        colorDist(gen)
+                };
+            }
+            else
+            {
+                int grey = colorDist(gen);
+                color = {grey, grey, grey};
+            }
+
+            triangleColors[hashRadius] = color;
+        }
+
+        QColor triangleColor = triangleColors.at(hashRadius);
+        painter.setBrush(triangleColor);
+
+        QPoint pnts[] = {QPoint(triangle.a.x, triangle.a.y),
+                         QPoint(triangle.b.x, triangle.b.y),
+                         QPoint(triangle.c.x, triangle.c.y)};
+        painter.drawPolygon(pnts, 3, Qt::OddEvenFill);
     }
-    painter.restore();
-
-    painter.setBrush(QBrush("green"));
-
-    QPen pen("green");
-    pen.setWidth(5);
-    painter.setPen(pen);
-
-    painter.drawEllipse(QPoint(superTriangle.a.x, superTriangle.a.y), 5, 5);
-    painter.drawEllipse(QPoint(superTriangle.b.x, superTriangle.b.y), 5, 5);
-    painter.drawEllipse(QPoint(superTriangle.c.x, superTriangle.c.y), 5, 5);
-
-    painter.end();
 
     return res;
 }
 
 
-
-struct GCoord
+ImageManip::Manip::Point ImageManip::Manip::AveragePoint(
+        std::vector<ImageManip::Manip::Point> points)
 {
-    int x;
-    int y;
-};
-
-
-struct GRect
-{
-    int width;
-    int height;
-};
-
-
-typedef std::array<int, 2> Coord2D;
-typedef std::array<double, 2> DCoord2D;
-typedef std::array<double, 3> DCoord3D;
-
-
-struct GCell
-{
-    int x = 0;
-    int y = 0;
-    double px = 0;
-    double py = 0;
-
-public:
-    GCell() = default;
-
-    GCell(int x_, int y_, double px_, double py_)
+    double sumX = 0;
+    double sumY = 0;
+    for (const Point& p : points)
     {
-        x = x_;
-        y = y_;
-        px = px_;
-        py = py_;
+        sumX += p.x;
+        sumY += p.y;
     }
 
-    GCell(const GCell& other)
-    {
-        x = other.x;
-        y = other.y;
-        px = other.px;
-        py = other.py;
-    }
-
-
-    GCell(int x_, int y_, const GCell& other)
-    {
-        x = x_;
-        y = y_;
-        px = other.px;
-        py = other.py;
-    }
-
-    DCoord2D RandPoint() const
-    {
-        return {px, py};
-    }
-
-    DCoord2D RandRealPoint() const
-    {
-        return {x + px, y + py};
-    }
-};
-
-
-
-float Vec2DLength(DCoord2D p1, DCoord2D p2)
-{
-    return std::sqrt((p1[0] - p2[0]) * (p1[0] - p2[0]) +
-                     (p1[1] - p2[1]) * (p1[1] - p2[1]));
+    return {sumX / static_cast<double>(points.size()),
+            sumY / static_cast<double>(points.size())};
 }
 
 
-float TArea2D(DCoord2D p1, DCoord2D p2, DCoord2D p3)
+size_t HashPolygon(std::vector<ImageManip::Manip::Point> polygon)
 {
-    float a = Vec2DLength(p1, p2);
-    float b = Vec2DLength(p2, p3);
-    float c = Vec2DLength(p3, p1);
-    float d = (a + b + c) / 2.0f;
+    double sumX = 0;
+    double sumY = 0;
+    for (const auto& point : polygon)
+    {
+        sumX += point.x;
+        sumY += point.y;
+    }
 
-    return std::sqrt(d * (d - a) * (d - b) * (d - c));
+    ImageManip::Manip::Point center(
+            sumX / (double)polygon.size(),
+            sumY / (double)polygon.size()
+            );
+
+    size_t hash = 0;
+    for (const auto& point : polygon)
+    {
+        ImageManip::Manip::Point vec = Normalized(point  - center);
+        hash_combine(hash, vec);
+    }
+
+    return hash;
 }
 
 
-DCoord3D BCoord2D(DCoord2D point, DCoord2D p1, DCoord2D p2, DCoord2D p3)
+void ImageManip::Manip::Polygon::Sort()
 {
-    float mainArea = TArea2D(p1, p2, p3);
-
-    float area1 = TArea2D(point, p2, p3);
-    float area2 = TArea2D(p1, point, p3);
-    float area3 = TArea2D(p1, p2, point);
-
-    float darea1 = area1 / mainArea;
-    float darea2 = area2 / mainArea;
-    float darea3 = area3 / mainArea;
-
-    return {darea1, darea2, darea3};
-}
-
-
-DCoord2D FromBCoord2D(DCoord3D bary, DCoord2D p1, DCoord2D p2, DCoord2D p3)
-{
-    return {
-            (bary[0] * p1[0]) + (bary[1] * p2[0]) + (bary[2] * p3[0]),
-            (bary[0] * p1[1]) + (bary[1] * p2[1]) + (bary[2] * p3[1])
+    auto cmp = [this](const Point& lhs, const Point& rhs)
+    {
+        return PointRootAngle(center, lhs) < PointRootAngle(center, rhs);
     };
+
+    std::sort(points.begin(), points.end(), cmp);
 }
 
 
-struct Triangle2D
+void ImageManip::Manip::Polygon::ComputeCenter()
 {
-    DCoord2D p1;
-    DCoord2D p2;
-    DCoord2D p3;
-
-    DCoord2D rp;
-
-    Triangle2D(
-            DCoord2D p1_,
-            DCoord2D p2_,
-            DCoord2D p3_
-            )
-    {
-        p1 = p1_;
-        p2 = p2_;
-        p3 = p3_;
-    }
-
-    Triangle2D(const Triangle2D& other)
-    {
-        p1 = other.p1;
-        p2 = other.p2;
-        p3 = other.p3;
-
-        rp = other.rp;
-    }
-
-    void GenerateRandomPoint(double b1, double b2, double b3)
-    {
-        rp = FromBCoord2D({b1, b2, b3}, p1, p2, p3);
-    }
-
-    static Triangle2D FromCoord(DCoord2D p1, DCoord2D p2,
-                                DCoord2D p3, double x,
-                                double y, double z)
-    {
-        Triangle2D triangle(p1, p2, p3);
-        triangle.GenerateRandomPoint(x, y, z);
-
-        return triangle;
-    }
-
-    bool operator ==(const Triangle2D& other) const
-    {
-        return (p1[0] == other.p1[0] && p1[1] == other.p1[1] &&
-                p2[0] == other.p2[0] && p2[1] == other.p2[1] &&
-                p3[0] == other.p3[0] && p3[1] == other.p3[1]);
-    }
-
-    bool operator <(const Triangle2D& other) const
-    {
-        return (p1 < other.p1 && p2 < other.p2 && p3 < other.p3);
-    }
-};
-
-
-DCoord2D RealCoord(int x, int y, Coord2D point)
-{
-    return {static_cast<double>(x + point[0]),
-            static_cast<double>(y + point[1])};
+    center = AveragePoint(points);
 }
 
 
-DCoord2D RealCoord(int x, int y, DCoord2D point)
+size_t ImageManip::Manip::Polygon::Hash() const
 {
-    return {static_cast<double>(x + point[0]),
-            static_cast<double>(y + point[1])};
+    Polygon normalized = Normalized();
+
+    size_t hash = 0;
+    for (const Point& p : normalized.points)
+    {
+        hash_combine(hash, p.Round(3));
+    }
+
+    return hash;
 }
 
 
-struct VoronoiCell
+ImageManip::Manip::Polygon ImageManip::Manip::Polygon::Normalized() const
 {
-    std::vector<DCoord2D> coords;
-};
+    Polygon p;
+    p.center = {0, 0};
+
+    for (const auto& point : points)
+    {
+        p.points.push_back(point - center);
+    }
+
+    return p;
+}
 
 
-QImage ImageManip::Manip::VoronoiCells(int imageWidth,
-                     int imageHeight,
-                     int gridWidth,
-                     int gridHeight,
-                     int seed)
+bool ImageManip::Manip::Polygon::operator==(const Polygon& other) const
+{
+    return (Hash() == other.Hash());
+}
+
+
+QPolygon ImageManip::Manip::Polygon::ToQPolygon() const
+{
+    QPolygon p;
+
+    for (const auto& pnt : points)
+    {
+        p.emplace_back(pnt.x, pnt.y);
+    }
+
+    return p;
+}
+
+
+
+QImage ImageManip::Manip::VoronoiNoise(
+        int imageWidth, int imageHeight,
+        int frequency, int seed, int lineWidth,
+        bool filled, bool colored, bool tileable)
 {
     QImage res(imageWidth, imageHeight, QImage::Format_RGBA64);
-    res.fill(Qt::black);
+    res.fill(Qt::white);
+    // ----------------------------------------------------------------------
+    // Generate the points first.
+
+    // Generate a grid with points.
+    Grid grid(frequency, seed);
+    if (tileable)
+    {
+        grid.TileRepeat();
+    }
 
     QPainter painter(&res);
     painter.setRenderHint(QPainter::Antialiasing);
 
-    QPen pen;
+    Triangle superTriangle = {
+            Point(-imageWidth * 4, -imageHeight),
+            Point(imageWidth * 5, -imageHeight),
+            Point(imageWidth / 2, 8 * imageHeight)
+    };
+
+    double x = 0;
+    double y = 0;
+    double cellWidth = imageWidth / frequency;
+    double cellHeight = imageHeight / frequency;
+    if (tileable)
+    {
+        x = -imageWidth / 2;
+        y = -imageHeight / 2;
+    }
+
+    auto points = grid.MapPoints(x, y, cellWidth, cellHeight);
+
+    auto triangles = DelaunayTriangulation(points, superTriangle);
 
     RGen gen;
     gen.seed(seed);
+    std::uniform_int_distribution<int> colorDist(0, 255);
 
-    std::uniform_real_distribution<double> dist(0, 1);
-
-    std::map<Coord2D, GCell> cellsPoints;
-    for (int x = 0; x < gridWidth; x++)
+    // order points using an angle between (1, 0) vector to
+    // specified vector. It should order around the point...
+    // I guess...
+    std::unordered_map<Point, std::vector<Triangle>> trianglePoints;
+    for (const Triangle& triangle : triangles)
     {
-        for (int y = 0; y < gridHeight; y++)
+        for (const Point& point : triangle.Points())
         {
-            auto rx = dist(gen);
-            auto ry = dist(gen);
-            Coord2D c = {x, y};
-            cellsPoints[c] = GCell(
-                    x, y,
-                    rx, ry
-            );
+            auto roundPoint = point.Round(5);
+            if (trianglePoints.find(roundPoint) == trianglePoints.end())
+                trianglePoints[roundPoint] = std::vector<Triangle>();
+            trianglePoints.at(roundPoint).push_back(triangle);
         }
     }
 
-    // Expand grid by one to make it tillable.
-    for (int i = 0; i < gridWidth; i++)
+    std::vector<Polygon> polygons;
+    std::set<size_t> hashes;
+    for (const auto& pointTriangle: trianglePoints)
     {
-        cellsPoints[{i, -1}] = GCell(
-                i, -1, cellsPoints.at({i, gridHeight - 1})
-                );
+        Polygon p;
 
-        cellsPoints[{i, gridHeight}] = GCell(
-                i, gridHeight, cellsPoints.at({i, 0})
-                );
-    }
-
-    for (int j = 0; j < gridHeight; j++)
-    {
-        cellsPoints[{-1, j}] = GCell(
-                -1, j, cellsPoints.at({gridWidth - 1, j})
-                );
-
-        cellsPoints[{gridWidth, j}] = GCell(
-                gridWidth, j, cellsPoints.at({0, j})
-                );
-    }
-
-    cellsPoints[{-1, -1}] = GCell(-1, -1, cellsPoints.at({gridWidth - 1, gridHeight - 1}));
-    cellsPoints[{gridWidth, gridHeight}] = GCell(gridWidth, gridHeight, cellsPoints.at({0, 0}));
-    cellsPoints[{-1, gridHeight}] = GCell(-1, gridHeight, cellsPoints.at({gridWidth - 1, 0}));
-    cellsPoints[{gridWidth, -1}] = GCell(gridWidth, -1, cellsPoints.at({-1, gridHeight}));
-
-    pen.setColor(Qt::red);
-    pen.setWidth(3);
-    painter.setPen(pen);
-
-    for (auto cp : cellsPoints)
-    {
-        auto cprp = cp.second.RandRealPoint();
-        auto cprpx = static_cast<int>(cprp[0] / gridWidth * imageWidth);
-        auto cprpy = static_cast<int>(cprp[1] / gridHeight * imageHeight);
-        painter.drawPoint(cprpx, cprpy);
-
-    }
-
-    std::vector<Triangle2D> triangles;
-
-    std::uniform_real_distribution<double> rdist(0, 1);
-
-    std::vector<VoronoiCell> cells;
-    for (int x = 0; x < gridWidth + 1; x++)
-    {
-        for (int y = 0; y < gridHeight + 1; y++)
+        for (const Triangle& t : pointTriangle.second)
         {
-            Coord2D center = {x, y};
+            auto circum = CircumCircle(t.a, t.b, t.c);
+            p.points.emplace_back(circum.x, circum.y);
+        }
 
-            Coord2D topLeft = {x - 1, y - 1};
-            Coord2D topCenter = {x, y - 1};
-            Coord2D topRight = {x + 1, y - 1};
-            Coord2D left = {x - 1, y};
-            Coord2D right = {x + 1, y};
-            Coord2D bottomLeft = {x - 1, y + 1};
-            Coord2D bottomCenter = {x, y + 1};
-            Coord2D bottomRight = {x + 1, y + 1};
+        p.ComputeCenter();
+        p.Sort();
 
-            // Triangles :
-            std::vector<std::array<Coord2D, 3>> ts = {
-                    {topLeft, topCenter, center},
-//                    {topCenter, topRight, center},
-//                    {topRight, right, center},
-//                    {right, bottomRight, center},
-//                    {bottomRight, bottomCenter, center},
-//                    {bottomCenter, bottomLeft, center},
-//                    {bottomLeft, left, center},
-                    {left, topLeft, center}
-            };
+        polygons.push_back(p);
+        hashes.insert(p.Hash());
+    }
 
-            // Get real coordinates.
-            VoronoiCell vcell;
-            for (auto tsg : ts)
+    painter.setPen(Qt::NoPen);
+
+    std::unordered_map<size_t, QColor> polygonColors;
+
+    for (const Polygon& polygon : polygons)
+    {
+        if (polygon.points.size() < 3)
+            continue;
+
+        if (filled)
+        {
+            size_t hash = polygon.Hash();
+            if (polygonColors.find(hash) == polygonColors.end())
             {
-                // Generate a random double between 0 and 1.
-                auto rx = rdist(gen);
-
-                // Divide the rest using another random
-                // generated number.
-                auto factor = rdist(gen);
-                auto ry = (1 - rx) * factor;
-                auto rz = (1 - rx) * (1 - factor);
-
-                // Create a triangle.
-                auto triangle = Triangle2D::FromCoord(
-                        cellsPoints.at(tsg[0]).RandRealPoint(),
-                        cellsPoints.at(tsg[1]).RandRealPoint(),
-                        cellsPoints.at(tsg[2]).RandRealPoint(),
-                        rx, ry, rz);
-
-                auto foundIter = std::find(triangles.begin(), triangles.end(), triangle);
-                if (foundIter == triangles.end())
-                    triangles.push_back(triangle);
-//                else
-//                    triangle = *foundIter;
-
-//                vcell.coords.push_back(triangle.rp);
+                if (colored)
+                {
+                    polygonColors[hash] = QColor(
+                            colorDist(gen),
+                            colorDist(gen),
+                            colorDist(gen)
+                    );
+                }
+                else
+                {
+                    int c = colorDist(gen);
+                    polygonColors[hash] = QColor(c, c, c);
+                }
             }
 
-//            cells.push_back(vcell);
+            QPen ppen;
+            ppen.setWidth(1);
+            ppen.setColor(polygonColors.at(hash));
+            painter.setPen(ppen);
+            painter.setBrush(polygonColors.at(hash));
         }
-    }
 
-
-
-    pen.setColor(Qt::green);
-    pen.setWidth(2);
-    painter.setPen(pen);
-
-    std::uniform_int<int> cdist(0, 255);
-    for (auto t : triangles)
-    {
-        QPainterPath path;
-        path.moveTo(t.p1[0] / gridWidth * imageWidth,
-                    t.p1[1] / gridHeight * imageHeight);
-        path.lineTo(t.p2[0] / gridWidth * imageWidth,
-                    t.p2[1] / gridHeight * imageHeight);
-        path.moveTo(t.p2[0] / gridWidth * imageWidth,
-                    t.p2[1] / gridHeight * imageHeight);
-        path.lineTo(t.p3[0] / gridWidth * imageWidth,
-                    t.p3[1] / gridHeight * imageHeight);
-        path.moveTo(t.p3[0] / gridWidth * imageWidth,
-                    t.p3[1] / gridHeight * imageHeight);
-        path.lineTo(t.p1[0] / gridWidth * imageWidth,
-                    t.p1[1] / gridHeight * imageHeight);
-
-        QColor arbcolor = QColor(cdist(gen), cdist(gen), cdist(gen));
-
-        pen.setColor(arbcolor);
-        painter.setPen(pen);
-        painter.setBrush(QBrush(arbcolor));
-
-        painter.drawPath(path);
-    }
-
-    pen.setColor(Qt::white);
-    pen.setWidth(2);
-
-    painter.setPen(pen);
-    for (auto cell : cells)
-    {
-        QPainterPath path;
-        path.moveTo(cell.coords.at(0)[0],
-                    cell.coords.at(0)[1]);
-        for (unsigned int i = 1; i < cell.coords.size(); i++)
+        else
         {
-            auto cc = cell.coords.at(i);
-
-            auto x = (cc[0] / gridWidth) * imageWidth;
-            auto y = (cc[1] / gridHeight) * imageHeight;
-            path.lineTo(x, y);
-            path.moveTo(x, y);
+            QPen ppen;
+            ppen.setWidth(lineWidth);
+            painter.setPen(ppen);
+            painter.setBrush(Qt::NoBrush);
         }
 
-//        painter.drawPath(path);
+        painter.drawPolygon(polygon.ToQPolygon(), Qt::OddEvenFill);
     }
 
-    painter.end();
     return res;
-}
-
-
-QImage ImageManip::Manip::VoronoiNoise(int width, int height, int seed)
-{
-    return {};
 }
 
 
@@ -829,4 +1116,111 @@ QImage ImageManip::Manip::DirtNoise(
     painter.end();
 
     return image;
+}
+
+
+//double OrderAngle(ImageManip::Manip::Point& p1,
+//                  ImageManip::Manip::Point& p2)
+//{
+//
+//}
+
+
+QImage ImageManip::Manip::CircallyOrdered(
+        int imageWidth, int imageHeight,
+        int frequency, int seed)
+{
+    RGen gen;
+    gen.seed(seed);
+
+    std::uniform_real_distribution<double> dist(0, 1);
+
+    std::vector<Point> points;
+
+    double sumX = 0;
+    double sumY = 0;
+    for (unsigned int i = 0; i < frequency; i++)
+    {
+        double x = std::round(dist(gen) * imageWidth);
+        double y = std::round(dist(gen) * imageHeight);
+        points.emplace_back(x, y);
+
+        sumX += x;
+        sumY += y;
+    }
+
+    Point center(sumX / frequency, sumY / frequency);
+
+    QImage res(imageWidth + 550, imageHeight + 550, QImage::Format_RGBA64);
+    res.fill(Qt::black);
+
+    QPainter painter(&res);
+
+    struct Compare
+    {
+        Point p;
+
+        Compare(Point center)
+        {
+            p = center;
+        }
+
+        bool operator()(const Point& lhs, const Point& rhs) const
+        {
+            Point vec1 = lhs - p;
+            Point vec2 = rhs - p;
+
+            Point refVec = p + Point(1, 0);
+
+            double angle1 = Angle(refVec, vec1);
+            if (lhs.y < p.y)
+            {
+                angle1 = 2 * PI - angle1;
+            }
+
+            double angle2 = Angle(refVec, vec2);
+            if (rhs.y < p.y)
+            {
+                angle2 = 2 * PI - angle2;
+            }
+
+            return angle1 > angle2;
+        }
+    };
+
+    std::sort(points.begin(), points.end(), Compare(center));
+
+    painter.setBrush(Qt::red);
+    painter.setPen(Qt::NoPen);
+
+    painter.drawEllipse(QPoint(center.x, center.y), 5, 5);
+
+    painter.setPen(Qt::red);
+    painter.setBrush(Qt::NoBrush);
+
+    painter.setFont(QFont("sans", 20));
+    painter.drawText(center.x + 5, center.y + 5, ("Center (" + std::to_string((int)center.x) + ", " + std::to_string((int)center.y) + ")").c_str());
+
+    painter.setBrush(Qt::green);
+
+    unsigned int pi = 0;
+    for (const auto& p : points)
+    {
+        painter.setPen(Qt::NoPen);
+        painter.drawEllipse(QPoint(p.x, p.y), 5, 5);
+
+        painter.setPen(Qt::green);
+        std::string text = std::to_string(pi);
+
+        text += " (" + std::to_string(p.x) + ", " + std::to_string(p.y) + "): " + std::to_string(PointRootAngle(center, p));
+        painter.setFont(QFont("sans", 20));
+        painter.drawText(p.x + 5, p.y + 5, text.c_str());
+        pi++;
+    }
+
+    painter.setPen(Qt::NoPen);
+
+    painter.end();
+
+    return res;
 }

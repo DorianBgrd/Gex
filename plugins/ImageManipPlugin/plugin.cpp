@@ -55,6 +55,14 @@ extern EXPORT RegisterPlugin(Gex::PluginLoader* loader)
 
     loader->RegisterNode<ImageManip::Nodes::RandomNoiseBuilder>("Image/Noises/RandomNoise");
 
+    loader->RegisterNode<ImageManip::Nodes::DelaunayNoiseBuilder>("Image/Noises/DelaunayNoise");
+
+    loader->RegisterNode<ImageManip::Nodes::TriangleCircleBuilder>("Image/Noises/TriangleCircle");
+
+    loader->RegisterNode<ImageManip::Nodes::GridVisBuilder>("Image/Noises/Grid");
+
+    loader->RegisterNode<ImageManip::Nodes::CircleOrderedBuilder>("Image/Noises/CircleOrdered");
+
     loader->RegisterNode<ImageManip::Nodes::VoronoiCellNoiseBuilder>("Image/Noises/VoronoiCells");
 
     loader->RegisterNode<ImageManip::Nodes::ColorMapNodeBuilder>("Image/Modifiers/ColorMap");

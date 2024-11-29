@@ -40,8 +40,14 @@ void RegisterUiPlugin(Gex::Ui::UiPluginLoader* loader)
     loader->RegisterNodeViewer<ImageManip::Viewers::ImageNodeViewerBuilder>("Image/Modifiers/Blur/BoxBlur");
     loader->RegisterNodeViewer<ImageManip::Viewers::ImageNodeViewerBuilder>("Image/Noises/RandomNoise");
     loader->RegisterNodeViewer<ImageManip::Viewers::ImageNodeViewerBuilder>("Image/Noises/VoronoiCells");
+    loader->RegisterNodeViewer<ImageManip::Viewers::ImageNodeViewerBuilder>("Image/Noises/DelaunayNoise");
+    loader->RegisterNodeViewer<ImageManip::Viewers::ImageNodeViewerBuilder>("Image/Noises/TriangleCircle");
+    loader->RegisterNodeViewer<ImageManip::Viewers::ImageNodeViewerBuilder>("Image/Noises/CircleOrdered");
+    loader->RegisterNodeViewer<ImageManip::Viewers::ImageNodeViewerBuilder>("Image/Noises/Grid");
+    loader->RegisterNodeViewer<ImageManip::Viewers::ImageNodeViewerBuilder>("Image/Modifiers/ColorMap");
     loader->RegisterNodeViewer<ImageManip::Viewers::ImageNodeViewerBuilder>("Image/Modifiers/ColorMap");
     loader->RegisterNodeViewer<ImageManip::Viewers::ImageNodeViewerBuilder>("Image/Modifiers/Level");
+    loader->RegisterNodeViewer<ImageManip::Viewers::ImageNodeViewerBuilder>("Image/Modifiers/Tile");
     loader->RegisterNodeViewer<ImageManip::Viewers::ImageNodeViewerBuilder>("Image/Shapes/Rectangle");
     loader->RegisterNodeViewer<ImageManip::Viewers::ImageNodeViewerBuilder>("Image/Shapes/Ellipse");
 }

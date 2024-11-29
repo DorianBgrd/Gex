@@ -47,7 +47,7 @@ void ImageManip::Ui::Types::ImageViewer::paintEvent(
     QPainter painter(this);
     painter.setPen(Qt::NoPen);
 
-    painter.setBrush(QColor(0, 0, 0));
+    painter.setBrush(QColor(0, 0, 0, 0));
     painter.drawRect(rect());
 
     QPixmap pixmap = QPixmap::fromImage(img).scaled(

@@ -14,9 +14,9 @@ add_definitions(
 )
 
 
-add_library(
-        ImageManipPlugin
-        SHARED
+set(
+        ImageManip_Core_Sources
+
         Manip/blur.cpp
         Manip/blend.cpp
         Manip/noises.cpp
@@ -41,18 +41,30 @@ add_library(
         Nodes/level.cpp
         Nodes/tile.cpp
         Nodes/channels.cpp
+)
 
-        plugin.cpp
 
+set(
+        ImageManip_UI_Sources
         Ui/Types.cpp
         Ui/Viewers/Viewers.cpp
 
-        Ui/uiplugin.cpp)
+        Ui/uiplugin.cpp
+)
 
 
-target_include_directories(
+add_library(
         ImageManipPlugin
-        PUBLIC
+        SHARED
+
+        ${ImageManip_Core_Sources}
+        ${ImageManip_UI_Sources}
+        plugin.cpp
+)
+
+
+set(
+        ImageManip_IncludeDirs
         ${CMAKE_SOURCE_DIR}
         ${CMAKE_CURRENT_SOURCE_DIR}
         ${Boost_INCLUDE_DIRS}
@@ -73,9 +85,15 @@ target_include_directories(
 )
 
 
-target_link_directories(
+target_include_directories(
         ImageManipPlugin
         PUBLIC
+        ${ImageManip_IncludeDirs}
+)
+
+set(
+        ImageManip_LinkDirs
+
         ${CMAKE_BINARY_DIR}
         ${Boost_LIBRARY_DIRS}
         ${Python_LIBRARY_DIRS}
@@ -83,6 +101,13 @@ target_link_directories(
         ${TSYS_LIBRARY_DIR}
         $ENV{UI_TSYS_DIR}/UiTSys/cmake-build-${BUILD_TYPE}
         $ENV{UI_RES_DIR}/UiRes/cmake-build-${BUILD_TYPE}
+)
+
+
+target_link_directories(
+        ImageManipPlugin
+        PUBLIC
+        ${ImageManip_LinkDirs}
 )
 
 
@@ -113,4 +138,60 @@ add_custom_command(
         --plugin ImageManipPlugin.dll
         --plugin-file ${CMAKE_BINARY_DIR}/plugins/ImageManipPlugin.dll
         --type C++
+)
+
+
+# Tests --------------------------
+add_executable(
+        ImageManipTest
+
+        ${ImageManip_Core_Sources}
+        test.cpp
+)
+
+target_include_directories(
+        ImageManipTest
+        PUBLIC
+        ${ImageManip_IncludeDirs}
+        ${ImageManip_LinkDirs}
+)
+
+target_link_directories(
+        ImageManipTest
+        PUBLIC
+        ${ImageManip_LinkDirs}
+)
+
+target_link_libraries(
+        ImageManipTest
+        PUBLIC
+        Gex
+        TSys
+        UiTSys
+        Gex_ui
+        UiRes
+        ${Qt6Widgets_LIBRARIES}
+)
+
+
+add_custom_command(
+        TARGET
+        ImageManipTest
+        POST_BUILD
+        COMMAND
+        python $ENV{BUILD_UTILS_DIR}/BuildUtils/deploy.py
+
+        --name ImageManipTest
+        --executable ${CMAKE_BINARY_DIR}/plugins/ImageManipTest.exe
+        --destination ${CMAKE_CURRENT_BINARY_DIR}
+
+#        --library-search-dir ${Boost_LIBRARY_DIRS}
+        --library-search-dir ${Python_LIBRARY_DIRS}
+        --library-search-dir ${CMAKE_CURRENT_SOURCE_DIR}
+        --library-search-dir ${TSYS_LIBRARY_DIR}
+        --library-search-dir ${CMAKE_BINARY_DIR}
+
+        --library ${TSYS_LIBRARY_DIR}/TSys.dll
+        --library ${CMAKE_BINARY_DIR}/Gex/Gex.dll
+
 )

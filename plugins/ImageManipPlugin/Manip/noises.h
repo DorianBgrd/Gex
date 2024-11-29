@@ -19,16 +19,19 @@ namespace ImageManip::Manip
 
         Point() = default;
 
-        Point(double x_, double y_)
-        {
-            x = x_;
-            y = y_;
-        }
+        Point(const Point& other): Point(other.x, other.y) {}
 
-        bool operator==(const Point& other) const
-        {
-            return (x == other.x && y == other.y);
-        }
+        Point(double x_, double y_);
+
+        bool operator==(const Point& other) const;
+
+//        Point& operator=(const Point& other) = default;
+
+        Point operator-(const Point& other) const;
+
+        Point operator+(const Point& other) const;
+
+        Point Round(unsigned int decimals) const;
     };
 
 
@@ -39,16 +42,9 @@ namespace ImageManip::Manip
 
         Segment() = default;
 
-        Segment(Point p1_, Point p2_)
-        {
-            p1 = p1_;
-            p2 = p2_;
-        }
+        Segment(Point p1_, Point p2_);
 
-        bool operator==(const Segment& other) const
-        {
-            return (p1 == other.p1 && p2 == other.p2) || (p1 == other.p2 && p2 == other.p1);
-        }
+        bool operator==(const Segment& other) const;
     };
 
 
@@ -60,64 +56,97 @@ namespace ImageManip::Manip
 
         Triangle() = default;
 
-        Triangle(Point a_, Point b_, Point c_)
-        {
-            a = a_;
-            b = b_;
-            c = c_;
-        }
+        Triangle(const Point& a, const Point& b, const Point& c);
 
-        bool operator==(const Triangle& other) const
-        {
-            auto segments = Segments();
-            auto segmentsOther = Segments();
+        bool operator==(const Triangle& other) const;
 
-            for (const auto& seg : Segments())
-            {
-                auto iter = std::find(segmentsOther.begin(), segmentsOther.end(), seg);
-                if (iter == segmentsOther.end())
-                {
-                    return false;
-                }
+        std::vector<Segment> Segments() const;
 
-                segmentsOther.erase(iter);
-            }
+        bool HasSegment(const Segment& other) const;
 
-            return true;
-        }
+        std::vector<Point> Points() const;
+    };
 
-        std::vector<Segment> Segments() const
-        {
-            return {
-                    Segment(a, b),
-                    Segment(b, c),
-                    Segment(c, a)
-            };
-        }
 
-        bool HasSegment(const Segment& other) const
-        {
-            auto segments = Segments();
-            for (const auto& segment : segments)
-            {
-                if (segment == other)
-                {
-                    return true;
-                }
-            }
+    struct Circle
+    {
+        double x;
+        double y;
+        double radius;
+    };
 
-            return false;
-        }
 
-        std::vector<Point> Points() const
-        {
-            return {a, b, c};
-        }
+    bool IsInsideCircle(const Circle& circle, const ImageManip::Manip::Point& p);
+
+
+    Circle CircumCircle(const ImageManip::Manip::Point& pa,
+                        const ImageManip::Manip::Point& pb,
+                        const ImageManip::Manip::Point& pc);
+
+
+    double Distance(double x1, double y1, double x2, double y2);
+
+
+    double NormalizedAngle(const ImageManip::Manip::Point& vector1,
+                           const ImageManip::Manip::Point& vector2);
+
+    double Angle(const ImageManip::Manip::Point& vector1,
+                 const ImageManip::Manip::Point& vector2);
+
+
+    double TrigoAngle(const ImageManip::Manip::Point& vector);
+
+    double TrigoAngle(const ImageManip::Manip::Point& root,
+                      const ImageManip::Manip::Point& vector);
+
+
+    class Cell
+    {
+    public:
+        double px = 0;
+        double py = 0;
+
+    public:
+        Cell() = default;
+
+        Cell(const Cell& other);
+
+        Cell(double px, double py);
+    };
+
+
+    class Grid
+    {
+        int width = 0;
+        int height = 0;
+
+        std::vector<std::vector<Cell>> grid;
+
+    public:
+        Grid() = default;
+
+        Grid(int resolution, int seed);
+
+        Grid(int width, int height, int seed);
+
+        std::vector<Cell> Cells() const;
+
+        void Tile();
+
+        void TileRepeat();
+
+        std::vector<Point> MapPoints(
+                double x, double y, double cellWidth,
+                double cellHeight) const;
+
+        int ColumnCount() const;
+
+        int RowCount() const;
     };
 
 
     std::vector<Triangle> DelaunayTriangulation(
-            std::vector<Point> points,
+            const std::vector<Point>& points,
             const Triangle& superTriangle
             );
 
@@ -125,22 +154,66 @@ namespace ImageManip::Manip
                          int imageHeight,
                          int frequency,
                          int seed,
+                         bool colored=false,
                          bool tileable=true
                          );
 
-    QImage VoronoiCells(int imageWidth,
-                        int imageHeight,
-                        int width,
-                        int height,
-                        int seed);
 
-    QImage VoronoiNoise(int width, int height, int seed);
+    Point AveragePoint(std::vector<Point> points);
+
+    struct Polygon
+    {
+        Point center;
+        std::vector<Point> points;
+        std::vector<Triangle> triangles;
+
+        void Sort();
+
+        void ComputeCenter();
+
+        size_t Hash() const;
+
+        Polygon Normalized() const;
+
+        bool operator==(const Polygon& other) const;
+
+        QPolygon ToQPolygon() const;
+    };
+
+    QImage VoronoiNoise(int imageWidth,
+                        int imageHeight,
+                        int frequency,
+                        int seed,
+                        int lineWidth=1,
+                        bool filled=true,
+                        bool colored=false,
+                        bool tileable=true);
 
     QImage DirtNoise(int width, int height, int size,
                      int randomSize, int density,
                      int randomDensity, int seed);
 
     QImage TriangleCirconscrit(int imageWidth, int imageHeight, int seed);
+
+    QImage GridViz(int imageWidth,
+                   int imageHeight,
+                   int width,
+                   int height,
+                   int seed,
+                   bool tileable);
+
+    QImage CircallyOrdered(int imageWidth,
+                           int imageHeight,
+                           int frequency,
+                           int seed);
+}
+
+
+template <class T>
+inline void hash_combine(std::size_t& seed, const T& v)
+{
+    std::hash<T> hasher;
+    seed ^= hasher(v) + 0x9e3779b9 + (seed<<6) + (seed>>2);
 }
 
 
@@ -161,12 +234,10 @@ struct std::hash<ImageManip::Manip::Triangle>
 {
     std::size_t operator()(const ImageManip::Manip::Triangle& p) const noexcept
     {
-        std::size_t h1 = std::hash<ImageManip::Manip::Point>{}(p.a);
-        std::size_t h2 = std::hash<ImageManip::Manip::Point>{}(p.b);
-        std::size_t h3 = std::hash<ImageManip::Manip::Point>{}(p.c);
+        auto circum = ImageManip::Manip::CircumCircle(p.a, p.b, p.c);
 
-        std::size_t rh1 = h1 ^ (h2 << 1);
-        return rh1 ^ (h3 << 1);
+        size_t hash = std::hash<double>()(circum.radius);
+        return hash;
     }
 };
 
@@ -179,7 +250,9 @@ struct std::hash<ImageManip::Manip::Segment>
     {
         std::size_t h1 = std::hash<ImageManip::Manip::Point>{}(p.p1);
         std::size_t h2 = std::hash<ImageManip::Manip::Point>{}(p.p2);
-        return h1 ^ (h2 << 1);
+
+        hash_combine(h1, h2);
+        return h1;
     }
 };
 
