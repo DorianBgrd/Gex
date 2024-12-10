@@ -5,6 +5,40 @@
 ##########################
 
 set(
+        GEX_INCLUDES
+        include/Attribute.h
+        include/Attribute_Wrap.h
+        include/cntrs.h
+        include/Config.h
+        include/defs.h
+        include/Evaluation.h
+        include/Gex.h
+        include/Graph_Wrap.h
+        include/io.h
+        include/io_Wrap.h
+        include/Metadatas.h
+        include/Node.h
+        include/Node_Wrap.h
+        include/NodeAttributeData.h
+        include/NodeFactory.h
+        include/NodeFactory_Wrap.h
+        include/PluginLoader.h
+        include/PluginLoader_Wrap.h
+        include/Profiler.h
+        include/ptrs.h
+        include/References.h
+        include/References_Wrap.h
+        include/References_Wrap.h
+        include/Scheduling.h
+        include/Status.h
+        include/Status_Wrap.h
+        include/UndoCommands.h
+        include/UndoStack.h
+        include/utils.h
+        include/wraputils.h
+)
+
+set(
         GEX_SOURCES
 
         # Cpp source files.
@@ -14,9 +48,9 @@ set(
         src/NodeAttributeData.cpp
         src/NodeFactory.cpp
         src/PluginLoader.cpp
-        include/Config.h
         src/Config.cpp
         include/Status.h
+        src/Status.cpp
         include/Gex.h
         include/io.h
         src/io.cpp
@@ -143,3 +177,8 @@ target_link_libraries(
 
 
 target_compile_definitions(Gex PRIVATE /DGEX_API_EXPORT)
+
+install(TARGETS Gex DESTINATION bin
+        CONFIGURATIONS Debug Release)
+
+install(FILES ${GEX_INCLUDES} DESTINATION include/Gex)
