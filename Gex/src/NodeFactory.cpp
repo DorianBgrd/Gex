@@ -3,6 +3,8 @@
 #include "rapidjson/document.h"
 #include "Gex/include/io.h"
 #include "Gex/include/References.h"
+#include "Gex/include/PluginLoader.h"
+#include "Gex/include/Status.h"
 
 #include <boost/python.hpp>
 
@@ -143,6 +145,20 @@ Gex::NodeBuilder* Gex::NodeFactory::GetBuilder(const std::string& type) const
 
 Gex::NodePtr Gex::NodeFactory::LoadNode(rapidjson::Value& dict) const
 {
+    if (dict.HasMember(Config::GetConfig().compoundPluginsKey.c_str()))
+    {
+        rapidjson::Value& plugins = dict[Config::GetConfig().compoundPluginsKey.c_str()];
+        for (unsigned int i = 0; i < plugins.Size(); i++)
+        {
+            std::string plug = plugins[i].GetString();
+
+            Feedback plugResult;
+            PluginLoader::LoadPlugin(plug, &plugResult);
+
+            LogFeedback(plugResult);
+        }
+    }
+
     if (dict.HasMember(Config::GetConfig().nodeReferencePathKey.c_str()))
     {
         std::string path = dict[Config::GetConfig().nodeReferencePathKey.c_str()].GetString();
