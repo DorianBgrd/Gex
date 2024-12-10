@@ -192,6 +192,8 @@ void Gex::NodeEvaluator::Run()
     else
     {
         EvaluatorThread th(this, 0, evalStart, evalEnd);
+        runningThreads = 1;
+
         th.Start();
     }
 }
@@ -259,6 +261,11 @@ void Gex::NodeEvaluator::Terminate()
     status = EvaluationStatus::Failed;
 
     profiler->Stop();
+
+    if (postEval)
+    {
+        postEval(context);
+    }
 }
 
 
@@ -272,6 +279,11 @@ void Gex::NodeEvaluator::Stop()
     status = EvaluationStatus::Canceled;
 
     profiler->Stop();
+
+    if (postEval)
+    {
+        postEval(context);
+    }
 }
 
 
