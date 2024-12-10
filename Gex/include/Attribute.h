@@ -581,7 +581,7 @@ namespace Gex
         /**
          * Cleans invalids destinations.
          */
-        std::vector<AttributeWkPtr> _ValidateDests();
+        void _ValidateDests();
 
     public:
 
@@ -731,6 +731,10 @@ namespace Gex
 
 		std::any GetAnyValue() const;
 
+    private:
+        bool _SetAnyValue(std::any value);
+
+    public:
 		bool SetAnyValue(std::any value);
 
     public:
