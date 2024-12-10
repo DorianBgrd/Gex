@@ -72,21 +72,20 @@ std::map<std::string, Gex::NodeBuilder*> Gex::PluginLoader::RegisteredBuilders()
 }
 
 
-void Gex::PluginLoader::RegisterPluginPath(const std::string& path)
+void Gex::PluginLoader::RegisterPluginName(const std::string& name)
 {
-    pluginPath = path;
+    pluginName = name;
 }
 
 
-std::string Gex::PluginLoader::PluginPath()
+std::string Gex::PluginLoader::PluginName()
 {
-    return pluginPath;
+    return pluginName;
 }
 
 
 void Gex::PluginLoader::RegisterNode(const std::string& type, NodeBuilder* builder)
 {
-    std::string pluginName = std::filesystem::path(pluginPath).filename().string();
     builder->SetPlugin(pluginName);
     registeredBuilders[type] = builder;
 
@@ -181,7 +180,7 @@ void Gex::PluginLoader::LoadCppPlugin(const std::string& name, PluginLoader* loa
     if (!found)
     {
         if (result)
-            result->Set(Status::Success, "Plugin file not found.");
+            result->Set(Status::Success, "Plugin " + name + " file not found.");
         return;
     }
 
@@ -191,7 +190,7 @@ void Gex::PluginLoader::LoadCppPlugin(const std::string& name, PluginLoader* loa
     if (!module)
     {
         if (result)
-            result->Set(Status::Failed, "Could not load module");
+            result->Set(Status::Failed, "Could not load module for plugin " + name);
         return;
     }
 
@@ -205,7 +204,6 @@ void Gex::PluginLoader::LoadCppPlugin(const std::string& name, PluginLoader* loa
         return;
     }
 
-    loader->RegisterPluginPath(absolutePath.string());
     auto function = (RegisterFunction)func;
     function(loader);
 
@@ -293,6 +291,8 @@ Gex::PluginLoader* Gex::PluginLoader::LoadPluginFile(
     auto* loader = new PluginLoader(NodeFactory::GetFactory(),
                                     TSys::TypeRegistry::GetRegistry());
 
+    loader->RegisterPluginName(std::filesystem::path(name).filename().stem().string());
+
     switch (type)
     {
         case PluginType::Library:
@@ -342,7 +342,7 @@ Gex::PluginLoader* Gex::PluginLoader::LoadPlugin(
     if (!found)
     {
         if (result)
-            result->Set(Status::Failed, "Plugin file not found.");
+            result->Set(Status::Failed, "Plugin  file "  + pluginFile + " not found.");
         return nullptr;
     }
 
@@ -359,7 +359,8 @@ Gex::PluginLoader* Gex::PluginLoader::LoadPlugin(
     if (!json.IsObject())
     {
         if (result)
-            result->Set(Status::Failed, "Plugin file content was not readable.");
+            result->Set(Status::Failed, "Plugin file "  +
+                pluginFile +  " content was not readable.");
         return nullptr;
     }
 
@@ -369,7 +370,8 @@ Gex::PluginLoader* Gex::PluginLoader::LoadPlugin(
     if (!dict.HasMember(conf.pluginConfPlugKey.c_str()))
     {
         if (result)
-            result->Set(Status::Failed, "Missing " + conf.pluginConfPlugKey);
+            result->Set(Status::Failed, "Plugin file "  + pluginFile +
+                " is missing " + conf.pluginConfPlugKey);
         return nullptr;
     }
 
@@ -380,7 +382,8 @@ Gex::PluginLoader* Gex::PluginLoader::LoadPlugin(
     if(!dict.HasMember(conf.pluginConfTypeKey.c_str()))
     {
         if (result)
-            result->Set(Status::Failed, "Missing " + conf.pluginConfTypeKey);
+            result->Set(Status::Failed, "Plugin file " + pluginFile +
+                " missing " + conf.pluginConfTypeKey);
         return nullptr;
     }
 

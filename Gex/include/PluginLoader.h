@@ -29,7 +29,7 @@ namespace Gex
 
         static void Initialize();
     protected:
-        std::string pluginPath;
+        std::string pluginName;
         std::map<std::string, NodeBuilder*> registeredBuilders;
         NodeFactory* factory;
         TSys::TypeRegistry* registry;
@@ -59,10 +59,10 @@ namespace Gex
         std::map<std::string, NodeBuilder*> RegisteredBuilders() const;
 
     protected:
-        void RegisterPluginPath(const std::string& path);
+        void RegisterPluginName(const std::string& name);
 
     public:
-        std::string PluginPath();
+        std::string PluginName();
 
     public:
         template<class NodeBuilderClass>
