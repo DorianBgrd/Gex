@@ -875,6 +875,7 @@ bool Gex::Attribute::_ConnectSource(const AttributePtr& attribute)
 
     auto prev = source;
 	source = attribute;
+    source->dests.push_back(weak_from_this());
     SignalChange(AttributeChange::Connected);
 
     if (!Undo::UndoStack::IsDoing())
@@ -911,30 +912,21 @@ bool Gex::Attribute::_ConnectDest(const AttributePtr& attribute)
 }
 
 
-std::vector<Gex::AttributeWkPtr> Gex::Attribute::_ValidateDests()
+void Gex::Attribute::_ValidateDests()
 {
-    std::vector<AttributeWkPtr> results;
-
     if (dests.empty())
-        return results;
+        return;
 
-    auto itr = dests.end();
-    do
+    std::vector<Gex::AttributeWkPtr> results;
+    for (const Gex::AttributeWkPtr& dest : dests)
     {
-        if (itr->expired())
-        {
-            dests.erase(itr);
-        }
-        else
-        {
-            results.push_back(*itr);
-        }
+        if (!dest)
+            continue;
 
-        itr--;
+        results.push_back(dest);
     }
-    while (itr != dests.begin());
 
-    return results;
+    dests = results;
 }
 
 
@@ -980,6 +972,13 @@ bool Gex::Attribute::_DisconnectSource(const AttributePtr& attribute)
 	{
 		return false;
 	}
+
+    auto destIter = std::find(
+            source->dests.begin(), source->dests.end(),
+            weak_from_this());
+
+    if (destIter != source->dests.end())
+        source->dests.erase(destIter);
 
     source.reset();
 
@@ -1164,7 +1163,9 @@ std::vector<Gex::AttributeWkPtr> Gex::Attribute::Sources() const
 
 std::vector<Gex::AttributeWkPtr> Gex::Attribute::Dests()
 {
-	return _ValidateDests();
+	_ValidateDests();
+
+    return dests;
 }
 
 
@@ -1258,7 +1259,7 @@ std::any Gex::Attribute::GetAnyValue() const
 }
 
 
-bool Gex::Attribute::SetAnyValue(std::any value)
+bool Gex::Attribute::_SetAnyValue(std::any value)
 {
     size_t destHash = value.type().hash_code();
     size_t typeHash = TypeHash();
@@ -1280,7 +1281,20 @@ bool Gex::Attribute::SetAnyValue(std::any value)
         value = dstval;
     }
 
+    attributeAnyValue = value;
+    return true;
+}
+
+
+bool Gex::Attribute::SetAnyValue(std::any value)
+{
     auto prev = attributeAnyValue;
+
+    if (!_SetAnyValue(value))
+    {
+        return false;
+    }
+
     attributeAnyValue = value;
     SignalChange(AttributeChange::ValueChanged);
 
@@ -1585,7 +1599,7 @@ bool Gex::Attribute::PullSource()
     {
         if (!IsMulti())
         {
-            return SetAnyValue(source_->GetAnyValue());
+            return _SetAnyValue(source_->GetAnyValue());
         }
         else
         {
@@ -1597,7 +1611,7 @@ bool Gex::Attribute::PullSource()
 
                 AttributePtr sourceIndexAttr = source_->GetIndexAttribute(index);
                 AttributePtr indexAttr = GetIndexAttribute(index);
-                indexAttr->SetAnyValue(sourceIndexAttr->GetAnyValue());
+                indexAttr->_SetAnyValue(sourceIndexAttr->GetAnyValue());
             }
 
             for (unsigned int index : ValidIndices())
