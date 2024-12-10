@@ -3,6 +3,7 @@
 
 #include <string>
 #include "api.h"
+#include <iostream>
 
 
 namespace Gex
@@ -43,6 +44,8 @@ namespace Gex
             return f;
         }
     };
+
+    void LogFeedback(const Feedback& feedback);
 }
 
 
