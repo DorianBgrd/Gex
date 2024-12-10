@@ -723,6 +723,9 @@ void Gex::Node::InitAttributes()
 void Gex::Node::SignalAttributeChange(const AttributePtr& attribute,
                                       const AttributeChange& change)
 {
+    if (initializing)
+        return;
+
     AttributeChanged(attribute, change);
 
     for (const auto& callb : attrCallbacks)
@@ -1337,13 +1340,15 @@ void Gex::CompoundNode::Serialize(rapidjson::Value& dict,
     }
 
     rapidjson::Value& connections = rapidjson::Value(rapidjson::kArrayType).GetArray();
-    for (auto node : nodes)
+    for (const NodePtr& node : nodes)
     {
         AttributeWkList attributes = node->GetAllAttributes();
-        for (const auto& attr : attributes)
+        for (const AttributeWkPtr& attr : attributes)
         {
             if (!attr)
+            {
                 continue;
+            }
 
             AttributeWkPtr src = attr->Source();
             if (!src)
