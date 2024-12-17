@@ -152,10 +152,19 @@ std::filesystem::path Gex::PluginLoader::SearchFilePath(const std::string& name,
     for (const std::string& p : pluginSearchPaths)
     {
         libPath = std::filesystem::path(p).append(name);
-
         if (!std::filesystem::exists(libPath))
         {
-            continue;
+            std::filesystem::path dirLibPath = libPath;
+            dirLibPath.replace_extension("");
+            if (std::filesystem::exists(dirLibPath) &&
+                std::filesystem::is_directory(dirLibPath))
+            {
+                libPath = dirLibPath.append(libPath.filename().string());
+                if (!std::filesystem::exists(libPath))
+                    continue;
+            }
+            else
+                continue;
         }
 
         if (result)
@@ -199,8 +208,8 @@ void Gex::PluginLoader::LoadCppPlugin(const std::string& name, PluginLoader* loa
     {
         if (result)
             result->Set(Status::Failed, "Could not find" +
-                                        std::string(REGISTER_PLUGIN_FUNC_NAME) +
-                                        " function.");
+                        std::string(REGISTER_PLUGIN_FUNC_NAME) +
+                        " function.");
         return;
     }
 
@@ -212,7 +221,7 @@ void Gex::PluginLoader::LoadCppPlugin(const std::string& name, PluginLoader* loa
 
     loadedPlugins.push_back(libPath.filename().string());
 
-    for (auto cb : callbacks)
+    for (const auto& cb : callbacks)
     {
         cb.second(libPath.string());
     }
@@ -338,11 +347,17 @@ Gex::PluginLoader* Gex::PluginLoader::LoadPlugin(
         Feedback* result)
 {
     Feedback found;
-    std::filesystem::path pluginPath = SearchFilePath(pluginFile, &found);
+
+    std::string plugFile = pluginFile;
+
+    if (!std::filesystem::path(plugFile).has_extension())
+        plugFile = pluginFile + ".json";
+
+    std::filesystem::path pluginPath = SearchFilePath(plugFile, &found);
     if (!found)
     {
         if (result)
-            result->Set(Status::Failed, "Plugin  file "  + pluginFile + " not found.");
+            result->Set(Status::Failed, "Plugin  file "  + pluginPath.string() + " not found.");
         return nullptr;
     }
 
@@ -360,7 +375,7 @@ Gex::PluginLoader* Gex::PluginLoader::LoadPlugin(
     {
         if (result)
             result->Set(Status::Failed, "Plugin file "  +
-                pluginFile +  " content was not readable.");
+                    pluginPath.string() +  " content was not readable.");
         return nullptr;
     }
 
