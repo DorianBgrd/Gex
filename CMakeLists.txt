@@ -9,6 +9,8 @@ set(BOOST_ROOT $ENV{BOOST_ROOT})
 
 set(Boost_USE_STATIC_LIBS OFF)
 
+set(CMAKE_INSTALL_PREFIX ${CMAKE_BINARY_DIR}/install)
+
 find_package(Python 3.11 REQUIRED COMPONENTS Development Interpreter)
 find_package(Boost 1.82.0 COMPONENTS python311 REQUIRED HINTS $ENV{BOOST_ROOT})
 
