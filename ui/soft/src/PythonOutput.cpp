@@ -1,4 +1,4 @@
-#include "ui/soft/python/include/output.h"
+#include "ui/soft/include/PythonOutput.h"
 
 #include "boost/python.hpp"
 
@@ -22,12 +22,18 @@ void SoftPython::PythonOutput::RegisterCallback(std::function<void(std::string)>
 }
 
 
-void SoftPython::PythonOutput::write(std::string write)
+void SoftPython::PythonOutput::writeMsg(std::string write)
 {
-    for (auto cb : callbacks)
+    for (const auto& cb : callbacks)
     {
         cb(write);
     }
+}
+
+
+void SoftPython::PythonOutput::write(std::string write)
+{
+    GetInstance()->writeMsg(write);
 }
 
 
@@ -43,10 +49,9 @@ boost::python::object PythonOutput_Write(boost::python::tuple args, boost::pytho
 
 void SoftPython::PythonOutput::RegisterPythonWrapper()
 {
-    boost::python::class_<SoftPython::PythonOutput, SoftPython::PythonOutputPtr>(
+    boost::python::class_<SoftPython::PythonOutput>(
             "PythonOutput", boost::python::no_init)
-            .def("write", boost::python::raw_function(&PythonOutput_Write, 1))
-            .def("GetInstance", &SoftPython::PythonOutput::GetInstance)
-            .staticmethod("GetInstance")
+            .def("write", &SoftPython::PythonOutput::write)
+            .staticmethod("write")
             ;
 }

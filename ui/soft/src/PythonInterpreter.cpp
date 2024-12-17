@@ -14,7 +14,7 @@
 #include <QRegularExpressionMatch>
 #include <QRegularExpressionMatchIterator>
 
-#include "ui/soft/python/module.h"
+#include "ui/soft/include/PythonOutput.h"
 
 
 
@@ -168,9 +168,9 @@ void GexSoftware::PythonInterpreter::Initialize()
 {
     int res = PyRun_SimpleString("import SoftPython\n"
                                  "import sys\n"
-                                 "buffer = SoftPython.PythonOutput.GetInstance()\n"
-                                 "sys.stdout = buffer\n"
-                                 "sys.stderr = buffer");
+                                 "sys.stdout = SoftPython.PythonOutput\n"
+                                 "sys.stderr = SoftPython.PythonOutput"
+                                 );
     if (res)
     {
         PyErr_Print();

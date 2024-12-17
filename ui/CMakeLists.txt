@@ -23,27 +23,31 @@ set(CMAKE_AUTORCC ON)
 set(QT_AWESOME_LIBRARY_DIR "$ENV{QT_AWESOME_DIR}/${CMAKE_BUILD_TYPE}")
 # -------------------------------------------------------------------------
 
+set(
+        GEX_UI_INCLUDES
+        include/AttributeEditor.h
+        include/BaseGraph.h
+        include/Commands.h
+        include/NodeGraph.h
+        include/UiStatus.h
+        include/ProfileViewer.h
+        include/GraphView.h
+        include/PluginLoader.h
+        include/NodeViewer.h
+)
 
 add_library(
         Gex_ui
         SHARED
-        include/AttributeEditor.h
+        ${GEX_UI_INCLUDES}
         src/AttributeEditor.cpp
-        include/BaseGraph.h
         src/BaseGraph.cpp
-        include/Commands.h
         src/Commands.cpp
-        include/NodeGraph.h
         src/NodeGraph.cpp
-        include/UiStatus.h
         src/UiStatus.cpp
-        include/ProfileViewer.h
         src/ProfileViewer.cpp
-        include/GraphView.h
         src/GraphView.cpp
-        include/PluginLoader.h
         src/PluginLoader.cpp
-        include/NodeViewer.h
         src/NodeViewer.cpp
 )
 
@@ -110,8 +114,26 @@ add_subdirectory(
 
 
 add_dependencies(
+        SoftPython
+        SoftApi
+)
+
+add_dependencies(
         Gex_Software
-        Gex_ui
+        SoftApi
         SoftPython
 )
 
+
+add_dependencies(
+        Gex_Software
+        Gex_ui
+        SoftApi
+        SoftPython
+)
+
+
+install(TARGETS Gex_ui DESTINATION bin
+        CONFIGURATIONS Debug Release)
+
+install(FILES ${GEX_UI_INCLUDES} DESTINATION include/Gex_ui)

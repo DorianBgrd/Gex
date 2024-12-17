@@ -1,4 +1,4 @@
-#include "include/output.h"
+#include "include/PythonOutput.h"
 
 #include "boost/python.hpp"
 

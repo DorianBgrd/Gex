@@ -24,10 +24,10 @@ Gex::Editor::MainWindow::MainWindow(Gex::CompoundNodePtr graph_, std::string fil
     graphView = new Gex::Ui::GraphView(graph, this);
     layout->addWidget(graphView);
 
-//    interpreter = new GexSoftware::PythonInterpreter(this);
-//    interpreter->Initialize();
-//
-//    addDockWidget(Qt::RightDockWidgetArea, interpreter);
+    interpreter = new GexSoftware::PythonInterpreter(this);
+    interpreter->Initialize();
+
+    addDockWidget(Qt::RightDockWidgetArea, interpreter);
 
     dock = new Gex::Ui::ViewerDock(this);
     addDockWidget(Qt::LeftDockWidgetArea, dock);

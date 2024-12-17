@@ -1,7 +1,7 @@
 #ifndef NODELIBRARY2COMPLETE_INTERPRETERKERNEL_H
 #define NODELIBRARY2COMPLETE_INTERPRETERKERNEL_H
 
-#include "api.h"
+#include "softApi.h"
 #include <string>
 #include <functional>
 #include <memory>
@@ -12,7 +12,7 @@ namespace SoftPython
 
     typedef std::shared_ptr<PythonOutput> PythonOutputPtr;
 
-    class SOFT_PYTHON_API PythonOutput
+    class SOFT_API PythonOutput
     {
     private:
         static bool pythonRegistered;
@@ -26,7 +26,9 @@ namespace SoftPython
 
         void RegisterCallback(std::function<void(std::string)> callback);
 
-        void write(std::string);
+        void writeMsg(std::string);
+
+        static void write(std::string);
 
         static void RegisterPythonWrapper();
     };

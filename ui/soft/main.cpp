@@ -19,17 +19,31 @@
 
 void InitializePython()
 {
-    PyConfig config;
-    PyConfig_InitPythonConfig(&config);
+//    PyConfig config;
+//    PyConfig_InitPythonConfig(&config);
+//
+//    WCHAR p[MAX_PATH];
+//    GetModuleFileNameW(nullptr, p, MAX_PATH);
+//
+//    std::filesystem::path path(p);
+//    PyWideStringList_Append(&config.module_search_paths, path.parent_path().parent_path()
+//        .append("python").wstring().c_str());
+//
+//    Py_InitializeFromConfig(&config);
+
+    Py_Initialize();
 
     WCHAR p[MAX_PATH];
     GetModuleFileNameW(nullptr, p, MAX_PATH);
 
     std::filesystem::path path(p);
-    PyWideStringList_Append(&config.module_search_paths, path.parent_path().parent_path()
-        .append("python").wstring().c_str());
 
-    Py_InitializeFromConfig(&config);
+    std::string modulePath = path.parent_path().parent_path()
+            .append("python").string();
+
+    std::string code = "import sys\nsys.path.append(r\"" + modulePath + "\")";
+
+    PyRun_SimpleString(code.c_str());
 }
 
 
