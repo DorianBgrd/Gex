@@ -67,17 +67,17 @@ void Gex::Ui::NodeViewer::ConnectToNode(Gex::NodeWkPtr n)
 
     callbackIndex = n->RegisterAttributeCallback(cb);
     connected = true;
-
-    auto dcb = [this]()
-    {
-        if (this->node && this->connected)
-        {
-            this->DisconnectFromNode(this->node);
-            this->connected = false;
-        }
-    };
-
-    deleteCallbackIndex = node->RegisterAboutToBeDeletedCallback(dcb);
+//
+//    auto dcb = [this]()
+//    {
+//        if (this->node && this->connected)
+//        {
+//            this->DisconnectFromNode(this->node);
+//            this->connected = false;
+//        }
+//    };
+//
+//    deleteCallbackIndex = node->RegisterAboutToBeDeletedCallback(dcb);
 }
 
 
