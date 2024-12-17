@@ -41,6 +41,6 @@ Gex::Ui::ProfileView* Gex::Ui::GraphView::GetProfileWidget() const
 
 void Gex::Ui::GraphView::SwitchGraph(Gex::CompoundNodePtr graph_)
 {
+    graphView->SwitchGraph(graph_);
     graph = graph_;
-    graphView->SwitchGraph(graph);
 }
