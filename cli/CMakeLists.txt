@@ -48,16 +48,15 @@ target_link_libraries(
 )
 
 
-add_custom_command(
-        TARGET
-        Gex-cli
-
-        POST_BUILD
-        COMMAND
+add_custom_target(
+        Gex-cli-build
+        ALL
         python $ENV{BUILD_UTILS_DIR}/BuildUtils/build_executable.py
         --executable Gex-cli.exe --name Gex-cli --depth 2
         --directory ${CMAKE_CURRENT_BINARY_DIR}
         --search_directories ${CMAKE_BINARY_DIR} ${CMAKE_CURRENT_BINARY_DIR} ${TSYS_LIBRARY_DIR}
         ${CMAKE_BINARY_DIR}/Gex
         --dependencies TSys.dll Gex.dll
+        DEPENDS
+        Gex-cli
 )
