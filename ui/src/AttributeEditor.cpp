@@ -175,7 +175,7 @@ void Gex::Ui::AttributeWidget::OnValueChanged(std::any value)
 
 
 Gex::Ui::ExtraAttributeDialog::ExtraAttributeDialog(
-        Gex::NodePtr node, GraphWidget* _graphWidget,
+        const Gex::NodePtr& node, GraphWidget* _graphWidget,
         QWidget* parent, QWidget* _updateWidget):
         QDialog(parent)
 {
@@ -194,14 +194,14 @@ Gex::Ui::ExtraAttributeDialog::ExtraAttributeDialog(
 
 void Gex::Ui::ExtraAttributeDialog::Setup()
 {
-    QVBoxLayout* layout = new QVBoxLayout();
+    auto* layout = new QVBoxLayout();
     setLayout(layout);
 
-    QHBoxLayout* nameLayout = new QHBoxLayout();
+    auto* nameLayout = new QHBoxLayout();
     nameLayout->setContentsMargins(0, 0, 0, 0);
     layout->addLayout(nameLayout);
 
-    QLabel* nameLabel = new QLabel();
+    auto* nameLabel = new QLabel();
     nameLabel->setObjectName("defaultLabel");
     nameLabel->setText("Attribute name :");
     nameLayout->addWidget(nameLabel);
@@ -209,7 +209,7 @@ void Gex::Ui::ExtraAttributeDialog::Setup()
     attributeName = new QLineEdit(this);
     nameLayout->addWidget(attributeName);
 
-    QHBoxLayout* vtypeLayout = new QHBoxLayout();
+    auto* vtypeLayout = new QHBoxLayout();
     vtypeLayout->setContentsMargins(0, 0, 0, 0);
     layout->addLayout(vtypeLayout);
 
@@ -221,7 +221,6 @@ void Gex::Ui::ExtraAttributeDialog::Setup()
     output->setText("Output");
     vtypeLayout->addWidget(output);
 
-    // TODO : Holder attributes...
     multi = new QCheckBox(this);
     multi->setText("Multi");
     vtypeLayout->addWidget(multi);
@@ -231,16 +230,16 @@ void Gex::Ui::ExtraAttributeDialog::Setup()
     internal->setVisible(targetNode->IsCompound());
     vtypeLayout->addWidget(internal);
 
-    QHBoxLayout* typeLayout = new QHBoxLayout();
+    auto* typeLayout = new QHBoxLayout();
     typeLayout->setContentsMargins(0, 0, 0, 0);
     layout->addLayout(typeLayout);
 
-    QLabel* typeLabel = new QLabel();
+    auto* typeLabel = new QLabel();
     typeLabel->setObjectName("defaultLabel");
     typeLabel->setText("Type :");
     typeLayout->addWidget(typeLabel);
 
-    QComboBox* typecb = new QComboBox(this);
+    auto* typecb = new QComboBox(this);
     for (auto t : UiTSys::UiTypeEngine::GetEngine()->UiTypes())
     {
         typecb->addItem(UiTSys::UiTypeEngine::GetEngine()->UiName(t).c_str());
@@ -251,16 +250,16 @@ void Gex::Ui::ExtraAttributeDialog::Setup()
     initWidgetLayout->setContentsMargins(0, 0, 0, 0);
     layout->addLayout(initWidgetLayout);
 
-    QHBoxLayout* buttonsLayout = new QHBoxLayout();
+    auto* buttonsLayout = new QHBoxLayout();
     buttonsLayout->setContentsMargins(0, 0, 0, 0);
     layout->addLayout(buttonsLayout);
 
-    QPushButton* createButton = new QPushButton(this);
+    auto* createButton = new QPushButton(this);
     createButton->setIcon(Res::UiRes::GetRes()->GetQtAwesome()->icon(fa::fa_solid, fa::fa_add));
     createButton->setText("Create");
     buttonsLayout->addWidget(createButton);
 
-    QPushButton* cancelButton = new QPushButton(this);
+    auto* cancelButton = new QPushButton(this);
     cancelButton->setIcon(Res::UiRes::GetRes()->GetQtAwesome()->icon(fa::fa_solid, fa::fa_times));
     cancelButton->setText("Cancel");
     buttonsLayout->addWidget(cancelButton);
@@ -354,30 +353,30 @@ Gex::Ui::AttributeTypeTitle::AttributeTypeTitle(
 {
 //    setObjectName("AttributeCategory");
 
-    QVBoxLayout* vlayout = new QVBoxLayout();
+    auto* vlayout = new QVBoxLayout();
     vlayout->setAlignment(Qt::AlignTop);
     vlayout->setContentsMargins(0, 0, 0, 0);
     setLayout(vlayout);
 
-    QHBoxLayout* hlayout = new QHBoxLayout();
+    auto* hlayout = new QHBoxLayout();
     hlayout->setAlignment(Qt::AlignLeft);
     hlayout->setContentsMargins(0, 0, 0, 0);
     vlayout->addLayout(hlayout);
 
     QPixmap icon = Res::UiRes::GetRes()->GetQtAwesome()->icon(
             fa::fa_solid, fa_icon).pixmap(25, 25);
-    QLabel* iconLabel = new QLabel(this);
+    auto* iconLabel = new QLabel(this);
     iconLabel->setScaledContents(true);
     iconLabel->setPixmap(icon);
     hlayout->addWidget(iconLabel);
 
-    QLabel* titleLabel = new QLabel(this);
+    auto* titleLabel = new QLabel(this);
     titleLabel->setObjectName("AttributeCategory");
     titleLabel->setFont(QFont("sans", 10));
     titleLabel->setText(title);
     hlayout->addWidget(titleLabel);
 
-    QFrame* line = new QFrame(this);
+    auto* line = new QFrame(this);
     line->setObjectName("AttributeCategoryLine");
     line->setFixedHeight(1);
     vlayout->addWidget(line);
@@ -386,7 +385,7 @@ Gex::Ui::AttributeTypeTitle::AttributeTypeTitle(
 
 
 Gex::Ui::AttributeTab::AttributeTab(
-        Gex::NodePtr node_,
+        const Gex::NodePtr& node_,
         GraphWidget* graphWidget,
         QWidget* parent): QWidget(parent)
 {
@@ -400,52 +399,52 @@ Gex::Ui::AttributeTab::AttributeTab(
 
 void Gex::Ui::AttributeTab::Setup(const Gex::NodePtr& node_)
 {
-    QVBoxLayout* mainLayout = new QVBoxLayout();
+    auto* mainLayout = new QVBoxLayout();
     mainLayout->setAlignment(Qt::AlignTop);
     setLayout(mainLayout);
 
-    QLabel* title = new QLabel(this);
+    auto* title = new QLabel(this);
     title->setObjectName("AttributeTitle");
     title->setText(node_->Name().c_str());
     mainLayout->addWidget(title);
 
-    QLabel* type = new QLabel(this);
+    auto* type = new QLabel(this);
     type->setObjectName("AttributeType");
     type->setText(node_->Type().c_str());
     mainLayout->addWidget(type);
 
-    QLabel* description = new QLabel(this);
+    auto* description = new QLabel(this);
     description->setWordWrap(true);
     description->setObjectName("AttributeDescription");
     description->setText(node_->Description().c_str());
     mainLayout->addWidget(description);
 
-    QFrame* separator = new QFrame(this);
+    auto* separator = new QFrame(this);
     separator->setObjectName("AttributeSeparator");
     separator->setLineWidth(1);
     separator->setFixedHeight(1);
     separator->setFrameShape(QFrame::HLine);
     mainLayout->addWidget(separator);
 
-    QScrollArea* attributesArea = new QScrollArea(this);
+    auto* attributesArea = new QScrollArea(this);
     attributesArea->setWidgetResizable(true);
     attributesArea->setContentsMargins(0, 0, 0, 0);
     mainLayout->addWidget(attributesArea);
 
-    QWidget* attributesWidget = new QWidget(attributesArea);
+    auto* attributesWidget = new QWidget(attributesArea);
     attributesWidget->setContentsMargins(0, 0, 0, 0);
     attributesArea->setWidget(attributesWidget);
 
-    QVBoxLayout* attributesWidgetLayout = new QVBoxLayout();
+    auto* attributesWidgetLayout = new QVBoxLayout();
     attributesWidgetLayout->setAlignment(Qt::AlignTop);
     attributesWidgetLayout->setContentsMargins(0, 0, 0, 0);
     attributesWidget->setLayout(attributesWidgetLayout);
 
-    AttributeTypeTitle* inputsTitle = new AttributeTypeTitle(
+    auto* inputsTitle = new AttributeTypeTitle(
             "Inputs", fa::fa_arrow_right_to_bracket);
     attributesWidgetLayout->addWidget(inputsTitle);
 
-    QWidget* inputAttributesWidget = new QWidget(attributesWidget);
+    auto* inputAttributesWidget = new QWidget(attributesWidget);
     inputAttributesWidget->setContentsMargins(0, 0, 0, 0);
     attributesWidgetLayout->addWidget(inputAttributesWidget);
 
@@ -454,11 +453,11 @@ void Gex::Ui::AttributeTab::Setup(const Gex::NodePtr& node_)
     inputWidgetsLayout->setAlignment(Qt::AlignTop);
     inputAttributesWidget->setLayout(inputWidgetsLayout);
 
-    AttributeTypeTitle* outputsTitle = new AttributeTypeTitle(
+    auto* outputsTitle = new AttributeTypeTitle(
             "Outputs", fa::fa_arrow_right_from_bracket);
     attributesWidgetLayout->addWidget(outputsTitle);
 
-    QWidget* outputAttributesWidget = new QWidget(attributesWidget);
+    auto* outputAttributesWidget = new QWidget(attributesWidget);
     outputAttributesWidget->setContentsMargins(0, 0, 0, 0);
     attributesWidgetLayout->addWidget(outputAttributesWidget);
 
@@ -467,7 +466,7 @@ void Gex::Ui::AttributeTab::Setup(const Gex::NodePtr& node_)
     outputWidgetsLayout->setAlignment(Qt::AlignTop);
     outputAttributesWidget->setLayout(outputWidgetsLayout);
 
-    QPushButton* extraAttr = new QPushButton(this);
+    auto* extraAttr = new QPushButton(this);
     extraAttr->setIcon(Res::UiRes::GetRes()->GetQtAwesome()->icon(fa::fa_solid, fa::fa_add));
     extraAttr->setText("Add attribute");
     mainLayout->addWidget(extraAttr);
@@ -488,7 +487,7 @@ void Gex::Ui::AttributeTab::Clear()
 }
 
 
-void CreateTabWidget(Gex::AttributePtr attr,
+void CreateTabWidget(const Gex::AttributePtr& attr,
                      QVBoxLayout* widgetsLayout,
                      QList<QWidget*>& widgets,
                      Gex::Ui::GraphWidget* graph,
@@ -566,18 +565,18 @@ void Gex::Ui::AttributeTab::CreateExtraAttribute()
 Gex::Ui::AttributeEditor::AttributeEditor(GraphWidget* parent): QWidget(parent)
 {
     graph = parent;
-    QVBoxLayout* layout = new QVBoxLayout(this);
+    auto* layout = new QVBoxLayout(this);
     setLayout(layout);
 
     stacked = new QStackedWidget(this);
     layout->addWidget(stacked);
 
     emptyWidget = new QWidget(stacked);
-    QVBoxLayout* emptyLayout = new QVBoxLayout();
+    auto* emptyLayout = new QVBoxLayout();
     emptyLayout->setAlignment(Qt::AlignCenter);
     emptyWidget->setLayout(emptyLayout);
 
-    QLabel* emptyLabel = new  QLabel(emptyWidget);
+    auto* emptyLabel = new  QLabel(emptyWidget);
     emptyLabel->setFont(QFont("sans", 9));
     emptyLabel->setObjectName("DefaultLabel");
     emptyLabel->setAlignment(Qt::AlignCenter);
@@ -592,7 +591,7 @@ Gex::Ui::AttributeEditor::AttributeEditor(GraphWidget* parent): QWidget(parent)
 }
 
 
-void Gex::Ui::AttributeEditor::SetNodes(Gex::NodeWkList nodes)
+void Gex::Ui::AttributeEditor::SetNodes(const Gex::NodeWkList& nodes)
 {
     currentNodes.clear();
     tab->clear();
@@ -615,5 +614,6 @@ void Gex::Ui::AttributeEditor::SetNodes(Gex::NodeWkList nodes)
 
 void Gex::Ui::AttributeEditor::Update()
 {
-    SetNodes(currentNodes);
+    Gex::NodeWkList copy = currentNodes;
+    SetNodes(copy);
 }

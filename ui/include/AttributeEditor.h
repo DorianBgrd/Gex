@@ -93,7 +93,7 @@ namespace Gex
             QCheckBox* internal;
 
         public:
-            ExtraAttributeDialog(Gex::NodePtr node,
+            ExtraAttributeDialog(const Gex::NodePtr& node,
                                  GraphWidget* graphWidget,
                                  QWidget* parent=nullptr,
                                  QWidget* updateWidget=nullptr);
@@ -123,7 +123,7 @@ namespace Gex
             QVBoxLayout* outputWidgetsLayout;
             QVector<QWidget*> widgets;
         public:
-            AttributeTab(Gex::NodePtr node,
+            AttributeTab(const Gex::NodePtr& node,
                          GraphWidget* graphWidget,
                          QWidget* parent=nullptr);
 
@@ -152,7 +152,7 @@ namespace Gex
         public:
             AttributeEditor(GraphWidget* parent=nullptr);
 
-            void SetNodes(Gex::NodeWkList nodes);
+            void SetNodes(const Gex::NodeWkList& nodes);
 
             void Update();
         };
