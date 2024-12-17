@@ -224,7 +224,7 @@ Gex::Ui::TitleDoc* Gex::Ui::NodeNameItem::TitleDocument() const
 Gex::Ui::AttributeItem::AttributeItem(Gex::AttributeWkPtr attr,
                                       AttributeItem* parent,
                                       NodeItem* node):
-        QGraphicsRectItem(parent)
+        QGraphicsRectItem(parent), QObject(node)
 {
     Initialize(attr, parent, node);
 }
@@ -232,13 +232,12 @@ Gex::Ui::AttributeItem::AttributeItem(Gex::AttributeWkPtr attr,
 
 Gex::Ui::AttributeItem::~AttributeItem()
 {
-    for (int i = links.length() - 1; i >= 0; i--)
+    for (qsizetype i = links.length() - 1; i >= 0; i--)
     {
-        if (links[i].isNull())
+        QPointer<LinkItem> linkItem = links[i];
+        if (linkItem.isNull())
             continue;
 
-//        auto* scene_ = scene();
-//        scene()->removeItem(links[i].get());
         links[i]->scene()->removeItem(links[i].get());
         delete links[i];
     }
@@ -280,6 +279,8 @@ Gex::Ui::AttributeItem::AttributeItem(Gex::AttributeWkPtr attr,
                                       NodeItem* node):
         QGraphicsRectItem(node)
 {
+    setFlag(ItemSendsScenePositionChanges, true);
+
     Initialize(attr, nullptr, node);
 }
 
@@ -418,6 +419,15 @@ void Gex::Ui::AttributeItem::ShowAsInternal(bool internal)
 }
 
 
+Gex::Ui::NodeGraphScene* Gex::Ui::AttributeItem::GraphScene() const
+{
+    if  (!parentNode)
+        return nullptr;
+
+    return parentNode->GraphScene();
+}
+
+
 bool Gex::Ui::AttributeItem::AsInternal() const
 {
     return asInternal;
@@ -523,15 +533,33 @@ void Gex::Ui::AttributeItem::RebuildAttributes()
 }
 
 
-void Gex::Ui::AttributeItem::InitializeLinks()
+void Gex::Ui::AttributeItem::ClearLinks(bool recursive)
 {
-    for (const auto& link : links)
+    for (const QPointer<LinkItem>& link : links)
     {
-        if (link)
-            delete link;
+        delete link;
     }
 
     links.clear();
+
+    if (recursive)
+    {
+        for (AttributeItem* attrItem : indexedAttributes)
+        {
+            attrItem->ClearLinks(recursive);
+        }
+
+        for (AttributeItem* attrItem : childAttributes)
+        {
+            attrItem->ClearLinks(recursive);
+        }
+    }
+}
+
+
+void Gex::Ui::AttributeItem::InitializeLinks()
+{
+    ClearLinks(false);
 
     for (auto* attrItem : indexedAttributes)
     {
@@ -543,38 +571,55 @@ void Gex::Ui::AttributeItem::InitializeLinks()
         attrItem->InitializeLinks();
     }
 
-    QList<QGraphicsItem*> items = scene()->items();
-    std::unordered_map<Gex::NodePtr, NodeItem*> nodesItems;
-    for (auto* item : items)
+    NodeGraphScene* graphScene = GraphScene();
+    if (!graphScene)
     {
-        auto* nodeitem = qgraphicsitem_cast<NodeItem*>(item);
-        if (!nodeitem)
+        return;
+    }
+
+    if (auto attr = attribute->Source())
+    {
+        if (!attr)
+        {
+            return;
+        }
+
+        if (NodeItem* srcNodeItem = graphScene->ItemFromNode(attr->Node()))
+        {
+            AttributeItem* attrItem = srcNodeItem->FindAttribute(attr->Longname());
+
+            auto* link = new LinkItem(attrItem, this);
+            if (!links.contains(link))
+            {
+                attrItem->links.append(link);
+                links.append(link);
+
+                scene()->addItem(link);
+                link->Update();
+            }
+            else
+            {
+                delete link;
+            }
+        }
+    }
+
+    for (const Gex::AttributeWkPtr& dest : attribute->Dests())
+    {
+        if (!dest)
         {
             continue;
         }
 
-        nodesItems[nodeitem->Node()] = nodeitem;
-    }
-
-    auto attr = attribute->Source();
-    if (attr)
-    {
-        auto node = attr.lock()->Node();
-        if (!node)
-            return;
-
-        auto lockedNode = node.lock();
-        auto lockedAttr = attr.lock();
-        if (nodesItems.find(lockedNode) != nodesItems.end())
+        if (Gex::Ui::NodeItem* destNodeItem = graphScene->ItemFromNode(dest->Node()))
         {
-            NodeItem* nodeItem = nodesItems.at(lockedNode);
-            AttributeItem* attrItem = nodeItem->FindAttribute(lockedAttr->Longname());
+            AttributeItem* attrItem = destNodeItem->FindAttribute(dest->Longname());
 
-            auto* link = new LinkItem(attrItem, this);
+            auto* link = new LinkItem(this, attrItem);
             if (links.contains(link))
             {
                 delete link;
-                return;
+                continue;
             }
 
             attrItem->links.append(link);
@@ -584,6 +629,7 @@ void Gex::Ui::AttributeItem::InitializeLinks()
             link->Update();
         }
     }
+
 }
 
 
@@ -700,9 +746,9 @@ qreal Gex::Ui::AttributeItem::TotalHeight() const
 
 QVariant Gex::Ui::AttributeItem::itemChange(GraphicsItemChange change, const QVariant &value)
 {
-    if (change == QGraphicsItem::ItemPositionHasChanged)
+    if (change == QGraphicsItem::ItemScenePositionHasChanged)
     {
-        for (auto link : links)
+        for (const auto& link : links)
         {
             link->Update();
         }
@@ -724,7 +770,7 @@ void Gex::Ui::AttributeItem::UpdateLinks()
         attr->UpdateLinks();
     }
 
-    for (auto link : links)
+    for (const auto& link : links)
     {
         link->Update();
     }
@@ -737,7 +783,7 @@ QList<QString> Gex::Ui::AttributeItem::SubNames() const
     for (auto* attr : indexedAttributes)
     {
         names.append(attr->Attribute()->Longname().c_str());
-        for (auto name : attr->SubNames())
+        for (const QString& name : attr->SubNames())
         {
             names.append(name);
         }
@@ -746,7 +792,7 @@ QList<QString> Gex::Ui::AttributeItem::SubNames() const
     for (auto* attr : childAttributes)
     {
         names.append(attr->Attribute()->Longname().c_str());
-        for (auto name : attr->SubNames())
+        for (const auto& name : attr->SubNames())
         {
             names.append(name);
         }
@@ -762,7 +808,7 @@ QList<Gex::Ui::LinkItem*> Gex::Ui::AttributeItem::SourceLinks() const
 {
     QList<Gex::Ui::LinkItem*> items;
 
-    for (auto link : links)
+    for (const auto& link : links)
     {
         if (link->Dest() == this)
             items.append(link);
@@ -851,7 +897,7 @@ void Gex::Ui::NodeItem::SetDefaultFooter(qreal footer)
 Gex::Ui::NodeItem::NodeItem(Gex::NodePtr node_,
                             NodeGraphScene* sc,
                             QGraphicsItem* parent):
-        QObject(), QGraphicsItem(parent)
+        QGraphicsObject(parent)
 {
     node = node_;
     graphScene = sc;
@@ -900,7 +946,7 @@ Gex::Ui::NodeItem::NodeItem(Gex::NodePtr node_,
     QFont typeFont("sans", 8);
     typeFont.setItalic(true);
 
-    QGraphicsTextItem* type = new QGraphicsTextItem(this);
+    auto* type = new QGraphicsTextItem(this);
     type->setFont(typeFont);
     type->setDefaultTextColor(QColor("white"));
     type->setPlainText(node->Type().c_str());
@@ -936,9 +982,11 @@ void Gex::Ui::NodeItem::ConnectToNode()
 
         if (change == AttributeChange::Connected ||
             change == AttributeChange::Disconnected)
-            InitializeLinks();
+            if (AttributeItem* attr = GetAttribute(attribute))
+                attr->InitializeLinks();
 
-        this->graphScene->OnNodeModified(this->node, change);
+        Gex::AttributeWkPtr attrWeak = attribute;
+        this->graphScene->OnNodeModified(this->node, attrWeak, change);
     };
     cbIndex = node->RegisterAttributeCallback(callback);
 
@@ -975,6 +1023,11 @@ void Gex::Ui::NodeItem::DisconnectFromNode()
 
 Gex::Ui::NodeItem::~NodeItem()
 {
+    for (AttributeItem* attrItem : attributes)
+    {
+        attrItem->ClearLinks(true);
+    }
+
     DisconnectFromNode();
 }
 
@@ -995,6 +1048,12 @@ Gex::NodePtr Gex::Ui::NodeItem::Node() const
 }
 
 
+Gex::Ui::NodeGraphScene* Gex::Ui::NodeItem::GraphScene() const
+{
+    return graphScene;
+}
+
+
 void Gex::Ui::NodeItem::SetAttributeVisibility(AttributeVisibilityMode mode)
 {
     attrVisMode = mode;
@@ -1012,9 +1071,9 @@ Gex::Ui::NodeItem::AttributeVisibilityMode Gex::Ui::NodeItem::AttributeVisibilit
 
 void Gex::Ui::NodeItem::CreateAttributes()
 {
-    for (auto attr : node->GetAttributes())
+    for (const Gex::AttributeWkPtr& attr : node->GetAttributes())
     {
-        AttributeItem* item = new AttributeItem(attr, this);
+        auto* item = new AttributeItem(attr, this);
         attributes.push_back(item);
     }
 }
@@ -1039,6 +1098,8 @@ void Gex::Ui::NodeItem::RebuildAttributes()
 
 void Gex::Ui::NodeItem::PlaceAttributes()
 {
+    prepareGeometryChange();
+
     qreal posY = attributesY;
 
     bool skippedInput = false;
@@ -1698,9 +1759,17 @@ Gex::Ui::LinkItem::LinkItem(AttributeItem *source, AttributeItem *dest): QGraphi
 }
 
 
-Gex::Ui::LinkItem::~LinkItem() {
-    src->RemoveLink(this);
-    dst->RemoveLink(this);
+Gex::Ui::LinkItem::~LinkItem()
+{
+    if (!src.isNull())
+    {
+        src->RemoveLink(this);
+    }
+
+    if (!dst.isNull())
+    {
+        dst->RemoveLink(this);
+    }
 }
 
 
@@ -1827,6 +1896,377 @@ void Gex::Ui::PreviewLinkItem::Draw(QPointF dest)
 }
 
 
+Gex::Ui::FrameItem::FrameItem(
+        const QPoint& topLeft,
+        qreal width, qreal height,
+        NodeGraphScene* graphSc,
+        QGraphicsItem* parent
+): QGraphicsObject(parent)
+{
+    textItem = new QGraphicsTextItem(this);
+
+    resizeHandle = new QGraphicsRectItem(this);
+    resizeHandle->setBrush(Qt::transparent);
+
+    QPen pen(Qt::white);
+    pen.setStyle(Qt::DashLine);
+    resizeHandle->setPen(pen);
+    resizeHandle->setVisible(false);
+
+    textItem->setDefaultTextColor(Qt::white);
+    textItem->setTextInteractionFlags(
+            Qt::TextSelectableByMouse|
+            Qt::TextSelectableByKeyboard|
+            Qt::TextEditable);
+    textItem->setPlainText("Node group");
+    graphScene = graphSc;
+
+    setFlags(QGraphicsItem::ItemIsSelectable|
+             QGraphicsItem::ItemIsMovable|
+             QGraphicsItem::ItemSendsGeometryChanges
+    );
+
+    SetRect(QRect(topLeft.x(), topLeft.y(),
+                 width, height));
+
+    setZValue(-20);
+    setAcceptHoverEvents(true);
+}
+
+
+QRect Gex::Ui::FrameItem::Rect() const
+{
+    return rect;
+}
+
+
+void Gex::Ui::FrameItem::SetRect(const QRect& r)
+{
+    prepareGeometryChange();
+
+    rect = r;
+
+    update();
+}
+
+
+bool Gex::Ui::FrameItem::Active() const
+{
+    return moveItems;
+}
+
+
+void Gex::Ui::FrameItem::SetActive(bool active)
+{
+    moveItems = active;
+}
+
+
+void Gex::Ui::FrameItem::paint(
+        QPainter *painter,
+        const QStyleOptionGraphicsItem *option,
+        QWidget *widget
+)
+{
+    QPen pen = Qt::NoPen;
+    if (isSelected())
+    {
+        pen = QPen(QColor("#E58C02"));
+    }
+    painter->setPen(pen);
+
+    painter->setBrush(background);
+    painter->drawRoundedRect(rect, 5, 5);
+}
+
+
+QRectF Gex::Ui::FrameItem::boundingRect() const
+{
+    return rect;
+}
+
+
+QColor Gex::Ui::FrameItem::BackgroundColor() const
+{
+    return background;
+}
+
+
+void Gex::Ui::FrameItem::SetBackgroundColor(const QColor& color)
+{
+    background = color;
+}
+
+
+QList<QPointer<QGraphicsObject>> Gex::Ui::FrameItem::ContainedItems() const
+{
+    QList<QPointer<QGraphicsObject>> contained;
+
+    auto scRect = sceneBoundingRect();
+
+    for (auto* nodeItem : graphScene->NodeItems())
+    {
+        if (scRect.intersects(nodeItem->sceneBoundingRect()))
+        {
+            contained.emplace_back(nodeItem);
+        }
+    }
+
+    auto sortedFrames = graphScene->SortedFrameItems(scRect);
+    int index = sortedFrames.indexOf(this);
+
+    for (auto* frameItem : sortedFrames.sliced(index))
+    {
+        if (frameItem == this)
+            continue;
+
+        if (scRect.intersects(frameItem->sceneBoundingRect()))
+        {
+            contained.emplace_back(frameItem);
+
+            auto frameContained = frameItem->ContainedItems();
+            for (const auto& subitem : frameContained)
+            {
+                if (subitem == this)
+                    continue;
+
+                if (contained.contains(subitem))
+                {
+                    continue;
+                }
+
+                contained.append(subitem);
+            }
+        }
+    }
+
+    return contained;
+}
+
+
+void Gex::Ui::FrameItem::mousePressEvent(
+        QGraphicsSceneMouseEvent *event)
+{
+    moveItems = true;
+    items.clear();
+    movedItemsPositions.clear();
+
+    Grip cur = CurrentGrip(event->pos());
+    if (cur == Grip::None)
+    {
+        items = ContainedItems();
+    }
+    else
+    {
+        moveItems = false;
+        heldGrip = cur;
+
+        resizeHandle->setVisible(true);
+        resizeHandle->setRect(rect);
+    }
+
+    QGraphicsObject::mousePressEvent(event);
+}
+
+
+void Gex::Ui::FrameItem::mouseMoveEvent(QGraphicsSceneMouseEvent *event)
+{
+    if (heldGrip != Grip::None)
+    {
+        if (heldGrip == Grip::TopLeft)
+        {
+            // event->pos() becomes the top left corner.
+            resizeHandle->setRect(
+                    QRectF(
+                            event->pos(),
+                            rect.bottomRight()
+                    )
+            );
+        }
+        else if (heldGrip == Grip::TopRight)
+        {
+            resizeHandle->setRect(
+                    QRectF(
+                        QPointF(rect.topLeft().x(), event->pos().y()),
+                        QPointF(event->pos().x(), rect.bottomRight().y())
+                    )
+            );
+        }
+        else if (heldGrip == Grip::BottomLeft)
+        {
+            resizeHandle->setRect(
+                    QRectF(
+                            QPointF(event->pos().x(), rect.y()),
+                            QPointF(rect.bottomRight().x(), event->pos().y())
+                    )
+            );
+        }
+        else if (heldGrip == Grip::BottomRight)
+        {
+            resizeHandle->setRect(
+                    QRectF(
+                            rect.topLeft(),
+                            event->pos()
+                    )
+            );
+        }
+    }
+    else
+    {
+        QGraphicsObject::mouseMoveEvent(event);
+    }
+}
+
+
+void Gex::Ui::FrameItem::mouseReleaseEvent(
+        QGraphicsSceneMouseEvent *event)
+{
+    items.clear();
+    movedItemsPositions.clear();
+
+    moveItems = true;
+
+    if (heldGrip != Grip::None)
+    {
+        Resize(resizeHandle->rect());
+    }
+
+    heldGrip = Grip::None;
+    resizeHandle->setVisible(false);
+
+    QGraphicsObject::mouseReleaseEvent(event);
+}
+
+
+
+Gex::Ui::FrameItem::Grip Gex::Ui::FrameItem::CurrentGrip(QPointF pos) const
+{
+    if (pos.x() <= gripWidth && pos.y() <= gripHeight)
+        return Grip::TopLeft;
+
+    if (pos.x() >= rect.width() - gripWidth &&
+        pos.y() >= rect.height() - gripHeight)
+        return Grip::BottomRight;
+
+    if (pos.x() >= rect.width() - gripWidth && pos.y() < gripHeight)
+        return Grip::TopRight;
+
+    if (pos.x() <= gripWidth && pos.y() >= rect.height() - gripHeight)
+        return Grip::BottomLeft;
+
+    return Grip::None;
+}
+
+
+void Gex::Ui::FrameItem::Resize(QRectF resize)
+{
+    moveItems = false;
+    QPointF offset = resize.topLeft();
+    setPos(pos() + offset);
+    SetRect(QRect(0, 0, resize.width(), resize.height()));
+    moveItems = true;
+}
+
+
+
+void Gex::Ui::FrameItem::hoverEnterEvent(QGraphicsSceneHoverEvent *event)
+{
+    Grip cur = CurrentGrip(event->pos());
+    if (cur == Grip::TopLeft || cur == Grip::BottomRight)
+    {
+        setCursor(Qt::SizeFDiagCursor);
+    }
+    else if (cur == Grip::TopRight || cur == Grip::BottomLeft)
+    {
+        setCursor(Qt::SizeBDiagCursor);
+    }
+    else
+    {
+        unsetCursor();
+    }
+
+    QGraphicsObject::hoverEnterEvent(event);
+}
+
+
+void Gex::Ui::FrameItem::hoverLeaveEvent(QGraphicsSceneHoverEvent *event)
+{
+    unsetCursor();
+
+    QGraphicsObject::hoverLeaveEvent(event);
+}
+
+
+void Gex::Ui::FrameItem::hoverMoveEvent(QGraphicsSceneHoverEvent *event)
+{
+    Grip cur = CurrentGrip(event->pos());
+    if (cur == Grip::TopLeft || cur == Grip::BottomRight)
+    {
+        setCursor(Qt::SizeFDiagCursor);
+    }
+    else if (cur == Grip::TopRight || cur == Grip::BottomLeft)
+    {
+        setCursor(Qt::SizeBDiagCursor);
+    }
+    else
+    {
+        unsetCursor();
+    }
+
+    QGraphicsObject::hoverMoveEvent(event);
+}
+
+
+QVariant Gex::Ui::FrameItem::itemChange(
+        QGraphicsItem::GraphicsItemChange change,
+        const QVariant &value)
+{
+    if (moveItems)
+    {
+        if (change == QGraphicsItem::ItemPositionChange)
+        {
+            sceneRect = sceneBoundingRect();
+
+            movedItemsPositions.clear();
+
+            for (const auto item : items)
+            {
+                if (item.isNull())
+                    continue;
+
+                if (auto* frameItem = qgraphicsitem_cast<FrameItem*>(item.get()))
+                {
+                    frameItem->SetActive(false);
+                }
+
+                movedItemsPositions[item] = item->pos();
+            }
+
+            originPos = pos();
+        }
+
+        else if (change == QGraphicsItem::ItemPositionHasChanged)
+        {
+            auto offset = pos() - originPos;
+
+            for (auto iter = movedItemsPositions.keyValueBegin();
+                 iter != movedItemsPositions.keyValueEnd(); iter++)
+            {
+                iter->first->setPos(iter->first->pos() + offset);
+
+                if (auto* frameItem = qgraphicsitem_cast<FrameItem*>(iter->first.get()))
+                {
+                    frameItem->SetActive(true);
+                }
+            }
+        }
+
+    }
+
+    return value;
+}
+
+
 Gex::Ui::NodeGraphContext::NodeGraphContext(const QString& name_,
                                             Gex::CompoundNodePtr node_)
 {
@@ -1883,16 +2323,37 @@ Gex::Ui::NodeGraphScene::NodeGraphScene(QObject* parent): QGraphicsScene(parent)
 {
     previewLink = nullptr;
 
+    previewFrameBrush = Qt::NoBrush;
+    previewFramePen = QPen(Qt::white, 1, Qt::DashLine);
     setSceneRect(QRect(-100000, -100000, 200000, 200000));
 }
 
 
 void Gex::Ui::NodeGraphScene::mousePressEvent(QGraphicsSceneMouseEvent* mouseEvent)
 {
-    QGraphicsScene::mousePressEvent(mouseEvent);
+    pressed = true;
 
-    QGraphicsItem* item = itemAt(mouseEvent->scenePos(), QTransform());
-    if (item)
+    if (mouseZooming && mouseEvent->button() == Qt::RightButton)
+    {
+        mouseZoomingClicked = true;
+        mouseZoomingPos = mouseEvent->screenPos();
+    }
+
+    else if (creatingFrame)
+    {
+        frameTopLeft = mouseEvent->scenePos();
+        for (auto* view : views())
+        {
+            view->setDragMode(QGraphicsView::NoDrag);
+        }
+
+        previewFrame = addRect(QRectF());
+        previewFrame->setPen(previewFramePen);
+        previewFrame->setBrush(previewFrameBrush);
+        previewFrameStart = mouseEvent->scenePos();
+    }
+
+    else if (QGraphicsItem* item = itemAt(mouseEvent->scenePos(), QTransform()))
     {
         PlugItem *plugItem = qgraphicsitem_cast<PlugItem *>(item);
         if (!previewLink && plugItem)
@@ -1907,19 +2368,20 @@ void Gex::Ui::NodeGraphScene::mousePressEvent(QGraphicsSceneMouseEvent* mouseEve
                 view->setDragMode(QGraphicsView::NoDrag);
             }
         }
+        else
+        {
+            QGraphicsScene::mousePressEvent(mouseEvent);
+        }
     }
-
-    if (mouseZooming && mouseEvent->button() == Qt::RightButton)
+    else
     {
-        mouseZoomingClicked = true;
-        mouseZoomingPos = mouseEvent->screenPos();
+        QGraphicsScene::mousePressEvent(mouseEvent);
     }
 }
 
 
 void Gex::Ui::NodeGraphScene::mouseMoveEvent(QGraphicsSceneMouseEvent* mouseEvent)
 {
-    QGraphicsScene::mouseMoveEvent(mouseEvent);
 
     if (previewLink)
     {
@@ -1993,6 +2455,14 @@ void Gex::Ui::NodeGraphScene::mouseMoveEvent(QGraphicsSceneMouseEvent* mouseEven
 
         previewLink->Draw(mouseEvent->scenePos());
     }
+    else if (creatingFrame && pressed)
+    {
+        previewFrame->setRect(QRectF(previewFrameStart, mouseEvent->scenePos()));
+    }
+    else
+    {
+        QGraphicsScene::mouseMoveEvent(mouseEvent);
+    }
 }
 
 
@@ -2010,7 +2480,7 @@ void Connect(Gex::Ui::AttributeItem* source,
 
 void Gex::Ui::NodeGraphScene::mouseReleaseEvent(QGraphicsSceneMouseEvent* mouseEvent)
 {
-    QGraphicsScene::mouseReleaseEvent(mouseEvent);
+    pressed = false;
 
     QGraphicsItem *item = itemAt(mouseEvent->scenePos(), QTransform());
     if (previewLink) {
@@ -2105,17 +2575,35 @@ void Gex::Ui::NodeGraphScene::mouseReleaseEvent(QGraphicsSceneMouseEvent* mouseE
         }
     }
 
-    else
+    else if (creatingFrame)
     {
-        if (auto* nodePlugItem = qgraphicsitem_cast<NodePlugItem*>(item))
+        QPointF bottomRight = mouseEvent->scenePos();
+
+        CreateFrame(frameTopLeft, bottomRight);
+
+        creatingFrame = false;
+
+        for (auto* view : views())
         {
-            Q_EMIT NodePlugClicked(nodePlugItem);
+            view->setDragMode(QGraphicsView::RubberBandDrag);
         }
+
+        delete previewFrame;
+        previewFrame = nullptr;
     }
 
-    if (mouseZoomingClicked)
+    else if (mouseZoomingClicked)
     {
         mouseZoomingClicked = false;
+    }
+
+    else if (auto* nodePlugItem = qgraphicsitem_cast<NodePlugItem*>(item))
+    {
+        Q_EMIT NodePlugClicked(nodePlugItem);
+    }
+    else
+    {
+        QGraphicsScene::mouseReleaseEvent(mouseEvent);
     }
 }
 
@@ -2176,6 +2664,61 @@ void Gex::Ui::NodeGraphScene::OnItemDoubleClicked(QGraphicsItem* item)
 }
 
 
+void Gex::Ui::NodeGraphScene::StartFrameMode()
+{
+    creatingFrame = true;
+}
+
+
+void Gex::Ui::NodeGraphScene::StopFrameMode()
+{
+    creatingFrame = false;
+}
+
+
+Gex::Ui::FrameItem* Gex::Ui::NodeGraphScene::CreateFrame(
+        QPointF topLeft, QPointF bottomRight)
+{
+    qreal width = bottomRight.x() - topLeft.x();
+    qreal height = bottomRight.y() - topLeft.y();
+
+    QPoint rectTopLeft(0, 0);
+
+    FrameItem* frame = new FrameItem(rectTopLeft, width, height, this);
+    frame->SetBackgroundColor(QColor(255, 0, 0, 50));
+
+    addItem(frame);
+
+    frame->setPos(topLeft);
+
+    frames.push_back(frame);
+
+    return frame;
+}
+
+
+QList<Gex::Ui::FrameItem*> Gex::Ui::NodeGraphScene::FrameItems() const
+{
+    return frames;
+}
+
+
+QList<Gex::Ui::FrameItem*> Gex::Ui::NodeGraphScene::SortedFrameItems(const QRectF& rect) const
+{
+    QList<Gex::Ui::FrameItem*> frames;
+
+    for (auto* item : items(rect, Qt::IntersectsItemShape, Qt::AscendingOrder))
+    {
+        if (auto* frame = qgraphicsitem_cast<FrameItem*>(item))
+        {
+            frames.append(frame);
+        }
+    }
+
+    return frames;
+}
+
+
 void Gex::Ui::NodeGraphScene::UpdateNode(Gex::NodePtr node)
 {
     NodeItem* nodeItem = nodeItems.value(node, nullptr);
@@ -2194,9 +2737,11 @@ void Gex::Ui::NodeGraphScene::UpdateNode(Gex::NodePtr node)
 }
 
 
-void Gex::Ui::NodeGraphScene::OnNodeModified(Gex::NodePtr node, const Gex::AttributeChange& change)
+void Gex::Ui::NodeGraphScene::OnNodeModified(const Gex::NodeWkPtr& node,
+                                             const Gex::AttributeWkPtr& attr,
+                                             const Gex::AttributeChange& change)
 {
-    Q_EMIT NodeModified(node, change);
+    Q_EMIT NodeModified(node, attr, change);
 }
 
 
@@ -2381,9 +2926,8 @@ struct NodeLoader: public QObject
 
 QMenu* Gex::Ui::NodeGraphView::GetMenu()
 {
-    QMenu* createMenu = new QMenu();
+    auto* createMenu = new QMenu();
 
-    QList<NodeCreator*> creators;
     QMap<QString, QMenu*> menus;
     for (std::string type : Gex::NodeFactory::GetFactory()->NodeTypes())
     {
@@ -2568,10 +3112,10 @@ void Gex::Ui::NodeGraphView::OnNodePlugClicked(NodePlugItem* plug)
 
 void Gex::Ui::NodeGraphScene::Clear()
 {
-    clear();
     nodeItems.clear();
     input = nullptr;
     output = nullptr;
+    clear();
 }
 
 
@@ -2580,7 +3124,7 @@ void Gex::Ui::NodeGraphScene::SwitchGraphContext(NodeGraphContext* context)
     Clear();  // Clear all content.
 
     graphContext = context;
-    for (Gex::NodePtr node : graphContext->GetNodes())
+    for (const Gex::NodePtr& node : graphContext->GetNodes())
     {
         auto* item = new NodeItem(node, this);
         addItem(item);
@@ -2634,6 +3178,12 @@ void Gex::Ui::NodeGraphScene::DeleteNode(NodeItem* item)
 
     removeItem(item);
     delete item;
+}
+
+
+QList<Gex::Ui::NodeItem*> Gex::Ui::NodeGraphScene::NodeItems() const
+{
+    return nodeItems.values();
 }
 
 
@@ -2786,19 +3336,33 @@ void Gex::Ui::NodeGraphScene::DeleteLink(LinkItem* item)
 }
 
 
+void Gex::Ui::NodeGraphScene::DeleteFrame(FrameItem* item)
+{
+    frames.removeAll(item);
+    delete item;
+}
+
+
 void Gex::Ui::NodeGraphScene::DeleteSelection()
 {
     QList<QPointer<NodeItem>> deleteNodes;
     QList<QPointer<LinkItem>> deleteLinks;
+    QList<QPointer<FrameItem>> deleteFrames;
     for (QGraphicsItem* item : selectedItems())
     {
         if (auto* nodeItem = qgraphicsitem_cast<NodeItem*>(item))
         {
             deleteNodes.append(nodeItem);
         }
+
         else if (auto* linkItem = qgraphicsitem_cast<LinkItem*>(item))
         {
             deleteLinks.append(linkItem);
+        }
+
+        else if (auto* frameItem = qgraphicsitem_cast<FrameItem*>(item))
+        {
+            deleteFrames.append(frameItem);
         }
     }
 
@@ -2817,6 +3381,14 @@ void Gex::Ui::NodeGraphScene::DeleteSelection()
 
         DeleteNode(nodeItem);
     }
+
+    for (const auto& frameItem : deleteFrames)
+    {
+        if (frameItem.isNull())
+            continue;
+
+        DeleteFrame(frameItem);
+    }
 }
 
 
@@ -2828,6 +3400,9 @@ void Gex::Ui::NodeGraphScene::CreateNode(QString type, QString name)
     auto* item = new NodeItem(node, this);
     addItem(item);
     nodeItems[node] = item;
+
+    auto* view = views().at(0);
+    item->setPos(view->mapToScene(view->rect().center()));
 
     item->InitializeLinks();
 }
@@ -2849,7 +3424,7 @@ void Gex::Ui::NodeGraphScene::ReferenceNode(QString type, QString name)
 }
 
 
-void Gex::Ui::NodeGraphScene::NodeEvaluationStarted(Gex::NodePtr node)
+void Gex::Ui::NodeGraphScene::NodeEvaluationStarted(const Gex::NodePtr& node)
 {
     auto* nodeItem = nodeItems.value(node, nullptr);
     if (!nodeItem)
@@ -2859,7 +3434,7 @@ void Gex::Ui::NodeGraphScene::NodeEvaluationStarted(Gex::NodePtr node)
 
 }
 
-void Gex::Ui::NodeGraphScene::NodeEvaluationDone(Gex::NodePtr node, bool success)
+void Gex::Ui::NodeGraphScene::NodeEvaluationDone(const Gex::NodePtr& node, bool success)
 {
     auto* nodeItem = nodeItems.value(node, nullptr);
     if (!nodeItem)
@@ -3041,8 +3616,8 @@ void Gex::Ui::NodeGraphScene::AutoLayoutNodes(const QPointF& destination,
 }
 
 
-Gex::Ui::ContextButton::ContextButton(std::string name_, unsigned int index_,
-                                                QWidget* parent): QPushButton(parent)
+Gex::Ui::ContextButton::ContextButton(const std::string& name_, unsigned int index_,
+                                      QWidget* parent): QPushButton(parent)
 {
     index = index_;
     name = name_;
@@ -3077,7 +3652,7 @@ void Gex::Ui::ContextsWidget::ContextClicked(unsigned int index)
 }
 
 
-void Gex::Ui::ContextsWidget::AddContext(std::string name)
+void Gex::Ui::ContextsWidget::AddContext(const std::string& name)
 {
     auto* button = new ContextButton("/ " + name, contexts.length(), this);
     button->setObjectName("NodeGraphContextButton");
@@ -3109,7 +3684,7 @@ void Gex::Ui::ContextsWidget::ClearContexts()
 QEvent::Type Gex::Ui::GraphWidget::scheduleEventType = QEvent::Type(QEvent::registerEventType());
 
 
-Gex::Ui::GraphWidget::GraphWidget(Gex::CompoundNodePtr graph_,
+Gex::Ui::GraphWidget::GraphWidget(const Gex::CompoundNodePtr& graph_,
                                   QWidget* parent): QWidget(parent)
 {
     graph = graph_;
@@ -3181,6 +3756,12 @@ Gex::Ui::GraphWidget::GraphWidget(Gex::CompoundNodePtr graph_,
 
     QObject::connect(layoutButton, &QPushButton::clicked,
                      this, &GraphWidget::AutoLayoutNodes);
+
+    QPushButton* createFrameButton = toolbar->NewButton();
+    createFrameButton->setIcon(Res::UiRes::GetRes()->GetQtAwesome()->icon(fa::fa_solid, fa::fa_square));
+
+    QObject::connect(createFrameButton, &QPushButton::clicked,
+                     scene, &NodeGraphScene::StartFrameMode);
 
     QPushButton* runButton = toolbar->NewButton();
     runButton->setIcon(Res::UiRes::GetRes()->GetQtAwesome()->icon(fa::fa_solid, fa::fa_play));
@@ -3260,7 +3841,7 @@ void Gex::Ui::GraphWidget::OnNodeSelected()
 }
 
 
-void Gex::Ui::GraphWidget::RegisterContext(Gex::CompoundNodePtr compound)
+void Gex::Ui::GraphWidget::RegisterContext(const Gex::CompoundNodePtr& compound)
 {
     auto *context = new NodeGraphContext(compound->Name().c_str(), compound);
 
@@ -3311,27 +3892,28 @@ bool Gex::Ui::GraphWidget::event(QEvent *event)
 }
 
 
-void Gex::Ui::GraphWidget::SwitchGraph(Gex::CompoundNodePtr graph_)
+void Gex::Ui::GraphWidget::SwitchGraph(const Gex::CompoundNodePtr& graph_)
 {
+    scene->Clear();
+
     graph = graph_;
 
     ClearContexts();
-
-    scene->Clear();
 
     Initialize();
 }
 
 
 
-void Gex::Ui::GraphWidget::UpdateNode(Gex::NodePtr node)
+void Gex::Ui::GraphWidget::UpdateNode(const Gex::NodePtr& node)
 {
     scene->UpdateNode(node);
 }
 
 
-void Gex::Ui::GraphWidget::UpdateNodeAttribute(Gex::NodePtr node,
-                                                         QString attribute)
+void Gex::Ui::GraphWidget::UpdateNodeAttribute(
+        const Gex::NodePtr& node,
+        const QString& attribute)
 {
     scene->UpdateNodeAttribute(node, attribute);
 }
@@ -3379,9 +3961,9 @@ void Gex::Ui::GraphWidget::RunGraph()
     scene->ClearNodeEvaluation();
 
     graph->Run(profiler, threadsSpinBox->value(),
-               [this](Gex::NodePtr node)
+               [this](const Gex::NodePtr& node)
                {this->scene->NodeEvaluationStarted(node);},
-               [this](Gex::NodePtr node, bool success)
+               [this](const Gex::NodePtr& node, bool success)
                {this->scene->NodeEvaluationDone(node, success);},
                [this, prevState](const Gex::GraphContext& ctx)
                {EmitProfiler(this, ctx);this->interactiveEvalEnabled = prevState;}
@@ -3390,13 +3972,20 @@ void Gex::Ui::GraphWidget::RunGraph()
 
 
 void Gex::Ui::GraphWidget::OnNodeChanged(
-        const Gex::NodePtr& node,
+        const Gex::NodeWkPtr& node,
+        const Gex::AttributeWkPtr& attr,
         const Gex::AttributeChange& change)
 {
+    if (!node)
+        return;
+
+    if (!attr->IsInput() || attr->IsUserDefined())
+        return;
+
     if (change == AttributeChange::Connected ||
         change == AttributeChange::Disconnected ||
         change == AttributeChange::ValueChanged)
-        RunFromNode(node);
+        RunFromNode(node.ToShared());
 }
 
 
@@ -3425,16 +4014,21 @@ void Gex::Ui::GraphWidget::RunFromNode(const Gex::NodePtr& node)
     if (subGraph.empty())
         return;
 
+    auto postEval = [this](const Gex::GraphContext& ctx)
+    {
+        EmitProfiler(this, ctx);
+        this->interactiveEvalEnabled = true;
+    };
+
     GraphContext context;
     interactiveEval = new Gex::NodeEvaluator(
             subGraph, context, profiler,
             false, threadsSpinBox->value(),
-            [this](Gex::NodePtr node)
+            [this](const Gex::NodePtr& node)
             {this->scene->NodeEvaluationStarted(node);},
-            [this](Gex::NodePtr node, bool success)
+            [this](const Gex::NodePtr& node, bool success)
             {if (success) this->scene->NodeEvaluationDone(node, success);},
-            [this](const Gex::GraphContext& ctx)
-            {EmitProfiler(this, ctx);this->interactiveEvalEnabled = true;}
+            postEval
             );
 
     interactiveEval->Run();

@@ -33,6 +33,7 @@
 
 
 
+
 namespace Gex
 {
     namespace Ui
@@ -146,7 +147,7 @@ namespace Gex
         };
 
 
-        class GEX_UI_API AttributeItem: public QGraphicsRectItem
+        class GEX_UI_API AttributeItem: public QGraphicsRectItem, public QObject
         {
             friend LinkItem;
             friend NodeItem;
@@ -200,6 +201,8 @@ namespace Gex
 
             void ShowAsInternal(bool internal);
         public:
+            NodeGraphScene* GraphScene() const;
+
             bool AsInternal() const;
 
             PlugItem* InputAnchor() const;
@@ -222,6 +225,8 @@ namespace Gex
             void RebuildAttributes();
 
             void InitializeLinks();
+
+            void ClearLinks(bool recursive=false);
 
             QPointF SceneInputPosition() const;
 
@@ -273,7 +278,7 @@ namespace Gex
         };
 
 
-        class GEX_UI_API NodeItem: public QGraphicsItem, public QObject
+        class GEX_UI_API NodeItem: public QGraphicsObject
         {
             QVector<LinkItem*> links;
             QVector<AttributeItem*> attributes;
@@ -357,6 +362,8 @@ namespace Gex
 
             Gex::NodePtr Node() const;
 
+            NodeGraphScene* GraphScene() const;
+
             void SetAttributeVisibility(AttributeVisibilityMode mode);
 
             AttributeVisibilityMode AttributeVisibility() const;
@@ -423,8 +430,8 @@ namespace Gex
 
         class GEX_UI_API LinkItem: public QGraphicsPathItem, public QObject
         {
-            AttributeItem* src;
-            AttributeItem* dst;
+            QPointer<AttributeItem> src;
+            QPointer<AttributeItem> dst;
             bool sourceInternal = false;
             bool destInternal = false;
         public:
@@ -492,6 +499,97 @@ namespace Gex
         };
 
 
+        class GEX_UI_API FrameItem: public QGraphicsObject
+        {
+        public:
+            enum {
+                Type = UserType + 125
+            };
+
+            int type() const override
+            {
+                return Type;
+            }
+
+        private:
+            QGraphicsTextItem* textItem;
+            QGraphicsRectItem* resizeHandle;
+
+            QPointF originPos;
+            QList<QPointer<QGraphicsObject>> items;
+            QMap<QPointer<QGraphicsObject>, QPointF> movedItemsPositions;
+
+            QRect rect;
+
+            QRectF sceneRect;
+            QColor background;
+            QColor textColor;
+
+            enum class Grip
+            {
+                None,
+                TopLeft,
+                TopRight,
+                BottomLeft,
+                BottomRight
+            };
+
+            int gripWidth = 10;
+            int gripHeight = 10;
+
+            bool moveItems = true;
+            Grip heldGrip = Grip::None;
+
+            NodeGraphScene* graphScene;
+
+        public:
+            FrameItem(const QPoint& topLeft, qreal width,
+                      qreal height, NodeGraphScene* graphScene,
+                      QGraphicsItem* parent=nullptr);
+
+            QRect Rect() const;
+
+            void SetRect(const QRect& rect);
+
+            bool Active() const;
+
+            void SetActive(bool active);
+
+            QList<QPointer<QGraphicsObject>> ContainedItems() const;
+
+            void paint(QPainter *painter,
+                       const QStyleOptionGraphicsItem *option,
+                       QWidget *widget) override;
+
+            QRectF boundingRect() const;
+
+            QColor BackgroundColor() const;
+
+            void SetBackgroundColor(const QColor& color);
+
+            void mousePressEvent(QGraphicsSceneMouseEvent *event) override;
+
+            void mouseMoveEvent(QGraphicsSceneMouseEvent *event) override;
+
+            void mouseReleaseEvent(QGraphicsSceneMouseEvent *event) override;
+
+        protected:
+            Grip CurrentGrip(QPointF pos) const;
+
+            void Resize(QRectF resize);
+        public:
+
+            void hoverEnterEvent(QGraphicsSceneHoverEvent *event) override;
+
+            void hoverLeaveEvent(QGraphicsSceneHoverEvent *event) override;
+
+            void hoverMoveEvent(QGraphicsSceneHoverEvent *event) override;
+
+            QVariant itemChange(QGraphicsItem::GraphicsItemChange change,
+                                const QVariant &value) override;
+        };
+
+
         class NodeGraphContext
         {
             QString name;
@@ -520,16 +618,27 @@ namespace Gex
         {
             Q_OBJECT
 
+            bool pressed = false;
+
             PreviewLinkItem* previewLink;
             bool mouseZooming = false;
             bool mouseZoomingClicked = false;
             QPointF mouseZoomingPos;
 
+            bool creatingFrame = false;
+            QPointF frameTopLeft;
+
             NodeGraphContext* graphContext;
             QMap<Gex::NodePtr, NodeItem*> nodeItems;
+            QList<FrameItem*> frames;
             NodeItem* input = nullptr;
             NodeItem* output = nullptr;
             LinkItem* pressedLink = nullptr;
+
+            QPen previewFramePen;
+            QBrush previewFrameBrush;
+            QPointF previewFrameStart;
+            QGraphicsRectItem* previewFrame = nullptr;
 
         public:
             NodeGraphScene(QObject *parent=nullptr);
@@ -546,16 +655,30 @@ namespace Gex
 
             Q_SIGNAL void CompoundNodeDoubleClicked(Gex::CompoundNodePtr);
 
-            Q_SIGNAL void NodeModified(Gex::NodePtr node, const Gex::AttributeChange& change);
+            Q_SIGNAL void NodeModified(const Gex::NodeWkPtr& node,
+                                       const Gex::AttributeWkPtr& attr,
+                                       const Gex::AttributeChange& change);
 
             void StartPlugLinking(PlugItem* source);
 
         public:
             void OnItemDoubleClicked(QGraphicsItem* item);
 
+            void StartFrameMode();
+
+            void StopFrameMode();
+
+            FrameItem* CreateFrame(QPointF topLeft, QPointF bottomRight);
+
+            QList<FrameItem*> FrameItems() const;
+
+            QList<FrameItem*> SortedFrameItems(const QRectF& rect) const;
+
             void UpdateNode(Gex::NodePtr node);
 
-            void OnNodeModified(Gex::NodePtr node, const Gex::AttributeChange& change);
+            void OnNodeModified(const Gex::NodeWkPtr& node,
+                                const Gex::AttributeWkPtr& attr,
+                                const Gex::AttributeChange& change);
 
             void UpdateNodeAttribute(Gex::NodePtr node,
                                      QString attribute);
@@ -567,6 +690,8 @@ namespace Gex
             void DeleteNode(NodeItem* item);
 
             void DuplicateNodes(std::vector<Gex::NodePtr> nodes, bool copyLinks);
+
+            QList<NodeItem*> NodeItems() const;
 
             QList<NodeItem*> SelectedNodeItems() const;
 
@@ -588,15 +713,17 @@ namespace Gex
 
             void DeleteLink(LinkItem* item);
 
+            void DeleteFrame(FrameItem* item);
+
             void DeleteSelection();
 
             void CreateNode(QString type, QString name);
 
             void ReferenceNode(QString type, QString name);
 
-            void NodeEvaluationStarted(Gex::NodePtr node);
+            void NodeEvaluationStarted(const Gex::NodePtr& node);
 
-            void NodeEvaluationDone(Gex::NodePtr node, bool success);
+            void NodeEvaluationDone(const Gex::NodePtr& node, bool success);
 
             void ClearNodeEvaluation();
 
@@ -679,7 +806,7 @@ namespace Gex
             std::string name;
 
         public:
-            ContextButton(std::string name, unsigned int index,
+            ContextButton(const std::string& name, unsigned int index,
                           QWidget* parent=nullptr);
 
             Q_SIGNAL void ContextClicked(unsigned int index);
@@ -698,7 +825,7 @@ namespace Gex
         public:
             ContextsWidget(QWidget* parent = nullptr);
 
-            void AddContext(std::string name);
+            void AddContext(const std::string& name);
 
             void ContextClicked(unsigned int index);
 
@@ -731,7 +858,7 @@ namespace Gex
             static QEvent::Type scheduleEventType;
 
         public:
-            GraphWidget(Gex::CompoundNodePtr graph,
+            GraphWidget(const Gex::CompoundNodePtr& graph,
                         QWidget* parent=nullptr);
 
             ~GraphWidget() override;
@@ -740,11 +867,11 @@ namespace Gex
 
             void OnNodeSelected();
 
-            void RegisterContext(Gex::CompoundNodePtr compound);
+            void RegisterContext(const Gex::CompoundNodePtr& compound);
 
             void SwitchContext(unsigned int index);
 
-            void SwitchGraph(Gex::CompoundNodePtr graph);
+            void SwitchGraph(const Gex::CompoundNodePtr& graph);
 
         protected:
             void ClearContexts();
@@ -757,10 +884,10 @@ namespace Gex
 
 //        void mouseReleaseEvent(QMouseEvent* event) override;
 
-            void UpdateNode(Gex::NodePtr node);
+            void UpdateNode(const Gex::NodePtr& node);
 
-            void UpdateNodeAttribute(Gex::NodePtr node,
-                                     QString attribute);
+            void UpdateNodeAttribute(const Gex::NodePtr& node,
+                                     const QString& attribute);
 
             void DisableInteraction();
 
@@ -770,7 +897,9 @@ namespace Gex
 
             void RunGraph();
 
-            void OnNodeChanged(const Gex::NodePtr& node, const Gex::AttributeChange& change);
+            void OnNodeChanged(const Gex::NodeWkPtr& node,
+                               const Gex::AttributeWkPtr& attr,
+                               const Gex::AttributeChange& change);
 
             void RunFromNode(const Gex::NodePtr& node);
 
