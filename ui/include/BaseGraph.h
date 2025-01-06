@@ -93,9 +93,9 @@ namespace Gex::Ui
 
     class GEX_UI_API BaseGraphView: public QGraphicsView
     {
-    Q_OBJECT
-        qreal zoomInFactor = 1.1;
-        qreal zoomOutFactor = 0.9;
+        Q_OBJECT
+
+        qreal zoomFactor = 0.9;
         bool zooming = false;
         bool dragMode = false;
         QPoint zoomingPos;

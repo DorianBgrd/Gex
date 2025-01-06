@@ -518,21 +518,25 @@ void Gex::Ui::BaseGraphView::leaveEvent(QEvent* event)
 
 void Gex::Ui::BaseGraphView::ZoomIn()
 {
-    QPointF sceneCenter = mapToScene(rect().center());
+    QTransform currTsfm = transform();
+    QTransform scaledTransform(
+            currTsfm.m11() / zoomFactor, currTsfm.m12(), currTsfm.m13(),
+            currTsfm.m21(), currTsfm.m22() / zoomFactor, currTsfm.m23(),
+            currTsfm.m31(), currTsfm.m32(), currTsfm.m33());
 
-    scale(zoomInFactor, zoomInFactor);
-
-    centerOn(sceneCenter);
+    setTransform(scaledTransform);
 }
 
 
 void Gex::Ui::BaseGraphView::ZoomOut()
 {
-    QPointF sceneCenter = mapToScene(rect().center());
+    QTransform currTsfm = transform();
+    QTransform scaledTransform(
+            currTsfm.m11() * zoomFactor, currTsfm.m12(), currTsfm.m13(),
+            currTsfm.m21(), currTsfm.m22() * zoomFactor, currTsfm.m23(),
+            currTsfm.m31(), currTsfm.m32(), currTsfm.m33());
 
-    scale(zoomOutFactor, zoomOutFactor);
-
-    centerOn(sceneCenter);
+    setTransform(scaledTransform);
 }
 
 
