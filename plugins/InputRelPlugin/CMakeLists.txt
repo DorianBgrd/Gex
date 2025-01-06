@@ -15,30 +15,36 @@ add_definitions(
 
 
 add_library(
-        InputRel
+        InputRelPlugin
         SHARED
         Func.h
         Func.cpp
         Nodes.h
         Nodes.cpp
-        BezierFunc.h
-        BezierFunc.cpp
+#        BezierFunc.h
+#        BezierFunc.cpp
 
         Plugin.cpp
 
         # Ui files.
-        ui/main.cpp
-        ui/LinearFunc.h
-        ui/LinearFunc.cpp
-        ui/BezierFunc.h
-        ui/BezierFunc.cpp
-)
+        viewer/main.cpp
+
+        viewer/LinearFunc.h
+        viewer/LinearFunc.cpp
+
+        viewer/FuncViewer.h
+        viewer/FuncViewer.cpp
+#        ui/BezierFunc.h
+#        ui/BezierFunc.cpp
+        viewer/Viewer.h
+        viewer/Viewer.cpp)
 
 
 target_include_directories(
-        InputRel
+        InputRelPlugin
         PUBLIC
         ${CMAKE_SOURCE_DIR}
+        ${CMAKE_CURRENT_SOURCE_DIR}
         ${Boost_INCLUDE_DIRS}
         ${Python_INCLUDE_DIRS}
         ${ThirdParties_INCLUDE_DIRS}
@@ -53,7 +59,7 @@ target_include_directories(
 
 
 target_link_directories(
-        InputRel
+        InputRelPlugin
         PUBLIC
         ${CMAKE_BINARY_DIR}
         ${Boost_LIBRARY_DIRS}
@@ -66,7 +72,7 @@ target_link_directories(
 
 
 target_link_libraries(
-        InputRel
+        InputRelPlugin
         PUBLIC
         Gex
         ${Boost_LIBRARIES}
@@ -83,10 +89,27 @@ target_link_libraries(
 )
 
 
+add_custom_command(
+        TARGET
+        InputRelPlugin
+        POST_BUILD
+        COMMAND
+        python ${CMAKE_SOURCE_DIR}/plugins/build_plugin.py
 
-add_subdirectory(app)
+        --package
+        --name InputRelPlugin
+        --plugin InputRelPlugin.dll
+        --plugin-file ${CMAKE_BINARY_DIR}/plugins/InputRelPlugin.dll
+        --type C++
+        --env PATH:./libs
 
-add_dependencies(
-        App
-        InputRel
+        --libs-search-path
+        ${CMAKE_BINARY_DIR}/ui
+        $ENV{UI_RES_DIR}/UiRes/cmake-build-${BUILD_TYPE}
+        $ENV{UI_TSYS_DIR}/UiTSys/cmake-build-${BUILD_TYPE}
+
+        --libs
+        Gex_ui.dll
+        UiRes.dll
+        UiTSys.dll
 )

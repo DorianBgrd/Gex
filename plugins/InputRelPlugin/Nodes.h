@@ -20,19 +20,19 @@ namespace Gex::InputRel
     GENERATE_DEFAULT_BUILDER(LinearRelBuilder, LinearRel)
 
 
-    class BezierRel: public Gex::Node
-    {
-    public:
-        std::string Description() const;
-
-        void InitAttributes() override;
-
-        bool Evaluate(NodeAttributeData &context,
-                      GraphContext &graphContext,
-                      NodeProfiler &profiler) override;
-    };
-
-    GENERATE_DEFAULT_BUILDER(BezierRelBuilder, BezierRel)
+//    class BezierRel: public Gex::Node
+//    {
+//    public:
+//        std::string Description() const;
+//
+//        void InitAttributes() override;
+//
+//        bool Evaluate(NodeAttributeData &context,
+//                      GraphContext &graphContext,
+//                      NodeProfiler &profiler) override;
+//    };
+//
+//    GENERATE_DEFAULT_BUILDER(BezierRelBuilder, BezierRel)
 }
 
 
