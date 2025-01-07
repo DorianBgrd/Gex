@@ -62,7 +62,7 @@ namespace Gex::InputRel
         ) override;
 
         void DrawCurve(
-                QGraphicsPathItem* item,
+                QPainterPath& path,
                 FuncScene* scene,
                 int decimals
         ) const override;

@@ -242,11 +242,11 @@ void Gex::InputRel::FuncViewerDelegate::DrawPoints(
 
 
 void Gex::InputRel::FuncViewerDelegate::DrawCurve(
-        QGraphicsPathItem* item,
+        QPainterPath& path,
         FuncScene* scene
 ) const
 {
-    DrawCurve(item, scene, decimals);
+    DrawCurve(path, scene, decimals);
 }
 
 
@@ -393,14 +393,14 @@ Gex::InputRel::FuncView::FuncView(FuncScene* scene, QWidget *parent, bool toolba
     setViewportUpdateMode(FullViewportUpdate);
     funcScene = scene;
 
-    curveItem = new QGraphicsPathItem();
+//    curveItem = new QGraphicsPathItem();
 //    curveItem->setFlag(QGraphicsItem::ItemIgnoresTransformations);
 
-    QPen curvePen(QColor(232, 168, 55));
-    curvePen.setWidth(10000);
-    curveItem->setPen(curvePen);
+//    QPen curvePen(QColor(232, 168, 55));
+//    curvePen.setWidth(10000);
+//    curveItem->setPen(curvePen);
 
-    funcScene->addItem(curveItem);
+//    funcScene->addItem(curveItem);
 
     QObject::connect(funcScene, &FuncScene::PointRequested,
                      this, &FuncView::AddPoint);
@@ -447,10 +447,7 @@ void Gex::InputRel::FuncView::OnSceneSelection()
 void Gex::InputRel::FuncView::OnPointsModified(
         QList<FuncViewerHandlePtr> pnts)
 {
-    if (delegate)
-    {
-        delegate->DrawCurve(curveItem, funcScene, decimals);
-    }
+    DrawCurve();
 
     Q_EMIT PointsModified(std::move(pnts));
 }
@@ -523,6 +520,13 @@ void Gex::InputRel::FuncView::ActivateCreateMode()
 
 void Gex::InputRel::FuncView::Draw()
 {
+    DrawPoints();
+    DrawCurve();
+}
+
+
+void Gex::InputRel::FuncView::DrawPoints()
+{
     for (auto* handle : handles)
     {
         delete handle;
@@ -530,15 +534,22 @@ void Gex::InputRel::FuncView::Draw()
 
     handles.clear();
 
-    if (!delegate)
-    {
-        curveItem->setPath(QPainterPath());
-    }
-    else
+    if (delegate)
     {
         delegate->DrawPoints(funcScene, handles);
-        delegate->DrawCurve(curveItem, funcScene, decimals);
     }
+}
+
+
+void Gex::InputRel::FuncView::DrawCurve()
+{
+    if (!delegate)
+        return;
+
+    path.clear();
+    delegate->DrawCurve(path, funcScene, decimals);
+
+//    curveItem->setPath(path);
 }
 
 
@@ -616,7 +627,7 @@ void Gex::InputRel::FuncView::DrawAdaptativeGrid(QPainter* painter)
     double scale = rect.width() / viewport()->rect().width();
 
     QPen linePen(QColor(50, 50, 50));
-    linePen.setWidth(scale);
+    linePen.setWidth(0);
 
     painter->setPen(linePen);
     painter->drawLine(rect.left(), 0, rect.right(), 0);
@@ -663,6 +674,14 @@ void Gex::InputRel::FuncView::drawBackground(
         const QRectF &)
 {
     DrawAdaptativeGrid(painter);
+
+    painter->setRenderHint(QPainter::Antialiasing);
+
+    QPen curvePen(QColor(220, 119, 18));
+    curvePen.setWidth(0);
+    painter->setPen(curvePen);
+
+    painter->drawPath(path);
 }
 
 

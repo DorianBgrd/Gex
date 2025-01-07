@@ -65,12 +65,11 @@ bool Gex::InputRel::LinearFuncDelegate::EditPoint(
 
 
 void Gex::InputRel::LinearFuncDelegate::DrawCurve(
-        QGraphicsPathItem* item,
+        QPainterPath& path,
         FuncScene* scene,
         int decimals
 ) const
 {
-    QPainterPath path;
     bool init = false;
     for (const auto& point : func->Points())
     {
@@ -83,6 +82,4 @@ void Gex::InputRel::LinearFuncDelegate::DrawCurve(
 
         path.moveTo(qp);
     }
-
-    item->setPath(path);
 }

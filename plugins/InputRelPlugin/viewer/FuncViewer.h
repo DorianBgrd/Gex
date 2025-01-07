@@ -120,13 +120,13 @@ namespace Gex::InputRel
                 );
 
         virtual void DrawCurve(
-                QGraphicsPathItem* item,
+                QPainterPath& path,
                 FuncScene* scene,
                 int decimals
                 ) const = 0;
 
         void DrawCurve(
-                QGraphicsPathItem* item,
+                QPainterPath& path,
                 FuncScene* scene
                 ) const;
     };
@@ -284,6 +284,7 @@ namespace Gex::InputRel
         Q_OBJECT
 
         double tick = 0;
+        QPainterPath path;
         QGraphicsPathItem* curveItem;
         FuncDelegatePtr delegate;
         int decimals = 3;
@@ -312,6 +313,10 @@ namespace Gex::InputRel
         void ActivateCreateMode();
 
         void Draw();
+
+        void DrawPoints();
+
+        void DrawCurve();
 
         void AutoFrame();
 
