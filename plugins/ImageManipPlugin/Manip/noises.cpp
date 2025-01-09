@@ -60,112 +60,6 @@ QImage ImageManip::Manip::RandomNoise(
 
 
 
-ImageManip::Manip::Point::Point(double x_, double y_)
-{
-    x = x_;
-    y = y_;
-}
-
-
-bool ImageManip::Manip::Point::operator==(const Point& other) const
-{
-    return (x == other.x && y == other.y);
-}
-
-
-ImageManip::Manip::Point ImageManip::Manip::Point::operator-(const Point& other) const
-{
-    return {x - other.x, y - other.y};
-}
-
-
-ImageManip::Manip::Point ImageManip::Manip::Point::operator+(const Point& other) const
-{
-    return {x + other.x, y + other.y};
-}
-
-
-#define ROUND(number, decimals) std::round(number * std::pow(10, decimals)) / std::pow(10, decimals)
-
-
-ImageManip::Manip::Point ImageManip::Manip::Point::Round(unsigned int decimals) const
-{
-    return {ROUND(x, decimals), ROUND(y, decimals)};
-}
-
-
-ImageManip::Manip::Segment::Segment(Point p1_, Point p2_)
-{
-    p1 = p1_;
-    p2 = p2_;
-}
-
-
-bool ImageManip::Manip::Segment::operator==(const Segment& other) const
-{
-    return (p1 == other.p1 && p2 == other.p2) || (p1 == other.p2 && p2 == other.p1);
-}
-
-
-ImageManip::Manip::Triangle::Triangle(const Point& a_, const Point& b_, const Point& c_)
-{
-    a = a_;
-    b = b_;
-    c = c_;
-}
-
-
-bool ImageManip::Manip::Triangle::operator==(const Triangle& other) const
-{
-    auto segments = Segments();
-    auto segmentsOther = Segments();
-
-    for (const auto& seg : Segments())
-    {
-        auto iter = std::find(segmentsOther.begin(), segmentsOther.end(), seg);
-        if (iter == segmentsOther.end())
-        {
-            return false;
-        }
-
-        segmentsOther.erase(iter);
-    }
-
-    return true;
-}
-
-
-std::vector<ImageManip::Manip::Segment> ImageManip::Manip::Triangle::Segments() const
-{
-    return {
-            Segment(a, b),
-            Segment(b, c),
-            Segment(c, a)
-    };
-}
-
-
-bool ImageManip::Manip::Triangle::HasSegment(const Segment& other) const
-{
-    auto segments = Segments();
-    for (const auto& segment : segments)
-    {
-        if (segment == other)
-        {
-            return true;
-        }
-    }
-
-    return false;
-}
-
-
-std::vector<ImageManip::Manip::Point> ImageManip::Manip::Triangle::Points() const
-{
-    return {a, b, c};
-}
-
-
 ImageManip::Manip::Cell::Cell(const Cell& other)
 {
     px = other.px;
@@ -353,11 +247,11 @@ void ImageManip::Manip::Grid::TileRepeat()
 }
 
 
-std::vector<ImageManip::Manip::Point> ImageManip::Manip::Grid::MapPoints(
+std::vector<ImageManip::Types::Point> ImageManip::Manip::Grid::MapPoints(
         double x, double y, double cellWidth,
         double cellHeight) const
 {
-    std::vector<Point> points;
+    std::vector<Types::Point> points;
 
     int cx = 0;
     for (const std::vector<Cell>& column : grid)
@@ -459,116 +353,10 @@ QImage ImageManip::Manip::GridViz(
 }
 
 
-double ImageManip::Manip::Distance(double x1, double y1, double x2, double y2)
+bool _Matches(ImageManip::Types::Triangle t1,
+              ImageManip::Types::Triangle t2)
 {
-    return std::sqrt(std::pow(x1 - x2, 2) + std::pow(y1 - y2, 2));
-}
-
-
-ImageManip::Manip::Point Normalized(const ImageManip::Manip::Point vector)
-{
-    double vNorm = std::sqrt(std::pow(vector.x, 2) + std::pow(vector.y, 2));
-
-    return {vector.x / vNorm, vector.y / vNorm};
-}
-
-
-double ImageManip::Manip::NormalizedAngle(
-        const ImageManip::Manip::Point& vector1,
-        const ImageManip::Manip::Point& vector2
-)
-{
-//    double v1Length = Distance(p1.x, p1.y, p2.x, p2.y);
-//    double v2Length = Distance(p1.x, p1.y, p3.x, p3.y);
-
-    double v1Norm = std::sqrt(std::pow(vector1.x, 2) + std::pow(vector1.y, 2));
-    double v2Norm = std::sqrt(std::pow(vector2.x, 2) + std::pow(vector2.y, 2));
-
-    double scalarProduct = vector1.x * vector2.x + vector1.y * vector2.y;
-
-    double p = scalarProduct / (v1Norm * v2Norm);
-
-    double ac = std::acos(p);
-//    return std::acos((v1.x * v2.x) + (v1.y * v2.y));
-    return ac;
-}
-
-
-double ImageManip::Manip::Angle(
-        const ImageManip::Manip::Point& vector1,
-        const ImageManip::Manip::Point& vector2
-)
-{
-//    double v1Length = Distance(p1.x, p1.y, p2.x, p2.y);
-//    double v2Length = Distance(p1.x, p1.y, p3.x, p3.y);
-
-    double v1Norm = std::sqrt(std::pow(vector1.x, 2) + std::pow(vector1.y, 2));
-    double v2Norm = std::sqrt(std::pow(vector2.x, 2) + std::pow(vector2.y, 2));
-
-    double scalarProduct = vector1.x * vector2.x + vector1.y * vector2.y;
-
-    double p = scalarProduct / (v1Norm * v2Norm);
-
-    double ac = std::acos(p);
-//    return std::acos((v1.x * v2.x) + (v1.y * v2.y));
-    return ac;
-}
-
-
-#define PI 3.14159265358979323846
-
-
-double ImageManip::Manip::TrigoAngle(
-        const Point& vector
-)
-{
-    double angle = Angle({1, 0}, vector);
-
-    if (vector.y < 0)
-    {
-        angle = (2 * PI) - angle;
-    }
-
-    return angle;
-}
-
-
-double ImageManip::Manip::TrigoAngle(
-        const Point& root, const Point& vector
-)
-{
-    double angle = Angle(root + Point(1, 0), vector);
-
-    if (vector.y < root.y)
-    {
-        angle = (2 * PI) - angle;
-    }
-
-    double deg = angle * 57.2958;
-    return angle;
-}
-
-
-double PointRootAngle(const ImageManip::Manip::Point& root,
-                      const ImageManip::Manip::Point& point)
-{
-    ImageManip::Manip::Point vector = point - root;
-    ImageManip::Manip::Point refVec = (root + ImageManip::Manip::Point(1, 0)) - root;
-
-    double angle = Angle(refVec, vector);
-    if (point.y < root.y)
-    {
-        angle = 2 * PI - angle;
-    }
-
-    return angle;
-}
-
-
-bool _Matches(ImageManip::Manip::Triangle t1,
-              ImageManip::Manip::Triangle t2)
-{
-    for (const ImageManip::Manip::Segment& seg : t1.Segments())
+    for (const ImageManip::Types::Segment& seg : t1.Segments())
     {
         if (t2.HasSegment(seg))
             return true;
@@ -578,8 +366,8 @@ bool _Matches(ImageManip::Manip::Triangle t1,
 }
 
 
-bool _PointMatch(ImageManip::Manip::Triangle t1,
-                 ImageManip::Manip::Triangle t2)
+bool _PointMatch(ImageManip::Types::Triangle t1,
+                 ImageManip::Types::Triangle t2)
 {
     auto t1Points = t1.Points();
     auto t2Points = t2.Points();
@@ -595,48 +383,21 @@ bool _PointMatch(ImageManip::Manip::Triangle t1,
 }
 
 
-bool ImageManip::Manip::IsInsideCircle(const Circle& circle, const ImageManip::Manip::Point& p)
+
+
+std::vector<ImageManip::Types::Triangle> AddPoint(
+        ImageManip::Types::Point point,
+        std::vector<ImageManip::Types::Triangle> triangles)
 {
-    return Distance(p.x, p.y, circle.x, circle.y) <= circle.radius;
-}
+    std::vector<ImageManip::Types::Triangle> res;
+    std::vector<ImageManip::Types::Segment> edges;
 
-
-ImageManip::Manip::Circle ImageManip::Manip::CircumCircle(
-        const ImageManip::Manip::Point& pa,
-        const ImageManip::Manip::Point& pb,
-        const ImageManip::Manip::Point& pc)
-{
-    double D = 2 * (pa.x * (pb.y -  pc.y) + pb.x * (pc.y - pa.y) + pc.x * (pa.y - pb.y));
-
-    double centerX = 1 / D * (
-            (std::pow(pa.x, 2) + std::pow(pa.y, 2)) * (pb.y - pc.y) +
-            (std::pow(pb.x, 2) + std::pow(pb.y, 2)) * (pc.y - pa.y) +
-            (std::pow(pc.x, 2) + std::pow(pc.y, 2)) * (pa.y - pb.y)
-    );
-
-    double centerY = 1 / D * (
-            (std::pow(pa.x, 2) + std::pow(pa.y, 2)) * (pc.x - pb.x) +
-            (std::pow(pb.x, 2) + std::pow(pb.y, 2)) * (pa.x - pc.x) +
-            (std::pow(pc.x, 2) + std::pow(pc.y, 2)) * (pb.x - pa.x)
-    );
-
-    double radius = Distance(pa.x, pa.y, centerX,centerY);
-
-    return {centerX, centerY, radius};
-}
-
-
-std::vector<ImageManip::Manip::Triangle> AddPoint(ImageManip::Manip::Point point, std::vector<ImageManip::Manip::Triangle> triangles)
-{
-    std::vector<ImageManip::Manip::Triangle> res;
-    std::vector<ImageManip::Manip::Segment> edges;
-
-    for (const ImageManip::Manip::Triangle& triangle : triangles)
+    for (const ImageManip::Types::Triangle& triangle : triangles)
     {
         auto circum = CircumCircle(triangle.a, triangle.b, triangle.c);
         if  (IsInsideCircle(circum, point))
         {
-            for (const ImageManip::Manip::Segment& edge : triangle.Segments())
+            for (const ImageManip::Types::Segment& edge : triangle.Segments())
             {
                 edges.push_back(edge);
             }
@@ -647,7 +408,7 @@ std::vector<ImageManip::Manip::Triangle> AddPoint(ImageManip::Manip::Point point
         }
     }
 
-    std::vector<ImageManip::Manip::Segment> polygon;
+    std::vector<ImageManip::Types::Segment> polygon;
     for (const auto& edge : edges)
     {
         if (std::count(edges.begin(), edges.end(), edge) > 1)
@@ -659,18 +420,19 @@ std::vector<ImageManip::Manip::Triangle> AddPoint(ImageManip::Manip::Point point
 }
 
 
-std::vector<ImageManip::Manip::Triangle> ImageManip::Manip::DelaunayTriangulation(
-        const std::vector<Point>& points, const Triangle& superTriangle
+std::vector<ImageManip::Types::Triangle> ImageManip::Manip::DelaunayTriangulation(
+        const std::vector<Types::Point>& points,
+        const Types::Triangle& superTriangle
 )
 {
-    std::vector<Triangle> triangles = {superTriangle};
+    std::vector<Types::Triangle> triangles = {superTriangle};
 
     for (const auto& point : points)
     {
         triangles = AddPoint(point, triangles);
     }
 
-    std::vector<Triangle> res;
+    std::vector<Types::Triangle> res;
     for (const auto& t : triangles)
     {
         if (_Matches(t, superTriangle))
@@ -697,9 +459,9 @@ QImage ImageManip::Manip::TriangleCirconscrit(int imageWidth, int imageHeight, i
 
     std::uniform_real_distribution<double> pointDist(0, 1);
 
-    Point pa = {pointDist(gen) * imageWidth, pointDist(gen) * imageHeight};
-    Point pb = {pointDist(gen) * imageWidth, pointDist(gen) * imageHeight};
-    Point pc = {pointDist(gen) * imageWidth, pointDist(gen) * imageHeight};
+    Types::Point pa = {pointDist(gen) * imageWidth, pointDist(gen) * imageHeight};
+    Types::Point pb = {pointDist(gen) * imageWidth, pointDist(gen) * imageHeight};
+    Types::Point pc = {pointDist(gen) * imageWidth, pointDist(gen) * imageHeight};
 //
 //    double D = 2 * (pa.x * (pb.y -  pc.y) + pb.x * (pc.y - pa.y) + pc.x * (pa.y - pb.y));
 //
@@ -764,10 +526,10 @@ QImage  ImageManip::Manip::DelaunayNoise(
     QPainter painter(&res);
     painter.setRenderHint(QPainter::Antialiasing);
 
-    Triangle superTriangle = {
-            Point(-imageWidth * 4, -imageHeight),
-            Point(imageWidth * 5, -imageHeight),
-            Point(imageWidth / 2, 8 * imageHeight)
+    Types::Triangle superTriangle = {
+            Types::Point(-imageWidth * 4, -imageHeight),
+            Types::Point(imageWidth * 5, -imageHeight),
+            Types::Point(imageWidth / 2, 8 * imageHeight)
     };
 
     double x = 0;
@@ -783,7 +545,7 @@ QImage  ImageManip::Manip::DelaunayNoise(
     auto points = grid.MapPoints(x, y, cellWidth, cellHeight);
 
     auto triangles = DelaunayTriangulation(points, superTriangle);
-    for (const Triangle& triangle : triangles)
+    for (const Types::Triangle& triangle : triangles)
     {
         QPoint pnts[] = {QPoint(triangle.a.x, triangle.a.y),
                          QPoint(triangle.b.x, triangle.b.y),
@@ -838,110 +600,7 @@ QImage  ImageManip::Manip::DelaunayNoise(
 }
 
 
-ImageManip::Manip::Point ImageManip::Manip::AveragePoint(
-        std::vector<ImageManip::Manip::Point> points)
-{
-    double sumX = 0;
-    double sumY = 0;
-    for (const Point& p : points)
-    {
-        sumX += p.x;
-        sumY += p.y;
-    }
 
-    return {sumX / static_cast<double>(points.size()),
-            sumY / static_cast<double>(points.size())};
-}
-
-
-size_t HashPolygon(std::vector<ImageManip::Manip::Point> polygon)
-{
-    double sumX = 0;
-    double sumY = 0;
-    for (const auto& point : polygon)
-    {
-        sumX += point.x;
-        sumY += point.y;
-    }
-
-    ImageManip::Manip::Point center(
-            sumX / (double)polygon.size(),
-            sumY / (double)polygon.size()
-            );
-
-    size_t hash = 0;
-    for (const auto& point : polygon)
-    {
-        ImageManip::Manip::Point vec = Normalized(point  - center);
-        hash_combine(hash, vec);
-    }
-
-    return hash;
-}
-
-
-void ImageManip::Manip::Polygon::Sort()
-{
-    auto cmp = [this](const Point& lhs, const Point& rhs)
-    {
-        return PointRootAngle(center, lhs) < PointRootAngle(center, rhs);
-    };
-
-    std::sort(points.begin(), points.end(), cmp);
-}
-
-
-void ImageManip::Manip::Polygon::ComputeCenter()
-{
-    center = AveragePoint(points);
-}
-
-
-size_t ImageManip::Manip::Polygon::Hash() const
-{
-    Polygon normalized = Normalized();
-
-    size_t hash = 0;
-    for (const Point& p : normalized.points)
-    {
-        hash_combine(hash, p.Round(3));
-    }
-
-    return hash;
-}
-
-
-ImageManip::Manip::Polygon ImageManip::Manip::Polygon::Normalized() const
-{
-    Polygon p;
-    p.center = {0, 0};
-
-    for (const auto& point : points)
-    {
-        p.points.push_back(point - center);
-    }
-
-    return p;
-}
-
-
-bool ImageManip::Manip::Polygon::operator==(const Polygon& other) const
-{
-    return (Hash() == other.Hash());
-}
-
-
-QPolygon ImageManip::Manip::Polygon::ToQPolygon() const
-{
-    QPolygon p;
-
-    for (const auto& pnt : points)
-    {
-        p.emplace_back(pnt.x, pnt.y);
-    }
-
-    return p;
-}
 
 
 
@@ -965,10 +624,10 @@ QImage ImageManip::Manip::VoronoiNoise(
     QPainter painter(&res);
     painter.setRenderHint(QPainter::Antialiasing);
 
-    Triangle superTriangle = {
-            Point(-imageWidth * 4, -imageHeight),
-            Point(imageWidth * 5, -imageHeight),
-            Point(imageWidth / 2, 8 * imageHeight)
+    Types::Triangle superTriangle = {
+            Types::Point(-imageWidth * 4, -imageHeight),
+            Types::Point(imageWidth * 5, -imageHeight),
+            Types::Point(imageWidth / 2, 8 * imageHeight)
     };
 
     double x = 0;
@@ -992,25 +651,25 @@ QImage ImageManip::Manip::VoronoiNoise(
     // order points using an angle between (1, 0) vector to
     // specified vector. It should order around the point...
     // I guess...
-    std::unordered_map<Point, std::vector<Triangle>> trianglePoints;
-    for (const Triangle& triangle : triangles)
+    std::unordered_map<Types::Point, std::vector<Types::Triangle>> trianglePoints;
+    for (const Types::Triangle& triangle : triangles)
     {
-        for (const Point& point : triangle.Points())
+        for (const Types::Point& point : triangle.Points())
         {
             auto roundPoint = point.Round(5);
             if (trianglePoints.find(roundPoint) == trianglePoints.end())
-                trianglePoints[roundPoint] = std::vector<Triangle>();
+                trianglePoints[roundPoint] = std::vector<Types::Triangle>();
             trianglePoints.at(roundPoint).push_back(triangle);
         }
     }
 
-    std::vector<Polygon> polygons;
+    std::vector<Types::Polygon> polygons;
     std::set<size_t> hashes;
     for (const auto& pointTriangle: trianglePoints)
     {
-        Polygon p;
+        Types::Polygon p;
 
-        for (const Triangle& t : pointTriangle.second)
+        for (const Types::Triangle& t : pointTriangle.second)
         {
             auto circum = CircumCircle(t.a, t.b, t.c);
             p.points.emplace_back(circum.x, circum.y);
@@ -1027,7 +686,7 @@ QImage ImageManip::Manip::VoronoiNoise(
 
     std::unordered_map<size_t, QColor> polygonColors;
 
-    for (const Polygon& polygon : polygons)
+    for (const Types::Polygon& polygon : polygons)
     {
         if (polygon.points.size() < 3)
             continue;
@@ -1135,7 +794,7 @@ QImage ImageManip::Manip::CircallyOrdered(
 
     std::uniform_real_distribution<double> dist(0, 1);
 
-    std::vector<Point> points;
+    std::vector<Types::Point> points;
 
     double sumX = 0;
     double sumY = 0;
@@ -1149,7 +808,7 @@ QImage ImageManip::Manip::CircallyOrdered(
         sumY += y;
     }
 
-    Point center(sumX / frequency, sumY / frequency);
+    Types::Point center(sumX / frequency, sumY / frequency);
 
     QImage res(imageWidth + 550, imageHeight + 550, QImage::Format_RGBA64);
     res.fill(Qt::black);
@@ -1158,30 +817,30 @@ QImage ImageManip::Manip::CircallyOrdered(
 
     struct Compare
     {
-        Point p;
+        Types::Point p;
 
-        Compare(Point center)
+        Compare(Types::Point center)
         {
             p = center;
         }
 
-        bool operator()(const Point& lhs, const Point& rhs) const
+        bool operator()(const Types::Point& lhs, const Types::Point& rhs) const
         {
-            Point vec1 = lhs - p;
-            Point vec2 = rhs - p;
+            Types::Point vec1 = lhs - p;
+            Types::Point vec2 = rhs - p;
 
-            Point refVec = p + Point(1, 0);
+            Types::Point refVec = p + Types::Point(1, 0);
 
             double angle1 = Angle(refVec, vec1);
             if (lhs.y < p.y)
             {
-                angle1 = 2 * PI - angle1;
+                angle1 = 2 * Types::PI() - angle1;
             }
 
             double angle2 = Angle(refVec, vec2);
             if (rhs.y < p.y)
             {
-                angle2 = 2 * PI - angle2;
+                angle2 = 2 * Types::PI() - angle2;
             }
 
             return angle1 > angle2;
@@ -1209,12 +868,6 @@ QImage ImageManip::Manip::CircallyOrdered(
         painter.setPen(Qt::NoPen);
         painter.drawEllipse(QPoint(p.x, p.y), 5, 5);
 
-        painter.setPen(Qt::green);
-        std::string text = std::to_string(pi);
-
-        text += " (" + std::to_string(p.x) + ", " + std::to_string(p.y) + "): " + std::to_string(PointRootAngle(center, p));
-        painter.setFont(QFont("sans", 20));
-        painter.drawText(p.x + 5, p.y + 5, text.c_str());
         pi++;
     }
 
