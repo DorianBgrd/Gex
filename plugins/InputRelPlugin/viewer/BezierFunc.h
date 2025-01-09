@@ -1,102 +1,136 @@
 #ifndef GEX_UI_BEZIERFUNC_H
 #define GEX_UI_BEZIERFUNC_H
 
-#include "plugins/InputRel/BezierFunc.h"
+
+#include "plugins/InputRelPlugin/BezierFunc.h"
+#include "plugins/InputRelPlugin/Nodes.h"
+#include "Gex/include/Gex.h"
 
 #include "plugins/export.h"
 
 #include "UiTsys/include/uitsys.h"
 
-#include "ui/include/BaseGraph.h"
-
-
-#include <QPainterPath>
-
 #include <QWidget>
 #include <QGraphicsView>
 #include <QGraphicsScene>
-#include <QGraphicsItem>
 #include <QGraphicsEllipseItem>
 #include <QGraphicsLineItem>
 
+#include "FuncViewer.h"
 
 namespace Gex::InputRel
 {
-    typedef QGraphicsEllipseItem PointItem;
+    class BezierFuncHandle;
 
-    class Handle: public QGraphicsPolygonItem
+
+    class BezierHandle: public QGraphicsObject
     {
     public:
-        Handle(QGraphicsItem* item=nullptr);
-    };
+        enum Side
+        {
+            Left,
+            Right
+        };
 
-    class UIBezierPoint: public QGraphicsEllipseItem
-    {
-        Handle* left;
-        Handle* right;
+    private:
+        bool init = false;
+        Side side;
+        BezierFuncHandle* point;
+        BezierPoint::BezierHandleWk handle;
+
     public:
-        UIBezierPoint(QGraphicsItem* parent=nullptr);
+        BezierHandle(BezierPoint::BezierHandleWk h, Side side,
+                     BezierFuncHandle* parent);
+
+        QVariant itemChange(
+                GraphicsItemChange change,
+                const QVariant &value)
+                override;
 
         void paint(QPainter *painter, const QStyleOptionGraphicsItem *option,
                    QWidget *widget = nullptr) override;
+
+        QRectF boundingRect() const override;
     };
 
 
-    class Scene: public QGraphicsScene
+    class BezierPointRepr: public QGraphicsEllipseItem
     {
     public:
-        Scene(QObject* parent=nullptr);
+        using QGraphicsEllipseItem::QGraphicsEllipseItem;
+
+        QVariant itemChange(
+                GraphicsItemChange change,
+                const QVariant &value)
+                override;
     };
 
 
-    class View: public Gex::Ui::BaseGraphView
+    class BezierFuncHandle: public FuncViewerHandle
     {
+        BezierHandle* leftHandle;
+        BezierHandle* rightHandle;
+        BezierPointRepr* repr;
+        BezierPointWk bezierPnt;
+
     public:
-        View(QWidget* parent=nullptr);
-    };
+        BezierFuncHandle(const CurvePointWk& point,
+                         const FuncDelegatePtr& delegate,
+                         FuncScene* scene);
 
-/*
-    struct Plugin_API BezierFuncWidget: public UiTSys::TypedWidget
-    {
-        BezierGraph* graphView = nullptr;
+        QRectF boundingRect() const override;
 
-        virtual QWidget* CreateTypedWidget() override;
+        void paintHandle(
+                QPainter *painter,
+                const QStyleOptionGraphicsItem *option,
+                QWidget *widget=nullptr)
+                override;
 
-        virtual void SetValue(std::any value) override;
+        BezierPointWk BezierPoint() const;
 
-        virtual std::any GetValue() const override;
-
-        virtual void ShowConnected(bool connected) override;
-
-        virtual void ShowDisabled(bool disabled) override;
-    };
-
-
-    class Plugin_API BezierFuncWidgetCreator: public UiTSys::TypedWidgetCreator
-    {
-        UiTSys::TypedWidget* CreateWidget() const
-        {
-            return new BezierFuncWidget();
-        }
+        QVariant itemChange(GraphicsItemChange change,
+                            const QVariant &value)
+                            override;
     };
 
 
-    class Plugin_API BezierFuncInitWidget: public UiTSys::TypedInitWidget
+    class BezierFuncDelegate: public FuncViewerDelegate
     {
-        BezierGraph* graphView;
+    private:
+        BezierFuncPtr func;
+
     public:
+        void AddPoint(double x, double y) override;
 
-        virtual QWidget* CreateInitWidget() override;
+        void InitFunction(const std::any& f) override;
 
-        virtual std::any CreateValue() override;
+        PointsSet GetPoints() const override;
+
+        FuncViewerHandle* CreateHandle(
+                const CurvePointWk& p,
+                const FuncDelegatePtr& d,
+                FuncScene* scene)
+        override;
+
+        bool EditPoint(
+                const CurvePointWk& p,
+                const QPointF& previous,
+                const QPointF& next,
+                int decimals
+        ) override;
+
+//        void EditBezierPoint()
+
+        void DrawCurve(
+                QPainterPath& path,
+                FuncScene* scene,
+                int decimals
+        ) const override;
     };
 
 
-    class Plugin_API BezierFuncInitWidgetCreator: public UiTSys::TypedInitWidgetCreator
-    {
-        UiTSys::TypedInitWidget* CreateWidget() const override;
-    };
-    */
+    struct BezierFuncDelegateCreator: public TypedDelegateCreator<BezierFuncDelegate> {};
+
 }
 
 

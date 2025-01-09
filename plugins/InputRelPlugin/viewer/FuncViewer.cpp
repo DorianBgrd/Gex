@@ -110,11 +110,18 @@ QVariant Gex::InputRel::FuncViewerHandle::itemChange(
                     );
         }
 
-        scene->OnSelectedPointsModified();
+        OnModified();
     }
 
     return value;
 }
+
+
+void Gex::InputRel::FuncViewerHandle::OnModified()
+{
+    scene->OnSelectedPointsModified();
+}
+
 
 void Gex::InputRel::FuncViewerHandle::paintCoordinates(
         QPainter* painter)
@@ -258,6 +265,7 @@ Gex::InputRel::FuncDelegateCreatorPtr Gex::InputRel::FuncDelegateFactory::GetFac
     if (!instance)
         instance = new FuncDelegateFactory();
 
+    auto del = instance->delegates;
     auto iter = instance->delegates.find(hash);
     if (iter == instance->delegates.end())
         return {};

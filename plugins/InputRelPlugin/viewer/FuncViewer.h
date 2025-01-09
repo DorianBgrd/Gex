@@ -172,6 +172,7 @@ namespace Gex::InputRel
                                  const QStyleOptionGraphicsItem *option,
                                  QWidget *widget=nullptr) = 0;
 
+        void OnModified();
 //        void mousePressEvent(QGraphicsSceneMouseEvent *event) override;
 //
 //        void mouseReleaseEvent(QGraphicsSceneMouseEvent *event) override;
@@ -208,7 +209,7 @@ namespace Gex::InputRel
 
         static FuncDelegateCreatorPtr GetFactory(size_t hash);
 
-        static FuncDelegateCreatorPtr GetFactory(std::any func)
+        static FuncDelegateCreatorPtr GetFactory(const std::any& func)
         {
             return GetFactory(func.type().hash_code());
         }

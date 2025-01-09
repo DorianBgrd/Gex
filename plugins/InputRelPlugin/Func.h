@@ -244,6 +244,7 @@ namespace Gex::InputRel
                            const override;
     };
 
+
     typedef std::shared_ptr<LinearFunc> LinearFuncPtr;
 
 

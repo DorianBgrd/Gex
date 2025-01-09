@@ -21,8 +21,8 @@ add_library(
         Func.cpp
         Nodes.h
         Nodes.cpp
-#        BezierFunc.h
-#        BezierFunc.cpp
+        BezierFunc.h
+        BezierFunc.cpp
 
         Plugin.cpp
 
@@ -34,8 +34,8 @@ add_library(
 
         viewer/FuncViewer.h
         viewer/FuncViewer.cpp
-#        ui/BezierFunc.h
-#        ui/BezierFunc.cpp
+        viewer/BezierFunc.h
+        viewer/BezierFunc.cpp
         viewer/Viewer.h
         viewer/Viewer.cpp)
 

@@ -18,11 +18,11 @@ extern EXPORT RegisterPlugin(Gex::PluginLoader* loader)
     loader->RegisterTypeHandler<Gex::InputRel::LinearFuncPtr,
         Gex::InputRel::LinearFuncHandler>();
 
-//    loader->RegisterTypeHandler<Gex::InputRel::BezierFuncPtr,
-//            Gex::InputRel::BezierFuncHandler>();
+    loader->RegisterTypeHandler<Gex::InputRel::BezierFuncPtr,
+            Gex::InputRel::BezierFuncHandler>();
 
     loader->RegisterNode<Gex::InputRel::LinearRelBuilder>("InputRel/Linear");
 
-//    loader->RegisterNode<Gex::InputRel::BezierRelBuilder>("InputRel/Bezier");
+    loader->RegisterNode<Gex::InputRel::BezierRelBuilder>("InputRel/Bezier");
 }
 
