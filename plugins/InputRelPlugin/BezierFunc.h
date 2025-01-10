@@ -5,7 +5,7 @@
 
 namespace Gex::InputRel
 {
-    class BezierPoint: public CurvePoint
+    class Plugin_API BezierPoint: public CurvePoint
     {
     public:
         struct BezierHandle
@@ -43,6 +43,10 @@ namespace Gex::InputRel
         BezierHandleWk LeftHandle() const;
 
         BezierHandleWk RightHandle() const;
+
+        void Serialize(rapidjson::Value& value, rapidjson::Document& json) const override;
+
+        void Deserialize(rapidjson::Value& value) override;
     };
 
 
@@ -50,7 +54,7 @@ namespace Gex::InputRel
     typedef Gex::BaseWkPtr<BezierPoint> BezierPointWk;
 
 
-    class BezierFunc: public Func
+    class Plugin_API BezierFunc: public Func
     {
     public:
         enum InterpMethod

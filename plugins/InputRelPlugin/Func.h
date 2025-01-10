@@ -1,6 +1,8 @@
 #ifndef GEX_FUNC_H
 #define GEX_FUNC_H
 
+#include "plugins/export.h"
+
 #include "Tsys/include/tsys.h"
 #include "rapidjson/document.h"
 #include "Gex/include/ptrs.h"
@@ -11,7 +13,7 @@ namespace Gex::InputRel
     class PointDelta;
     class Func;
 
-    class CurvePoint: public std::enable_shared_from_this<CurvePoint>
+    class Plugin_API CurvePoint: public std::enable_shared_from_this<CurvePoint>
     {
         double x = 0;
         double y = 0;
@@ -46,9 +48,9 @@ namespace Gex::InputRel
 
         CurvePoint operator +(const CurvePoint& other) const;
 
-        void Serialize(rapidjson::Value& value, rapidjson::Document& json) const;
+        virtual void Serialize(rapidjson::Value& value, rapidjson::Document& json) const;
 
-        void Deserialize(rapidjson::Value& value);
+        virtual void Deserialize(rapidjson::Value& value);
 
         virtual void Edit(const PointDelta* delta);
 
@@ -61,7 +63,7 @@ namespace Gex::InputRel
     typedef Gex::BaseWkPtr<CurvePoint> CurvePointWk;
 
 
-    struct PointCmp
+    struct Plugin_API PointCmp
     {
         bool operator()(
                 const CurvePointPtr& l,
@@ -73,7 +75,7 @@ namespace Gex::InputRel
     typedef std::set<CurvePointPtr, PointCmp> PointsSet;
 
 
-    class PointDelta
+    class Plugin_API PointDelta
     {
         double x = 0;
         double y = 0;
@@ -95,7 +97,7 @@ namespace Gex::InputRel
     };
 
 
-    class Func
+    class Plugin_API Func
     {
         friend CurvePoint;
         friend PointDelta;
@@ -237,7 +239,7 @@ namespace Gex::InputRel
     };
 
 
-    class LinearFunc: public Func
+    class Plugin_API LinearFunc: public Func
     {
         double Interpolate(double x, const CurvePointPtr& previous,
                            const CurvePointPtr& next)

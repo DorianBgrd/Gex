@@ -39,6 +39,60 @@ Gex::InputRel::BezierPoint::BezierHandleWk Gex::InputRel::BezierPoint::RightHand
 }
 
 
+#define LHX "lhx"
+#define LHY "lhy"
+#define RHX "rhx"
+#define RHY "rhy"
+
+
+void Gex::InputRel::BezierPoint::Serialize(
+        rapidjson::Value& value,
+        rapidjson::Document& json)
+        const
+{
+    CurvePoint::Serialize(value, json);
+
+    rapidjson::Value& lhx = rapidjson::Value().SetDouble(LeftHandle()->hx);
+    value.AddMember(LHX, lhx, json.GetAllocator());
+
+    rapidjson::Value& lhy = rapidjson::Value().SetDouble(LeftHandle()->hy);
+    value.AddMember(LHY, lhy, json.GetAllocator());
+
+    rapidjson::Value& rhx = rapidjson::Value().SetDouble(RightHandle()->hx);
+    value.AddMember(RHX, rhx, json.GetAllocator());
+
+    rapidjson::Value& rhy = rapidjson::Value().SetDouble(RightHandle()->hy);
+    value.AddMember(RHY, rhy, json.GetAllocator());
+}
+
+
+void Gex::InputRel::BezierPoint::Deserialize(
+        rapidjson::Value& value)
+{
+    CurvePoint::Deserialize(value);
+
+    if (value.HasMember(LHX))
+    {
+        LeftHandle()->hx = value[LHX].GetDouble();
+    }
+
+    if (value.HasMember(LHY))
+    {
+        LeftHandle()->hy = value[LHY].GetDouble();
+    }
+
+    if (value.HasMember(RHX))
+    {
+        RightHandle()->hx = value[RHX].GetDouble();
+    }
+
+    if (value.HasMember(RHY))
+    {
+        RightHandle()->hy = value[RHY].GetDouble();
+    }
+}
+
+
 Gex::InputRel::CurvePointPtr
 Gex::InputRel::BezierFunc::CreatePoint(double x, double y)
 {
