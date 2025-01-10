@@ -2,6 +2,8 @@
 #include "Func.h"
 #include "BezierFunc.h"
 
+#include "Tsys/include/defaultTypes.h"
+
 
 std::string Gex::InputRel::LinearRel::Description() const
 {
@@ -48,6 +50,17 @@ void Gex::InputRel::BezierRel::InitAttributes()
 //    CreateAttributeFromValue("func", new LinearFunc());
     CreateAttribute<BezierFuncPtr>("Func");
 
+    TSys::Enum methods({
+           {0, "CubicRoots"},
+           {1, "Iterative"}
+        }
+    );
+
+    methods.SetCurrentIndex(1);
+
+    CreateAttribute<TSys::Enum>("Method", AttrValueType::Single,
+                                AttrType::Input)->SetDefaultValue(methods);
+
     CreateAttribute<double>("Output", AttrValueType::Single,
                             AttrType::Output);
 }
@@ -57,6 +70,9 @@ bool Gex::InputRel::BezierRel::Evaluate(NodeAttributeData &context,
                                         NodeProfiler &profiler)
 {
     auto func = context.GetAttribute("Func").GetValue<BezierFuncPtr>();
+
+    auto method = context.GetAttribute("Method").GetValue<TSys::Enum>();
+    func->SetMethod(BezierFunc::InterpMethod(method.CurrentIndex()));
 
     auto x = context.GetAttribute("Input").GetValue<double>();
     context.GetAttribute("Output").SetValue(func->GetValue(x));

@@ -212,9 +212,9 @@ Gex::InputRel::CurvePointPtr Gex::InputRel::Func::PreviousPoint(double x) const
 {
     PointSearch search(x);
 
-    auto iter = std::find_if(points.begin(), points.end(), search);
+    auto iter = std::find_if(points.rbegin(), points.rend(), search);
 
-    if (iter == points.end())
+    if (iter == points.rend())
     {
         return *(points.begin());
     }
@@ -226,9 +226,9 @@ Gex::InputRel::CurvePointPtr Gex::InputRel::Func::NextPoint(double x) const
 {
     PointSearch search(x, true);
 
-    auto iter = std::find_if(points.rbegin(), points.rend(), search);
+    auto iter = std::find_if(points.begin(), points.end(), search);
 
-    if (iter == points.rend())
+    if (iter == points.end())
     {
         return *(--iter);
     }

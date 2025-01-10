@@ -52,8 +52,45 @@ namespace Gex::InputRel
 
     class BezierFunc: public Func
     {
+    public:
+        enum InterpMethod
+        {
+            CubicRoots = 0,
+            Iterative = 1
+        };
+
+    private:
+        InterpMethod method = InterpMethod::CubicRoots;
+
         CurvePointPtr CreatePoint(double x, double y) override;
 
+    public:
+        InterpMethod Method() const;
+
+        void SetMethod(InterpMethod method);
+
+        double Bezier(double a, double b,
+                      double c, double d,
+                      double t) const;
+
+        double BezierX(BezierPointPtr previous,
+                       BezierPointPtr next,
+                       double t) const;
+
+        double BezierY(BezierPointPtr previous,
+                       BezierPointPtr next,
+                       double t) const;
+
+    private:
+        double TFromX(double a, double b,
+                      double c, double d,
+                      double x) const;
+
+        double TIterative(double a, double b,
+                          double c, double d,
+                          double x,
+                          int precision=10) const;
+    private:
         double Interpolate(double x, const CurvePointPtr& previous,
                            const CurvePointPtr& next)
                            const override;

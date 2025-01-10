@@ -356,39 +356,40 @@ void Gex::InputRel::BezierFuncDelegate::DrawCurve(
         auto rightHandle = previousPoint->RightHandle();
         auto leftHandle = bezierPoint->LeftHandle();
 
-        QPointF p1 = {ToViewX(previousPoint->GetX(), decimals),
-                      ToViewY(previousPoint->GetY(), decimals)};
-
-        QPointF p2 = {ToViewX(previousPoint->GetX() + rightHandle->hx, decimals),
-                      ToViewY(previousPoint->GetY() + rightHandle->hy, decimals)};
-
-        QPointF p3 = {ToViewX(bezierPoint->GetX() + leftHandle->hx, decimals),
-                      ToViewY(bezierPoint->GetY() + leftHandle->hy, decimals)};
-
-        path.addRect(p2.x() - ToViewX(2, decimals),
-                     p2.y() + ToViewY(2, decimals),
-                     ToViewLength(4, decimals),
-                     ToViewLength(4, decimals));
-
-        path.addRect(p3.x() - ToViewX(2, decimals),
-                     p3.y() + ToViewY(2, decimals),
-                     ToViewLength(4, decimals),
-                     ToViewLength(4, decimals));
-
-        QPointF p4 = {ToViewX(bezierPoint->GetX(), decimals),
-                      ToViewY(bezierPoint->GetY(), decimals)};
-
         path.moveTo(ToViewX(previousPoint->GetX(), decimals),
                     ToViewY(previousPoint->GetY(), decimals));
 
+        double bx = previousPoint->GetX() + rightHandle->hx;
+        if (bx > bezierPoint->GetX())
+            bx = bezierPoint->GetX();
+
+        double cx = bezierPoint->GetX() + leftHandle->hx;
+        if (cx < previousPoint->GetX())
+            cx = previousPoint->GetX();
+
         path.cubicTo(
-                ToViewX(previousPoint->GetX() + rightHandle->hx, decimals),
+                ToViewX(bx, decimals),
                 ToViewY(previousPoint->GetY() + rightHandle->hy, decimals),
-                ToViewX(bezierPoint->GetX() + leftHandle->hx, decimals),
+                ToViewX(cx, decimals),
                 ToViewY(bezierPoint->GetY() + leftHandle->hy, decimals),
                 ToViewX(bezierPoint->GetX(), decimals),
                 ToViewY(bezierPoint->GetY(), decimals)
                 );
+
+        for (double t = 0; t < 1; t += 0.1)
+        {
+            QPointF bp(
+                    ToViewX(func->BezierX(previousPoint, bezierPoint, t), decimals),
+                    ToViewY(func->BezierY(previousPoint, bezierPoint, t), decimals)
+            );
+
+            path.addRect(
+                    bp.x() - ToViewX(2, decimals),
+                    bp.y() + ToViewY(2, decimals),
+                    ToViewLength(4, decimals),
+                    ToViewLength(4, decimals)
+            );
+        }
 
         previousPoint = bezierPoint;
     }
