@@ -43,10 +43,15 @@ add_library(
         SHARED
 
         options.h
-        UsdPlugin.cpp
-        Ui/UsdUiPlugin.cpp
         Geom.h
-        Geom.cpp)
+        Geom.cpp
+
+        Ui/UsdUiPlugin.cpp
+#        Ui/Viewers.h
+#        Ui/Viewers.cpp
+
+        UsdPlugin.cpp
+)
 
 target_include_directories(
         UsdPlugin
