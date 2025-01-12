@@ -10,7 +10,7 @@ QLabel#defaultLabel {
 }
 
 QMainWindow::separator {
-    background: transparent;
+    background: #1C1C1C;
     width: 4px;
     height: 4px;
 }
@@ -331,6 +331,8 @@ QSpinBox {
 
 QDoubleSpinBox {
     color:#FFFFFF;
+    background-color: #000000;
+    border: none;
 }
 
 

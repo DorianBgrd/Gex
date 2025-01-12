@@ -590,6 +590,14 @@ namespace Gex
         };
 
 
+        class GEX_UI_API FrameEditDialog: public QDialog
+        {
+            FrameItem* item;
+        public:
+            FrameEditDialog(FrameItem* item, QWidget* widget=nullptr);
+        };
+
+
         class NodeGraphContext
         {
             QString name;

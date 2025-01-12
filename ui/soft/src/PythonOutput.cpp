@@ -49,9 +49,13 @@ boost::python::object PythonOutput_Write(boost::python::tuple args, boost::pytho
 
 void SoftPython::PythonOutput::RegisterPythonWrapper()
 {
+    if (pythonRegistered)
+        return;
+
     boost::python::class_<SoftPython::PythonOutput>(
             "PythonOutput", boost::python::no_init)
             .def("write", &SoftPython::PythonOutput::write)
             .staticmethod("write")
             ;
+    pythonRegistered = true;
 }

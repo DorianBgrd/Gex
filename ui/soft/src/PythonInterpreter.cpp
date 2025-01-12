@@ -166,10 +166,10 @@ void GexSoftware::PythonInterpreter::RunCurrentEditorCode()
 
 void GexSoftware::PythonInterpreter::Initialize()
 {
-    int res = PyRun_SimpleString("import SoftPython\n"
+    int res = PyRun_SimpleString("import SoftApi\n"
                                  "import sys\n"
-                                 "sys.stdout = SoftPython.PythonOutput\n"
-                                 "sys.stderr = SoftPython.PythonOutput"
+                                 "sys.stdout = SoftApi.PythonOutput\n"
+                                 "sys.stderr = SoftApi.PythonOutput"
                                  );
     if (res)
     {

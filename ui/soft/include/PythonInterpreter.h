@@ -8,6 +8,7 @@
 #include <QSyntaxHighlighter>
 
 #include "Python.h"
+#include "softApi.h"
 
 
 namespace GexSoftware
@@ -23,7 +24,7 @@ namespace GexSoftware
         void highlightBlock(const QString &text) override;
     };
 
-    class PythonInterpreter: public QDockWidget
+    class SOFT_API PythonInterpreter: public QDockWidget
     {
         QTextEdit* read;
         QTextEdit* write;

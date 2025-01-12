@@ -2267,6 +2267,31 @@ QVariant Gex::Ui::FrameItem::itemChange(
 }
 
 
+Gex::Ui::FrameEditDialog::FrameEditDialog(
+        FrameItem* item_, QWidget* widget):
+        QDialog(widget)
+{
+    item = item_;
+
+    auto* layout = new QGridLayout();
+    setLayout(layout);
+
+    auto* textLabel = new QLabel(this);
+    textLabel->setText("Text color");
+    layout->addWidget(textLabel, 1, 0, 1, 1);
+
+    auto* textButton = new QPushButton(this);
+    layout->addWidget(textButton, 1, 0, 1, 1);
+
+    auto* backgroundLabel = new QLabel(this);
+    backgroundLabel->setText("Background color");
+    layout->addWidget(backgroundLabel, 0, 0, 1, 1);
+
+    auto* backgroundButton = new QPushButton(this);
+    layout->addWidget(backgroundButton, 0, 1, 1 ,1);
+}
+
+
 Gex::Ui::NodeGraphContext::NodeGraphContext(const QString& name_,
                                             Gex::CompoundNodePtr node_)
 {

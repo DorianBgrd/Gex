@@ -9,6 +9,9 @@
 #include "Gex/include/Gex.h"
 
 
+#include "ui/soft/include/AppContext.h"
+
+
 Gex::Editor::MainWindow::MainWindow(Gex::CompoundNodePtr graph_, std::string file,
                                     QWidget* parent): QMainWindow(parent)
 {
@@ -78,6 +81,8 @@ Gex::Editor::MainWindow::MainWindow(Gex::CompoundNodePtr graph_, std::string fil
 
     QObject::connect(redo, &QShortcut::activated,
                      this, &MainWindow::Redo);
+
+    SoftApi::AppContext::SetMainWindow(this);
 }
 
 
@@ -257,4 +262,10 @@ void Gex::Editor::MainWindow::Redo() const
                 Gex::Status::Warning,
                 "Redo stack is empty."));
     }
+}
+
+
+Gex::CompoundNodePtr Gex::Editor::MainWindow::CurrentNode() const
+{
+    return graph;
 }

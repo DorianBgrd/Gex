@@ -6,6 +6,11 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 project(Gex_Soft CXX)
 
 
+set(CMAKE_AUTOUIC ON)
+set(CMAKE_AUTOMOC ON)
+set(CMAKE_AUTORCC ON)
+
+
 # ------------------------------------------
 # First build an api as part of a bundle
 # for python compatibility. A first library
@@ -17,15 +22,34 @@ add_library(
         SHARED
         include/PythonOutput.h
         src/PythonOutput.cpp
+        include/AppContext.h
+        src/AppContext.cpp
+        include/MainWindow.h
+        src/MainWindow.cpp
+        include/PythonInterpreter.h
+        src/PythonInterpreter.cpp
 )
 
 target_include_directories(
         SoftApi
         PUBLIC
+        $ENV{RAPIDJSON_DIR}
+        $ENV{TSYS_DIR}
+        $ENV{UI_RES_DIR}
+        $ENV{UI_TSYS_DIR}
+        $ENV{QT_AWESOME_DIR}
+        $ENV{ARGPARSE_DIR}
+
         ${CMAKE_SOURCE_DIR}
         ${CMAKE_CURRENT_SOURCE_DIR}
+
         ${Boost_INCLUDE_DIRS}
         ${Python_INCLUDE_DIRS}
+        ${Qt6Widgets_INCLUDE_DIRS}
+        ${Qt6Core_INCLUDE_DIRS}
+        ${Qt6Gui_INCLUDE_DIRS}
+        ${Qt6Svg_INCLUDE_DIRS}
+        ${Qt6SvgWidgets_INCLUDE_DIRS}
 )
 
 target_link_directories(
@@ -38,8 +62,17 @@ target_link_directories(
 target_link_libraries(
         SoftApi
         PUBLIC
+        Gex
+        Gex_ui
+
         ${Boost_LIBRARIES}
         ${Python_LIBRARIES}
+
+        Qt6::Widgets
+        Qt6::Core
+        Qt6::Gui
+        Qt6::Svg
+        Qt6::SvgWidgets
 )
 
 target_compile_definitions(
@@ -58,12 +91,33 @@ add_library(
         src/module.cpp
 )
 
+target_compile_definitions(
+        SoftPython
+        PUBLIC
+        -DSOFT_API_IMPORT
+)
+
 target_include_directories(
         SoftPython
         PUBLIC
+        $ENV{RAPIDJSON_DIR}
+        $ENV{TSYS_DIR}
+        $ENV{UI_RES_DIR}
+        $ENV{UI_TSYS_DIR}
+        $ENV{QT_AWESOME_DIR}
+        $ENV{ARGPARSE_DIR}
+
+        ${CMAKE_SOURCE_DIR}/ui
+        ${CMAKE_SOURCE_DIR}/ui/soft
         ${CMAKE_CURRENT_SOURCE_DIR}
+
         ${Boost_INCLUDE_DIRS}
         ${Python_INCLUDE_DIRS}
+        ${Qt6Widgets_INCLUDE_DIRS}
+        ${Qt6Core_INCLUDE_DIRS}
+        ${Qt6Gui_INCLUDE_DIRS}
+        ${Qt6Svg_INCLUDE_DIRS}
+        ${Qt6SvgWidgets_INCLUDE_DIRS}
 )
 
 target_link_directories(
@@ -71,17 +125,25 @@ target_link_directories(
         PUBLIC
         ${Boost_LIBRARY_DIRS}
         ${Python_LIBRARY_DIRS}
-        ${CMAKE_SOURCE_DIR}
-        ${CMAKE_SOURCE_DIR}/ui
+#        ${CMAKE_SOURCE_DIR}
+#        ${CMAKE_SOURCE_DIR}/ui
         ${CMAKE_SOURCE_DIR}/ui/soft
 )
 
 target_link_libraries(
         SoftPython
         PUBLIC
-        ${Boost_LIBRARIES}
-        ${Python_LIBRARIES}
+
+#        ${Boost_LIBRARIES}
+#        ${Python_LIBRARIES}
+
         SoftApi
+
+#        Qt6::Widgets
+#        Qt6::Core
+#        Qt6::Gui
+#        Qt6::Svg
+#        Qt6::SvgWidgets
 )
 
 
@@ -92,10 +154,10 @@ target_link_libraries(
 add_executable(
         Gex_Software
         main.cpp
-        include/MainWindow.h
-        src/MainWindow.cpp
-        include/PythonInterpreter.h
-        src/PythonInterpreter.cpp
+#        include/MainWindow.h
+#        src/MainWindow.cpp
+#        include/PythonInterpreter.h
+#        src/PythonInterpreter.cpp
 )
 
 
@@ -160,11 +222,11 @@ target_link_libraries(
         ${SoftApi_LIBRARY}
 )
 
-add_custom_command(
-        TARGET Gex_Software POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy
-        ${CMAKE_BINARY_DIR}/ui/SoftPython.dll
-        ${CMAKE_BINARY_DIR}/ui/SoftPython.pyd)
+#add_custom_command(
+#        TARGET Gex_Software POST_BUILD
+#        COMMAND ${CMAKE_COMMAND} -E copy
+#        ${CMAKE_BINARY_DIR}/ui/SoftPython.dll
+#        ${CMAKE_BINARY_DIR}/ui/SoftPython.pyd)
 
 
 set(Qt_Deploy_Executable "windeployqt.exe")
@@ -220,7 +282,8 @@ add_custom_target(
         --extra-directory plugins
         --extra-directory python
 
-        --add-extra-directory python ${CMAKE_BINARY_DIR}/ui/SoftPython.pyd
+        --add-extra-directory python ${CMAKE_BINARY_DIR}/Gex/python/Gex
+#        --add-extra-directory python ${CMAKE_BINARY_DIR}/ui/SoftPython.pyd
 
         --add-extra-directory ui ${CMAKE_CURRENT_SOURCE_DIR}/resources/stylesheet.css
 
@@ -233,9 +296,22 @@ add_custom_target(
         --add-extra-directory plugins ${CMAKE_BINARY_DIR}/plugins/PathsPlugin/PathsPlugin
         --add-extra-directory plugins ${CMAKE_BINARY_DIR}/plugins/StringPlugin/StringPlugin
         --add-extra-directory plugins ${CMAKE_BINARY_DIR}/plugins/ImageManipPlugin/ImageManipPlugin
+        --add-extra-directory plugins ${CMAKE_BINARY_DIR}/plugins/InputRelPlugin/InputRelPlugin
         ${USD_PLUGIN_RELOC}
         #        --add-extra-directory plugins ${CMAKE_BINARY_DIR}/plugins/InputRel.dll
         #        --add-extra-directory plugins ${CMAKE_BINARY_DIR}/plugins/GraphPlugin/GraphPlugin.dll
+
+        COMMAND
+        python $ENV{BUILD_UTILS_DIR}/BuildUtils/build_package.py
+        --name SoftApi
+        --directory ${CMAKE_CURRENT_BINARY_DIR}/Gex_Software/python
+        --template-init ${CMAKE_CURRENT_SOURCE_DIR}/resources/__init__.py
+        --search_directories ${CMAKE_CURRENT_BINARY_DIR} ${Boost_LIBRARY_DIRS}
+        ${CMAKE_BINARY_DIR} ${CMAKE_CURRENT_BINARY_DIR} ${TSYS_LIBRARY_DIR}
+        ${CMAKE_BINARY_DIR}/Gex
+
+        --library ${CMAKE_BINARY_DIR}/ui/SoftPython.dll
+#        --dependencies Gex.dll
 
         COMMAND
         ${Qt_Deploy_Executable} ${Qt_DeployFlag} ${CMAKE_CURRENT_BINARY_DIR}/Gex_Software/bin/Gex_Software.exe

@@ -6,11 +6,12 @@
 #include "ui/include/ui.h"
 
 #include "PythonInterpreter.h"
+#include "softApi.h"
 
 
 namespace Gex::Editor
 {
-    class MainWindow: public QMainWindow
+    class SOFT_API MainWindow: public QMainWindow
     {
         Q_OBJECT
 
@@ -48,6 +49,8 @@ namespace Gex::Editor
         void Undo() const;
 
         void Redo() const;
+
+        Gex::CompoundNodePtr CurrentNode() const;
     };
 }
 
