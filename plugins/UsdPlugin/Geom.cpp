@@ -797,7 +797,7 @@ void UsdPlugin::UsdGeom::UsdGeomUvToPoint::InitAttributes()
 
 float Vec2DAngle(pxr::GfVec2f v1, pxr::GfVec2f v2)
 {
-    return std::acos((v1[0] * v2[0]) + (v2[1] * v2[1]));
+    return std::acos((v1[0] * v2[0]) + (v1[1] * v2[1]));
 }
 
 
