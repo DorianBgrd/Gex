@@ -112,7 +112,8 @@ namespace Gex::InputRel
         CurvePointPtr NextPoint(double x) const;
 
         virtual double Interpolate(double x, const CurvePointPtr& previous,
-                                   const CurvePointPtr& next) const = 0;
+                                   const CurvePointPtr& next) const
+                                   {return 0;};
 
         virtual double GetValue(double x) const;
 
@@ -213,13 +214,18 @@ namespace Gex::InputRel
         {
 //            std::shared_ptr<T> value = boost::python::extract<std::shared_ptr<T>>(v);
 //            return std::make_any<std::shared_ptr<T>>(value);
-            return std::make_any<T>(T());
+            std::shared_ptr<T> p = boost::python::extract<std::shared_ptr<T>>(v);
+
+            return std::make_any<std::shared_ptr<T>>(p);
         }
 
-        virtual boost::python::object ToPython(std::any v) const override
+        boost::python::object ToPython(std::any v) const override
         {
-//            return boost::python::object(std::any_cast<std::shared_ptr<T>>(v));
-            return {};
+            T::RegisterPythonWrapper();
+
+            std::shared_ptr<T> p = std::any_cast<std::shared_ptr<T>>(v);
+
+            return boost::python::object(p);
         }
 
         virtual std::any CopyValue(std::any source) const override

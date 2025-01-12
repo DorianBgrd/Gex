@@ -89,10 +89,22 @@ target_link_libraries(
 )
 
 
+add_subdirectory(
+        python
+)
+
+add_dependencies(
+        InputRel_Python
+        InputRelPlugin
+)
+
+
 add_custom_command(
         TARGET
         InputRelPlugin
         POST_BUILD
+        DEPENDS
+        InputRel_Python
         COMMAND
         python ${CMAKE_SOURCE_DIR}/plugins/build_plugin.py
 
@@ -102,11 +114,14 @@ add_custom_command(
         --plugin-file ${CMAKE_BINARY_DIR}/plugins/InputRelPlugin.dll
         --type C++
         --env PATH:./libs
+        --python-path ./scripts
 
         --libs-search-path
         ${CMAKE_BINARY_DIR}/ui
         $ENV{UI_RES_DIR}/UiRes/cmake-build-${BUILD_TYPE}
         $ENV{UI_TSYS_DIR}/UiTSys/cmake-build-${BUILD_TYPE}
+
+        --scripts ${CMAKE_CURRENT_BINARY_DIR}/python/InputRel
 
         --libs
         Gex_ui.dll

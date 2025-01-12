@@ -302,6 +302,10 @@ double Gex::InputRel::BezierFunc::TIterative(
         double x, int precision)
         const
 {
+    // Add number of 10 pows to precision to obtain
+    // the same precision between small and high numbers.
+    precision += std::ceil(std::log10(d - a));
+
     auto iter = [this, precision, a, b, c, d, x]
             (double mint, double maxt)
     {
