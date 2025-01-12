@@ -41,6 +41,24 @@ namespace ImageManip::Nodes
     };
 
     GENERATE_DEFAULT_BUILDER(EllipseNodeBuilder, EllipseNode)
+
+
+    class Plugin_API PolygonNode: public Gex::Node
+    {
+        std::string Description() const override
+        {
+            return "Generates a polygon.";
+        }
+
+        void InitAttributes() override;
+
+        bool Evaluate(Gex::NodeAttributeData &context,
+                      Gex::GraphContext &graphContext,
+                      Gex::NodeProfiler &profiler)
+        override;
+    };
+
+    GENERATE_DEFAULT_BUILDER(PolygonNodeBuilder, PolygonNode)
 }
 
 #endif //GEX_SHAPES_H

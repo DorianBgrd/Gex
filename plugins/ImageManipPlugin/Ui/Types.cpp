@@ -1,5 +1,6 @@
 #include "Types.h"
 #include "Types/resolution.h"
+#include "Types/geometry.h"
 
 #include <QPainter>
 #include <QPainterPath>
@@ -918,3 +919,55 @@ void ImageManip::Ui::Types::LevelWidget::ShowDisabled(bool disabled)
     m->setDisabled(disabled);
 }
 
+
+QWidget* ImageManip::Ui::Types::PointWidget::CreateTypedWidget()
+{
+    QWidget* w = new QWidget(this);
+    QHBoxLayout* l = new QHBoxLayout(w);
+    xSb = new QDoubleSpinBox(w);
+    xSb->setMinimum(-999999);
+    xSb->setMaximum(999999);
+    ySb = new QDoubleSpinBox(w);
+    ySb->setMinimum(-999999);
+    ySb->setMaximum(999999);
+
+    l->setContentsMargins(0, 0, 0, 0);
+    l->addWidget(xSb);
+    l->addWidget(ySb);
+
+    Connect(xSb, &QDoubleSpinBox::valueChanged);
+    Connect(ySb, &QDoubleSpinBox::valueChanged);
+    return w;
+}
+
+
+void ImageManip::Ui::Types::PointWidget::SetValue(std::any value)
+{
+    auto pnt = std::any_cast<ImageManip::Types::Point>(value);
+
+    xSb->setValue(pnt.x);
+    ySb->setValue(pnt.y);
+}
+
+
+std::any ImageManip::Ui::Types::PointWidget::GetValue() const
+{
+    return ImageManip::Types::Point(
+            xSb->value(),
+            ySb->value()
+            );
+}
+
+
+void ImageManip::Ui::Types::PointWidget::ShowConnected(bool connected)
+{
+    xSb->setDisabled(connected);
+    ySb->setDisabled(connected);
+}
+
+
+void ImageManip::Ui::Types::PointWidget::ShowDisabled(bool disabled)
+{
+    xSb->setDisabled(disabled);
+    ySb->setDisabled(disabled);
+}

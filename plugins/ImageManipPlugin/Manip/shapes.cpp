@@ -46,3 +46,35 @@ QImage ImageManip::Manip::GenerateEllipse(
     painter.end();
     return res;
 }
+
+
+QImage ImageManip::Manip::GeneratePolygon(
+        int imageWidth, int imageHeight,
+        const std::vector<Types::Point>& points,
+        const QColor& color, const QImage& source)
+{
+    QImage result(imageWidth, imageHeight, QImage::Format_RGBA64);
+    result.fill(Qt::transparent);
+
+    QPainter painter(&result);
+    painter.setRenderHint(QPainter::Antialiasing);
+
+    if (!source.isNull())
+    {
+        painter.drawImage(QPoint(0, 0), source);
+    }
+
+    painter.setPen(Qt::NoPen);
+    painter.setBrush(color);
+
+    QPolygon poly;
+    for (const auto& point : points)
+    {
+        poly.push_back(point.ToQPoint());
+    }
+
+    painter.drawPolygon(poly);
+    painter.end();
+
+    return result;
+}

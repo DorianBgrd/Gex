@@ -13,6 +13,7 @@
 #include "Types/resolution.h"
 #include "Types/gradient.h"
 #include "Types/level.h"
+#include "Types/geometry.h"
 
 #include "Nodes/blur.h"
 #include "Nodes/load.h"
@@ -36,6 +37,8 @@ extern EXPORT RegisterPlugin(Gex::PluginLoader* loader)
     loader->RegisterTypeHandler<ImageManip::Types::LinearGradient, ImageManip::Types::LinearGradientHandler>();
 
     loader->RegisterTypeHandler<ImageManip::Types::LevelMap, ImageManip::Types::LevelMapHandler>();
+
+    loader->RegisterTypeHandler<ImageManip::Types::Point, ImageManip::Types::PointHandler>();
 
     loader->RegisterNode<ImageManip::Nodes::CreateImageBuilder>("Image/IO/Create");
 
@@ -78,6 +81,8 @@ extern EXPORT RegisterPlugin(Gex::PluginLoader* loader)
     loader->RegisterNode<ImageManip::Nodes::RectangleNodeBuilder>("Image/Shapes/Rectangle");
 
     loader->RegisterNode<ImageManip::Nodes::EllipseNodeBuilder>("Image/Shapes/Ellipse");
+
+    loader->RegisterNode<ImageManip::Nodes::PolygonNodeBuilder>("Image/Shapes/Polygon");
 
 }
 

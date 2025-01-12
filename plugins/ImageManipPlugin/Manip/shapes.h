@@ -2,6 +2,9 @@
 #define GEX_MANIP_SHAPES_H
 
 #include <QImage>
+#include <QPoint>
+#include <vector>
+#include "Types/geometry.h"
 
 
 namespace ImageManip::Manip
@@ -22,6 +25,12 @@ namespace ImageManip::Manip
                            int width,
                            int height,
                            const QColor& color);
+
+    QImage GeneratePolygon(int imageWidth,
+                           int imageHeight,
+                           const std::vector<Types::Point>& points,
+                           const QColor& color,
+                           const QImage& source=QImage());
 }
 
 #endif //GEX_MANIP_SHAPES_H

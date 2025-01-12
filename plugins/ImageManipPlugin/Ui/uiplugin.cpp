@@ -1,6 +1,7 @@
 #include "Types.h"
 #include "../export.h"
 #include "Types/resolution.h"
+#include "Types/geometry.h"
 
 
 #include "Gex/include/Gex.h"
@@ -29,6 +30,10 @@ void RegisterUiPlugin(Gex::Ui::UiPluginLoader* loader)
             "LevelMap", nullptr,
             new ImageManip::Ui::Types::LevelWidgetBuilder());
 
+    loader->RegisterTypeWidget<ImageManip::Types::Point>(
+            "ImageManip::Point", nullptr,
+            new ImageManip::Ui::Types::PointWidgetBuilder());
+
 
     loader->RegisterNodeViewer<ImageManip::Viewers::ImageNodeViewerBuilder>("Image/IO/Create");
     loader->RegisterNodeViewer<ImageManip::Viewers::ImageNodeViewerBuilder>("Image/IO/Load");
@@ -50,4 +55,7 @@ void RegisterUiPlugin(Gex::Ui::UiPluginLoader* loader)
     loader->RegisterNodeViewer<ImageManip::Viewers::ImageNodeViewerBuilder>("Image/Modifiers/Tile");
     loader->RegisterNodeViewer<ImageManip::Viewers::ImageNodeViewerBuilder>("Image/Shapes/Rectangle");
     loader->RegisterNodeViewer<ImageManip::Viewers::ImageNodeViewerBuilder>("Image/Shapes/Ellipse");
+
+    loader->RegisterNodeViewer<ImageManip::Viewers::PolygonNodeEditorBuilder>("Image/Shapes/Polygon");
+
 }

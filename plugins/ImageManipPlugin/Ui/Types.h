@@ -346,6 +346,29 @@ namespace ImageManip::Ui::Types
 
     GENERATE_DEFAULT_WIDGET_CREATOR(
             LevelWidgetBuilder, LevelWidget);
+
+
+    class Plugin_API PointWidget: public UiTSys::TypedWidget
+    {
+        QDoubleSpinBox* xSb;
+        QDoubleSpinBox* ySb;
+
+    public:
+        QWidget* CreateTypedWidget() override;
+
+        void SetValue(std::any value) override;
+
+        std::any GetValue() const override;
+
+        void ShowConnected(bool connected) override;
+
+        void ShowDisabled(bool disabled) override;
+    };
+
+
+    GENERATE_DEFAULT_WIDGET_CREATOR(
+            PointWidgetBuilder, PointWidget);
+
 }
 
 #endif //GEX_UI_TYPES_H

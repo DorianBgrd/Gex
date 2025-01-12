@@ -31,6 +31,7 @@ set(
         Types/gradient.cpp
         Types/resolution.cpp
         Types/level.cpp
+        Types/geometry.cpp
 
         Nodes/blur.cpp
         Nodes/load.cpp
@@ -138,6 +139,37 @@ add_custom_command(
         --plugin ImageManipPlugin.dll
         --plugin-file ${CMAKE_BINARY_DIR}/plugins/ImageManipPlugin.dll
         --type C++
+        --env PATH:./libs
+
+        --libs-search-path
+        ${CMAKE_BINARY_DIR}/ui
+        $ENV{UI_RES_DIR}/UiRes/cmake-build-${BUILD_TYPE}
+        $ENV{UI_TSYS_DIR}/UiTSys/cmake-build-${BUILD_TYPE}
+
+        --libs
+        Gex_ui.dll
+        UiRes.dll
+        UiTSys.dll
+)
+
+
+set(Qt_Deploy_Executable "windeployqt.exe")
+
+set(Qt_DeployFlag --release)
+if (${CMAKE_BUILD_TYPE} MATCHES Debug)
+    set(Qt_DeployFlag --debug)
+endif()
+
+
+add_custom_command(
+        TARGET
+        ImageManipPlugin
+        POST_BUILD
+        COMMAND
+        ${Qt_Deploy_Executable} ${Qt_DeployFlag}
+        --dir ${CMAKE_CURRENT_BINARY_DIR}/ImageManipPlugin/libs
+        ${CMAKE_BINARY_DIR}/plugins/ImageManipPlugin.dll
+
 )
 
 
