@@ -473,7 +473,7 @@ Gex::PluginLoader* Gex::PluginLoader::LoadPlugin(
         }
     }
 
-    if (dict.HasMember(conf.pluginConfPyEnvKey.c_str()))
+    if (dict.HasMember(conf.pluginConfPyPathKey.c_str()))
     {
         InitPython();
 
@@ -481,12 +481,16 @@ Gex::PluginLoader* Gex::PluginLoader::LoadPlugin(
         PyObject* sysPath = PyDict_GetItem(PyModule_GetDict(sysModule),
                                            PyUnicode_FromString("path"));
 
-        rapidjson::Value& pyPathList = dict[conf.pluginConfPyEnvKey.c_str()];
+        rapidjson::Value& pyPathList = dict[conf.pluginConfPyPathKey.c_str()];
         for (unsigned int sp = 0; sp < pyPathList.Size(); sp++)
         {
             PyList_Append(sysPath, PyUnicode_FromString(ToAbsolutePath(
                     pyPathList[sp].GetString(), start).c_str()));
         }
+
+        PyDict_SetItem(PyModule_GetDict(sysModule),
+                       PyUnicode_FromString("path"),
+                       sysPath);
     }
 
     return LoadPluginFile(pluginPilePath, pluginType, result);
