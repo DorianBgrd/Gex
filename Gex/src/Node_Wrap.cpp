@@ -7,6 +7,9 @@
 #include "Gex/include/wraputils.h"
 
 
+#include "boost/python/suite/indexing/vector_indexing_suite.hpp"
+
+
 std::any InitPythonValue(boost::python::object pythonType, Gex::Feedback& feedback)
 {
     boost::python::object class_ = pythonType.attr("__class__");
@@ -437,7 +440,8 @@ void Gex::Python::CompoundNode_Wrap::RegisterPythonWrapper()
     boost::python::class_<Gex::Python::CompoundNode_Wrap, boost::python::bases<Gex::Node>,
             Gex::CompoundNodePtr>("CompoundNode", boost::python::init())
             .def("CreateNode", &Gex::CompoundNode::CreateNode)
-            .def("GetNode", boost::python::raw_function(&CN_Python_GetInternalNode, 1))
+//            .def("GetNode", boost::python::raw_function(&CN_Python_GetInternalNode, 1))
+            .def("GetNode", &Gex::CompoundNode::GetNode)
             .def("GetNodes", boost::python::raw_function(&CN_Python_GetNodes, 1))
             .def("GetNodeNames", boost::python::raw_function(&CN_Python_GetNodeNames, 1))
             .def("HasNode", _IsInternalNode)
