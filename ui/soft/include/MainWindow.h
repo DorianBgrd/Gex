@@ -21,6 +21,7 @@ namespace Gex::Editor
         QAction* saveAction;
         GexSoftware::PythonInterpreter* interpreter;
         Gex::Ui::ViewerDock* dock;
+        Gex::Ui::TimelineDock* timeline;
 
     public:
         MainWindow(Gex::CompoundNodePtr graph, std::string file="",

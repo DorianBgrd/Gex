@@ -24,6 +24,7 @@ Gex::Editor::MainWindow::MainWindow(Gex::CompoundNodePtr graph_, std::string fil
     graph = graph_;
     currentFile = file;
 
+    // TODO : connect to node to update when node is added.
     graphView = new Gex::Ui::GraphView(graph, this);
     layout->addWidget(graphView);
 
@@ -40,6 +41,11 @@ Gex::Editor::MainWindow::MainWindow(Gex::CompoundNodePtr graph_, std::string fil
     };
 
     dock->SetSelectionCallback(selectionGetter);
+
+    // TODO : connect node to update when attribute is added.
+    timeline = new Gex::Ui::TimelineDock(this);
+    timeline->SetCurrentNode(graph);
+    addDockWidget(Qt::BottomDockWidgetArea, timeline);
 
     QObject::connect(graphView->GetGraphWidget(),
                      &Gex::Ui::GraphWidget::SelectedNodeChanged,
@@ -260,7 +266,8 @@ void Gex::Editor::MainWindow::Redo() const
     {
         ShowMessage(Gex::Feedback::New(
                 Gex::Status::Warning,
-                "Redo stack is empty."));
+                "Redo stack is empty.")
+        );
     }
 }
 

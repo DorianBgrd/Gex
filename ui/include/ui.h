@@ -9,5 +9,6 @@
 #include "ProfileViewer.h"
 #include "GraphView.h"
 #include "NodeViewer.h"
+#include "Timeline.h"
 
 #endif //GEX_UI_H
