@@ -160,6 +160,7 @@ Gex::Ui::ViewerWindow::ViewerWindow(NodeViewer* viewer, QWidget* parent): QDockW
 Gex::Ui::ViewerDock::ViewerDock(QWidget* parent):
         QDockWidget(parent)
 {
+    setWindowTitle("Node viewer");
 //    emptyWidget = new QWidget(this);
 //    auto* emptyWidgetLayout = new QVBoxLayout();
 //    emptyWidgetLayout->setAlignment(Qt::AlignCenter);
