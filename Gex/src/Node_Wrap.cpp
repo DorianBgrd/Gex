@@ -343,10 +343,69 @@ boost::python::object MakeWeakReference(boost::python::tuple args,
 }
 
 
+boost::python::object Node_RegisterAttributeCallback(
+        boost::python::tuple args,
+        boost::python::dict kwargs
+)
+{
+    Gex::Node* self = boost::python::extract<Gex::Node*>(args[0]);
+
+    boost::python::object callable = args[1];
+
+    auto id = self->RegisterAttributeCallback(
+            [callable](const Gex::AttributePtr& attribute,
+                       const Gex::AttributeChange& change)
+            {
+                callable(boost::python::object(attribute),
+                         boost::python::object(change));
+            }
+    );
+
+    return boost::python::object(id);
+}
+
+
+boost::python::object Node_RegisterNodeChangedCallback(
+        boost::python::tuple args,
+        boost::python::dict kwargs
+)
+{
+    Gex::Node* self = boost::python::extract<Gex::Node*>(args[0]);
+
+    boost::python::object callable = args[1];
+
+    auto id = self->RegisterNodeChangedCallback(
+            [callable](const Gex::NodeChange& c, const Gex::NodeWkPtr& n)
+            {
+                callable(boost::python::object(c),
+                         boost::python::object(n));
+            }
+    );
+
+    return boost::python::object(id);
+}
+
+
 void Gex::Python::Node_Wrap::RegisterPythonWrapper()
 {
     if (pythonRegistered)
         return;
+
+    /*
+     * ChildNodeAdded,
+        ChildNodeRemoved,
+        AttributeAdded,
+        AttributeRemoved,
+        Deleted
+     */
+
+    boost::python::enum_<Gex::NodeChange>("NodeChange")
+            .value("ChildNodeAdded", Gex::NodeChange::ChildNodeAdded)
+            .value("ChildNodeRemoved", Gex::NodeChange::ChildNodeRemoved)
+            .value("AttributeAdded", Gex::NodeChange::AttributeAdded)
+            .value("AttributeRemoved", Gex::NodeChange::AttributeRemoved)
+            .value("Deleted", Gex::NodeChange::Deleted)
+            ;
 
     boost::python::class_<Gex::Python::Node_Wrap, Gex::NodePtr>("Node", boost::python::init())
             .def(boost::python::init<Gex::NodePtr>())
@@ -364,6 +423,8 @@ void Gex::Python::Node_Wrap::RegisterPythonWrapper()
             .def("UpstreamNodes", boost::python::raw_function(&NW_Python_UpstreamNodes, 1))
             .def("HasAttribute", &Gex::Node::HasAttribute)
             .def("AttributeChanged", &Gex::Node::AttributeChanged)
+            .def("RegisterAttributeChangedCallback", boost::python::raw_function(&Node_RegisterAttributeCallback, 2))
+            .def("RegisterNodeChangedCallback", boost::python::raw_function(&Node_RegisterNodeChangedCallback, 2))
             .def("ToWeakRef", boost::python::raw_function(
                     &Gex::Python::StrongRefToWeak<Gex::NodePtr, Gex::NodeWkPtr>, 1))
             ;
