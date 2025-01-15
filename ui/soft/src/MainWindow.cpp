@@ -28,6 +28,15 @@ Gex::Editor::MainWindow::MainWindow(Gex::CompoundNodePtr graph_, std::string fil
     graphView = new Gex::Ui::GraphView(graph, this);
     layout->addWidget(graphView);
 
+    Gex::Ui::GraphWidget* graphWidget = graphView->GetGraphWidget();
+
+    auto selCb = [](const Gex::NodeWkList& sel)
+    {
+        SoftApi::SelectionContext::Select(sel);
+    };
+
+    QObject::connect(graphWidget, &Gex::Ui::GraphWidget::SelectedNodeChanged, selCb);
+
     interpreter = new GexSoftware::PythonInterpreter(this);
     interpreter->Initialize();
 
@@ -36,8 +45,8 @@ Gex::Editor::MainWindow::MainWindow(Gex::CompoundNodePtr graph_, std::string fil
     dock = new Gex::Ui::ViewerDock(this);
     addDockWidget(Qt::LeftDockWidgetArea, dock);
 
-    auto selectionGetter = [this](){
-        return this->graphView->GetGraphWidget()->CurrentSelection();
+    auto selectionGetter = [](){
+        return SoftApi::SelectionContext::Selection();
     };
 
     dock->SetSelectionCallback(selectionGetter);
@@ -47,9 +56,16 @@ Gex::Editor::MainWindow::MainWindow(Gex::CompoundNodePtr graph_, std::string fil
     timeline->SetCurrentNode(graph);
     addDockWidget(Qt::BottomDockWidgetArea, timeline);
 
-    QObject::connect(graphView->GetGraphWidget(),
-                     &Gex::Ui::GraphWidget::SelectedNodeChanged,
-                     dock, &Gex::Ui::ViewerDock::NodeSelectionChanged);
+//    QObject::connect(graphView->GetGraphWidget(),
+//                     &Gex::Ui::GraphWidget::SelectedNodeChanged,
+//                     dock, &Gex::Ui::ViewerDock::NodeSelectionChanged);
+    SoftApi::SelectionContext::Connect(
+            [this, graphWidget](const Gex::NodeWkList& sel)
+            {
+                dock->NodeSelectionChanged(sel);
+                graphWidget->Select(sel, false);
+            }
+    );
 
     auto* menu = new QMenuBar(this);
     auto* fileMenu =  menu->addMenu("File");

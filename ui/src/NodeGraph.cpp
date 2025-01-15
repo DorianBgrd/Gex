@@ -3246,6 +3246,33 @@ std::vector<Gex::NodePtr>  Gex::Ui::NodeGraphScene::SelectedNodes() const
 }
 
 
+void Gex::Ui::NodeGraphScene::SelectNodes(const Gex::NodeWkList& sel,
+                                          bool notify)
+{
+    blockSignals(true);
+
+    clearSelection();
+
+    QList<NodeItem*> items;
+    for (const auto& node : sel)
+    {
+        auto* item = ItemFromNode(node);
+        if (!item)
+            continue;
+
+        item->setSelected(true);
+    }
+
+    if (notify)
+        blockSignals(false);
+
+    Q_EMIT selectionChanged();
+
+    if (!notify)
+        blockSignals(false);
+}
+
+
 Gex::Ui::NodeGraphContext* Gex::Ui::NodeGraphScene::CurrentContext() const
 {
     return graphContext;
@@ -4098,4 +4125,11 @@ Gex::NodeWkList Gex::Ui::GraphWidget::CurrentSelection() const
     }
 
     return sel;
+}
+
+
+void Gex::Ui::GraphWidget::Select(const Gex::NodeWkList& nodes,
+                                  bool notify)
+{
+    scene->SelectNodes(nodes, notify);
 }

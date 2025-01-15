@@ -705,6 +705,9 @@ namespace Gex
 
             Gex::NodeList SelectedNodes() const;
 
+            void SelectNodes(const Gex::NodeWkList& sel,
+                             bool notify=true);
+
             NodeGraphContext* CurrentContext() const;
 
             NodeItem* ItemFromNode(const Gex::NodeWkPtr& node) const;
@@ -919,7 +922,9 @@ namespace Gex
 
             Q_SIGNAL void GraphEvaluated(const Gex::Profiler profiler);
 
-            Q_SIGNAL void SelectedNodeChanged(const std::vector<Gex::NodeWkPtr> nodes);
+            Q_SIGNAL void SelectedNodeChanged(const Gex::NodeWkList& nodes);
+
+            void Select(const Gex::NodeWkList& nodes, bool notify=true);
 
             Gex::NodeWkList CurrentSelection() const;
         };
