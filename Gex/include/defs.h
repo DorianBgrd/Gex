@@ -44,13 +44,17 @@ namespace Gex
 
     typedef EvaluationNodeProfiler NodeProfiler;
 
+    enum class NodeChange;
+
     typedef std::function<void()> InvalidateCallback;
     typedef std::function<void()> ScheduleCallback;
+    typedef std::function<void(const NodeChange&, const NodeWkPtr&)> NodeChangeCallback;
     typedef std::function<void()> AboutToBeDeletedCallback;
     typedef std::function<void(const AttributePtr& attribute, const AttributeChange& change)> AttributeChangeCallback;
     typedef std::function<void(std::string)> PluginLoadedCallback;
     typedef std::map<unsigned int, InvalidateCallback> InvalidateCallbacks;
     typedef std::map<unsigned int, ScheduleCallback> ScheduleCallbacks;
+    typedef std::map<unsigned int, NodeChangeCallback> NodeChangedCallbacks;
     typedef std::map<unsigned int, AttributeChangeCallback> AttributeChangedCallbacks;
     typedef std::map<unsigned int, AboutToBeDeletedCallback> AboutToBeDeletedCallbacks;
     typedef std::function<void(const NodePtr&)> NodeCallback;
