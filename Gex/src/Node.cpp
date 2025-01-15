@@ -266,6 +266,18 @@ void Gex::Node::SetReferencePath(const std::string& path)
 }
 
 
+void Gex::Node::SignalChange(const NodeChange& change, const NodeWkPtr& node) const
+{
+    if (initializing)
+        return;
+
+    for (const auto& callback : changeCallbacks)
+    {
+        callback.second(change, node);
+    }
+}
+
+
 std::string Gex::Node::Type() const
 {
     return typeName;
@@ -349,6 +361,32 @@ bool Gex::Node::DeregisterAboutToBeDeletedCallback(
 }
 
 
+Gex::CallbackId Gex::Node::RegisterNodeChangedCallback(
+        NodeChangeCallback cb)
+{
+    CallbackId id = changeCbId;
+    changeCallbacks[changeCbId] = std::move(cb);
+
+    changeCbId++;
+    return id;
+}
+
+
+bool Gex::Node::DeregisterNodeChangedCallback(
+        CallbackId index)
+{
+    if (changeCallbacks.empty())
+        return false;
+
+    auto idx = changeCallbacks.find(index);
+    if (idx == changeCallbacks.end())
+        return false;
+
+    changeCallbacks.erase(idx);
+    return true;
+}
+
+
 bool Gex::Node::AddAttribute(const AttributePtr& attr)
 {
 	std::string _name = attr->Longname();
@@ -362,7 +400,7 @@ bool Gex::Node::AddAttribute(const AttributePtr& attr)
 	attributes.push_back(attr);
 
     SignalAttributeChange(attr, AttributeChange::AttributeAdded);
-
+    SignalChange(NodeChange::AttributeAdded, shared_from_this());
 	return true;
 }
 
@@ -378,6 +416,7 @@ bool Gex::Node::RemoveAttribute(const AttributePtr& attr)
     }
 
     SignalAttributeChange(*idx, AttributeChange::AttributeRemoved);
+    SignalChange(NodeChange::AttributeAdded, shared_from_this());
     attributes.erase(idx);
     return true;
 }
@@ -980,6 +1019,8 @@ bool Gex::CompoundNode::AddNode(const NodePtr& node)
     node->SetName(node->Name());
 
     nodes.push_back(node);
+
+    SignalChange(NodeChange::ChildNodeAdded, node);
     return true;
 }
 
@@ -999,6 +1040,7 @@ bool Gex::CompoundNode::RemoveNode(const NodePtr& node)
 
     nodes.erase(std::find(nodes.begin(), nodes.end(), node));
 
+    SignalChange(NodeChange::ChildNodeRemoved, node);
     return true;
 }
 
@@ -1106,6 +1148,7 @@ bool Gex::CompoundNode::RemoveNode(const std::string& node)
 
     nodes.erase(std::find(nodes.begin(), nodes.end(), nodePtr.ToShared()));
 
+    SignalChange(NodeChange::ChildNodeRemoved, nodePtr);
     return true;
 }
 

@@ -48,6 +48,16 @@ namespace Gex
     };
 
 
+    enum class NodeChange
+    {
+        ChildNodeAdded,
+        ChildNodeRemoved,
+        AttributeAdded,
+        AttributeRemoved,
+        Deleted
+    };
+
+
 	class GEX_API Node: public std::enable_shared_from_this<Node>
 	{
     protected:
@@ -93,7 +103,10 @@ namespace Gex
         CallbackId invalidCbId = 0;
         CallbackId scheduleCbId = 0;
         CallbackId deleteCbId = 0;
+        CallbackId changeCbId = 0;
+
         InvalidateCallbacks invalidateCallbacks;
+        NodeChangedCallbacks changeCallbacks;
         ScheduleCallbacks scheduleCallbacks;
         AttributeChangedCallbacks attrCallbacks;
         AboutToBeDeletedCallbacks deleteCallbacks;
@@ -219,6 +232,14 @@ namespace Gex
 
         bool DeregisterAboutToBeDeletedCallback(
                 CallbackId id);
+
+        CallbackId RegisterNodeChangedCallback(
+                NodeChangeCallback cb);
+
+        bool DeregisterNodeChangedCallback(
+                CallbackId index);
+
+        void SignalChange(const NodeChange& change, const NodeWkPtr& node) const;
 
     protected:
 		// Adds attribute to node.
@@ -569,7 +590,7 @@ namespace Gex
     };
 
 
-class GEX_API CompoundNode : public Node
+    class GEX_API CompoundNode : public Node
 	{
 	private:
 		friend CompoundNodeBuilder;
