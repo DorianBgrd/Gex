@@ -76,11 +76,13 @@ std::string Gex::Ui::UiPluginLoader::PluginPath() const
 
 
 bool Gex::Ui::UiPluginLoader::RegisterTypeWidget(
-        size_t hash, const std::string& name,
-        UiTSys::TypedInitWidgetCreator* initCreator,
-        UiTSys::TypedWidgetCreator* creator, bool force)
+        const std::type_index& t, const std::string& name,
+        const UiTSys::TypedInitCreatorPtr& initCreator,
+        const UiTSys::TypedCreatorPtr& creator,
+        bool force
+)
 {
-    return engine->RegisterType(hash, name, initCreator, creator, force);
+    return engine->RegisterType(t, name, initCreator, creator, force);
 }
 
 

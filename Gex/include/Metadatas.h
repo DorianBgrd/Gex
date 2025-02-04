@@ -89,7 +89,7 @@ namespace Gex
                 return std::any_cast<T>(val);
             }
 
-            auto* handler = TSys::TypeRegistry::GetRegistry()->GetTypeHandle(hash);
+            auto handler = TSys::TypeRegistry::GetRegistry()->GetTypeHandle(hash);
 
             if (handler->CanConvertFrom(val.type().hash_code()))
             {

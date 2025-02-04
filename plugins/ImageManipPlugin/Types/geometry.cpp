@@ -368,7 +368,7 @@ size_t ImageManip::Types::HashPolygon(
 
 
 void ImageManip::Types::PointHandler::SerializeValue(
-        std::any v, rapidjson::Value& value,
+        const std::any& v, rapidjson::Value& value,
         rapidjson::Document& document) const
 {
     Point p = std::any_cast<Point>(v);
@@ -377,13 +377,13 @@ void ImageManip::Types::PointHandler::SerializeValue(
 }
 
 std::any ImageManip::Types::PointHandler::DeserializeValue(
-        std::any v, rapidjson::Value& value) const
+        const std::any& v, rapidjson::Value& value) const
 {
     return Point(value[0].GetDouble(), value[1].GetDouble());
 }
 
 void ImageManip::Types::PointHandler::SerializeConstruction(
-        std::any v, rapidjson::Value& value,
+        const std::any& v, rapidjson::Value& value,
         rapidjson::Document& document) const
 {
 
@@ -400,22 +400,22 @@ std::any ImageManip::Types::PointHandler::InitValue() const
     return Point();
 }
 
-bool ImageManip::Types::PointHandler::CompareValue(std::any v1, std::any v2) const
+bool ImageManip::Types::PointHandler::CompareValue(const std::any& v1, const std::any& v2) const
 {
     return std::any_cast<Point>(v1) == std::any_cast<Point>(v2);
 }
 
-std::any ImageManip::Types::PointHandler::FromPython(boost::python::object) const
+std::any ImageManip::Types::PointHandler::FromPython(const boost::python::object&) const
 {
     return {};
 }
 
-boost::python::object ImageManip::Types::PointHandler::ToPython(std::any) const
+boost::python::object ImageManip::Types::PointHandler::ToPython(const std::any&) const
 {
     return {};
 }
 
-std::any ImageManip::Types::PointHandler::CopyValue(std::any source) const
+std::any ImageManip::Types::PointHandler::CopyValue(const std::any& source) const
 {
     return Point(std::any_cast<Point>(source));
 }
@@ -423,11 +423,6 @@ std::any ImageManip::Types::PointHandler::CopyValue(std::any source) const
 size_t ImageManip::Types::PointHandler::Hash() const
 {
     return typeid(Point).hash_code();
-}
-
-std::string ImageManip::Types::PointHandler::Name() const
-{
-    return "ImageManip::Point";
 }
 
 std::string ImageManip::Types::PointHandler::PythonName() const
@@ -440,7 +435,7 @@ std::string ImageManip::Types::PointHandler::ApiName() const
     return "ImageManip::Point";
 }
 
-size_t ImageManip::Types::PointHandler::ValueHash(std::any val) const
+size_t ImageManip::Types::PointHandler::ValueHash(const std::any& val) const
 {
     return std::hash<Point>()(std::any_cast<Point>(val));
 }

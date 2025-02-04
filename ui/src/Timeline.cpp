@@ -114,7 +114,7 @@ void Gex::Ui::Timeline::RefreshAvailableAttributes()
             continue;
         }
 
-        if (attr->TypeHash() == typeid(double).hash_code())
+        if (attr->Type() == typeid(double))
         {
             attributes.push_back(attr->Name());
         }

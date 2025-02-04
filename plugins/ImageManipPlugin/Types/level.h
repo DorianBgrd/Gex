@@ -52,31 +52,29 @@ namespace ImageManip::Types
     {
         std::any InitValue() const override;
 
-        std::any FromPython(boost::python::object) const override;
+        std::any FromPython(const boost::python::object&) const override;
 
-        boost::python::object ToPython(std::any) const override;
+        boost::python::object ToPython(const std::any&) const override;
 
-        std::any CopyValue(std::any source) const override;
+        std::any CopyValue(const std::any& source) const override;
 
         size_t Hash() const override;
-
-        std::string Name() const override;
 
         std::string PythonName() const override;
 
         std::string ApiName() const override;
 
-        size_t ValueHash(std::any val) const override;
+        size_t ValueHash(const std::any& val) const override;
 
-        bool CompareValue(std::any v1, std::any v2) const override;
+        bool CompareValue(const std::any& v1, const std::any& v2) const override;
 
-        virtual void SerializeValue(std::any v, rapidjson::Value& value,
+        virtual void SerializeValue(const std::any& v, rapidjson::Value& value,
                                     rapidjson::Document& document) const
                                     override;
 
-        virtual std::any DeserializeValue(std::any v, rapidjson::Value& value) const override;
+        virtual std::any DeserializeValue(const std::any& v, rapidjson::Value& value) const override;
 
-        virtual void SerializeConstruction(std::any v, rapidjson::Value& value,
+        virtual void SerializeConstruction(const std::any& v, rapidjson::Value& value,
                                            rapidjson::Document& document)
                                            const override;
 

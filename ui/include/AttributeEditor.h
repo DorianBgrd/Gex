@@ -85,7 +85,7 @@ namespace Gex
             QLineEdit* attributeName;
             QVBoxLayout* initWidgetLayout;
             UiTSys::TypedInitWidget* initWidget = nullptr;
-            size_t typeHash;
+            std::type_index typeIndex;
             GraphWidget* graphWidget;
             QCheckBox* input;
             QCheckBox* output;

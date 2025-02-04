@@ -11,13 +11,7 @@ boost::python::object Attribute_Python_Get(boost::python::tuple args,
     boost::python::object result;
     Gex::Attribute* attribute = boost::python::extract<Gex::Attribute*>(args[0]);
 
-    TSys::TypeHandler* handler = TSys::TypeRegistry::GetRegistry()->GetTypeHandle(attribute->TypeHash());
-    if (handler == nullptr)
-    {
-        return result;
-    }
-
-    return handler->ToPython(attribute->GetAnyValue());
+    return attribute->TypeHandle()->ToPython(attribute->GetAnyValue());
 }
 
 
@@ -35,16 +29,8 @@ bool Attribute_Python_Set(boost::python::tuple args,
     }
 
     boost::python::object value = args[1];
-    std::string classname = boost::python::extract<std::string>(
-            value.attr("__class__").attr("__name__"));
 
-    TSys::TypeHandler* handler = TSys::TypeRegistry::GetRegistry()->GetTypeHandleFromPythonName(classname);
-    if (!handler)
-    {
-        return false;
-    }
-
-    std::any _v = handler->FromPython(value);
+    std::any _v = attribute->TypeHandle()->FromPython(value);
 
     // Set Value.
     return attribute->SetAnyValue(value);

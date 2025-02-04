@@ -11,15 +11,23 @@
 
 #include "pxr/base/gf/half.h"
 
+#include "Geom.h"
+
+#ifdef min
+#undef min
+#endif
+
+#ifdef max
+#undef max
+#endif
+
 #include "Tsys/include/tsys.h"
 #include "Tsys/include/defaultTypes.h"
 #include "Gex/include/Gex.h"
 
 #include <filesystem>
 
-#include "Geom.h"
 #include "plugins/export.h"
-
 
 
 template<typename Matrix>
@@ -68,7 +76,7 @@ namespace UsdPlugin
     template<typename PxrType, typename CppType, typename JsonType>
     struct PxrGfToCppDefault: public TSys::TypeHandler
     {
-        void SerializeValue(std::any v, rapidjson::Value& value,
+        void SerializeValue(const std::any& v, rapidjson::Value& value,
                             rapidjson::Document& document)
         const override
         {
@@ -81,7 +89,7 @@ namespace UsdPlugin
             value.PushBack<JsonType>(dbl, document.GetAllocator());
         }
 
-        void SerializeConstruction(std::any v, rapidjson::Value& value,
+        void SerializeConstruction(const std::any& v, rapidjson::Value& value,
                                    rapidjson::Document& document)
         const override
         {
@@ -99,23 +107,23 @@ namespace UsdPlugin
             return std::make_any<PxrType>(PxrType());
         }
 
-        bool CompareValue(std::any v1, std::any v2) const override
+        bool CompareValue(const std::any& v1, const std::any& v2) const override
         {
             return (std::any_cast<PxrType>(v1) == std::any_cast<PxrType>(v2));
         }
 
-        std::any FromPython(boost::python::object obj) const override
+        std::any FromPython(const boost::python::object& obj) const override
         {
             auto value = boost::python::extract<PxrType>(obj);
             return std::make_any<PxrType>(value);
         }
 
-        boost::python::object ToPython(std::any v) const override
+        boost::python::object ToPython(const std::any& v) const override
         {
             return boost::python::object(std::any_cast<PxrType>(v));
         }
 
-        std::any CopyValue(std::any source) const override
+        std::any CopyValue(const std::any& source) const override
         {
             return std::make_any<PxrType>(std::any_cast<PxrType>(source));
         }
@@ -125,12 +133,7 @@ namespace UsdPlugin
             return typeid(PxrType).hash_code();
         }
 
-        std::string Name() const override
-        {
-            return typeid(PxrType).name();
-        }
-
-        size_t ValueHash(std::any val) const override
+        size_t ValueHash(const std::any& val) const override
         {
             auto h = std::hash<CppType>();
             return h(static_cast<CppType>(std::any_cast<PxrType>(val)));
@@ -150,7 +153,7 @@ namespace UsdPlugin
             return "Half";
         }
 
-        std::any DeserializeValue(std::any v, rapidjson::Value& value) const override
+        std::any DeserializeValue(const std::any& v, rapidjson::Value& value) const override
         {
             return std::make_any<pxr::GfHalf>(static_cast<pxr::GfHalf>(value.GetDouble()));
         }
@@ -169,7 +172,7 @@ namespace UsdPlugin
             return "TimeCode";
         }
 
-        std::any DeserializeValue(std::any v, rapidjson::Value& value) const override
+        std::any DeserializeValue(const std::any& v, rapidjson::Value& value) const override
         {
             return std::make_any<pxr::SdfTimeCode>(pxr::SdfTimeCode(value.GetDouble()));
         }
@@ -188,7 +191,7 @@ namespace UsdPlugin
             return "Token";
         }
 
-        void SerializeValue(std::any v, rapidjson::Value& value,
+        void SerializeValue(const std::any& v, rapidjson::Value& value,
                             rapidjson::Document& document)
         const override
         {
@@ -201,7 +204,7 @@ namespace UsdPlugin
                            document.GetAllocator());
         }
 
-        void SerializeConstruction(std::any v, rapidjson::Value& value,
+        void SerializeConstruction(const std::any& v, rapidjson::Value& value,
                                    rapidjson::Document& document)
         const override
         {
@@ -219,23 +222,23 @@ namespace UsdPlugin
             return std::make_any<pxr::TfToken>(pxr::TfToken());
         }
 
-        bool CompareValue(std::any v1, std::any v2) const override
+        bool CompareValue(const std::any& v1, const std::any& v2) const override
         {
             return (std::any_cast<pxr::TfToken>(v1) == std::any_cast<pxr::TfToken>(v2));
         }
 
-        std::any FromPython(boost::python::object obj) const override
+        std::any FromPython(const boost::python::object& obj) const override
         {
             auto value = boost::python::extract<pxr::TfToken>(obj);
             return std::make_any<pxr::TfToken>(value);
         }
 
-        boost::python::object ToPython(std::any v) const override
+        boost::python::object ToPython(const std::any& v) const override
         {
             return boost::python::object(std::any_cast<pxr::TfToken>(v));
         }
 
-        std::any CopyValue(std::any source) const override
+        std::any CopyValue(const std::any& source) const override
         {
             return std::make_any<pxr::TfToken>(std::any_cast<pxr::TfToken>(source));
         }
@@ -245,12 +248,7 @@ namespace UsdPlugin
             return typeid(pxr::TfToken).hash_code();
         }
 
-        std::string Name() const override
-        {
-            return typeid(pxr::TfToken).name();
-        }
-
-        size_t ValueHash(std::any val) const override
+        size_t ValueHash(const std::any& val) const override
         {
             auto h = std::hash<std::string>();
             return h(static_cast<std::string>(std::any_cast<pxr::TfToken>(val)));
@@ -273,7 +271,7 @@ namespace UsdPlugin
             return 2;
         }
 
-        void SerializeValue(std::any v, rapidjson::Value& value,
+        void SerializeValue(const std::any& v, rapidjson::Value& value,
                             rapidjson::Document& document) const override
         {
             value.PushBack(rapidjson::Value().SetString(ApiName().c_str(), document.GetAllocator()),
@@ -283,12 +281,12 @@ namespace UsdPlugin
                              Rows(), Columns())
         }
 
-        std::any DeserializeValue(std::any v, rapidjson::Value& value) const override
+        std::any DeserializeValue(const std::any& v, rapidjson::Value& value) const override
         {
             return DeserializeMatrix<Matrix>(Rows(), Columns(), value);
         }
 
-        void SerializeConstruction(std::any v, rapidjson::Value& value,
+        void SerializeConstruction(const std::any& v, rapidjson::Value& value,
                                    rapidjson::Document& document) const override
         {
             return SerializeValue(v, value, document);
@@ -305,23 +303,23 @@ namespace UsdPlugin
             return std::make_any<Matrix>(Matrix());
         }
 
-        bool CompareValue(std::any v1, std::any v2) const override
+        bool CompareValue(const std::any& v1, const std::any& v2) const override
         {
             return (std::any_cast<Matrix>(v1) == std::any_cast<Matrix>(v2));
         }
 
-        std::any FromPython(boost::python::object python) const  override
+        std::any FromPython(const boost::python::object& python) const  override
         {
             Matrix value = boost::python::extract<Matrix>(python);
             return std::make_any<Matrix>(value);
         }
 
-        boost::python::object ToPython(std::any value) const override
+        boost::python::object ToPython(const std::any& value) const override
         {
             return boost::python::object(std::any_cast<Matrix>(value));
         }
 
-        std::any CopyValue(std::any source) const override
+        std::any CopyValue(const std::any& source) const override
         {
             return std::make_any<Matrix>(std::any_cast<Matrix>(source));
         }
@@ -331,7 +329,7 @@ namespace UsdPlugin
             return typeid(Matrix).hash_code();
         }
 
-        size_t ValueHash(std::any val) const override
+        size_t ValueHash(const std::any& val) const override
         {
             return 0;
         }
@@ -342,10 +340,6 @@ namespace UsdPlugin
 #define GF_MATRIX_HANDLER(structname, matrix, classname, pythonName, rows, columns) \
     struct structname: public GfMatrixHandler<matrix> \
     { \
-        std::string Name() const override \
-        { \
-            return typeid(pxr::classname).name(); \
-        }\
         std::string PythonName() const override \
         { \
             return #pythonName; \
@@ -368,7 +362,7 @@ namespace UsdPlugin
     template<typename Quat, typename Def>
     struct GfQuatHandler: public TSys::TypeHandler
     {
-        void SerializeValue(std::any v, rapidjson::Value& value,
+        void SerializeValue(const std::any& v, rapidjson::Value& value,
                             rapidjson::Document& document) const override
         {
             value.PushBack(rapidjson::Value().SetString(ApiName().c_str(), document.GetAllocator()),
@@ -385,13 +379,13 @@ namespace UsdPlugin
             value.PushBack(array, document.GetAllocator());
         }
 
-        std::any DeserializeValue(std::any v, rapidjson::Value& value) const override
+        std::any DeserializeValue(const std::any& v, rapidjson::Value& value) const override
         {
             return std::make_any<Quat>(Quat(value[0].Get<Def>(), value[1].Get<Def>(),
                                             value[2].Get<Def>(), value[3].Get<Def>()));
         }
 
-        void SerializeConstruction(std::any v, rapidjson::Value& value,
+        void SerializeConstruction(const std::any& v, rapidjson::Value& value,
                                    rapidjson::Document& document) const override
         {
             return SerializeValue(v, value, document);
@@ -408,23 +402,23 @@ namespace UsdPlugin
             return std::make_any<Quat>(Quat());
         }
 
-        bool CompareValue(std::any v1, std::any v2) const override
+        bool CompareValue(const std::any& v1, const std::any& v2) const override
         {
             return (std::any_cast<Quat>(v1) == std::any_cast<Quat>(v2));
         }
 
-        std::any FromPython(boost::python::object python) const  override
+        std::any FromPython(const boost::python::object& python) const  override
         {
             Quat value = boost::python::extract<Quat>(python);
             return std::make_any<Quat>(value);
         }
 
-        boost::python::object ToPython(std::any value) const override
+        boost::python::object ToPython(const std::any& value) const override
         {
             return boost::python::object(std::any_cast<Quat>(value));
         }
 
-        std::any CopyValue(std::any source) const override
+        std::any CopyValue(const std::any& source) const override
         {
             return std::make_any<Quat>(std::any_cast<Quat>(source));
         }
@@ -434,7 +428,7 @@ namespace UsdPlugin
             return typeid(Quat).hash_code();
         }
 
-        size_t ValueHash(std::any val) const override
+        size_t ValueHash(const std::any& val) const override
         {
             return 0;
         }
@@ -443,10 +437,6 @@ namespace UsdPlugin
 
 #define GF_QUAT_HANDLER(typeName, defType, pxrType, pythonName) \
     struct typeName: public GfQuatHandler<pxr::pxrType, defType> { \
-        std::string Name() const override \
-        { \
-            return #pxrType; \
-        } \
         std::string PythonName() const override \
         { \
             return #pythonName; \
@@ -522,7 +512,7 @@ namespace UsdPlugin
             return 2;
          }
 
-        void SerializeValue(std::any v, rapidjson::Value& value,
+        void SerializeValue(const std::any& v, rapidjson::Value& value,
                             rapidjson::Document& document) const override
         {
             value.PushBack(rapidjson::Value().SetString(ApiName().c_str(), document.GetAllocator()),
@@ -538,13 +528,13 @@ namespace UsdPlugin
             value.PushBack(array, document.GetAllocator());
         }
 
-        std::any DeserializeValue(std::any v, rapidjson::Value& value) const override
+        std::any DeserializeValue(const std::any& v, rapidjson::Value& value) const override
         {
             rapidjson::Value& jsonArray = value[1].GetArray();
             return std::make_any<Vec>(MakeVecBuilder<Vec, Def, Bld>(jsonArray));
         }
 
-        void SerializeConstruction(std::any v, rapidjson::Value& value,
+        void SerializeConstruction(const std::any& v, rapidjson::Value& value,
                                    rapidjson::Document& document) const override
         {
             return SerializeValue(v, value, document);
@@ -561,23 +551,23 @@ namespace UsdPlugin
             return std::make_any<Vec>(Vec());
         }
 
-        bool CompareValue(std::any v1, std::any v2) const override
+        bool CompareValue(const std::any& v1, const std::any& v2) const override
         {
             return (std::any_cast<Vec>(v1) == std::any_cast<Vec>(v2));
         }
 
-        std::any FromPython(boost::python::object python) const  override
+        std::any FromPython(const boost::python::object& python) const  override
         {
             Vec value = boost::python::extract<Vec>(python);
             return std::make_any<Vec>(value);
         }
 
-        boost::python::object ToPython(std::any value) const override
+        boost::python::object ToPython(const std::any& value) const override
         {
             return boost::python::object(std::any_cast<Vec>(value));
         }
 
-        std::any CopyValue(std::any source) const override
+        std::any CopyValue(const std::any& source) const override
         {
             return std::make_any<Vec>(std::any_cast<Vec>(source));
         }
@@ -587,7 +577,7 @@ namespace UsdPlugin
             return typeid(Vec).hash_code();
         }
 
-        size_t ValueHash(std::any val) const override
+        size_t ValueHash(const std::any& val) const override
         {
             return 0;
         }
@@ -597,10 +587,6 @@ namespace UsdPlugin
 #define GF_VEC_HANDLER(typeName, defType, builder, pxrShortName, apiName, pythonName, count) \
     struct typeName: public GfVecHandler<pxr::pxrShortName, defType, builder> \
     { \
-        std::string Name() const override \
-        { \
-            return #pxrShortName; \
-        } \
         std::string PythonName() const override \
         { \
             return #pythonName; \
@@ -689,7 +675,7 @@ namespace UsdPlugin
             return "UsdStage";
         }
 
-        void SerializeValue(std::any v, rapidjson::Value& value,
+        void SerializeValue(const std::any& v, rapidjson::Value& value,
                             rapidjson::Document& document)
                             const override
         {
@@ -707,7 +693,7 @@ namespace UsdPlugin
 
         }
 
-        std::any DeserializeValue(std::any v, rapidjson::Value& value) const override
+        std::any DeserializeValue(const std::any& v, rapidjson::Value& value) const override
         {
             std::string stageStr = value[1].GetString();
 
@@ -715,7 +701,7 @@ namespace UsdPlugin
             return std::make_any<pxr::UsdStageRefPtr>(pxr::UsdStage::Open(layer));
         }
 
-        void SerializeConstruction(std::any v, rapidjson::Value& value,
+        void SerializeConstruction(const std::any& v, rapidjson::Value& value,
                                    rapidjson::Document& document)
                                    const override
         {
@@ -733,7 +719,7 @@ namespace UsdPlugin
             return std::make_any<pxr::UsdStageRefPtr>(pxr::UsdStage::CreateInMemory());
         }
 
-        bool CompareValue(std::any v1, std::any v2) const override
+        bool CompareValue(const std::any& v1, const std::any& v2) const override
         {
             auto ptr1 = std::any_cast<pxr::UsdStageRefPtr>(v1);
             auto ptr2 = std::any_cast<pxr::UsdStageRefPtr>(v2);
@@ -741,18 +727,18 @@ namespace UsdPlugin
             return (ptr1 == ptr2);
         }
 
-        std::any FromPython(boost::python::object obj) const override
+        std::any FromPython(const boost::python::object& obj) const override
         {
             pxr::UsdStageRefPtr stage = boost::python::extract<pxr::UsdStageRefPtr>(obj);
             return std::make_any<pxr::UsdStageRefPtr>(stage);
         }
 
-        boost::python::object ToPython(std::any v) const override
+        boost::python::object ToPython(const std::any& v) const override
         {
             return boost::python::object(std::any_cast<pxr::UsdStageRefPtr>(v));
         }
 
-        std::any CopyValue(std::any source) const override
+        std::any CopyValue(const std::any& source) const override
         {
             return source;
         }
@@ -762,17 +748,12 @@ namespace UsdPlugin
             return typeid(pxr::UsdStageRefPtr).hash_code();
         }
 
-        std::string Name() const override
-        {
-            return typeid(pxr::UsdStageRefPtr).name();
-        }
-
         std::string PythonName() const override
         {
             return "Stage";
         }
 
-        size_t ValueHash(std::any val) const override
+        size_t ValueHash(const std::any& val) const override
         {
             auto st = std::any_cast<pxr::UsdStageRefPtr>(val);
 
@@ -808,7 +789,7 @@ namespace UsdPlugin
             return "UsdPrim";
         }
 
-        void SerializeValue(std::any v, rapidjson::Value& value,
+        void SerializeValue(const std::any& v, rapidjson::Value& value,
                             rapidjson::Document& document)
         const override
         {
@@ -824,12 +805,12 @@ namespace UsdPlugin
 
         }
 
-        std::any DeserializeValue(std::any v, rapidjson::Value& value) const override
+        std::any DeserializeValue(const std::any& v, rapidjson::Value& value) const override
         {
             return std::make_any<pxr::UsdPrim>(pxr::UsdPrim());
         }
 
-        void SerializeConstruction(std::any v, rapidjson::Value& value,
+        void SerializeConstruction(const std::any& v, rapidjson::Value& value,
                                    rapidjson::Document& document)
         const override
         {
@@ -847,7 +828,7 @@ namespace UsdPlugin
             return std::make_any<pxr::UsdPrim>(pxr::UsdPrim());
         }
 
-        bool CompareValue(std::any v1, std::any v2) const override
+        bool CompareValue(const std::any& v1, const std::any& v2) const override
         {
             auto ptr1 = std::any_cast<pxr::UsdPrim>(v1);
             auto ptr2 = std::any_cast<pxr::UsdPrim>(v2);
@@ -855,18 +836,18 @@ namespace UsdPlugin
             return (ptr1 == ptr2);
         }
 
-        std::any FromPython(boost::python::object obj) const override
+        std::any FromPython(const boost::python::object& obj) const override
         {
             pxr::UsdPrim prim = boost::python::extract<pxr::UsdPrim>(obj);
             return std::make_any<pxr::UsdPrim>(prim);
         }
 
-        boost::python::object ToPython(std::any v) const override
+        boost::python::object ToPython(const std::any& v) const override
         {
             return boost::python::object(std::any_cast<pxr::UsdPrim>(v));
         }
 
-        std::any CopyValue(std::any source) const override
+        std::any CopyValue(const std::any& source) const override
         {
             return source;
         }
@@ -876,17 +857,12 @@ namespace UsdPlugin
             return typeid(pxr::UsdPrim).hash_code();
         }
 
-        std::string Name() const override
-        {
-            return typeid(pxr::UsdPrim).name();
-        }
-
         std::string PythonName() const override
         {
             return "Prim";
         }
 
-        size_t ValueHash(std::any val) const override
+        size_t ValueHash(const std::any& val) const override
         {
             auto st = std::any_cast<pxr::UsdPrim>(val);
 
@@ -905,7 +881,7 @@ namespace UsdPlugin
             return "UsdAttribute";
         }
 
-        void SerializeValue(std::any v, rapidjson::Value& value,
+        void SerializeValue(const std::any& v, rapidjson::Value& value,
                             rapidjson::Document& document)
         const override
         {
@@ -921,12 +897,12 @@ namespace UsdPlugin
 
         }
 
-        std::any DeserializeValue(std::any v, rapidjson::Value& value) const override
+        std::any DeserializeValue(const std::any& v, rapidjson::Value& value) const override
         {
             return std::make_any<pxr::UsdAttribute>(pxr::UsdAttribute());
         }
 
-        void SerializeConstruction(std::any v, rapidjson::Value& value,
+        void SerializeConstruction(const std::any& v, rapidjson::Value& value,
                                    rapidjson::Document& document)
         const override
         {
@@ -944,7 +920,7 @@ namespace UsdPlugin
             return std::make_any<pxr::UsdAttribute>(pxr::UsdAttribute());
         }
 
-        bool CompareValue(std::any v1, std::any v2) const override
+        bool CompareValue(const std::any& v1, const std::any& v2) const override
         {
             auto ptr1 = std::any_cast<pxr::UsdAttribute>(v1);
             auto ptr2 = std::any_cast<pxr::UsdAttribute>(v2);
@@ -952,18 +928,18 @@ namespace UsdPlugin
             return (ptr1 == ptr2);
         }
 
-        std::any FromPython(boost::python::object obj) const override
+        std::any FromPython(const boost::python::object& obj) const override
         {
             pxr::UsdAttribute prim = boost::python::extract<pxr::UsdAttribute>(obj);
             return std::make_any<pxr::UsdAttribute>(prim);
         }
 
-        boost::python::object ToPython(std::any v) const override
+        boost::python::object ToPython(const std::any& v) const override
         {
             return boost::python::object(std::any_cast<pxr::UsdAttribute>(v));
         }
 
-        std::any CopyValue(std::any source) const override
+        std::any CopyValue(const std::any& source) const override
         {
             return source;
         }
@@ -973,17 +949,12 @@ namespace UsdPlugin
             return typeid(pxr::UsdAttribute).hash_code();
         }
 
-        std::string Name() const override
-        {
-            return typeid(pxr::UsdAttribute).name();
-        }
-
         std::string PythonName() const override
         {
             return "Prim";
         }
 
-        size_t ValueHash(std::any val) const override
+        size_t ValueHash(const std::any& val) const override
         {
             auto st = std::any_cast<pxr::UsdAttribute>(val);
 
@@ -1176,7 +1147,7 @@ namespace UsdPlugin
             return "SdfLayer";
         }
 
-        void SerializeValue(std::any v, rapidjson::Value& value,
+        void SerializeValue(const std::any& v, rapidjson::Value& value,
                             rapidjson::Document& document)
         const override
         {
@@ -1193,7 +1164,7 @@ namespace UsdPlugin
 
         }
 
-        std::any DeserializeValue(std::any v, rapidjson::Value& value) const override
+        std::any DeserializeValue(const std::any& v, rapidjson::Value& value) const override
         {
             std::string stageStr = value[1].GetString();
 
@@ -1203,7 +1174,7 @@ namespace UsdPlugin
             return std::make_any<pxr::SdfLayerRefPtr>(layer);
         }
 
-        void SerializeConstruction(std::any v, rapidjson::Value& value,
+        void SerializeConstruction(const std::any& v, rapidjson::Value& value,
                                    rapidjson::Document& document)
         const override
         {
@@ -1222,7 +1193,7 @@ namespace UsdPlugin
             return std::make_any<pxr::SdfLayerRefPtr>(layer);
         }
 
-        bool CompareValue(std::any v1, std::any v2) const override
+        bool CompareValue(const std::any& v1, const std::any& v2) const override
         {
             auto ptr1 = std::any_cast<pxr::SdfLayerRefPtr>(v1);
             auto ptr2 = std::any_cast<pxr::SdfLayerRefPtr>(v2);
@@ -1230,18 +1201,18 @@ namespace UsdPlugin
             return (ptr1 == ptr2);
         }
 
-        std::any FromPython(boost::python::object obj) const override
+        std::any FromPython(const boost::python::object& obj) const override
         {
             pxr::SdfLayerRefPtr layer = boost::python::extract<pxr::SdfLayerRefPtr>(obj);
             return std::make_any<pxr::SdfLayerRefPtr>(layer);
         }
 
-        boost::python::object ToPython(std::any v) const override
+        boost::python::object ToPython(const std::any& v) const override
         {
             return boost::python::object(std::any_cast<pxr::SdfLayerRefPtr>(v));
         }
 
-        std::any CopyValue(std::any source) const override
+        std::any CopyValue(const std::any& source) const override
         {
             return source;
         }
@@ -1251,17 +1222,12 @@ namespace UsdPlugin
             return typeid(pxr::SdfLayerRefPtr).hash_code();
         }
 
-        std::string Name() const override
-        {
-            return typeid(pxr::SdfLayerRefPtr).name();
-        }
-
         std::string PythonName() const override
         {
             return "Layer";
         }
 
-        size_t ValueHash(std::any val) const override
+        size_t ValueHash(const std::any& val) const override
         {
             auto st = std::any_cast<pxr::SdfLayerRefPtr>(val);
 
@@ -1304,7 +1270,7 @@ namespace UsdPlugin
             return "SdfPath";
         }
 
-        void SerializeValue(std::any v, rapidjson::Value& value,
+        void SerializeValue(const std::any& v, rapidjson::Value& value,
                             rapidjson::Document& document)
         const override
         {
@@ -1319,7 +1285,7 @@ namespace UsdPlugin
 
         }
 
-        std::any DeserializeValue(std::any v, rapidjson::Value& value) const override
+        std::any DeserializeValue(const std::any& v, rapidjson::Value& value) const override
         {
             std::string stageStr = value[1].GetString();
 
@@ -1328,7 +1294,7 @@ namespace UsdPlugin
             return std::make_any<pxr::SdfPath>(path);
         }
 
-        void SerializeConstruction(std::any v, rapidjson::Value& value,
+        void SerializeConstruction(const std::any& v, rapidjson::Value& value,
                                    rapidjson::Document& document)
         const override
         {
@@ -1346,7 +1312,7 @@ namespace UsdPlugin
             return std::make_any<pxr::SdfPath>(pxr::SdfPath());
         }
 
-        bool CompareValue(std::any v1, std::any v2) const override
+        bool CompareValue(const std::any& v1, const std::any& v2) const override
         {
             auto p1 = std::any_cast<pxr::SdfPath>(v1);
             auto p2 = std::any_cast<pxr::SdfPath>(v2);
@@ -1354,18 +1320,18 @@ namespace UsdPlugin
             return (p1 == p2);
         }
 
-        std::any FromPython(boost::python::object obj) const override
+        std::any FromPython(const boost::python::object& obj) const override
         {
             pxr::SdfPath layer = boost::python::extract<pxr::SdfPath>(obj);
             return std::make_any<pxr::SdfPath>(layer);
         }
 
-        boost::python::object ToPython(std::any v) const override
+        boost::python::object ToPython(const std::any& v) const override
         {
             return boost::python::object(std::any_cast<pxr::SdfPath>(v));
         }
 
-        std::any CopyValue(std::any source) const override
+        std::any CopyValue(const std::any& source) const override
         {
             return source;
         }
@@ -1375,17 +1341,12 @@ namespace UsdPlugin
             return typeid(pxr::SdfPath).hash_code();
         }
 
-        std::string Name() const override
-        {
-            return typeid(pxr::SdfPath).name();
-        }
-
         std::string PythonName() const override
         {
             return "Layer";
         }
 
-        size_t ValueHash(std::any val) const override
+        size_t ValueHash(const std::any& val) const override
         {
             auto st = std::any_cast<pxr::SdfPath>(val);
 
@@ -2068,10 +2029,10 @@ REGISTER_PLUGIN(Gex::PluginLoader* loader)
 
     loader->RegisterTypeHandler<pxr::SdfPath, UsdPlugin::SdfPathHandler>();
 
-    TSys::TypeRegistry::GetRegistry()->GetTypeHandleFromApiName("String")
+    TSys::TypeRegistry::GetRegistry()->GetTypeHandle("String")
             ->RegisterConverter<pxr::SdfPath, UsdPlugin::SdfPathToStr>();
 
-    TSys::TypeRegistry::GetRegistry()->GetTypeHandleFromApiName("SdfPath")
+    TSys::TypeRegistry::GetRegistry()->GetTypeHandle("SdfPath")
             ->RegisterConverter<std::string, UsdPlugin::StrToSdfPath>();
 
     loader->RegisterTypeHandler<pxr::SdfLayerRefPtr, UsdPlugin::SdfLayerHandler>();

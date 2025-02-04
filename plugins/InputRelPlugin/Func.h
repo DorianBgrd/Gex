@@ -162,17 +162,12 @@ namespace Gex::InputRel
     template<typename T>
     struct FuncWrapper: public TSys::TypeHandler
     {
-        virtual std::string Name() const override
-        {
-            return ApiName();
-        }
-
         virtual std::string PythonName() const override
         {
             return ApiName();
         }
 
-        void SerializeValue(std::any v, rapidjson::Value& value,
+        void SerializeValue(const std::any& v, rapidjson::Value& value,
                             rapidjson::Document& document)
                             const override
         {
@@ -180,7 +175,7 @@ namespace Gex::InputRel
             func->Serialize(value, document);
         }
 
-        std::any DeserializeValue(std::any v, rapidjson::Value& value) const override
+        std::any DeserializeValue(const std::any& v, rapidjson::Value& value) const override
         {
             std::shared_ptr<T> func = std::make_shared<T>();
             func->Deserialize(value);
@@ -188,7 +183,7 @@ namespace Gex::InputRel
             return std::make_any<std::shared_ptr<T>>(func);
         }
 
-        void SerializeConstruction(std::any v, rapidjson::Value& value,
+        void SerializeConstruction(const std::any& v, rapidjson::Value& value,
                                    rapidjson::Document& document)
                                    const override
         {
@@ -205,12 +200,12 @@ namespace Gex::InputRel
             return std::make_any<std::shared_ptr<T>>(std::make_shared<T>());
         }
 
-        bool CompareValue(std::any, std::any) const override
+        bool CompareValue(const std::any&, const std::any&) const override
         {
             return false;
         }
 
-        std::any FromPython(boost::python::object v) const override
+        std::any FromPython(const boost::python::object& v) const override
         {
 //            std::shared_ptr<T> value = boost::python::extract<std::shared_ptr<T>>(v);
 //            return std::make_any<std::shared_ptr<T>>(value);
@@ -219,7 +214,7 @@ namespace Gex::InputRel
             return std::make_any<std::shared_ptr<T>>(p);
         }
 
-        boost::python::object ToPython(std::any v) const override
+        boost::python::object ToPython(const std::any& v) const override
         {
             T::RegisterPythonWrapper();
 
@@ -228,7 +223,7 @@ namespace Gex::InputRel
             return boost::python::object(p);
         }
 
-        virtual std::any CopyValue(std::any source) const override
+        virtual std::any CopyValue(const std::any& source) const override
         {
             return std::make_any<std::shared_ptr<T>>(std::any_cast<std::shared_ptr<T>>(source));
         }
@@ -238,7 +233,7 @@ namespace Gex::InputRel
             return typeid(std::shared_ptr<T>).hash_code();
         }
 
-        virtual size_t ValueHash(std::any val) const override
+        virtual size_t ValueHash(const std::any& val) const override
         {
             return 0;
         }

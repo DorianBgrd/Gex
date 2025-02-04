@@ -74,14 +74,42 @@ namespace Debug
     };
 
 
-    class Plugin_API WaitBuilder: public Gex::DefaultNodeBuilder
+    GENERATE_DEFAULT_BUILDER(WaitBuilder, Wait)
+
+
+    class Plugin_API Blocker: public Gex::Node
     {
     public:
-        Gex::Node* CreateNode() const override
+        using Gex::Node::Node;
+
+        void InitAttributes() override
         {
-            return new Wait();
+            CreateAttribute<TSys::AnyValue>(
+                    "Input", Gex::AttrValueType::Single,
+                    Gex::AttrType::Input);
+            CreateAttribute<TSys::AnyValue>(
+                    "Output", Gex::AttrValueType::Single,
+                    Gex::AttrType::Output);
+            CreateAttribute<bool>(
+                    "Block", Gex::AttrValueType::Single,
+                    Gex::AttrType::Input);
+        }
+
+        bool Evaluate(Gex::NodeAttributeData &data,
+                      Gex::GraphContext &,
+                      Gex::NodeProfiler& profiler) override
+        {
+            bool block = data.GetAttribute("Block").GetValue<bool>();
+            if (block)
+                return false;
+
+            return data.GetAttribute("Output").SetValue(
+                    data.GetAttribute("Input").GetValue<TSys::AnyValue>());
         }
     };
+
+
+    GENERATE_DEFAULT_BUILDER(BlockerBuilder, Blocker)
 }
 
 
@@ -90,6 +118,8 @@ extern EXPORT RegisterPlugin(Gex::PluginLoader* loader)
     loader->RegisterNode<Debug::PrintBuilder>("Debug/Print");
 
     loader->RegisterNode<Debug::WaitBuilder>("Debug/Wait");
+
+    loader->RegisterNode<Debug::BlockerBuilder>("Debug/Block");
 }
 
 

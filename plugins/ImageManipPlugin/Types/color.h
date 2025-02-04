@@ -11,7 +11,7 @@ namespace ImageManip::Types
 {
     struct Plugin_API ColorHandler: TSys::TypeHandler
     {
-        void SerializeValue(std::any v, rapidjson::Value& value,
+        void SerializeValue(const std::any& v, rapidjson::Value& value,
                             rapidjson::Document& document)
                             const override
         {
@@ -27,7 +27,7 @@ namespace ImageManip::Types
                            document.GetAllocator());
         }
 
-        std::any DeserializeValue(std::any v, rapidjson::Value& value) const override
+        std::any DeserializeValue(const std::any& v, rapidjson::Value& value) const override
         {
             QColor color(
                     value[0].GetInt(),
@@ -39,7 +39,7 @@ namespace ImageManip::Types
             return std::make_any<QColor>(color);
         }
 
-        void SerializeConstruction(std::any v, rapidjson::Value& value,
+        void SerializeConstruction(const std::any& v, rapidjson::Value& value,
                                    rapidjson::Document& document)
         const override
         {
@@ -56,22 +56,22 @@ namespace ImageManip::Types
             return std::make_any<QColor>(QColor());
         }
 
-        bool CompareValue(std::any v1, std::any v2) const override
+        bool CompareValue(const std::any& v1, const std::any& v2) const override
         {
             return std::any_cast<QColor>(v1) == std::any_cast<QColor>(v2);
         }
 
-        std::any FromPython(boost::python::object) const override
+        std::any FromPython(const boost::python::object&) const override
         {
             return InitValue();
         }
 
-        boost::python::object ToPython(std::any) const override
+        boost::python::object ToPython(const std::any&) const override
         {
             return {};
         }
 
-        std::any CopyValue(std::any source) const override
+        std::any CopyValue(const std::any& source) const override
         {
             return std::make_any<QColor>(QColor(std::any_cast<QColor>(source)));
         }
@@ -79,11 +79,6 @@ namespace ImageManip::Types
         size_t Hash() const override
         {
             return typeid(QColor).hash_code();
-        }
-
-        std::string Name() const override
-        {
-            return typeid(QColor).name();
         }
 
         std::string PythonName() const override
@@ -96,7 +91,7 @@ namespace ImageManip::Types
             return "QColor";
         }
 
-        size_t ValueHash(std::any val) const override
+        size_t ValueHash(const std::any& val) const override
         {
             return 0;
         }

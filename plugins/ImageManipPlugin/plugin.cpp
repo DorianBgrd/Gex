@@ -28,7 +28,7 @@
 
 extern EXPORT RegisterPlugin(Gex::PluginLoader* loader)
 {
-    loader->RegisterTypeHandler<QPixmap, ImageManip::Types::ImageHandler>();
+    loader->RegisterTypeHandler<QImage, ImageManip::Types::ImageHandler>();
 
     loader->RegisterTypeHandler<QColor, ImageManip::Types::ColorHandler>();
 

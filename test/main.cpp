@@ -1,38 +1,95 @@
+#include <memory>
+#include "iostream"
 #include "Gex/include/Gex.h"
-#include <filesystem>
 
 
+struct T: public std::enable_shared_from_this<T>
+{
+    int v = 0;
 
+    bool operator < (const T& other) const
+    {
+        return v < other.v;
+    }
+
+    std::shared_ptr<T> Cp()
+    {
+        return shared_from_this();
+    }
+};
+
+
+struct A
+{
+    double x = 0;
+};
+
+
+struct B: public A
+{
+
+};
 
 
 int main(int argc, char** argv)
 {
-    char* pluginPath = argv[0];
-    char* graphF = argv[1];
+    Gex::Feedback res;
+//    Gex::PluginLoader::LoadPlugin("D:\\WORK\\GEX\\Gex\\test\\TestPlugin\\testPlugin.json", &res);
 
-    auto* graph = new Gex::CompoundNode();
+    Gex::PluginLoader::LoadPlugin(
+            "D:\\WORK\\GEX\\Gex\\cmake-build-debug\\plugins\\MathPlugin\\MathPlugin\\MathPlugin.json",
+            &res);
+    if (!res)
+    {
+        return 1;
+    }
 
-    bool success = Gex::PluginLoader::LoadPlugin(pluginPath);
+    auto addDoubles = Gex::NodeFactory::GetFactory()->CreateNode("Math/Add2Doubles", "BatchNode");
 
-    Gex::Node* n1 = graph->CreateNode("String/Constant", "Node1");
-    Gex::Node* n2 = graph->CreateNode("String/Constant", "Node2");
+//    Gex::Undo::UndoStack::OpenGroup("Batch");
+//
+//    addDoubles->GetAttribute("Input1")->Set(5);
+//    addDoubles->GetAttribute("Input2")->Set(10);
+//
+//    Gex::Undo::UndoStack::CloseGroup();
+//
+//    auto value1 = addDoubles->GetAttribute("Input1")->Get<double>();
+//    auto value2 = addDoubles->GetAttribute("Input2")->Get<double>();
+//
+//    assert(value1 == 5);
+//    assert(value2 == 10);
+//
+//    Gex::Undo::UndoStack::Undo();
+//
+//    value1 = addDoubles->GetAttribute("Input1")->Get<double>();
+//    value2 = addDoubles->GetAttribute("Input2")->Get<double>();
+//
+//    assert(value1 == 0);
+//    assert(value2 == 0);
 
-    Gex::Node* n3 = graph->CreateNode("String/Constant", "Node3");
+//    std::set<T> s = {{0}, {1}, {2}};
+//
+//    auto s1 = *(s.begin()++);
+//
+//    s.erase(s1);
+//    s1.v = 4;
+//
+//    s.insert(s1);
 
-    auto* at1 = n1->GetAttribute("String");
-    auto* at3 = n3->GetAttribute("String");
-    bool connected = at3->ConnectSource(at1);
+    std::shared_ptr<T> st = std::make_shared<T>();
+    st->v = 6;
 
-    at1->Set(std::string("Value"));
+    Gex::BaseWkPtr<T> wt = st;
 
-    Gex::SaveGraph(graph, graphF);
+    auto sft = wt->Cp();
 
-    Gex::CompoundNode* lg = Gex::CompoundNode::FromNode(
-            Gex::LoadGraph(graphF));
+    std::shared_ptr<A> sharedA = std::make_shared<A>();
+    std::shared_ptr<A> sharedB = std::make_shared<B>();
+    std::shared_ptr<B> sharedB1 = std::make_shared<B>();
 
-    Gex::Node* n_1 = lg->GetNode("Node1");
-    auto* at_1 = n_1->GetAttribute("String");
-    auto v = at_1->Get<std::string>();
+    std::cout << "sharedA : " << typeid(sharedA).hash_code() << std::endl;
+    std::cout << "sharedB : " << typeid(sharedB.get()).hash_code() << std::endl;
+    std::cout << "sharedB1 : " << typeid(sharedB1.get()).hash_code() << std::endl;
 
     return 0;
 }

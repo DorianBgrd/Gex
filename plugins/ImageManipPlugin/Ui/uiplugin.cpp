@@ -12,27 +12,35 @@
 extern "C" Plugin_API
 void RegisterUiPlugin(Gex::Ui::UiPluginLoader* loader)
 {
-    loader->RegisterTypeWidget<QImage>("Image", nullptr,
-                                       new ImageManip::Ui::Types::ImageWidgetBuilder());
+    loader->RegisterTypeWidget<QImage>(
+            "Image", nullptr,
+            MakeUiPtr(ImageManip::Ui::Types::ImageWidgetBuilder)
+    );
 
-    loader->RegisterTypeWidget<QColor>("Color", nullptr,
-                                        new ImageManip::Ui::Types::ColorWidgetBuilder());
+    loader->RegisterTypeWidget<QColor>(
+            "Color", nullptr,
+            MakeUiPtr(ImageManip::Ui::Types::ColorWidgetBuilder)
+    );
 
     loader->RegisterTypeWidget<ImageManip::Types::Resolution>(
             "Resolution", nullptr,
-            new ImageManip::Ui::Types::ResolutionWidgetBuilder());
+            MakeUiPtr(ImageManip::Ui::Types::ResolutionWidgetBuilder)
+    );
 
     loader->RegisterTypeWidget<ImageManip::Types::LinearGradient>(
             "LinearGradient", nullptr,
-            new ImageManip::Ui::Types::LinearGradientWidgetBuilder());
+            MakeUiPtr(ImageManip::Ui::Types::LinearGradientWidgetBuilder)
+    );
 
     loader->RegisterTypeWidget<ImageManip::Types::LevelMap>(
             "LevelMap", nullptr,
-            new ImageManip::Ui::Types::LevelWidgetBuilder());
+            MakeUiPtr(ImageManip::Ui::Types::LevelWidgetBuilder)
+    );
 
     loader->RegisterTypeWidget<ImageManip::Types::Point>(
             "ImageManip::Point", nullptr,
-            new ImageManip::Ui::Types::PointWidgetBuilder());
+            MakeUiPtr(ImageManip::Ui::Types::PointWidgetBuilder)
+    );
 
 
     loader->RegisterNodeViewer<ImageManip::Viewers::ImageNodeViewerBuilder>("Image/IO/Create");

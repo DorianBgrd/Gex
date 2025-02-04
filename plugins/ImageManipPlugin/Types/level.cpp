@@ -106,7 +106,7 @@ std::any ImageManip::Types::LevelMapHandler::InitValue() const
 }
 
 
-std::any ImageManip::Types::LevelMapHandler::FromPython(boost::python::object o) const
+std::any ImageManip::Types::LevelMapHandler::FromPython(const boost::python::object& o) const
 {
     ImageManip::Types::LevelMap map_ = boost::python::extract<
             ImageManip::Types::LevelMap>(o);
@@ -115,13 +115,13 @@ std::any ImageManip::Types::LevelMapHandler::FromPython(boost::python::object o)
 }
 
 
-boost::python::object ImageManip::Types::LevelMapHandler::ToPython(std::any v) const
+boost::python::object ImageManip::Types::LevelMapHandler::ToPython(const std::any& v) const
 {
     return boost::python::object(std::any_cast<ImageManip::Types::LevelMap>(v));
 }
 
 
-std::any ImageManip::Types::LevelMapHandler::CopyValue(std::any source) const
+std::any ImageManip::Types::LevelMapHandler::CopyValue(const std::any& source) const
 {
     return std::make_any<ImageManip::Types::LevelMap>(LevelMap(
             std::any_cast<ImageManip::Types::LevelMap>(source)));
@@ -131,12 +131,6 @@ std::any ImageManip::Types::LevelMapHandler::CopyValue(std::any source) const
 size_t ImageManip::Types::LevelMapHandler::Hash() const
 {
     return typeid(LevelMap).hash_code();
-}
-
-
-std::string ImageManip::Types::LevelMapHandler::Name() const
-{
-    return typeid(LevelMap).name();
 }
 
 
@@ -152,20 +146,20 @@ std::string ImageManip::Types::LevelMapHandler::ApiName() const
 }
 
 
-size_t ImageManip::Types::LevelMapHandler::ValueHash(std::any val) const
+size_t ImageManip::Types::LevelMapHandler::ValueHash(const std::any& val) const
 {
     return 0;
 }
 
 
-bool ImageManip::Types::LevelMapHandler::CompareValue(std::any v1, std::any v2) const
+bool ImageManip::Types::LevelMapHandler::CompareValue(const std::any& v1, const std::any& v2) const
 {
     return (std::any_cast<LevelMap>(v1) == std::any_cast<LevelMap>(v2));
 }
 
 
 void ImageManip::Types::LevelMapHandler::SerializeValue(
-        std::any v, rapidjson::Value& value,
+        const std::any& v, rapidjson::Value& value,
         rapidjson::Document& document) const
 {
     auto level = std::any_cast<LevelMap>(v);
@@ -184,7 +178,7 @@ void ImageManip::Types::LevelMapHandler::SerializeValue(
 }
 
 std::any ImageManip::Types::LevelMapHandler::DeserializeValue(
-        std::any v, rapidjson::Value& value) const
+        const std::any& v, rapidjson::Value& value) const
 {
     LevelMap level(
             value[0].GetDouble(),
@@ -198,7 +192,7 @@ std::any ImageManip::Types::LevelMapHandler::DeserializeValue(
 }
 
 void ImageManip::Types::LevelMapHandler::SerializeConstruction(
-        std::any v, rapidjson::Value& value,
+        const std::any& v, rapidjson::Value& value,
         rapidjson::Document& document) const
 {
 

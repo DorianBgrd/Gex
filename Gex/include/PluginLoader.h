@@ -104,8 +104,6 @@ namespace Gex
         static bool PluginLoaded(std::string plugin);
 
         static std::vector<std::string> LoadedPlugins();
-
-        static void LoadConfigFile(std::string envFile);
     };
 }
 

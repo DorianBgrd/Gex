@@ -12,12 +12,12 @@ namespace UsdPlugin
     struct UnsavableHandler: public TSys::TypeHandler
     {
         // Disable saving options.
-        void SerializeValue(std::any v, rapidjson::Value& value,
+        void SerializeValue(const std::any& v, rapidjson::Value& value,
                             rapidjson::Document& document)
         const override {};
 
         // Disable loading options.
-        std::any DeserializeValue(std::any v,
+        std::any DeserializeValue(const std::any& v,
                                   rapidjson::Value& value)
         const override
         {
@@ -25,7 +25,7 @@ namespace UsdPlugin
         };
 
 
-        void SerializeConstruction(std::any v, rapidjson::Value& value,
+        void SerializeConstruction(const std::any& v, rapidjson::Value& value,
                                    rapidjson::Document& document)
         const override {};
 
@@ -50,24 +50,22 @@ namespace UsdPlugin
 
             // Checks whether the two usd geom mesh api
             // operates on the same prims.
-            bool CompareValue(std::any v1, std::any v2) const override;
+            bool CompareValue(const std::any& v1, const std::any& v2) const override;
 
             //
-            std::any FromPython(boost::python::object o) const override;
+            std::any FromPython(const boost::python::object& o) const override;
 
-            boost::python::object ToPython(std::any) const override;
+            boost::python::object ToPython(const std::any&) const override;
 
-            std::any CopyValue(std::any source) const override;
+            std::any CopyValue(const std::any& source) const override;
 
             size_t Hash() const override;
-
-            std::string Name() const override;
 
             std::string PythonName() const override;
 
             std::string ApiName() const override;
 
-            size_t ValueHash(std::any val) const override;
+            size_t ValueHash(const std::any& val) const override;
         };
 
 
@@ -187,24 +185,22 @@ namespace UsdPlugin
 
             // Checks whether the two usd geom mesh api
             // operates on the same prims.
-            bool CompareValue(std::any v1, std::any v2) const override;
+            bool CompareValue(const std::any& v1, const std::any& v2) const override;
 
             //
-            std::any FromPython(boost::python::object o) const override;
+            std::any FromPython(const boost::python::object& o) const override;
 
-            boost::python::object ToPython(std::any) const override;
+            boost::python::object ToPython(const std::any&) const override;
 
-            std::any CopyValue(std::any source) const override;
+            std::any CopyValue(const std::any& source) const override;
 
             size_t Hash() const override;
-
-            std::string Name() const override;
 
             std::string PythonName() const override;
 
             std::string ApiName() const override;
 
-            size_t ValueHash(std::any val) const override;
+            size_t ValueHash(const std::any& val) const override;
         };
 
 
@@ -238,25 +234,25 @@ namespace UsdPlugin
 
             std::string PythonName() const override;
 
-            void SerializeValue(std::any v, rapidjson::Value& value,
+            void SerializeValue(const std::any& v, rapidjson::Value& value,
                                 rapidjson::Document& document) const override;
 
-            std::any DeserializeValue(std::any v, rapidjson::Value& value) const override;
+            std::any DeserializeValue(const std::any& v, rapidjson::Value& value) const override;
 
-            void SerializeConstruction(std::any v, rapidjson::Value& value,
+            void SerializeConstruction(const std::any& v, rapidjson::Value& value,
                                        rapidjson::Document& document) const override;
 
             std::any DeserializeConstruction(rapidjson::Value& value) const override;
 
             std::any InitValue() const override;
 
-            std::any FromPython(boost::python::object) const override;
+            std::any FromPython(const boost::python::object&) const override;
 
-            boost::python::object ToPython(std::any) const override;
+            boost::python::object ToPython(const std::any&) const override;
 
-            std::any CopyValue(std::any source) const override;
+            std::any CopyValue(const std::any& source) const override;
 
-            size_t ValueHash(std::any val) const override
+            size_t ValueHash(const std::any& val) const override
             {
                 return 0;
             }
@@ -266,12 +262,7 @@ namespace UsdPlugin
                 return typeid(PointList).hash_code();
             }
 
-            std::string Name() const override
-            {
-                return typeid(PointList).name();
-            }
-
-            bool CompareValue(std::any, std::any) const override
+            bool CompareValue(const std::any&, const std::any&) const override
             {
                 return false;
             }

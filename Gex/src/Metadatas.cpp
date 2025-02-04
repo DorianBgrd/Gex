@@ -8,8 +8,8 @@ Gex::JsonValue Gex::NodeMetadata::Serialize(JsonDoc& doc) const
     for (auto mv : metadata)
     {
         std::any anyval = mv.second;
-        auto* handler = TSys::TypeRegistry::GetRegistry()->GetTypeHandle(
-                anyval.type().hash_code());
+        auto handler = TSys::TypeRegistry::GetRegistry()->GetTypeHandle(
+                anyval.type());
         if (!handler)
             continue;
 
@@ -43,7 +43,7 @@ void Gex::NodeMetadata::Deserialize(JsonValue& val)
         std::string type = val[i][1].GetString();
         rapidjson::Value& m = val[i][2];
 
-        auto* handler = TSys::TypeRegistry::GetRegistry()->GetTypeHandleFromApiName(type);
+        auto handler = TSys::TypeRegistry::GetRegistry()->GetTypeHandle(type);
         if (!handler)
             continue;
 

@@ -52,7 +52,7 @@ namespace Gex
         }
 
 
-        bool SetAnyValue(std::any value);
+        bool SetAnyValue(const std::any& value);
 
 
         template<class T> bool SetValue(T value)
@@ -123,7 +123,7 @@ namespace Gex
         }
 
 
-        NodeAttributeData GetAttribute(std::string name, Feedback* success=nullptr) const;
+        NodeAttributeData GetAttribute(const std::string& name, Feedback* success=nullptr) const;
 
 
         NodeAttributeData GetIndex(unsigned int index, Feedback* success=nullptr) const;
@@ -174,7 +174,7 @@ namespace Gex
         bool ClearMultiIndices() const;
 
 
-        bool HasAttribute(std::string name) const;
+        bool HasAttribute(const std::string& name) const;
 
 
         bool HasIndex(unsigned int index) const;

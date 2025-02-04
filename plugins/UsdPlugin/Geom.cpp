@@ -5,6 +5,14 @@
 
 #include "pxr/usd/usdGeom/primvarsAPI.h"
 
+#ifdef min
+#undef min
+#endif
+
+#ifdef max
+#undef max
+#endif
+
 
 UsdPlugin::UsdGeom::UsdGeomMeshType::UsdGeomMeshType(): UnsavableHandler()
 {
@@ -17,26 +25,26 @@ std::any UsdPlugin::UsdGeom::UsdGeomMeshType::InitValue() const
     return pxr::UsdGeomMesh();
 }
 
-bool UsdPlugin::UsdGeom::UsdGeomMeshType::CompareValue(std::any v1, std::any v2) const
+bool UsdPlugin::UsdGeom::UsdGeomMeshType::CompareValue(const std::any& v1, const std::any& v2) const
 {
         return (std::any_cast<pxr::UsdGeomMesh>(v1).GetPrim() ==
                 std::any_cast<pxr::UsdGeomMesh>(v2).GetPrim());
 }
 
-std::any UsdPlugin::UsdGeom::UsdGeomMeshType::FromPython(boost::python::object o) const
+std::any UsdPlugin::UsdGeom::UsdGeomMeshType::FromPython(const boost::python::object& o) const
 {
     pxr::UsdGeomMesh fpy = boost::python::extract<pxr::UsdGeomMesh>(o);
     return fpy;
 }
 
 
-boost::python::object UsdPlugin::UsdGeom::UsdGeomMeshType::ToPython(std::any o) const
+boost::python::object UsdPlugin::UsdGeom::UsdGeomMeshType::ToPython(const std::any& o) const
 {
     return boost::python::object(std::any_cast<pxr::UsdGeomMesh>(o));
 }
 
 
-std::any UsdPlugin::UsdGeom::UsdGeomMeshType::CopyValue(std::any source) const
+std::any UsdPlugin::UsdGeom::UsdGeomMeshType::CopyValue(const std::any& source) const
 {
     return pxr::UsdGeomMesh(std::any_cast<pxr::UsdGeomMesh>(source));
 }
@@ -48,11 +56,6 @@ size_t UsdPlugin::UsdGeom::UsdGeomMeshType::Hash() const
 }
 
 
-std::string UsdPlugin::UsdGeom::UsdGeomMeshType::Name() const
-{
-    return typeid(pxr::UsdGeomMesh).name();
-}
-
 std::string UsdPlugin::UsdGeom::UsdGeomMeshType::PythonName() const
 {
     return "GeomMesh";
@@ -63,7 +66,7 @@ std::string UsdPlugin::UsdGeom::UsdGeomMeshType::ApiName() const
     return "pxr::UsdGeomMesh";
 }
 
-size_t UsdPlugin::UsdGeom::UsdGeomMeshType::ValueHash(std::any val) const
+size_t UsdPlugin::UsdGeom::UsdGeomMeshType::ValueHash(const std::any& val) const
 {
     return 0;
 }
@@ -397,7 +400,7 @@ std::string UsdPlugin::UsdGeom::UsdTriangulatedMeshType::ApiName() const
 
 
 bool UsdPlugin::UsdGeom::UsdTriangulatedMeshType::CompareValue(
-        std::any v1, std::any v2) const
+        const std::any& v1, const std::any& v2) const
 {
     return (std::any_cast<UsdTriangulatedMesh>(v1).GetMesh().GetPrim() ==
             std::any_cast<UsdTriangulatedMesh>(v2).GetMesh().GetPrim());
@@ -405,19 +408,19 @@ bool UsdPlugin::UsdGeom::UsdTriangulatedMeshType::CompareValue(
 
 
 std::any UsdPlugin::UsdGeom::UsdTriangulatedMeshType::FromPython(
-        boost::python::object o) const
+        const boost::python::object& o) const
 {
     return {};
 }
 
 
-boost::python::object UsdPlugin::UsdGeom::UsdTriangulatedMeshType::ToPython(std::any) const
+boost::python::object UsdPlugin::UsdGeom::UsdTriangulatedMeshType::ToPython(const std::any&) const
 {
     return {};
 }
 
 
-std::any UsdPlugin::UsdGeom::UsdTriangulatedMeshType::CopyValue(std::any source) const
+std::any UsdPlugin::UsdGeom::UsdTriangulatedMeshType::CopyValue(const std::any& source) const
 {
     return std::make_any<UsdTriangulatedMesh>(UsdTriangulatedMesh(
             std::any_cast<UsdTriangulatedMesh>(source)));
@@ -431,19 +434,13 @@ size_t UsdPlugin::UsdGeom::UsdTriangulatedMeshType::Hash() const
 }
 
 
-std::string UsdPlugin::UsdGeom::UsdTriangulatedMeshType::Name() const
-{
-    return typeid(UsdTriangulatedMesh).name();
-}
-
-
 std::string UsdPlugin::UsdGeom::UsdTriangulatedMeshType::PythonName() const
 {
     return ApiName();
 }
 
 
-size_t UsdPlugin::UsdGeom::UsdTriangulatedMeshType::ValueHash(std::any val) const
+size_t UsdPlugin::UsdGeom::UsdTriangulatedMeshType::ValueHash(const std::any& val) const
 {
     return 0;
 }
@@ -495,7 +492,7 @@ std::string UsdPlugin::UsdGeom::UsdGeomPoints::PythonName() const
 
 
 void UsdPlugin::UsdGeom::UsdGeomPoints::SerializeValue(
-        std::any v, rapidjson::Value& value,
+        const std::any& v, rapidjson::Value& value,
         rapidjson::Document& document) const
 {
     PointList pl = std::any_cast<PointList>(v);
@@ -515,7 +512,7 @@ void UsdPlugin::UsdGeom::UsdGeomPoints::SerializeValue(
 
 
 std::any UsdPlugin::UsdGeom::UsdGeomPoints::DeserializeValue(
-        std::any v, rapidjson::Value& value) const
+        const std::any& v, rapidjson::Value& value) const
 {
     PointList points;
 
@@ -530,7 +527,7 @@ std::any UsdPlugin::UsdGeom::UsdGeomPoints::DeserializeValue(
 
 
 void UsdPlugin::UsdGeom::UsdGeomPoints::SerializeConstruction(
-        std::any v, rapidjson::Value& value,
+        const std::any& v, rapidjson::Value& value,
         rapidjson::Document& document) const
 {
     value.PushBack(
@@ -557,7 +554,7 @@ std::any UsdPlugin::UsdGeom::UsdGeomPoints::InitValue() const
 
 
 std::any UsdPlugin::UsdGeom::UsdGeomPoints::FromPython(
-        boost::python::object o) const
+        const boost::python::object& o) const
 {
     boost::python::list l(o);
 
@@ -573,7 +570,7 @@ std::any UsdPlugin::UsdGeom::UsdGeomPoints::FromPython(
 
 
 boost::python::object UsdPlugin::UsdGeom::UsdGeomPoints::ToPython(
-        std::any value) const
+        const std::any& value) const
 {
     PointList l = std::any_cast<PointList>(value);
 
@@ -588,7 +585,7 @@ boost::python::object UsdPlugin::UsdGeom::UsdGeomPoints::ToPython(
 
 
 std::any UsdPlugin::UsdGeom::UsdGeomPoints::CopyValue(
-        std::any source) const
+        const std::any& source) const
 {
     return std::make_any<PointList>(PointList(std::any_cast<PointList>(source)));
 }

@@ -15,18 +15,12 @@ add_definitions("/DQT_NO_KEYWORDS")
 
 add_definitions(
         /DPlugins_EXPORT
+        /DTBB_USE_DEBUG=0
 )
 
+set(PXR_DIR "$ENV{PXR_ROOT}-${CMAKE_BUILD_TYPE}")
 
-if (${CMAKE_BUILD_TYPE} STREQUAL "Debug")
-    set(PXR_ROOT $ENV{PXR_DEBUG_ROOT})
-else()
-    set(PXR_ROOT $ENV{PXR_ROOT})
-endif()
-
-
-message("PXR ROOT : ${PXR_ROOT}")
-find_package(pxr COMPONENTS Usd UsdGeom Tf REQUIRED HINTS ${PXR_ROOT})
+find_package(pxr COMPONENTS Usd UsdGeom Tf REQUIRED HINTS PXR_DIR)
 
 
 # Find Qt package -------------------------------------------------------------
@@ -77,6 +71,8 @@ target_include_directories(
         $ENV{SAFEPTRS_DIR}
 )
 
+set(PXR_LIBRARY_DIR "$ENV{PXR_ROOT}-${CMAKE_BUILD_TYPE}/lib")
+
 
 target_link_directories(
         UsdPlugin
@@ -85,33 +81,10 @@ target_link_directories(
         ${Boost_LIBRARY_DIRS}
         ${PipelineLibrary_LIBRARY_DIRS}
         ${Python_LIBRARY_DIRS}
-        ${PXR_ROOT}/lib
+        ${PXR_LIBRARY_DIR}
 
         ${TSYS_LIBRARY_DIR}
         $ENV{UI_TSYS_DIR}/UiTSys/cmake-build-${BUILD_TYPE}
-
-        arch
-        tf
-        gf
-        pegtl
-        js
-        trace
-        work
-        plug
-        vt
-        ts
-        ar
-        kind
-        sdf
-        ndr
-        sdr
-        pcp
-        usd
-        usdGeom
-        garch
-        hf
-        geomUtil
-        glf
 )
 
 
@@ -137,6 +110,19 @@ target_link_libraries(
 )
 
 
+# ------------------------------------------
+# Prepare a list of dlls to be used in the
+# plugin packaging command.
+set(PXR_DLLS "")
+
+FOREACH(lib ${PXR_LIBRARIES})
+
+    LIST(APPEND PXR_DLLS "usd_${lib}.dll")
+
+endforeach()
+# ------------------------------------------
+
+
 add_custom_command(
         TARGET
         UsdPlugin
@@ -148,75 +134,17 @@ add_custom_command(
         ${CMAKE_CURRENT_BINARY_DIR}
         ${Python_LIBRARY_DIRS}/..
         ${Boost_LIBRARY_DIRS}
-        ${PXR_ROOT}/lib
+        ${PXR_LIBRARY_DIR}
 
         --libs
         python3.dll
-        ${Qt6Widgets_LIBRARIES}
         ${Boost_LIBRARIES}
 
         TSys.dll
         UiTSys.dll
         Gex_ui.dll
 
-        usd_arch.dll
-        usd_tf.dll
-        usd_gf.dll
-        usd_pegtl.dll
-        usd_js.dll
-        usd_trace.dll
-        usd_work.dll
-        usd_plug.dll
-        usd_vt.dll
-        usd_ts.dll
-        usd_ar.dll
-        usd_kind.dll
-        usd_sdf.dll
-        usd_ndr.dll
-        usd_sdr.dll
-        usd_pcp.dll
-        usd_usd.dll
-        usd_usdGeom.dll
-        usd_usdVol.dll
-        usd_usdMedia.dll
-        usd_usdShade.dll
-        usd_usdLux.dll
-        usd_usdProc.dll
-        usd_usdRender.dll
-        usd_usdHydra.dll
-        usd_usdRi.dll
-        usd_usdSkel.dll
-        usd_usdUI.dll
-        usd_usdUtils.dll
-        usd_usdPhysics.dll
-        usd_usdMtlx.dll
-        usd_garch.dll
-        usd_hf.dll
-        usd_hio.dll
-        usd_cameraUtil.dll
-        usd_pxOsd.dll
-        usd_geomUtil.dll
-        usd_glf.dll
-        usd_hgi.dll
-        usd_hgiGL.dll
-        usd_hgiInterop.dll
-        usd_hd.dll
-        usd_hdar.dll
-        usd_hdGp.dll
-        usd_hdsi.dll
-        usd_hdMtlx.dll
-        usd_hdSt.dll
-        usd_hdx.dll
-        usd_usdImaging.dll
-        usd_usdImagingGL.dll
-        usd_usdProcImaging.dll
-        usd_usdRiPxrImaging.dll
-        usd_usdSkelImaging.dll
-        usd_usdVolImaging.dll
-        usd_usdAppUtils.dll
-        usd_usdviewq.dll
-        usd_usdBakeMtlx.dll
-
+        ${PXR_DLLS}
 
         --env
         PATH:./libs
@@ -225,7 +153,7 @@ add_custom_command(
         ./scripts
 
         --scripts
-        ${PXR_ROOT}/lib/python/pxr
+        ${PXR_LIBRARY_DIR}/python/pxr
 
         --package
         --name UsdPlugin

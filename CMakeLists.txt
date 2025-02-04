@@ -5,14 +5,15 @@ set(CMAKE_CXX_STANDARD 17)
 
 add_definitions(/DGEX_API_EXPORT)
 
-set(BOOST_ROOT $ENV{BOOST_ROOT})
+set(BOOST_DIR $ENV{BOOST_DIR})
 
 set(Boost_USE_STATIC_LIBS OFF)
 
 set(CMAKE_INSTALL_PREFIX ${CMAKE_BINARY_DIR}/install)
 
 find_package(Python 3.11 REQUIRED COMPONENTS Development Interpreter)
-find_package(Boost 1.82.0 COMPONENTS python311 REQUIRED HINTS $ENV{BOOST_ROOT})
+#find_package(Boost 1.82.0 COMPONENTS python311 REQUIRED HINTS $ENV{BOOST_ROOT})
+find_package(Boost 1.82.0 COMPONENTS python311 REQUIRED HINTS "D:/WORK/Boost/boost_1_82_0/boost_1_82_0/stage/lib/cmake/Boost-1.82.0")
 
 message("Python found ${Python_FOUND}")
 message("Boost found ${Boost_FOUND}")

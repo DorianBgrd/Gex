@@ -6,6 +6,7 @@
 #include <string>
 #include <map>
 #include <any>
+#include "Tsys//include/tsys.h"
 
 #include "defs.h"
 #include "Status.h"
@@ -72,6 +73,8 @@ namespace Gex
 		AttrValueType attributeValueType;
 		AttrType attributeType;
 
+        TSys::TypeHandlerPtr typeHandle;
+        std::type_index typeIndex;
         std::any defaultValue;
 		std::any attributeAnyValue;
 
@@ -159,7 +162,8 @@ namespace Gex
             Attribute(name, typeid(T).hash_code(), valueType,
                       type, userDefined, node, parent){}
 
-        explicit Attribute(const std::string& name, size_t hash, const AttrValueType& valueType = AttrValueType::Single,
+        explicit Attribute(const std::string& name, const std::type_index& t,
+                           const AttrValueType& valueType = AttrValueType::Single,
                            const AttrType& type = AttrType::Static, bool userDefined = false,
                            const NodePtr& node = nullptr, const AttributePtr& parent=nullptr);
 
@@ -244,7 +248,9 @@ namespace Gex
          * Returns attribute type hash.
          * @return size_t type hash.
          */
-		size_t TypeHash() const;
+		std::type_index Type() const;
+
+        TSys::TypeHandlerPtr TypeHandle() const;
 
         /**
          * Returns attribute default value.
@@ -653,10 +659,7 @@ namespace Gex
         std::vector<AttributeWkPtr> Dests();
 
     private:
-        std::any Convert(std::any value, size_t destHash,
-                         Feedback* success=nullptr) const;
-
-		bool ValueSet(std::any value);
+		bool ValueSet(const std::any& value);
 
 	public:
 		template<class T>
@@ -666,13 +669,13 @@ namespace Gex
 		}
 
     private:
-        std::any ValueGet(size_t dest, Feedback* status=nullptr) const;
+        std::any ValueGet(const std::type_info& dest, Feedback* status=nullptr) const;
 
 	public:
 		template<class T>
 		T Get(Feedback* status=nullptr)
 		{
-			std::any dest = ValueGet(typeid(T).hash_code(), status);
+			std::any dest = ValueGet(typeid(T), status);
             if (!dest.has_value())
             {
                 if (status)
@@ -683,6 +686,7 @@ namespace Gex
 
             if (status)
                 status->status = Status::Success;
+
 			return std::any_cast<T>(attributeAnyValue);
 		}
 
@@ -696,18 +700,14 @@ namespace Gex
 		std::vector<T> GetArrayValues()
 		{
 			std::vector<T> arr;
+            if (Type() != typeid(T))
+                return arr;
 
-			size_t h = typeid(T).hash_code();
+            Feedback stat;
 			for (std::pair<unsigned int, AttributePtr> p : multiValues)
 			{
-				if (p.second->TypeHash() != h)
-				{
-					continue;
-				}
-
-                Feedback status;
-                T value = p.second->Get<T>(&status);
-                if (!status)
+                T value = p.second->Get<T>(&stat);
+                if (!stat)
                 {
                     continue;
                 }
@@ -732,10 +732,10 @@ namespace Gex
 		std::any GetAnyValue() const;
 
     private:
-        bool _SetAnyValue(std::any value);
+        bool _SetAnyValue(const std::any& value);
 
     public:
-		bool SetAnyValue(std::any value);
+		bool SetAnyValue(const std::any& value);
 
     public:
 		// Serialize / Deserializes Values.
@@ -749,8 +749,6 @@ namespace Gex
 		static AttributePtr DeserializeAttribute(const std::string& name,
 			rapidjson::Value& value, const Gex::NodePtr& node=nullptr,
             const AttributePtr& parent=nullptr, bool userDefined=false);
-
-        void SerializeConnections(rapidjson::Value& dict, rapidjson::Document& json);
 
     private:
         /**

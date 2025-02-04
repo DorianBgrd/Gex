@@ -5,7 +5,6 @@
 Gex::NodeAttributeData::NodeAttributeData(const NodePtr& n)
 {
     node = n;
-    attribute = nullptr;
 }
 
 
@@ -37,7 +36,7 @@ std::any Gex::NodeAttributeData::GetAnyValue(Feedback* success)
 }
 
 
-bool Gex::NodeAttributeData::SetAnyValue(std::any value)
+bool Gex::NodeAttributeData::SetAnyValue(const std::any& value)
 {
     if(!attribute)
     {
@@ -76,18 +75,23 @@ std::vector<unsigned int> Gex::NodeAttributeData::GetIndices(Feedback* status)
 }
 
 
-Gex::NodeAttributeData Gex::NodeAttributeData::GetAttribute(std::string name, Feedback* success) const
+Gex::NodeAttributeData Gex::NodeAttributeData::GetAttribute(
+        const std::string& name,
+        Feedback* success
+) const
 {
     if(!attribute)
     {
-        if (!node->HasAttribute(name))
+        auto attr = node->GetAttribute(name);
+        if (!attr)
         {
             if (success)
                 success->status = Status::Failed;
+
             return NodeAttributeData(node);
         }
 
-        return NodeAttributeData(node->GetAttribute(name).ToShared());
+        return NodeAttributeData(attr.ToShared());
     }
 
     if (!attribute->HasChildAttribute(name))
@@ -103,7 +107,10 @@ Gex::NodeAttributeData Gex::NodeAttributeData::GetAttribute(std::string name, Fe
 }
 
 
-Gex::NodeAttributeData Gex::NodeAttributeData::GetIndex(unsigned int index, Feedback* success) const
+Gex::NodeAttributeData Gex::NodeAttributeData::GetIndex(
+        unsigned int index,
+        Feedback* success
+) const
 {
     if (!attribute)
     {
@@ -112,7 +119,7 @@ Gex::NodeAttributeData Gex::NodeAttributeData::GetIndex(unsigned int index, Feed
         return NodeAttributeData(node);
     }
 
-    if (!attribute->IsMulti() || !attribute->HasIndex(index))
+    if (!attribute->IsMulti())
     {
         if(success)
             success->status = Status::Failed;
@@ -121,7 +128,12 @@ Gex::NodeAttributeData Gex::NodeAttributeData::GetIndex(unsigned int index, Feed
 
     if (success)
         success->status = Status::Success;
-    return NodeAttributeData(attribute->GetIndexAttribute(index));
+
+    auto indexAttr = attribute->GetIndexAttribute(index);
+    if (indexAttr)
+        return NodeAttributeData(indexAttr);
+
+    return NodeAttributeData(attribute);
 }
 
 
@@ -134,7 +146,7 @@ bool Gex::NodeAttributeData::ClearMultiIndices() const
 }
 
 
-bool Gex::NodeAttributeData::HasAttribute(std::string name) const
+bool Gex::NodeAttributeData::HasAttribute(const std::string& name) const
 {
     if (!attribute)
     {

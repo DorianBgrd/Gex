@@ -332,7 +332,7 @@ namespace Gex
          virtual bool IsCompound() const;
 
     private:
-        std::any InitValueFromHash(size_t hash, Feedback* success=nullptr);
+        std::any InitValue(const std::type_info& t);
 
     public:
 
@@ -349,16 +349,8 @@ namespace Gex
 		AttributePtr CreateAttribute(const std::string& name, const AttrValueType& valueType = AttrValueType::Single,
 			const AttrType& type = AttrType::Static, const AttributePtr& parent=nullptr)
 		{
-            Feedback status;
-            std::any initValue = InitValueFromHash(typeid(T).hash_code(),
-                                                   &status);
-            if (!status)
-            {
-                return nullptr;
-            }
-
-            return CreateAttributeFromValue(name, initValue, valueType,
-                                            type, parent);
+            return CreateAttributeFromValue(name, InitValue(typeid(T)),
+                                            valueType, type, parent);
 		}
 
 

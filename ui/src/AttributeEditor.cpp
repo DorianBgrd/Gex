@@ -5,6 +5,7 @@
 //#include "ui/include/Undo.h"
 
 #include <QWidget>
+#include "Tsys/include/defaultTypes.h"
 
 
 
@@ -151,7 +152,7 @@ Gex::Ui::AttributeWidget::AttributeWidget(const Gex::AttributePtr& attr,
     setLayout(mainLayout);
 
     UiTSys::TypedWidget* widget = UiTSys::UiTypeEngine::GetEngine()->CreateWidget(
-            attr->TypeHash(), attr->Name());
+            attr->Type(), attr->Name());
     mainLayout->addWidget(widget);
 
     widget->SetValue(attr->GetAnyValue());
@@ -177,7 +178,7 @@ void Gex::Ui::AttributeWidget::OnValueChanged(std::any value)
 Gex::Ui::ExtraAttributeDialog::ExtraAttributeDialog(
         const Gex::NodePtr& node, GraphWidget* _graphWidget,
         QWidget* parent, QWidget* _updateWidget):
-        QDialog(parent)
+        QDialog(parent), typeIndex(typeid(TSys::None))
 {
     graphWidget = _graphWidget;
     updateWidget = nullptr;
@@ -280,9 +281,11 @@ void Gex::Ui::ExtraAttributeDialog::SetType(const QString& type)
     if (initWidget)
         initWidget->deleteLater();
 
-    typeHash = UiTSys::UiTypeEngine::GetEngine()->UiHash(type.toStdString());
+    typeIndex = UiTSys::UiTypeEngine::GetEngine()->UiTypeIndex(
+            type.toStdString()
+    );
 
-    initWidget = UiTSys::UiTypeEngine::GetEngine()->CreateInitWidget(typeHash);
+    initWidget = UiTSys::UiTypeEngine::GetEngine()->CreateInitWidget(typeIndex);
 
     initWidgetLayout->addWidget(initWidget);
 }
@@ -293,7 +296,7 @@ void Gex::Ui::ExtraAttributeDialog::CreateAttribute()
     std::any value;
     if (!initWidget)
     {
-        auto* handler = TSys::TypeRegistry::GetRegistry()->GetTypeHandle(typeHash);
+        auto handler = TSys::TypeRegistry::GetRegistry()->GetTypeHandle(typeIndex);
         if (!handler)
             return;
 

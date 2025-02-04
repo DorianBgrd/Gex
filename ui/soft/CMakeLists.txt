@@ -202,6 +202,7 @@ target_link_directories(
 )
 
 message("Boost libraries ${Boost_LIBRARIES}")
+message("Boost libraries directories ${Boost_LIBRARY_DIR}")
 
 
 target_link_libraries(
@@ -277,6 +278,7 @@ add_custom_target(
         --library ${CMAKE_BINARY_DIR}/Gex/Gex.dll
         --library ${QT_AWESOME_LIBRARY_DIR}/QtAwesome.dll
         --library ${CMAKE_BINARY_DIR}/ui/SoftApi.dll
+        --library ${Boost_LIBRARIES}
 
         --extra-directory ui
         --extra-directory plugins

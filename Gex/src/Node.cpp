@@ -157,27 +157,27 @@ bool Gex::Node::IsCompound() const
 }
 
 
-std::any Gex::Node::InitValueFromHash(size_t hash, Feedback* success)
+std::any Gex::Node::InitValue(const std::type_info& t)
 {
     auto* registry = TSys::TypeRegistry::GetRegistry();
-    auto* handler = registry->GetTypeHandle(hash);
+
+    auto handler = registry->GetTypeHandle(t);
     if (!handler)
     {
-        if (success)
-            success->status = Status::Failed;
-
         return {};
     }
-    if (success)
-        success->status = Status::Success;
 
     return handler->InitValue();
 }
 
 
 Gex::AttributePtr Gex::Node::CreateAttributeFromValue(
-        const std::string& name, const std::any& v, const AttrValueType& valueType,
-        const AttrType& type, const AttributePtr& parent)
+        const std::string& name,
+        const std::any& v,
+        const AttrValueType& valueType,
+        const AttrType& type,
+        const AttributePtr& parent
+)
 {
     auto attribute = std::make_shared<Attribute>(
             name, v, valueType, type, !IsInitializing(),
@@ -203,7 +203,7 @@ Gex::AttributePtr Gex::Node::CreateAttributeFromTypeName(
         const AttributePtr& parent)
 {
     auto* registry = TSys::TypeRegistry::GetRegistry();
-    auto* handler = registry->GetTypeHandleFromApiName(apiName);
+    auto handler = registry->GetTypeHandle(apiName);
     if (!handler)
     {
         return nullptr;
@@ -1959,7 +1959,14 @@ Gex::NodePtr Gex::CompoundNode::ToCompound(NodeList sources, bool duplicate,
 
     for (const auto& node : sources) {
         compound->AddNode(node);
-        std::remove(nodes.begin(), nodes.end(), node);
+
+        auto iter = std::find(
+                nodes.begin(),
+                nodes.end(),
+                node
+        );
+        if (iter != nodes.end())
+            nodes.erase(iter);
 
         for (const auto& wkAttribute: node->GetAllAttributes())
         {

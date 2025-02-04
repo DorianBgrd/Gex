@@ -12,36 +12,21 @@
 
 std::any InitPythonValue(boost::python::object pythonType, Gex::Feedback& feedback)
 {
-    boost::python::object class_ = pythonType.attr("__class__");
-
-    std::string python_typename = boost::python::extract<std::string>(class_.attr("__name__"));
-
-    bool isObject = (python_typename != "type");
-    if (!isObject)
-    {
-        python_typename = boost::python::extract<std::string>(pythonType.attr("__name__"));
-    }
-
-    bool success = true;
-    size_t hash = TSys::TypeRegistry::GetRegistry()->GetHashFromPythonType(python_typename, success);
-    if (!success)
+    auto handler = TSys::TypeRegistry::GetRegistry()->GetTypeHandle(pythonType);
+    if (!handler)
     {
         feedback.status = Gex::Status::Failed;
-        feedback.message = "No type handler found for type " + python_typename;
+        feedback.message = "No type handler found for passed python type object.";
         return {};
     }
 
     std::any value;
 
-    auto* handler = TSys::TypeRegistry::GetRegistry()->GetTypeHandle(hash);
-    if (!handler)
-    {
-        feedback.status = Gex::Status::Failed;
-        feedback.message = "No type handler found for type " + python_typename;
-        return {};
-    }
+    std::string pyTypeName = boost::python::extract<std::string>(
+            pythonType.attr("__class__").attr("__name__")
+    );
 
-    if (isObject)
+    if (pyTypeName == "type")  // An object type has been passed, init a default value.
         value = handler->InitValue();
     else
         value = handler->FromPython(pythonType);

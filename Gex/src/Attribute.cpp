@@ -17,7 +17,7 @@
 #define CHECK_EDITABLE_BOOL() if(!IsEditable()){return false;}
 
 
-Gex::Attribute::Attribute()
+Gex::Attribute::Attribute(): typeIndex(typeid(TSys::None))
 {
     isInternal = false;
 	attributeAnyValue = std::make_any<int>(0);
@@ -39,7 +39,7 @@ Gex::AttrType Gex::Attribute::GetAttrType() const
 
 Gex::Attribute::Attribute(const std::string& name, const std::any& v, const AttrValueType& valueType,
 			              const AttrType& type, bool userDefined, const NodePtr& node,
-                          const AttributePtr& parent)
+                          const AttributePtr& parent): typeIndex(v.type())
 {
     isInternal = false;
     attributeName = name;
@@ -57,14 +57,14 @@ Gex::Attribute::Attribute(const std::string& name, const std::any& v, const Attr
     attributeType = type;
     defaultValue = v;
 
-//    InitDefaultValue();
+    typeHandle = TSys::TypeRegistry::GetRegistry()->GetTypeHandle(typeIndex);
 }
 
 
-Gex::Attribute::Attribute(const std::string& name, size_t hash, const AttrValueType& valueType,
+Gex::Attribute::Attribute(const std::string& name, const std::type_index& vt, const AttrValueType& valueType,
                           const AttrType& type, bool userDefined, const NodePtr& node,
                           const AttributePtr& parent):
-                          Attribute(name, TSys::TypeRegistry::GetRegistry()->GetTypeHandle(hash)->InitValue(),
+                          Attribute(name, TSys::TypeRegistry::GetRegistry()->GetTypeHandle(vt)->InitValue(),
                                     valueType, type, userDefined, node, parent)
 {
 
@@ -72,7 +72,9 @@ Gex::Attribute::Attribute(const std::string& name, size_t hash, const AttrValueT
 
 
 Gex::Attribute::Attribute(const std::string& name, const AttrType& type, bool multi,
-                          bool userDefined, const NodePtr& node, const AttributePtr& parent)
+                          bool userDefined, const NodePtr& node,
+                          const AttributePtr& parent):
+                          typeIndex(typeid(TSys::None))
 {
     isInternal = false;
     isExternal = true;
@@ -125,13 +127,12 @@ void Gex::Attribute::SignalChange(AttributeChange change)
 Gex::AttributePtr Gex::Attribute::Copy(const std::string& name, const NodePtr& node,
                                        const AttributePtr& parent) const
 {
-    size_t hash = TypeHash();
-    auto* handler = TSys::TypeRegistry::GetRegistry()->GetTypeHandle(TypeHash());
+    auto handler = TSys::TypeRegistry::GetRegistry()->GetTypeHandle(Type());
     if (!handler)
         return nullptr;
 
     return std::make_shared<Attribute>(
-            name, handler->InitValue(), attributeValueType,
+            name, defaultValue, attributeValueType,
             attributeType, attributeIsUserDefined,
             node, parent);
 }
@@ -148,7 +149,7 @@ Gex::AttributePtr Gex::Attribute::CopyAsChild(const AttributePtr& ref)
 
 void Gex::Attribute::InitDefaultValue()
 {
-    auto* handler = TSys::TypeRegistry::GetRegistry()->GetTypeHandle(TypeHash());
+    auto handler = TSys::TypeRegistry::GetRegistry()->GetTypeHandle(Type());
     if (!handler)
     {
         return;
@@ -194,15 +195,22 @@ void Gex::Attribute::SetName(std::string name)
 	attributeName = name;
 }
 
+
 std::string Gex::Attribute::TypeName() const
 {
 	return attributeAnyValue.type().name();
 }
 
 
-size_t Gex::Attribute::TypeHash() const
+std::type_index Gex::Attribute::Type() const
 {
-	return attributeAnyValue.type().hash_code();
+    return typeIndex;
+}
+
+
+TSys::TypeHandlerPtr Gex::Attribute::TypeHandle() const
+{
+    return typeHandle;
 }
 
 
@@ -216,7 +224,7 @@ bool Gex::Attribute::SetDefaultAnyValue(const std::any& v)
 {
     bool isDefault = IsDefault();
 
-    if (v.type().hash_code() != TypeHash())
+    if (std::type_index(v.type()) != Type())
     {
         return false;
     }
@@ -262,13 +270,7 @@ void Gex::Attribute::FactoryReset()
 
 bool Gex::Attribute::IsDefault() const
 {
-    auto* handler = TSys::TypeRegistry::GetRegistry()->GetTypeHandle(TypeHash());
-    if(!handler)
-    {
-        return false;
-    }
-
-    return handler->CompareValue(defaultValue, attributeAnyValue);
+    return typeHandle->CompareValue(defaultValue, attributeAnyValue);
 }
 
 
@@ -366,7 +368,7 @@ size_t Gex::Attribute::ValueHash(bool followCnx)
     }
     else if (IsHolder())
     {
-        for (auto at : GetChildAttributes())
+        for (const auto& at : GetChildAttributes())
         {
             boost::hash_combine(res, at->ValueHash());
         }
@@ -376,13 +378,13 @@ size_t Gex::Attribute::ValueHash(bool followCnx)
     {
         if (auto at = Source())
         {
-            auto* handler = TSys::TypeRegistry::GetRegistry()->GetTypeHandle(at->TypeHash());
+            auto handler = TSys::TypeRegistry::GetRegistry()->GetTypeHandle(at->Type());
             boost::hash_combine(res, handler->ValueHash(at->GetAnyValue()));
         }
     }
     else
     {
-        auto* handler = TSys::TypeRegistry::GetRegistry()->GetTypeHandle(TypeHash());
+        auto handler = TSys::TypeRegistry::GetRegistry()->GetTypeHandle(Type());
         boost::hash_combine(res, handler->ValueHash(attributeAnyValue));
     }
 
@@ -629,13 +631,7 @@ bool Gex::Attribute::_CreateIndex(unsigned int index)
 		return false;
 	}
 
-	auto* handler = TSys::TypeRegistry::GetRegistry()->GetTypeHandle(TypeHash());
-	if (!handler)
-	{
-		return false;
-	}
-
-	std::any _v = handler->InitValue();
+	std::any _v = typeHandle->InitValue();
 
 	AttrValueType indexType = AttrValueType::Single;
 	if (IsHolder())
@@ -770,15 +766,9 @@ bool  Gex::Attribute::_CanConnectSource(const AttributePtr& source)
         return false;
     }
 
-    if (source->TypeHash() != TypeHash())
+    if (source->Type() != Type())
     {
-        auto* handler = TSys::TypeRegistry::GetRegistry()->GetTypeHandle(TypeHash());
-        if (!handler)
-        {
-            return false;
-        }
-
-        if (!handler->CanConvertFrom(source->GetAnyValue()))
+        if (!typeHandle->CanConvertFrom(source->GetAnyValue()))
         {
             return false;
         }
@@ -1169,58 +1159,45 @@ std::vector<Gex::AttributeWkPtr> Gex::Attribute::Dests()
 }
 
 
-std::any Gex::Attribute::Convert(std::any value, size_t destHash,
-                                 Feedback* success) const
-{
-    auto* handler = TSys::TypeRegistry::GetRegistry()->GetTypeHandle(destHash);
-    if (!handler)
-    {
-        if (success)
-            success->status = Status::Failed;
-        return {};
-    }
-
-    std::any cvrtval = handler->ConvertFrom(value, attributeAnyValue);
-    if (!cvrtval.has_value() || cvrtval.type().hash_code() != destHash)
-    {
-        if (success)
-            success->status = Status::Failed;
-        return {};
-    }
-
-    if (success)
-        success->status = Status::Success;
-
-    return cvrtval;
-}
-
-
-bool Gex::Attribute::ValueSet(std::any value)
+bool Gex::Attribute::ValueSet(const std::any& value)
 {
     if (attributeType == AttrType::Output || !isExternal)
     {
         return false;
     }
 
-    return SetAnyValue(std::move(value));
+    return SetAnyValue(value);
 }
 
 
-std::any Gex::Attribute::ValueGet(size_t hash, Feedback* status) const
+std::any Gex::Attribute::ValueGet(const std::type_info& t, Feedback* status) const
 {
-    if (hash != TypeHash())
+    if (std::type_index(t) != Type())
     {
-        std::any cvrtval = Convert(attributeAnyValue, TypeHash());
+        auto handle = TSys::TypeRegistry::GetRegistry()->GetTypeHandle(t);
+        if (!handle)
+        {
+            if (status)
+            {
+                status->status = Status::Failed;
+            }
+
+            return {};
+        }
+
+        std::any cvrtval = handle->ConvertFrom(attributeAnyValue, attributeAnyValue);
         if (!cvrtval.has_value())
         {
             if (status)
                 status->status = Status::Failed;
         }
+
         return cvrtval;
     }
 
     if (status)
         status->status =Status::Success;
+
     return attributeAnyValue;
 }
 
@@ -1259,26 +1236,18 @@ std::any Gex::Attribute::GetAnyValue() const
 }
 
 
-bool Gex::Attribute::_SetAnyValue(std::any value)
+bool Gex::Attribute::_SetAnyValue(const std::any& value)
 {
-    size_t destHash = value.type().hash_code();
-    size_t typeHash = TypeHash();
-
-    if (destHash != typeHash)
+    if (std::type_index(value.type()) != Type())
     {
-        auto* handler = TSys::TypeRegistry::GetRegistry()->GetTypeHandle(TypeHash());
-        if (!handler)
-        {
-            return false;
-        }
-
-        std::any dstval = handler->ConvertFrom(value, attributeAnyValue);
+        std::any dstval = typeHandle->ConvertFrom(value, attributeAnyValue);
         if (!dstval.has_value())
         {
             return false;
         }
 
-        value = dstval;
+        attributeAnyValue = dstval;
+        return true;
     }
 
     attributeAnyValue = value;
@@ -1286,7 +1255,7 @@ bool Gex::Attribute::_SetAnyValue(std::any value)
 }
 
 
-bool Gex::Attribute::SetAnyValue(std::any value)
+bool Gex::Attribute::SetAnyValue(const std::any& value)
 {
     auto prev = attributeAnyValue;
 
@@ -1313,12 +1282,10 @@ void Gex::Attribute::SerializeAttribute(rapidjson::Value& value, rapidjson::Docu
 	// Sent value must be the root dict.
 	rapidjson::Value& resultValue = rapidjson::Value().SetObject();
 
-    TSys::TypeHandler* handler = TSys::TypeRegistry::GetRegistry()->GetTypeHandle(TypeHash());
-
-	if (handler)
+	if (typeHandle)
 	{
         rapidjson::Value& apiTypeValue = rapidjson::Value().SetString(
-                handler->ApiName().c_str(), doc.GetAllocator());
+                typeHandle->ApiName().c_str(), doc.GetAllocator());
 
         rapidjson::Value& attrSerializedTypeKey = rapidjson::Value().SetString(
                 Config::GetConfig().attributeSerializedTypeKey.c_str(),
@@ -1382,20 +1349,14 @@ Gex::AttributePtr Gex::Attribute::DeserializeAttribute(
 
 	bool success = false;
 	size_t attributeValueHash;
+    std::string apiTypeName;
 
     if (serialValues.HasMember(conf.attributeSerializedTypeKey.c_str()))
 	{
-        std::string apiTypeName = serialValues[conf.attributeSerializedTypeKey.c_str()].GetString();
-        attributeValueHash = TSys::TypeRegistry::GetRegistry()->HashFromApiName(
-                apiTypeName, success);
-	}
-	
-	if (!success)
-	{
-		return nullptr;
+        apiTypeName = serialValues[conf.attributeSerializedTypeKey.c_str()].GetString();
 	}
 
-	auto* handler = TSys::TypeRegistry::GetRegistry()->GetTypeHandle(attributeValueHash);
+	auto handler = TSys::TypeRegistry::GetRegistry()->GetTypeHandle(apiTypeName);
     if (!handler)
 	{
 		return nullptr;
@@ -1430,10 +1391,12 @@ Gex::AttributePtr Gex::Attribute::DeserializeAttribute(
 			iter != childAttributes.MemberEnd(); iter++
 			)
 		{
-			std::string name = iter->name.GetString();
-			// rapidjson::Value& childConst = childAttributes[name.c_str()];
+			AttributePtr subAttr = DeserializeAttribute(
+                    iter->name.GetString(),
+                    childAttributes, node,
+                    result, userDefined
+            );
 
-			AttributePtr subAttr = DeserializeAttribute(name, childAttributes, node, result, userDefined);
 			if (subAttr == nullptr)
 				continue;
 
@@ -1463,11 +1426,10 @@ void Gex::Attribute::Serialize(rapidjson::Value& value, rapidjson::Document& doc
          */
         if (!IsDefault())
         {
-            auto* handler = TSys::TypeRegistry::GetRegistry()->GetTypeHandle(TypeHash());
-            if (handler)
+            if (typeHandle)
             {
                 rapidjson::Value& resultArrayValue = rapidjson::Value().SetArray();
-                handler->SerializeValue(GetAnyValue(), resultArrayValue, doc);
+                typeHandle->SerializeValue(GetAnyValue(), resultArrayValue, doc);
 
                 rapidjson::Value& attributeValueKey = rapidjson::Value().SetString(
                         Config::GetConfig().attributeValueKey.c_str(),
@@ -1513,32 +1475,24 @@ void Gex::Attribute::Serialize(rapidjson::Value& value, rapidjson::Document& doc
 		value.AddMember(rapidjson::StringRef(Config::GetConfig().attributeChildrenKey.c_str()),
                         subAttributesValues, doc.GetAllocator());
 	}
-
-//    rapidjson::Value& internal = rapidjson::Value().SetBool(isInternal);
-//    rapidjson::Value& internalKey = rapidjson::Value().SetString(
-//            Config::GetConfig().attributeInternalKey.c_str(),
-//            doc.GetAllocator());
-//    value.AddMember(internalKey, internal, doc.GetAllocator());
 }
 
 
 void Gex::Attribute::Deserialize(rapidjson::Value& value)
 {
-    auto* handler = TSys::TypeRegistry::GetRegistry()->GetTypeHandle(TypeHash());
-    if (!handler)
-    {
-        return;
-    }
-
 	if (value.HasMember(Config::GetConfig().attributeValueKey.c_str()))
 	{
-		std::any v = handler->DeserializeValue(attributeAnyValue, value[Config::GetConfig().attributeValueKey.c_str()]);
+		std::any v = typeHandle->DeserializeValue(
+                attributeAnyValue,
+                value[Config::GetConfig().attributeValueKey.c_str()]
+        );
+
 		attributeAnyValue = v;
 	}
     else
     {
         if (!attributeAnyValue.has_value() && !defaultValue.has_value())
-            attributeAnyValue = handler->InitValue();
+            attributeAnyValue = typeHandle->InitValue();
         else
             attributeAnyValue = defaultValue;
     }
