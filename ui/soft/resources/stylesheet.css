@@ -124,17 +124,6 @@ QTabWidget::pane {
 }
 
 
-QFrame#AutomationNoSelectionWidget {
-    background-color: #27292C;
-}
-
-
-QLabel#AutomationNoSelectionText {
-    color: #FFFFFF;
-    background-color: transparent;
-}
-
-
 QDockWidget
 {
     color: #FFFFFF;
@@ -216,78 +205,6 @@ QMenu::item:hover
 QMenu::item:selected
 {
     background-color: #559FE0;
-}
-
-
-QWidget#AutomationList {
-    color: #FFFFFF;
-    background-color: #000000;
-}
-
-
-QFrame#Automation {
-    color: #FFFFFF;
-    background-color: #27292C;
-    border-radius: 3px;
-}
-QFrame#Automation[status="0"] {
-    border: none;
-}
-QFrame#Automation[status="1"] {
-    border: none;
-}
-QFrame#Automation[status="2"] {
-    border: 1px solid #E4EA22;
-}
-QFrame#Automation[status="3"] {
-    border: 1px solid #5B6FD3;
-}
-QFrame#Automation[status="4"] {
-    border: 1px solid #5B6FD3;
-}
-QFrame#Automation[status="5"] {
-    border: 1px solid #85E837;
-}
-QFrame#Automation[status="6"] {
-    border: 1px solid #E83737;
-}
-QFrame#Automation[status="7"] {
-    border: 1px solid #E86537;
-}
-
-QFrame#Automation[loaded="true"] {
-    background-color: #27292C;
-}
-QFrame#Automation[loaded="false"] {
-    background-color: #1B1C1E;
-}
-
-
-QFrame#AutomationPlaceHolder {
-    background-color: #545454;
-    border: 1px solid #8D8D8D;
-    border-radius: 5px;
-}
-
-
-QFrame#AutomationIndicator {
-    background-color: #02E510;
-}
-
-
-QFrame#AutomationIndicator[muted=true] {
-    background-color: #E58C02;
-}
-
-
-QLabel#AutomationTitle {
-    color: #FFFFFF;
-    background-color: transparent;
-}
-
-QPushButton#MuteButton
-{
-    background-color: transparent;
 }
 
 
@@ -420,17 +337,6 @@ QFrame#MultiAttributeFrame
 }
 
 
-QPushButton#FollowCnxButton {
-    qproperty-icon: url(":/images/Resources/Source_White.png");
-    qproperty-iconSize: 15px;
-    border-radius: 2px;
-    min-width: 15px;
-    min-height: 15px;
-    max-width: 15px;
-    max-height: 15px;
-}
-
-
 QPushButton#NodeGraphContextButton
 {
     background-color: transparent;
@@ -492,43 +398,6 @@ QWidget#ViewToolbarButton::pressed
 }
 
 
-QWidget#RevisionWidget
-{
-    background-color: black;
-}
-
-
-QPushButton#RevisionItemTitle
-{
-    background-color: #27292C;
-    text-align: left;
-}
-
-QPushButton#RevisionItemTitle:checked
-{
-    background-color: #27292C;
-}
-
-
-
-QFrame#AutomationGrip {
-    background-color: transparent;
-}
-
-
-QFrame#FileIndicator {
-    background-color: #85E837;
-    /*border-radius: 10px;*/
-}
-
-QLabel#FilenameLabel
-{
-    background-color: transparent;
-    font-family: sans;
-    font-size: 10;
-}
-
-
 QScrollArea{
     border: none;
 }
@@ -546,3 +415,32 @@ QTreeWidget {
     color: white;
 }
 
+
+QDockWidget#TimelineDock
+{
+    background-color: #27292C;
+}
+
+QWidget#TimelineWidget
+{
+    background-color: transparent;
+}
+
+
+/*
+QSlider#TimelineSlider
+{
+    height: 20pt;
+    background-color: red;
+}
+QSlider#TimelineSlider::groove:horizontal
+{
+    height: 20pt;
+    background-color: red;
+}
+QSlider#TimelineSlider::handle:horizontal
+{
+    height: 20pt;
+    background-color: red;
+}
+*/

@@ -34,27 +34,30 @@ namespace Gex::Ui
 
         std::string PluginPath() const;
 
-        bool RegisterTypeWidget(size_t hash, const std::string& uiName,
-                                UiTSys::TypedInitWidgetCreator* initCreator=nullptr,
-                                UiTSys::TypedWidgetCreator* creator=nullptr,
+        bool RegisterTypeWidget(const std::type_index& hash, const std::string& uiName,
+                                const UiTSys::TypedInitCreatorPtr& initCreator=nullptr,
+                                const UiTSys::TypedCreatorPtr& creator=nullptr,
                                 bool force=false);
 
         template<typename T>
         bool RegisterTypeWidget(const std::string& uiName,
-                                UiTSys::TypedInitWidgetCreator* initCreator=nullptr,
-                                UiTSys::TypedWidgetCreator* creator=nullptr,
+                                const UiTSys::TypedInitCreatorPtr& initCreator=nullptr,
+                                const UiTSys::TypedCreatorPtr& creator=nullptr,
                                 bool force=false)
         {
-            return RegisterTypeWidget(typeid(T).hash_code(), uiName,
+            return RegisterTypeWidget(typeid(T), uiName,
                                       initCreator, creator, force);
         }
 
         template<typename T, typename InitCreatorType, typename WidgetCreatorType>
         bool RegisterTypeWidget(const std::string& uiName, bool force=false)
         {
-            return RegisterTypeWidget(typeid(T).hash_code(),
-                                      uiName, new InitCreatorType(),
-                                      new WidgetCreatorType(), force);
+            return RegisterTypeWidget(
+                typeid(T), uiName,
+                MakeUiPtr(InitCreatorType),
+                MakeUiPtr(WidgetCreatorType),
+                force
+            );
         }
 
         void RegisterNodeViewer(const std::string& type,

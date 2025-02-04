@@ -14,7 +14,7 @@ namespace ImageManip::Types
 
     struct Plugin_API ResolutionHandler: TSys::TypeHandler
     {
-        void SerializeValue(std::any v, rapidjson::Value& value,
+        void SerializeValue(const std::any& v, rapidjson::Value& value,
                             rapidjson::Document& document)
         const override
         {
@@ -26,7 +26,7 @@ namespace ImageManip::Types
                            document.GetAllocator());
         }
 
-        std::any DeserializeValue(std::any v, rapidjson::Value& value) const override
+        std::any DeserializeValue(const std::any& v, rapidjson::Value& value) const override
         {
             Resolution res = {
                     value[0].GetInt(),
@@ -36,7 +36,7 @@ namespace ImageManip::Types
             return std::make_any<Resolution>(res);
         }
 
-        void SerializeConstruction(std::any v, rapidjson::Value& value,
+        void SerializeConstruction(const std::any& v, rapidjson::Value& value,
                                    rapidjson::Document& document)
         const override
         {
@@ -53,22 +53,22 @@ namespace ImageManip::Types
             return std::make_any<Resolution>(Resolution());
         }
 
-        bool CompareValue(std::any v1, std::any v2) const override
+        bool CompareValue(const std::any& v1, const std::any& v2) const override
         {
             return std::any_cast<Resolution>(v1) == std::any_cast<Resolution>(v2);
         }
 
-        std::any FromPython(boost::python::object) const override
+        std::any FromPython(const boost::python::object&) const override
         {
             return InitValue();
         }
 
-        boost::python::object ToPython(std::any) const override
+        boost::python::object ToPython(const std::any&) const override
         {
             return {};
         }
 
-        std::any CopyValue(std::any source) const override
+        std::any CopyValue(const std::any& source) const override
         {
             return std::make_any<Resolution>(Resolution(std::any_cast<Resolution>(source)));
         }
@@ -76,11 +76,6 @@ namespace ImageManip::Types
         size_t Hash() const override
         {
             return typeid(Resolution).hash_code();
-        }
-
-        std::string Name() const override
-        {
-            return typeid(Resolution).name();
         }
 
         std::string PythonName() const override
@@ -93,7 +88,7 @@ namespace ImageManip::Types
             return "Resolution";
         }
 
-        size_t ValueHash(std::any val) const override
+        size_t ValueHash(const std::any& val) const override
         {
             return 0;
         }
