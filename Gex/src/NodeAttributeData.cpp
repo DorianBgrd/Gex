@@ -2,6 +2,21 @@
 #include "Gex/include/NodeAttributeData.h"
 
 
+#define SET_STATUS(status_obj, stat) \
+if (status_obj)                      \
+{                                    \
+    status_obj->status = stat;       \
+}
+
+
+#define SET_STATUS_MSG(status_obj, stat, message) \
+if (status_obj)                                   \
+{                                                 \
+    status_obj->Set(stat, message);               \
+}
+
+
+
 Gex::NodeAttributeData::NodeAttributeData(const NodePtr& n)
 {
     node = n;
@@ -21,17 +36,17 @@ Gex::NodePtr Gex::NodeAttributeData::GetNode() const
 }
 
 
-std::any Gex::NodeAttributeData::GetAnyValue(Feedback* success)
+std::any Gex::NodeAttributeData::GetAnyValue(Feedback* status)
 {
     if (!attribute)
     {
-        if (success)
-            success->status = Status::Failed;
+        SET_STATUS(status, Status::Failed)
+
         return std::make_any<bool>();
     }
 
-    if (success)
-        success->status = Status::Success;
+    SET_STATUS(status, Status::Failed)
+
     return attribute->GetAnyValue();
 }
 
@@ -51,22 +66,14 @@ std::vector<unsigned int> Gex::NodeAttributeData::GetIndices(Feedback* status)
 {
     if (!attribute)
     {
-        if (status)
-        {
-            status->status = Status::Failed;
-            status->message = "No attribute to query.";
-        }
+        SET_STATUS_MSG(status, Status::Failed, "No attribute to query.")
 
         return {};
     }
 
     if (!attribute->IsMulti())
     {
-        if (status)
-        {
-            status->status = Status::Failed;
-            status->message = ("Attribute " + attribute->Name() + " is not a multi attribute.");
-        }
+        SET_STATUS_MSG(status, Status::Failed, ("Attribute " + attribute->Name() + " is not a multi attribute."))
 
         return {};
     }
@@ -77,7 +84,7 @@ std::vector<unsigned int> Gex::NodeAttributeData::GetIndices(Feedback* status)
 
 Gex::NodeAttributeData Gex::NodeAttributeData::GetAttribute(
         const std::string& name,
-        Feedback* success
+        Feedback* status
 ) const
 {
     if(!attribute)
@@ -85,53 +92,51 @@ Gex::NodeAttributeData Gex::NodeAttributeData::GetAttribute(
         auto attr = node->GetAttribute(name);
         if (!attr)
         {
-            if (success)
-                success->status = Status::Failed;
+            SET_STATUS(status, Status::Failed)
 
             return NodeAttributeData(node);
         }
 
+        SET_STATUS(status, Status::Success)
+
         return NodeAttributeData(attr.ToShared());
     }
 
-    if (!attribute->HasChildAttribute(name))
+    auto attr = attribute->GetAttribute(name);
+    if (!attr)
     {
-        if (success)
-            success->status = Status::Failed;
+        SET_STATUS(status, Status::Failed)
+
         return NodeAttributeData(attribute);
     }
 
-    if (success)
-        success->status = Status::Success;
-    return NodeAttributeData(attribute->GetAttribute(name));
+    SET_STATUS(status, Status::Success)
+
+    return NodeAttributeData(attr);
 }
 
 
 Gex::NodeAttributeData Gex::NodeAttributeData::GetIndex(
         unsigned int index,
-        Feedback* success
+        Feedback* status
 ) const
 {
     if (!attribute)
     {
-        if (success)
-            success->status = Status::Failed;
+        SET_STATUS(status, Status::Failed)
+
         return NodeAttributeData(node);
     }
 
-    if (!attribute->IsMulti())
-    {
-        if(success)
-            success->status = Status::Failed;
-        return NodeAttributeData(attribute);
-    }
-
-    if (success)
-        success->status = Status::Success;
-
     auto indexAttr = attribute->GetIndexAttribute(index);
     if (indexAttr)
+    {
+        SET_STATUS(status, Status::Success)
+
         return NodeAttributeData(indexAttr);
+    }
+
+    SET_STATUS(status, Status::Failed)
 
     return NodeAttributeData(attribute);
 }

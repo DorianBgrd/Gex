@@ -27,21 +27,23 @@ Gex::ScheduledNode::ScheduledNode(const ScheduledNodePtr& src)
 }
 
 
+bool NodeEvaluated(const Gex::ScheduledNodeWkPtr& n) {
+    return n->Evaluated();
+};
+
+
 bool Gex::ScheduledNode::ShouldBeEvaluated() const
 {
-    auto pred = [](const ScheduledNodeWkPtr& n) {
-        return n->Evaluated();
-    };
-
-    return std::all_of(previousNodes.begin(), previousNodes.end(), pred);
+    return std::all_of(
+            previousNodes.begin(),
+            previousNodes.end(),
+            NodeEvaluated);
 }
+
 
 bool Gex::ScheduledNode::Evaluate(Gex::GraphContext &context,
                                   Gex::NodeProfiler& profiler)
 {
-    if (!node)
-        return false;
-
     return node->Compute(context, profiler);
 }
 

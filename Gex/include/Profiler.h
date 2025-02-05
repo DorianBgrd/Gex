@@ -118,8 +118,8 @@ namespace Gex
         unsigned int event = 0;
     public:
         ProfilerScope(Profiler profiler,
-                      std::string category,
-                      std::string name);
+                      const std::string& category,
+                      const std::string& name);
 
         ~ProfilerScope();
 
@@ -133,7 +133,7 @@ namespace Gex
         unsigned int event = 0;
     public:
         NodeProfilerScope(NodeProfiler profiler,
-                          std::string name);
+                          const std::string& name);
 
         ~NodeProfilerScope();
 

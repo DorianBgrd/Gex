@@ -86,7 +86,7 @@ unsigned int Gex::EvaluationProfiler::StartEvent(const std::string& category,
 
 void Gex::EvaluationProfiler::StopEvent(unsigned int index)
 {
-    events.at(index).Stop();
+    events[index].Stop();
 }
 
 
@@ -188,8 +188,8 @@ Gex::Profiler Gex::EvaluationNodeProfiler::GetProfiler() const
 
 
 Gex::ProfilerScope::ProfilerScope(Profiler profiler_,
-                                  std::string category,
-                                  std::string name)
+                                  const std::string& category,
+                                  const std::string& name)
 {
     profiler = profiler_;
     event = profiler_->StartEvent(category, name);
@@ -209,7 +209,7 @@ void Gex::ProfilerScope::Stop()
 
 
 Gex::NodeProfilerScope::NodeProfilerScope(NodeProfiler profiler_,
-                                          std::string name):
+                                          const std::string& name):
                                           profiler(profiler_)
 {
     event = profiler.StartEvent(name);

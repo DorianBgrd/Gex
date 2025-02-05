@@ -123,51 +123,28 @@ namespace Gex
         }
 
 
-        NodeAttributeData GetAttribute(const std::string& name, Feedback* success=nullptr) const;
+        NodeAttributeData GetAttribute(const std::string& name, Feedback* status=nullptr) const;
 
 
-        NodeAttributeData GetIndex(unsigned int index, Feedback* success=nullptr) const;
+        NodeAttributeData GetIndex(unsigned int index, Feedback* status=nullptr) const;
 
+    public:
 
         template <class T>
-        T GetIndexValue(unsigned int index, Feedback* stat=nullptr)
+        T GetIndexValue(unsigned int index, Feedback* status=nullptr)
         {
-            if (!attribute->IsMulti())
-            {
-                if (stat)
-                {
-                    stat->status = Status::Failed;
-                    stat->message = "Attribute \"" + attribute->Name() + "\" is not a multi attribute.";
-                }
-                return T();
-            }
-
-            if (!attribute->HasIndex(index))
-            {
-                if (stat)
-                {
-                    stat->status = Status::Failed;
-                    stat->message = "Attribute \"" + attribute->Name() + "\" index " + std::to_string(index) +
-                        "does not exist.";
-                }
-
-                return T();
-            }
-
             AttributePtr indexAttr = attribute->GetIndexAttribute(index);
             if (!indexAttr)
             {
-                if (stat)
+                if (status)
                 {
-                    stat->status = Status::Failed;
-                    stat->message = ("Attribute \"" + attribute->Name() + "\" - failed to retrieve index " +
-                                     std::to_string(index) + "does not exist.");
+                    status->status = Status::Failed;
                 }
 
                 return T();
             }
 
-            return indexAttr->Get<T>(stat);
+            return indexAttr->Get<T>(status);
         }
 
 

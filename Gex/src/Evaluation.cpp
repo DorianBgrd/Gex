@@ -42,8 +42,12 @@ bool Gex::EvaluatorThread::ComputeNode()
     auto nodeProfiler = NodeProfiler(_evaluator->GetProfiler(),
                                      lockedNode, index);
 
+    auto te = nodeProfiler.StartEvent("Testing eval");
+    bool evaluate = node->ShouldBeEvaluated();
+    nodeProfiler.StopEvent(te);
+
     auto wn = nodeProfiler.StartEvent("Waiting previous nodes");
-    while (!node->ShouldBeEvaluated())
+    while (!evaluate)
     {
         std::this_thread::yield();
     }
@@ -213,7 +217,7 @@ Gex::ScheduledNodePtr Gex::NodeEvaluator::NextNode()
         return nullptr;
     }
 
-    return schelNodes.at(n);
+    return schelNodes[n];
 }
 
 
