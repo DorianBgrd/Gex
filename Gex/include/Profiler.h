@@ -91,12 +91,14 @@ namespace Gex
 
     class GEX_API EvaluationNodeProfiler
     {
-        unsigned int thread;
         Profiler profiler;
+        std::string thread;
         std::string node;
+
     public:
-        EvaluationNodeProfiler(Profiler profiler, const NodePtr& node,
-                               unsigned int thread);
+        EvaluationNodeProfiler(const Profiler& profiler,
+                               const NodePtr& node,
+                               const std::string& thread);
 
         EvaluationNodeProfiler(const EvaluationNodeProfiler& other);
 

@@ -14,6 +14,8 @@ namespace Gex
         NodeWkPtr node;
         ScheduleNodeWkPtrList previousNodes;
         ScheduleNodeWkPtrList futureNodes;
+        unsigned int sourceEvaluated = 0;
+
         bool evaluated = false;
         bool success = false;
 
@@ -43,7 +45,10 @@ namespace Gex
 
         operator bool() const;
 
-        ScheduledNodePtr CopyShared() const;
+        void SignalEvaluated() const;
+
+    protected:
+        void ReceiveEvaluated();
     };
 
     GEX_API

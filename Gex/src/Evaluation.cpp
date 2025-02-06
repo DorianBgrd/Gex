@@ -5,11 +5,13 @@
 #include <mutex>
 
 
-Gex::EvaluatorThread::EvaluatorThread(Gex::NodeEvaluator* eval, unsigned int index_,
-                                      std::function<void(const NodePtr&)> onNodeStart,
-                                      std::function<void(const NodePtr&, bool)> onNodeEnd)
+Gex::EvaluatorThread::EvaluatorThread(
+        Gex::NodeEvaluator* eval, unsigned int index_,
+        const std::function<void(const NodePtr&)>& onNodeStart,
+        const std::function<void(const NodePtr&, bool)>& onNodeEnd
+)
 {
-    index = index_;
+    name = "Thread " + std::to_string(index_);
     _evaluator = eval;
     nodeStart = onNodeStart;
     nodeEnd = onNodeEnd;
@@ -24,9 +26,16 @@ void Gex::EvaluatorThread::Start()
 }
 
 
+std::mutex nodeEvaluatorLock;
+
+
 bool Gex::EvaluatorThread::AcquireNode()
 {
+    nodeEvaluatorLock.lock();
+
     node = _evaluator->NextNode();
+
+    nodeEvaluatorLock.unlock();
 
     return (node != nullptr);
 }
@@ -40,17 +49,14 @@ bool Gex::EvaluatorThread::ComputeNode()
     auto lockedNode = node->node.lock();
 
     auto nodeProfiler = NodeProfiler(_evaluator->GetProfiler(),
-                                     lockedNode, index);
-
-    auto te = nodeProfiler.StartEvent("Testing eval");
-    bool evaluate = node->ShouldBeEvaluated();
-    nodeProfiler.StopEvent(te);
+                                     lockedNode, name);
 
     auto wn = nodeProfiler.StartEvent("Waiting previous nodes");
-    while (!evaluate)
+    while (!node->ShouldBeEvaluated())
     {
-        std::this_thread::yield();
+//        std::this_thread::yield();
     }
+
     nodeProfiler.StopEvent(wn);
 
     if (nodeStart)
@@ -73,20 +79,16 @@ bool Gex::EvaluatorThread::ComputeNode()
 }
 
 
-std::mutex nodeEvaluatorLock;
-
-
 void Gex::EvaluatorThread::Loop()
 {
     while(!_evaluator->Done() && !stop)
     {
-        auto an = _evaluator->profiler->StartEvent("Thread " + std::to_string(index),
-                                                              "AcquireNode");
-        nodeEvaluatorLock.lock();
+        auto an = _evaluator->profiler->StartEvent(
+                name, "AcquireNode"
+        );
 
         bool acquired = AcquireNode();
 
-        nodeEvaluatorLock.unlock();
         _evaluator->profiler->StopEvent(an);
 
         if (!acquired)

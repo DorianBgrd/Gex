@@ -150,9 +150,11 @@ void Gex::EvaluationProfiler::Reset()
 }
 
 
-Gex::EvaluationNodeProfiler::EvaluationNodeProfiler(Profiler profiler_,
-                                                    const NodePtr& node_,
-                                                    unsigned int thread_)
+Gex::EvaluationNodeProfiler::EvaluationNodeProfiler(
+        const Profiler& profiler_,
+        const NodePtr& node_,
+        const std::string& thread_
+)
 {
     node = node_->Path();
     profiler = profiler_;
@@ -170,8 +172,7 @@ Gex::EvaluationNodeProfiler::EvaluationNodeProfiler(
 
 unsigned int Gex::EvaluationNodeProfiler::StartEvent(const std::string& name)
 {
-    return profiler->StartEvent("Thread " + std::to_string(thread),
-                                node + "::" + name);
+    return profiler->StartEvent(thread, node + "::" + name);
 }
 
 

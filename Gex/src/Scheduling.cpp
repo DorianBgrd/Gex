@@ -27,17 +27,9 @@ Gex::ScheduledNode::ScheduledNode(const ScheduledNodePtr& src)
 }
 
 
-bool NodeEvaluated(const Gex::ScheduledNodeWkPtr& n) {
-    return n->Evaluated();
-};
-
-
 bool Gex::ScheduledNode::ShouldBeEvaluated() const
 {
-    return std::all_of(
-            previousNodes.begin(),
-            previousNodes.end(),
-            NodeEvaluated);
+    return sourceEvaluated >= previousNodes.size();
 }
 
 
@@ -52,6 +44,9 @@ bool Gex::ScheduledNode::Compute(Gex::GraphContext &context,
 {
     bool result = Evaluate(context, profiler);
     evaluated = true;
+
+    SignalEvaluated();
+
     return result;
 }
 
@@ -102,6 +97,21 @@ bool Gex::ScheduledNode::operator==(const ScheduledNode* other) const
 Gex::ScheduledNode::operator bool() const
 {
     return node;
+}
+
+
+void Gex::ScheduledNode::SignalEvaluated() const
+{
+    for (const auto& future : futureNodes)
+    {
+        future->ReceiveEvaluated();
+    }
+}
+
+
+void Gex::ScheduledNode::ReceiveEvaluated()
+{
+    sourceEvaluated += 1;
 }
 
 

@@ -24,12 +24,12 @@ namespace Gex
         bool stop = false;
         std::function<void(const NodePtr&)> nodeStart=nullptr;
         std::function<void(const NodePtr&, bool)> nodeEnd=nullptr;
-        unsigned int index;
+        std::string name;
 
     public:
         EvaluatorThread(NodeEvaluator* evaluator, unsigned int index,
-                        std::function<void(const NodePtr&)> onNodeStart=nullptr,
-                        std::function<void(const NodePtr&, bool)> onNodeEnd=nullptr);
+                        const std::function<void(const NodePtr&)>& onNodeStart=nullptr,
+                        const std::function<void(const NodePtr&, bool)>& onNodeEnd=nullptr);
 
         void Start();
 
