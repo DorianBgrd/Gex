@@ -20,15 +20,17 @@ namespace Gex
 
     struct GEX_API Event
     {
+        static bool registered;
     public:
         std::string category;
         std::string name;
     private:
         Time start;
         Time end;
-        bool started;
+        bool started = false;
 
     public:
+
         void Start();
 
         void Stop();
@@ -42,6 +44,8 @@ namespace Gex
         Time EndTime() const;
 
         bool operator==(const Event& other) const;
+
+        static void RegisterPythonWrapper();
     };
 
 
@@ -51,11 +55,13 @@ namespace Gex
     typedef std::map<std::string, std::vector<Event>> Profile;
 
 
-    class GEX_API EvaluationProfiler
+    class GEX_API EvaluationProfiler:
+            public std::enable_shared_from_this<EvaluationProfiler>
     {
         std::vector<Event> events;
         Time start;
         Time end;
+        static bool registered;
 
     public:
         EvaluationProfiler() = default;
@@ -84,6 +90,8 @@ namespace Gex
         Profile Result() const;
 
         void Reset();
+
+        static void RegisterPythonWrapper();
     };
 
 
@@ -91,6 +99,8 @@ namespace Gex
 
     class GEX_API EvaluationNodeProfiler
     {
+        static bool registered;
+
         Profiler profiler;
         std::string thread;
         std::string node;

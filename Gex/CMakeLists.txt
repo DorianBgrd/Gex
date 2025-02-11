@@ -25,6 +25,7 @@ set(
         include/PluginLoader.h
         include/PluginLoader_Wrap.h
         include/Profiler.h
+        include/Profiler_Wrap.h
         include/ptrs.h
         include/References.h
         include/References_Wrap.h
@@ -86,6 +87,7 @@ set(
         include/Status_Wrap.h
         src/Status_Wrap.cpp
         src/References_Wrap.cpp
+        src/Profiler_Wrap.cpp
 )
 
 
