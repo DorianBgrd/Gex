@@ -20,7 +20,7 @@
 Gex::Attribute::Attribute(): typeIndex(typeid(TSys::None))
 {
     isInternal = false;
-	attributeAnyValue = std::make_any<int>(0);
+	attributeAnyValue = std::make_any<TSys::None>(TSys::None());
 	attributeIsUserDefined = false;
 }
 
@@ -66,6 +66,17 @@ Gex::Attribute::Attribute(const std::string& name, const std::type_index& vt, co
                           const AttributePtr& parent):
                           Attribute(name, TSys::TypeRegistry::GetRegistry()->GetTypeHandle(vt)->InitValue(),
                                     valueType, type, userDefined, node, parent)
+{
+
+}
+
+
+Gex::Attribute::Attribute(const std::string& name, const std::string& apiType,
+                          const AttrValueType& valueType, const AttrType& type,
+                          bool userDefined, const NodePtr& node,
+                          const AttributePtr& parent):
+        Attribute(name, TSys::TypeRegistry::GetRegistry()->GetTypeHandle(apiType)->InitValue(),
+                  valueType, type, userDefined, node, parent)
 {
 
 }
@@ -417,19 +428,19 @@ bool Gex::Attribute::HasChildAttribute(const std::string& name) const
 }
 
 
-std::vector<Gex::AttributePtr> Gex::Attribute::GetChildAttributes() const
+std::vector<Gex::AttributeWkPtr> Gex::Attribute::GetChildAttributes() const
 {
-	std::vector<AttributePtr> childs;
+	std::vector<AttributeWkPtr> childs;
 	for (std::pair<std::string, AttributePtr> p : subAttributes)
 	{
-		childs.push_back(p.second);
+		childs.emplace_back(p.second);
 	}
 
 	return childs;
 }
 
 
-Gex::AttributePtr Gex::Attribute::GetAttribute(std::string name) const
+Gex::AttributeWkPtr Gex::Attribute::GetAttribute(std::string name) const
 {
 	size_t delimiter = name.find(Config::GetConfig().attributeSeparator);
 	std::string shortname = name.substr(0, delimiter);
@@ -443,7 +454,7 @@ Gex::AttributePtr Gex::Attribute::GetAttribute(std::string name) const
 	{
 		if (subAttributes.find(shortname) == subAttributes.end())
 		{
-			return nullptr;
+			return {};
 		}
 
 		attribute = subAttributes.at(shortname);
@@ -452,20 +463,20 @@ Gex::AttributePtr Gex::Attribute::GetAttribute(std::string name) const
 	{
 		if (results.empty())
 		{
-			return nullptr;
+			return {};
 		}
 
 		unsigned int index = std::stoi(results.str().substr(1, results.size() - 2));
 		if (!HasIndex(index))
 		{
-			return nullptr;
+			return {};
 		}
 
 		attribute = multiValues.at(index);
 	}
 	else
 	{
-		return nullptr;
+		return {};
 	}
 
 	if (delimiter == std::string::npos)
@@ -477,28 +488,28 @@ Gex::AttributePtr Gex::Attribute::GetAttribute(std::string name) const
 }
 
 
-std::vector<Gex::AttributePtr> Gex::Attribute::GetAllAttributes() const
+std::vector<Gex::AttributeWkPtr> Gex::Attribute::GetAllAttributes() const
 {
-    std::vector<Gex::AttributePtr> attributes;
+    std::vector<Gex::AttributeWkPtr> attributes;
 
     for (unsigned int index : ValidIndices())
     {
-        AttributePtr idxAttr = GetIndexAttribute(index);
+        AttributeWkPtr idxAttr = GetIndexAttribute(index);
         attributes.push_back(idxAttr);
 
-        std::vector<AttributePtr> subs = idxAttr->GetAllAttributes();
-        for (const AttributePtr& attr : subs)
+        std::vector<AttributeWkPtr> subs = idxAttr->GetAllAttributes();
+        for (const AttributeWkPtr& attr : subs)
         {
             attributes.push_back(attr);
         }
     }
 
-    for (const AttributePtr& attrptr : GetChildAttributes())
+    for (const AttributeWkPtr& attrptr : GetChildAttributes())
     {
         attributes.push_back(attrptr);
 
-        std::vector<AttributePtr> subs = attrptr->GetAllAttributes();
-        for (AttributePtr attr : subs)
+        std::vector<AttributeWkPtr> subs = attrptr->GetAllAttributes();
+        for (const AttributeWkPtr& attr : subs)
         {
             attributes.push_back(attr);
         }
@@ -530,8 +541,8 @@ bool Gex::Attribute::HasSource() const
 
 bool Gex::Attribute::HasSource(unsigned int index)
 {
-	AttributePtr indexAttr = GetIndexAttribute(index);
-	if (indexAttr == nullptr)
+	AttributeWkPtr indexAttr = GetIndexAttribute(index);
+	if (!indexAttr)
 	{
 		return false;
 	}
@@ -648,10 +659,10 @@ bool Gex::Attribute::_CreateIndex(unsigned int index)
 
     if (IsHolder())
     {
-        std::vector<AttributePtr> childs = GetChildAttributes();
+        std::vector<AttributeWkPtr> childs = GetChildAttributes();
         for (const auto& at : childs)
         {
-            idxAt->CopyAsChild(at);
+            idxAt->CopyAsChild(at.ToShared());
         }
     }
 
@@ -834,7 +845,7 @@ bool Gex::Attribute::ConnectSource(unsigned int index, const AttributePtr& attri
        }
     }
 
-	AttributePtr indexAttr = GetIndexAttribute(index);
+	AttributeWkPtr indexAttr = GetIndexAttribute(index);
 	return indexAttr->_ConnectSource(attribute);
 }
 
@@ -929,8 +940,8 @@ bool Gex::Attribute::ConnectDest(unsigned int index, const AttributePtr& attribu
 		return false;
 	}
 
-	AttributePtr indexAttr = GetIndexAttribute(index);
-	if (indexAttr == nullptr)
+	AttributeWkPtr indexAttr = GetIndexAttribute(index);
+	if (!indexAttr)
 	{
 		return false;
 	}
@@ -998,13 +1009,13 @@ bool Gex::Attribute::DisconnectSource(unsigned int index, const AttributePtr& at
 {
     CHECK_EDITABLE_BOOL()
 
-	AttributePtr indexAttribute = GetIndexAttribute(index);
+	AttributeWkPtr indexAttribute = GetIndexAttribute(index);
     if (!indexAttribute)
     {
         return false;
     }
 
-	return attribute->_DisconnectSource(indexAttribute);
+	return attribute->_DisconnectSource(indexAttribute.ToShared());
 }
 
 
@@ -1075,7 +1086,7 @@ bool Gex::Attribute::DisconnectDest(unsigned int index, const AttributePtr& attr
 {
     CHECK_EDITABLE_BOOL()
 
-	AttributePtr indexAttribute = GetIndexAttribute(index);
+	AttributeWkPtr indexAttribute = GetIndexAttribute(index);
 	if (!indexAttribute)
 	{
 		return false;
@@ -1179,7 +1190,10 @@ std::any Gex::Attribute::ValueGet(const std::type_info& t, Feedback* status) con
         {
             if (status)
             {
-                status->status = Status::Failed;
+                status->Set(
+                        Status::Failed,
+                        "Could not find type handle."
+                );
             }
 
             return {};
@@ -1189,7 +1203,10 @@ std::any Gex::Attribute::ValueGet(const std::type_info& t, Feedback* status) con
         if (!cvrtval.has_value())
         {
             if (status)
-                status->status = Status::Failed;
+                status->Set(
+                    Status::Failed,
+                    "Conversion failed."
+                );
         }
 
         return cvrtval;
@@ -1202,28 +1219,28 @@ std::any Gex::Attribute::ValueGet(const std::type_info& t, Feedback* status) con
 }
 
 
-std::vector<Gex::AttributePtr> Gex::Attribute::GetArray() const
+std::vector<Gex::AttributeWkPtr> Gex::Attribute::GetArray() const
 {
-    std::vector<AttributePtr> arr;
+    std::vector<AttributeWkPtr> arr;
     for (std::pair<unsigned int, AttributePtr> p : multiValues)
     {
-        arr.push_back(p.second);
+        arr.emplace_back(p.second);
     }
 
     return arr;
 }
 
 
-Gex::AttributePtr Gex::Attribute::GetIndexAttribute(unsigned int index) const
+Gex::AttributeWkPtr Gex::Attribute::GetIndexAttribute(unsigned int index) const
 {
     if (!IsMulti())
     {
-        return nullptr;
+        return {};
     }
 
     if (!HasIndex(index))
     {
-        return nullptr;
+        return {};
     }
 
     return multiValues.at(index);
@@ -1524,8 +1541,8 @@ void Gex::Attribute::Deserialize(rapidjson::Value& value)
 			 iter != childAttributes.MemberEnd(); ++iter)
 		{
 			std::string atName = iter->name.GetString();
-			AttributePtr sub = GetAttribute(atName);
-			if (sub == nullptr)
+            AttributeWkPtr sub = GetAttribute(atName);
+			if (!sub)
 			{
 				continue;
 			}
@@ -1563,8 +1580,8 @@ bool Gex::Attribute::PullSource()
                 if (!HasIndex(index))
                     _CreateIndex(index);
 
-                AttributePtr sourceIndexAttr = source_->GetIndexAttribute(index);
-                AttributePtr indexAttr = GetIndexAttribute(index);
+                AttributeWkPtr sourceIndexAttr = source_->GetIndexAttribute(index);
+                AttributeWkPtr indexAttr = GetIndexAttribute(index);
                 indexAttr->_SetAnyValue(sourceIndexAttr->GetAnyValue());
             }
 
@@ -1572,7 +1589,7 @@ bool Gex::Attribute::PullSource()
             {
                 if (std::find(sourceIndices.begin(), sourceIndices.end(), index) == sourceIndices.end())
                 {
-                    AttributePtr indexAttr = GetIndexAttribute(index);
+                    AttributeWkPtr indexAttr = GetIndexAttribute(index);
                     if (indexAttr->HasSource())
                     {
                         continue;

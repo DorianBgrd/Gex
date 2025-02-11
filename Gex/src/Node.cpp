@@ -206,6 +206,7 @@ Gex::AttributePtr Gex::Node::CreateAttributeFromTypeName(
     auto handler = registry->GetTypeHandle(apiName);
     if (!handler)
     {
+        std::cerr << "Could not find handler for type " << apiName << std::endl;
         return nullptr;
     }
 
@@ -484,9 +485,9 @@ Gex::AttributeWkList Gex::Node::GetAllAttributes() const
     AttributeWkList attrs;
     for (const auto& n : attributes)
     {
-        attrs.push_back(n);
+        attrs.emplace_back(n);
 
-        for (const AttributePtr& at : n->GetAllAttributes())
+        for (const AttributeWkPtr& at : n->GetAllAttributes())
         {
             attrs.push_back(at);
         }

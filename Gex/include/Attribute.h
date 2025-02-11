@@ -167,6 +167,11 @@ namespace Gex
                            const AttrType& type = AttrType::Static, bool userDefined = false,
                            const NodePtr& node = nullptr, const AttributePtr& parent=nullptr);
 
+        explicit Attribute(const std::string& name, const std::string& apiType,
+                           const AttrValueType& valueType = AttrValueType::Single,
+                           const AttrType& type = AttrType::Static, bool userDefined = false,
+                           const NodePtr& node = nullptr, const AttributePtr& parent=nullptr);
+
     public:
         /**
          * Creates new holder attribute.
@@ -387,20 +392,20 @@ namespace Gex
          * Returns children attributes.
          * @return std::vector<Attribute*> child attributes.
          */
-		std::vector<AttributePtr> GetChildAttributes() const;
+		std::vector<AttributeWkPtr> GetChildAttributes() const;
 
         /**
          * Return child attribute with specified name.
          * @param std::string name: child name.
          * @return child Attribute ptr.
          */
-		AttributePtr GetAttribute(std::string name) const;
+		AttributeWkPtr GetAttribute(std::string name) const;
 
         /**
          * Returns all sub attributes.
          * @return sub Attributes ptrs.
          */
-        std::vector<AttributePtr> GetAllAttributes() const;
+        std::vector<AttributeWkPtr> GetAllAttributes() const;
 
 	public:
         /**
@@ -676,24 +681,16 @@ namespace Gex
 		T Get(Feedback* status=nullptr)
 		{
 			std::any dest = ValueGet(typeid(T), status);
-            if (!dest.has_value())
-            {
-                if (status)
-                    status->status = Status::Failed;
-
+            if(!dest.has_value())
                 return T();
-            }
 
-            if (status)
-                status->status = Status::Success;
-
-			return std::any_cast<T>(attributeAnyValue);
+			return std::any_cast<T>(dest);
 		}
 
-		std::vector<AttributePtr> GetArray() const;
+		std::vector<AttributeWkPtr> GetArray() const;
 
 	public:
-		AttributePtr GetIndexAttribute(unsigned int index) const;
+		AttributeWkPtr GetIndexAttribute(unsigned int index) const;
 
 	public:
 		template<class T>

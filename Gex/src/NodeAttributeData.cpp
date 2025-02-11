@@ -30,6 +30,13 @@ Gex::NodeAttributeData::NodeAttributeData(const AttributePtr& attr)
 }
 
 
+Gex::NodeAttributeData::NodeAttributeData(const AttributeWkPtr& attr):
+        NodeAttributeData(attr.ToShared())
+{
+
+}
+
+
 Gex::NodePtr Gex::NodeAttributeData::GetNode() const
 {
     return node;

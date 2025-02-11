@@ -29,6 +29,9 @@ namespace Gex
         explicit NodeAttributeData(const AttributePtr& attr);
 
 
+        explicit NodeAttributeData(const AttributeWkPtr& attr);
+
+
     public:
         NodePtr GetNode() const;
 
@@ -102,7 +105,7 @@ namespace Gex
             if (!attribute->HasIndex(index))
                 return false;
 
-            AttributePtr indexAttr = attribute->GetIndexAttribute(index);
+            AttributeWkPtr indexAttr = attribute->GetIndexAttribute(index);
             if (!indexAttr)
                 return false;
 
@@ -133,7 +136,7 @@ namespace Gex
         template <class T>
         T GetIndexValue(unsigned int index, Feedback* status=nullptr)
         {
-            AttributePtr indexAttr = attribute->GetIndexAttribute(index);
+            AttributeWkPtr indexAttr = attribute->GetIndexAttribute(index);
             if (!indexAttr)
             {
                 if (status)

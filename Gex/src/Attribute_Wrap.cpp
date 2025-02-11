@@ -2,14 +2,19 @@
 #include "Gex/include/Node.h"
 #include "Tsys/include/tsys.h"
 
+#include "Gex/include/ptrs.h"
+
 bool Gex::Python::Attribute_Wrap::registered = false;
 
 
 boost::python::object Attribute_Python_Get(boost::python::tuple args,
                                            boost::python::dict kwargs)
 {
-    boost::python::object result;
     Gex::Attribute* attribute = boost::python::extract<Gex::Attribute*>(args[0]);
+    if (!attribute)
+    {
+        return {};
+    }
 
     return attribute->TypeHandle()->ToPython(attribute->GetAnyValue());
 }
@@ -19,11 +24,12 @@ bool Attribute_Python_Set(boost::python::tuple args,
                           boost::python::dict kwargs)
 {
     Gex::Attribute* attribute = boost::python::extract<Gex::Attribute*>(args[0]);
-
-    if (!attribute->IsEditable())
+    if (!attribute)
+    {
         return false;
+    }
 
-    if (attribute->IsOutput())
+    if (!attribute->IsEditable() || !attribute->IsInput())
     {
         return false;
     }
@@ -33,18 +39,20 @@ bool Attribute_Python_Set(boost::python::tuple args,
     std::any _v = attribute->TypeHandle()->FromPython(value);
 
     // Set Value.
-    return attribute->SetAnyValue(value);
+    return attribute->SetAnyValue(_v);
 }
 
 
-boost::python::object MakeSharedRef(boost::python::tuple args,
-                                    boost::python::dict kwargs)
+boost::python::object Attribute_Bool(
+        boost::python::tuple args,
+        boost::python::dict kwargs
+)
 {
-    Gex::AttributeWkPtr wkself = boost::python::extract<Gex::AttributeWkPtr>(args[0]);
-    if (!wkself)
-        return {};
+    Gex::Attribute* attribute = boost::python::extract<Gex::Attribute*>(args[0]);
 
-    return boost::python::object(wkself.ToShared());
+    return boost::python::object(
+        attribute != Gex::AttributeWkPtr::invalid.get()
+    );
 }
 
 
@@ -66,7 +74,13 @@ bool Gex::Python::Attribute_Wrap::RegisterPythonWrapper()
     bool (Gex::Attribute::* ProxyAttr_CanConnectSource)(const Gex::AttributePtr& a) =
     &Gex::Attribute::CanConnectSource;
 
-    boost::python::class_<Gex::Python::Attribute_Wrap, Gex::AttributePtr>("Attribute", boost::python::no_init)
+    boost::python::to_python_converter<
+            Gex::AttributeWkPtr,
+            Gex::Python::WeakPtrToPython<Gex::Attribute>,
+            true>();
+
+    boost::python::class_<Gex::Python::Attribute_Wrap, Gex::AttributePtr>
+            ("Attribute", boost::python::no_init)
             .def("Name", &Gex::Attribute::Name)
             .def("Get", boost::python::raw_function(&Attribute_Python_Get))
             .def("Set", boost::python::raw_function(&Attribute_Python_Set, 1))
@@ -89,15 +103,17 @@ bool Gex::Python::Attribute_Wrap::RegisterPythonWrapper()
             .def("HasChildAttributes", &Gex::Attribute::HasChildAttributes)
             .def("ChildAttributeNames", &Gex::Attribute::ChildAttributesNames)
             .def("GetAttribute", &Gex::Attribute::GetAttribute)
-            .def("ToWeakRef", boost::python::raw_function(&MakeSharedRef, 1))
+//            .def("ToWeakRef", boost::python::raw_function(&MakeSharedRef, 1))
+            .def("__bool__", boost::python::raw_function(Attribute_Bool))
             ;
 
-    boost::python::class_<Gex::AttributeWkPtr>("AttributeWk", boost::python::no_init)
-            .def("IsWkValid", &Gex::AttributeWkPtr::expired)
-            .def("ToAttribute", &Gex::AttributeWkPtr::lock)
-            .def("__call__", &Gex::AttributeWkPtr::lock)
-            .def("__bool__", &Gex::AttributeWkPtr::operator bool)
-            ;
+//    boost::python::class_<Gex::AttributeWkPtr, boost::python::bases<Gex::AttributePtr>>
+//            ("AttributeWk", boost::python::no_init)
+//            .def("IsWkValid", &Gex::AttributeWkPtr::expired)
+//            .def("ToAttribute", &Gex::AttributeWkPtr::lock)
+//            .def("__call__", &Gex::AttributeWkPtr::lock)
+//            .def("__bool__", &Gex::AttributeWkPtr::operator bool)
+//            ;
 
     boost::python::enum_<Gex::AttrValueType>("AttrValueType")
             .value("Single", Gex::AttrValueType::Single)

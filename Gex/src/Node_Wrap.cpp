@@ -156,7 +156,7 @@ Gex::Python::Node_Wrap::Node_Wrap(): Gex::Node(), boost::python::wrapper<Gex::No
 Gex::Python::Node_Wrap::Node_Wrap(const Gex::Node base) : Gex::Node(base), boost::python::wrapper<Node>()
 {
 
-};
+}
 
 
 std::string Gex::Python::Node_Wrap::Type() const
@@ -270,6 +270,42 @@ boost::python::object NW_Python_CreateAttribute(boost::python::tuple args,
 
     return boost::python::object(self->CreateAttributeFromValue(
             name, value, attrValueType, attrType, parent));
+}
+
+
+boost::python::object NW_Python_CreateAttributeFromTypeName(
+        boost::python::tuple args,
+        boost::python::dict kwargs
+)
+{
+    Gex::Node* self = boost::python::extract<Gex::Node*>(args[0]);
+    std::string name = boost::python::extract<std::string>(args[1]);
+    boost::python::object type = args[2];
+    Gex::AttrType attrType = Gex::AttrType::Static;
+    Gex::AttrValueType attrValueType = Gex::AttrValueType::Single;
+    Gex::AttributePtr parent = nullptr;
+
+    int length = boost::python::len(args);
+    if (length > 3)
+        attrType = boost::python::extract<Gex::AttrType>(args[3]);
+    else if (kwargs.has_key("type"))
+        attrType = boost::python::extract<Gex::AttrType>(kwargs["type"]);
+
+    if (length > 4)
+        attrValueType = boost::python::extract<Gex::AttrValueType>(args[4]);
+    else if (kwargs.has_key("valueType"))
+        attrValueType = boost::python::extract<Gex::AttrValueType>(kwargs["valueType"]);
+
+    if (length > 5)
+        parent = boost::python::extract<Gex::AttributePtr>(args[5]);
+    else if (kwargs.has_key("parent"))
+        parent = boost::python::extract<Gex::AttributePtr>(kwargs["parent"]);
+
+//    std::any value = InitPythonValue(type, feedback);
+    std::string apiType = boost::python::extract<std::string>(type);
+
+    return boost::python::object(self->CreateAttributeFromTypeName(
+            name, apiType, attrValueType, attrType, parent));
 }
 
 
@@ -392,6 +428,11 @@ void Gex::Python::Node_Wrap::RegisterPythonWrapper()
             .value("Deleted", Gex::NodeChange::Deleted)
             ;
 
+    boost::python::to_python_converter<
+            Gex::NodeWkPtr,
+            Gex::Python::WeakPtrToPython<Gex::Node>,
+            true>();
+
     boost::python::class_<Gex::Python::Node_Wrap, Gex::NodePtr>("Node", boost::python::init())
             .def(boost::python::init<Gex::NodePtr>())
             .def("InitAttributes", &Gex::Node::InitAttributes)
@@ -399,7 +440,9 @@ void Gex::Python::Node_Wrap::RegisterPythonWrapper()
             .def("Name", &Gex::Node::Name)
             .def("Type", &Gex::Node::Type)
             .def("Description", &Gex::Node::Description)
-            .def("CreateAttributeFromValue", boost::python::raw_function(&NW_Python_CreateAttribute, 3))
+//            .def("CreateAttributeFromValue", boost::python::raw_function(&NW_Python_CreateAttribute, 3))
+            .def("CreateAttributeFromTypeName", boost::python::raw_function(
+                    &NW_Python_CreateAttributeFromTypeName, 3))
             .def("GetAttributes", boost::python::raw_function(&NW_Python_GetAttributes, 1))
             .def("GetAttribute", &Gex::Node::GetAttribute)
             .def("IsEditable", &Gex::Node::IsEditable)
@@ -412,14 +455,15 @@ void Gex::Python::Node_Wrap::RegisterPythonWrapper()
             .def("RegisterNodeChangedCallback", boost::python::raw_function(&Node_RegisterNodeChangedCallback, 2))
             .def("ToWeakRef", boost::python::raw_function(
                     &Gex::Python::StrongRefToWeak<Gex::NodePtr, Gex::NodeWkPtr>, 1))
-            ;
-
-    boost::python::class_<Gex::NodeWkPtr>("NodeWk", boost::python::no_init)
-            .def("IsWkValid", &Gex::NodeWkPtr::expired)
-            .def("ToNode", &Gex::NodeWkPtr::lock)
-            .def("__call__", &Gex::NodeWkPtr::lock)
             .def("__bool__", &Gex::NodeWkPtr::operator bool)
             ;
+
+//    boost::python::class_<Gex::NodeWkPtr>("NodeWk", boost::python::no_init)
+//            .def("IsWkValid", &Gex::NodeWkPtr::expired)
+//            .def("ToNode", &Gex::NodeWkPtr::lock)
+//            .def("__call__", &Gex::NodeWkPtr::lock)
+//            .def("__bool__", &Gex::NodeWkPtr::operator bool)
+//            ;
 
     pythonRegistered = true;
 }
