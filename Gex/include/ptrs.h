@@ -4,12 +4,12 @@
 #include <vector>
 #include <memory>
 
+#include "boost/weak_ptr.hpp"
+
+#include <boost/python.hpp>
+
 namespace Gex
 {
-    class Attribute;
-    class Node;
-
-
     template<class T>
     class BaseWkPtr: public std::weak_ptr<T>
     {
@@ -41,20 +41,9 @@ namespace Gex
             return invalid;
         }
 
-        std::shared_ptr<T> operator->()
-        {
-            if (!this->expired())
-                return ToShared();
-
-            return invalid;
-        }
-
         std::shared_ptr<T> operator->() const
         {
-            if (!this->expired())
-                return ToShared();
-
-            return invalid;
+            return ToShared();
         }
     };
 
@@ -148,6 +137,24 @@ namespace Gex
         return res;
     }
 
+    namespace Python
+    {
+        template<class T>
+        struct WeakPtrToPython
+        {
+            static PyObject* convert(Gex::BaseWkPtr<T> const& x)
+            {
+                return boost::python::converter::registered<T>::converters.to_python(
+                        x.ToShared().get()
+                );
+            }
+
+            static PyTypeObject const* get_pytype()
+            {
+                return boost::python::converter::registered<T>::converters.get_class_object();
+            }
+        };
+    }
 }
 
 #endif //GEX_PTRS_H
