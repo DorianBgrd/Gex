@@ -13,7 +13,7 @@ set(CMAKE_INSTALL_PREFIX ${CMAKE_BINARY_DIR}/install)
 
 find_package(Python 3.11 REQUIRED COMPONENTS Development Interpreter)
 #find_package(Boost 1.82.0 COMPONENTS python311 REQUIRED HINTS $ENV{BOOST_ROOT})
-find_package(Boost 1.82.0 COMPONENTS python311 REQUIRED HINTS "D:/WORK/Boost/boost_1_82_0/boost_1_82_0/stage/lib/cmake/Boost-1.82.0")
+find_package(Boost 1.82.0 COMPONENTS python311 REQUIRED)
 
 message("Python found ${Python_FOUND}")
 message("Boost found ${Boost_FOUND}")
