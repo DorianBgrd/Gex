@@ -6,6 +6,15 @@ set(CMAKE_CXX_STANDARD 17)
 
 add_executable(
         Test
+
+        tests.h
+
+        testSuite/TestNodes.h
+        testSuite/TestNodes.cpp
+
+        testSuite/TestAttributes.h
+        testSuite/TestAttributes.cpp
+
         main.cpp
 )
 
@@ -14,6 +23,7 @@ target_include_directories(
         Test
         PUBLIC
         ${CMAKE_SOURCE_DIR}
+        ${CMAKE_CURRENT_SOURCE_DIR}
         $ENV{TSYS_DIR}
         $ENV{RAPIDJSON_DIR}
         $ENV{SAFEPTRS_DIR}
@@ -36,7 +46,7 @@ target_link_libraries(
         PUBLIC
         Gex
         ${Boost_LIBRARIES}
-        ${Python_LIBRARIES}
+        ${Python_LINK_LIBRARIES}
 )
 
 
