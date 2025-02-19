@@ -12,17 +12,35 @@ set(Boost_USE_STATIC_LIBS OFF)
 set(CMAKE_INSTALL_PREFIX ${CMAKE_BINARY_DIR}/install)
 
 find_package(Python 3.11 REQUIRED COMPONENTS Development Interpreter)
-#find_package(Boost 1.82.0 COMPONENTS python311 REQUIRED HINTS $ENV{BOOST_ROOT})
+
+# Due to boost build not using python debug by default, and
+# sometimes not linking it correctly when built from source
+# (linking to both python libs) it is disabled by default and
+# only release version of python is linked.
+if (DEFINED Python_DEBUG)
+    message(STATUS "Python_DEBUG variable is set to ${Python_DEBUG}")
+    set(Impl_Python_DEBUG ${Python_DEBUG})
+elseif (DEFINED ENV{Python_DEBUG})
+    message(STATUS "Python_DEBUG variable is set to ${Python_DEBUG} (From environment)")
+    set(Impl_Python_DEBUG $ENV{Python_DEBUG})
+else()
+    set(Impl_Python_DEBUG ON)
+endif()
+
+if (NOT ${Impl_Python_DEBUG})
+    set(Python_LINK_LIBRARIES ${Python_LIBRARY_RELEASE})
+    message(STATUS "Forced using python release libraries")
+else()
+    set(Python_LINK_LIBRARIES ${Python_LIBRARIES})
+endif()
+
 find_package(Boost 1.82.0 COMPONENTS python311 REQUIRED)
 
-message("Python found ${Python_FOUND}")
-message("Boost found ${Boost_FOUND}")
 
 string(TOLOWER ${CMAKE_BUILD_TYPE} BUILD_TYPE)
 
-set(TSYS_LIBRARY_DIR "$ENV{TSYS_DIR}/Tsys/cmake-build-${BUILD_TYPE}")
 
-message("TSYS_LIBRARY_DIR : ${TSYS_LIBRARY_DIR}")
+set(TSYS_LIBRARY_DIR "$ENV{TSYS_DIR}/Tsys/cmake-build-${BUILD_TYPE}")
 
 
 add_subdirectory(Gex)

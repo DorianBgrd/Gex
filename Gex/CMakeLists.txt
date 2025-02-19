@@ -139,7 +139,7 @@ target_link_libraries(
         Gex
         PUBLIC
         ${Boost_LIBRARIES}
-        ${Python_LIBRARIES}
+        ${Python_LINK_LIBRARIES}
         TSys
 )
 
@@ -173,7 +173,7 @@ target_link_libraries(
         Gex_Static
         PUBLIC
         ${Boost_LIBRARIES}
-        ${Python_LIBRARIES}
+        ${Python_LINK_LIBRARIES}
         TSys_Static
 )
 

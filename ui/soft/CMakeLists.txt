@@ -66,7 +66,7 @@ target_link_libraries(
         Gex_ui
 
         ${Boost_LIBRARIES}
-        ${Python_LIBRARIES}
+        ${Python_LINK_LIBRARIES}
 
         Qt6::Widgets
         Qt6::Core
@@ -135,7 +135,7 @@ target_link_libraries(
         PUBLIC
 
 #        ${Boost_LIBRARIES}
-#        ${Python_LIBRARIES}
+#        ${Python_LINK_LIBRARIES}
 
         SoftApi
 
@@ -200,9 +200,6 @@ target_link_directories(
         ${CMAKE_BINARY_DIR}
         ${CMAKE_BINARY_DIR}/ui
 )
-
-message("Boost libraries ${Boost_LIBRARIES}")
-message("Boost libraries directories ${Boost_LIBRARY_DIR}")
 
 
 target_link_libraries(

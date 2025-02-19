@@ -95,7 +95,7 @@ target_link_libraries(
         Python::Python
         Python::Module
         ${PXR_LIBRARIES}
-        ${Python_LIBRARIES}
+        ${Python_LINK_LIBRARIES}
 
         TSys
         UiTSys
