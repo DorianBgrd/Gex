@@ -2,11 +2,15 @@
 
 
 Gex::Undo::CreateNode::CreateNode(
-        const NodePtr& p,
-        const NodePtr& n)
+        const NodePtr& parent_,
+        const NodePtr& node_,
+        const NodeCB& createCB,
+        const NodeCB& deleteCB)
 {
-    parent = p;
-    node = n;
+    parent = parent_;
+    node = node_;
+    createCallback = createCB;
+    deleteCallback = deleteCB;
 }
 
 
@@ -18,45 +22,59 @@ std::string Gex::Undo::CreateNode::Name() const
 }
 
 
-void Gex::Undo::CreateNode::Undo() const
+void Gex::Undo::CreateNode::Undo()
 {
-    if (parent)
-    {
-        CompoundNode::FromNode(parent)->RemoveNode(node);
-    }
+    deleteCallback(node);
 }
 
 
-void Gex::Undo::CreateNode::Redo() const
+void Gex::Undo::CreateNode::Redo()
 {
-    if (parent)
-    {
-        CompoundNode::FromNode(parent)->AddNode(node);
-    }
+    createCallback(node);
 }
 
 
 Gex::Undo::DeleteNode::DeleteNode(
-        const NodePtr& p,
-        const NodePtr& n)
+        const NodePtr& n,
+        const NodeCB& rmCallback,
+        const NodeCB& addCallback)
 {
     node = n;
-    parent = p;
+    removeNodeCb = rmCallback;
+    addNodeCb = addCallback;
 
-    for (auto attr : node->GetAllAttributes())
+    for (auto& attribute : node->GetAllAttributes())
     {
-        if (attr->HasSource())
+        if (attribute->HasSource())
         {
-            connections.emplace_back(attr->Source().ToShared(), attr);
+            sourceConnections.emplace_back(
+                    attribute->Source().ToShared(),
+                    attribute
+            );
         }
-        for (const auto& d : attr->Dests())
+
+        for (auto& destination : attribute->Dests())
         {
-            if (!d)
+            if (!destination)
                 continue;
 
-            connections.emplace_back(attr, d.ToShared());
+            destConnections.emplace_back(
+                    attribute,
+                    destination.ToShared()
+            );
         }
     }
+}
+
+
+Gex::Undo::DeleteNode::DeleteNode(const DeleteNode& other):
+    node(other.node),
+    removeNodeCb(other.removeNodeCb),
+    addNodeCb(other.addNodeCb),
+    sourceConnections(other.sourceConnections),
+    destConnections(other.destConnections)
+{
+
 }
 
 
@@ -66,26 +84,43 @@ std::string Gex::Undo::DeleteNode::Name() const
 }
 
 
-void Gex::Undo::DeleteNode::Undo() const
+void Gex::Undo::DeleteNode::Undo()
 {
-    if (parent)
-    {
-        CompoundNode::FromNode(parent)->AddNode(node);
+    addNodeCb(node);
 
-        for (auto cnx : connections)
-        {
-            cnx.second->ConnectSource(cnx.first);
-        }
+    for (const auto& sourceConnection : sourceConnections)
+    {
+        sourceConnection.second->ConnectSource(
+                sourceConnection.first
+        );
+    }
+
+    for (const auto& destConnection: destConnections)
+    {
+        destConnection.second->ConnectSource(
+                destConnection.first
+        );
     }
 }
 
 
-void Gex::Undo::DeleteNode::Redo() const
+void Gex::Undo::DeleteNode::Redo()
 {
-    if (parent)
+    for (const auto& sourceConnection : sourceConnections)
     {
-        CompoundNode::FromNode(parent)->RemoveNode(node);
+        sourceConnection.second->DisconnectSource(
+                sourceConnection.first
+        );
     }
+
+    for (const auto& destConnection: destConnections)
+    {
+        destConnection.second->DisconnectSource(
+                destConnection.first
+        );
+    }
+
+    removeNodeCb(node);
 }
 
 
@@ -110,13 +145,13 @@ std::string Gex::Undo::ConnectAttr::Name() const
 }
 
 
-void Gex::Undo::ConnectAttr::Undo() const
+void Gex::Undo::ConnectAttr::Undo()
 {
     destAttr->DisconnectSource(sourceAttr);
 }
 
 
-void Gex::Undo::ConnectAttr::Redo() const
+void Gex::Undo::ConnectAttr::Redo()
 {
     destAttr->ConnectSource(sourceAttr);
 }
@@ -140,12 +175,12 @@ std::string Gex::Undo::DisconnectAttr::Name() const
 }
 
 
-void Gex::Undo::DisconnectAttr::Undo() const
+void Gex::Undo::DisconnectAttr::Undo()
 {
     destAttr->ConnectSource(sourceAttr);
 }
 
-void Gex::Undo::DisconnectAttr::Redo() const
+void Gex::Undo::DisconnectAttr::Redo()
 {
     destAttr->DisconnectSource(sourceAttr);
 }
@@ -170,12 +205,12 @@ std::string Gex::Undo::SetAttr::Name() const
 }
 
 
-void Gex::Undo::SetAttr::Undo() const
+void Gex::Undo::SetAttr::Undo()
 {
     attr->SetAnyValue(previous);
 }
 
-void Gex::Undo::SetAttr::Redo() const
+void Gex::Undo::SetAttr::Redo()
 {
     attr->SetAnyValue(value);
 }

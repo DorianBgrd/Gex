@@ -14,8 +14,8 @@ namespace Gex::Undo
     {
     public:
         virtual std::string Name() const = 0;
-        virtual void Undo() const = 0;
-        virtual void Redo() const = 0;
+        virtual void Undo() = 0;
+        virtual void Redo() = 0;
     };
 
 
@@ -45,9 +45,9 @@ namespace Gex::Undo
 
         void AddUndo(const UndoPtr& command);
 
-        void Undo() const override;
+        void Undo() override;
 
-        void Redo() const override;
+        void Redo() override;
 
         UndoGrpWkPtr ParentGroup() const;
 

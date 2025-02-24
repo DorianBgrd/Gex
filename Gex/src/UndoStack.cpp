@@ -22,7 +22,7 @@ void Gex::Undo::UndoCmdGroup::AddUndo(const UndoPtr& command)
 }
 
 
-void Gex::Undo::UndoCmdGroup::Undo() const
+void Gex::Undo::UndoCmdGroup::Undo()
 {
     for (const auto undo : group)
     {
@@ -31,7 +31,7 @@ void Gex::Undo::UndoCmdGroup::Undo() const
 }
 
 
-void Gex::Undo::UndoCmdGroup::Redo() const
+void Gex::Undo::UndoCmdGroup::Redo()
 {
     for (const auto undo : group)
     {

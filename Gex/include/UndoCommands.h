@@ -7,37 +7,52 @@
 
 namespace Gex::Undo
 {
+    typedef std::function<bool(const Gex::NodePtr&)> NodeCB;
+
+
     class CreateNode: public UndoCmd
     {
         NodePtr parent;
         NodePtr node;
 
+        NodeCB createCallback;
+        NodeCB deleteCallback;
+
     public:
-        CreateNode(const NodePtr& p,
-                   const NodePtr& n);
+        CreateNode(const NodePtr& parent,
+                   const NodePtr& node,
+                   const NodeCB& createCallback,
+                   const NodeCB& deleteCallback);
 
         std::string Name() const override;
 
-        void Undo() const override;
+        void Undo() override;
 
-        void Redo() const override;
+        void Redo() override;
     };
 
     class DeleteNode: public UndoCmd
     {
         NodePtr node;
-        NodePtr parent;
-        std::vector<std::pair<AttributePtr, AttributeWkPtr>> connections;
+        std::vector<std::pair<AttributePtr, AttributeWkPtr>> sourceConnections;
+        std::vector<std::pair<AttributeWkPtr, AttributePtr>> destConnections;
+
+    private:
+        NodeCB removeNodeCb;
+        NodeCB addNodeCb;
 
     public:
-        DeleteNode(const NodePtr& n,
-                   const NodePtr& p);
+        DeleteNode(const NodePtr& node,
+                   const NodeCB& removeCB,
+                   const NodeCB& addNodeCb);
+
+        DeleteNode(const DeleteNode& other);
 
         std::string Name() const override;
 
-        void Undo() const override;
+        void Undo() override;
 
-        void Redo() const override;
+        void Redo() override;
     };
 
     class ConnectAttr: public UndoCmd
@@ -56,9 +71,9 @@ namespace Gex::Undo
 
         std::string Name() const override;
 
-        void Undo() const override;
+        void Undo() override;
 
-        void Redo() const override;
+        void Redo() override;
     };
 
     class DisconnectAttr: public UndoCmd
@@ -76,9 +91,9 @@ namespace Gex::Undo
 
         std::string Name() const override;
 
-        void Undo() const override;
+        void Undo() override;
 
-        void Redo() const override;
+        void Redo() override;
     };
 
     class SetAttr: public UndoCmd
@@ -95,9 +110,9 @@ namespace Gex::Undo
 
         std::string Name() const override;
 
-        void Undo() const override;
+        void Undo() override;
 
-        void Redo() const override;
+        void Redo() override;
     };
 
 }
