@@ -44,8 +44,6 @@ std::vector<std::string> Gex::GraphContext::Resources() const
 
 Gex::Node::Node(const NodePtr& parent_)
 {
-    previous = nullptr;
-    next = nullptr;
     parent = parent_;
     nextId = 0;
 }
@@ -171,12 +169,12 @@ std::any Gex::Node::InitValue(const std::type_info& t)
 }
 
 
-Gex::AttributePtr Gex::Node::CreateAttributeFromValue(
+Gex::AttributeWkPtr Gex::Node::CreateAttributeFromValue(
         const std::string& name,
         const std::any& v,
         const AttrValueType& valueType,
         const AttrType& type,
-        const AttributePtr& parent
+        const AttributeWkPtr& parent
 )
 {
     auto attribute = std::make_shared<Attribute>(
@@ -197,17 +195,17 @@ Gex::AttributePtr Gex::Node::CreateAttributeFromValue(
 }
 
 
-Gex::AttributePtr Gex::Node::CreateAttributeFromTypeName(
+Gex::AttributeWkPtr Gex::Node::CreateAttributeFromTypeName(
         const std::string& name, const std::string& apiName,
         const AttrValueType& valueType, const AttrType& type,
-        const AttributePtr& parent)
+        const AttributeWkPtr& parent)
 {
     auto* registry = TSys::TypeRegistry::GetRegistry();
     auto handler = registry->GetTypeHandle(apiName);
     if (!handler)
     {
         std::cerr << "Could not find handler for type " << apiName << std::endl;
-        return nullptr;
+        return {};
     }
 
     return CreateAttributeFromValue(name, handler->InitValue(),
@@ -215,9 +213,9 @@ Gex::AttributePtr Gex::Node::CreateAttributeFromTypeName(
 }
 
 
-Gex::AttributePtr Gex::Node::CreateAttribute(
+Gex::AttributeWkPtr Gex::Node::CreateAttribute(
         const std::string& name, const AttrType& type,
-        bool multi, const AttributePtr& parent)
+        bool multi, const AttributeWkPtr& parent)
 {
     AttributePtr attribute = std::make_shared<Attribute>(
             name, type, multi, !IsInitializing(),
@@ -1009,13 +1007,8 @@ bool Gex::CompoundNode::IsCompound() const
 }
 
 
-bool Gex::CompoundNode::AddNode(const NodePtr& node)
+bool Gex::CompoundNode::_AddNode(const NodePtr& node)
 {
-    if (!IsEditable() || HasNode(node))
-    {
-        return false;
-    }
-
     node->SetParent(shared_from_this());
     node->SetName(node->Name());
 
@@ -1026,22 +1019,98 @@ bool Gex::CompoundNode::AddNode(const NodePtr& node)
 }
 
 
-bool Gex::CompoundNode::RemoveNode(const NodePtr& node)
+bool Gex::CompoundNode::AddNode(const NodePtr& node)
 {
-    if (IsReferenced() || !IsEditable() || !HasNode(node))
+    if (!IsEditable() || HasNode(node))
     {
         return false;
     }
 
-    for (const auto& attribute : node->GetAllAttributes())
-    {
-        attribute->ClearSource();
-        attribute->ClearDests();
-    }
+    auto thisSharedCompound = Gex::Node::ConvertTo<Gex::CompoundNode>(shared_from_this());
 
-    nodes.erase(std::find(nodes.begin(), nodes.end(), node));
+    auto addCb = [thisSharedCompound](const Gex::NodePtr& node)
+    {
+        return thisSharedCompound->_AddNode(node);
+    };
+
+    auto rmCB = [thisSharedCompound](const Gex::NodePtr& node)
+    {
+        return thisSharedCompound->_RemoveNode(node);
+    };
+
+    addCb(node);
+
+    Gex::Undo::UndoStack::AddUndo(
+        Gex::Undo::CreateUndo<Gex::Undo::CreateNode>(
+                thisSharedCompound,
+                node, addCb, rmCB
+        )
+    );
+
+    return true;
+}
+
+
+bool Gex::CompoundNode::_RemoveNode(const NodePtr& node)
+{
+    auto index = std::find_if(
+        nodes.begin(), nodes.end(),
+        [node](const NodePtr& other)
+        {
+            return node == other;
+        }
+    );
+
+    nodes.erase(index);
+    return true;
+}
+
+
+void Gex::CompoundNode::RemoveNodeWithUndo(const NodePtr& node)
+{
+    // To be efficiently able to use Undo commands, the next
+    // step of this command consists in making an undo command
+    // that will get all the necessary intels and callbacks
+    // to perform the action.
+
+    auto thisShared = Node::ConvertTo<Gex::CompoundNode>(shared_from_this());
+
+    auto rmCallback = [thisShared](const Gex::NodePtr& node)
+    {
+        return thisShared->_RemoveNode(node);
+    };
+
+    auto addCallback = [thisShared](const Gex::NodePtr& node)
+    {
+        return thisShared->AddNode(node);
+    };
+
+    auto command = Undo::CreateUndo<Undo::DeleteNode>(
+            node, rmCallback, addCallback
+    );
+
+    rmCallback(node);
+
+    Undo::UndoStack::AddUndo(command);
 
     SignalChange(NodeChange::ChildNodeRemoved, node);
+}
+
+
+bool Gex::CompoundNode::CanRemoveNode() const
+{
+    return (!IsReferenced() || IsEditable());
+}
+
+
+bool Gex::CompoundNode::RemoveNode(const NodePtr& node)
+{
+    if (!CanRemoveNode())
+    {
+        return false;
+    }
+
+    RemoveNodeWithUndo(node);
     return true;
 }
 
@@ -1138,18 +1207,19 @@ std::string Gex::CompoundNode::UniqueName(const std::string& name) const
 
 bool Gex::CompoundNode::RemoveNode(const std::string& node)
 {
-    if (!IsEditable())
+    if (!CanRemoveNode())
         return false;
 
-    NodeWkPtr nodePtr = GetNode(node);
-    if (nodePtr.expired())
-    {
+    auto pred = [node](const NodePtr& other) {
+        bool res = (other->Name() == node);
+        return res;
+    };
+
+    auto index = std::find_if(nodes.begin(), nodes.end(), pred);
+    if (index == nodes.end())
         return false;
-    }
 
-    nodes.erase(std::find(nodes.begin(), nodes.end(), nodePtr.ToShared()));
-
-    SignalChange(NodeChange::ChildNodeRemoved, nodePtr);
+    RemoveNodeWithUndo(*index);
     return true;
 }
 
@@ -1220,11 +1290,6 @@ Gex::NodePtr Gex::CompoundNode::CreateNode(const std::string& type, std::string 
         return nullptr;
     }
 
-    Undo::UndoStack::AddUndo(
-            Undo::CreateUndo<Undo::CreateNode>(
-                    shared_from_this(), newNode)
-    );
-
     return newNode;
 }
 
@@ -1240,14 +1305,26 @@ Gex::NodePtr Gex::CompoundNode::ReferenceNode(const std::string& path, std::stri
         return nullptr;
     }
 
-    if (!AddNode(referencedNode))
-    {
-        return nullptr;
-    }
+    auto thisSharedCompound = Node::ConvertTo<Gex::CompoundNode>(shared_from_this());
 
-    Undo::UndoStack::AddUndo(
-            Undo::CreateUndo<Undo::CreateNode>(
-                    shared_from_this(), referencedNode)
+    auto addCb = [thisSharedCompound](const Gex::NodePtr& node)
+    {
+        return thisSharedCompound->_AddNode(node);
+    };
+
+    auto rmCB = [thisSharedCompound](const Gex::NodePtr& node)
+    {
+        return thisSharedCompound->_RemoveNode(node);
+    };
+
+    addCb(referencedNode);
+
+    Gex::Undo::UndoStack::AddUndo(
+            Gex::Undo::CreateUndo<Gex::Undo::CreateNode>(
+                    thisSharedCompound,
+                    referencedNode,
+                    addCb, rmCB
+            )
     );
 
     return referencedNode;
@@ -1813,7 +1890,7 @@ Gex::NodePtr Duplicate(std::map<Gex::NodePtr, Gex::NodePtr>& res,
         auto attribute = wkAttribute.ToShared();
         std::string atpath = attribute->Longname();
 
-        Gex::AttributePtr destAttribute = nullptr;
+        Gex::AttributeWkPtr destAttribute;
         if (attribute->IsUserDefined())
         {
             Gex::AttributeWkPtr newWkParent = new_->GetAttribute(
@@ -1891,7 +1968,7 @@ Gex::NodeList Gex::CompoundNode::DuplicateNodes(NodeList sources, bool copyLinks
     Gex::NodeList news_;
     if (copyLinks)
     {
-        for (auto m : nmap)
+        for (const auto& m : nmap)
         {
             // Get the new node.
             auto source = m.first;
@@ -1990,7 +2067,7 @@ Gex::NodePtr Gex::CompoundNode::ToCompound(NodeList sources, bool duplicate,
                 std::string pname = lockedSourceNode->Name() + "_" + lockedSource->Name();
 
                 AttributeWkPtr proxy = compound->GetAttribute(pname);
-                AttributePtr sharedProxy;
+                AttributeWkPtr sharedProxy;
                 if (!proxy)
                 {
                     sharedProxy = ToSharedPtr(proxy);
@@ -2044,7 +2121,7 @@ Gex::NodePtr Gex::CompoundNode::ToCompound(NodeList sources, bool duplicate,
                 std::string pname = lockedDestNode->Name() + "_" + lockedDest->Name();
                 AttributeWkPtr proxy = compound->GetAttribute(pname);
 
-                AttributePtr sharedProxy;
+                AttributeWkPtr sharedProxy;
                 if (!proxy)
                 {
                     sharedProxy = ToSharedPtr(proxy);

@@ -94,8 +94,8 @@ namespace Gex
         std::vector<std::string> resources;
 
         NodeWkPtr parent;
-        AttributePtr previous;
-        AttributePtr next;
+        AttributeWkPtr previous;
+        AttributeWkPtr next;
 
         ScheduleNodePtrList scheduledNodes;
         bool isScheduled = false;
@@ -346,26 +346,32 @@ namespace Gex
          * @return Attribute* created attribute.
          */
 		template<class T>
-		AttributePtr CreateAttribute(const std::string& name, const AttrValueType& valueType = AttrValueType::Single,
-			const AttrType& type = AttrType::Static, const AttributePtr& parent=nullptr)
+		AttributeWkPtr CreateAttribute(const std::string& name,
+                                       const AttrValueType& valueType = AttrValueType::Single,
+                                       const AttrType& type = AttrType::Static,
+                                       const AttributeWkPtr& parent = AttributeWkPtr())
 		{
             return CreateAttributeFromValue(name, InitValue(typeid(T)),
                                             valueType, type, parent);
 		}
 
 
-		AttributePtr CreateAttributeFromValue(const std::string& name, const std::any& v, const AttrValueType& valueType = AttrValueType::Single,
-                                            const AttrType& type = AttrType::Static, const AttributePtr& parent = nullptr);
+		AttributeWkPtr CreateAttributeFromValue(const std::string& name, const std::any& v,
+                                                const AttrValueType& valueType = AttrValueType::Single,
+                                                const AttrType& type = AttrType::Static,
+                                                const AttributeWkPtr& parent=AttributeWkPtr());
 
 
-        AttributePtr CreateAttributeFromTypeName(const std::string& name, const std::string& apiName,
-                                                 const AttrValueType& valueType = AttrValueType::Single,
-                                                 const AttrType& type = AttrType::Static,
-                                                 const AttributePtr& parent = nullptr);
+        AttributeWkPtr CreateAttributeFromTypeName(const std::string& name, const std::string& apiName,
+                                                   const AttrValueType& valueType = AttrValueType::Single,
+                                                   const AttrType& type = AttrType::Static,
+                                                   const AttributeWkPtr& parent = AttributeWkPtr());
 
 
-        AttributePtr CreateAttribute(const std::string& name, const AttrType& type = AttrType::Static,
-                                     bool multi=false, const AttributePtr& parent = nullptr);
+        AttributeWkPtr CreateAttribute(const std::string& name,
+                                       const AttrType& type = AttrType::Static,
+                                       bool multi=false,
+                                       const AttributeWkPtr& parent = AttributeWkPtr());
 
 		/**
 		 * Returns whether attribute with name exists.
@@ -624,12 +630,24 @@ namespace Gex
          */
         virtual NodePtr ReferenceNode(const std::string& path, std::string name=std::string());
 
+    private:
+        virtual bool _AddNode(const NodePtr& node);
+
+    public:
         /**
          * Adds node pointer as internal node.
          * @param node: node pointer.
          * @return success.
          */
         virtual bool AddNode(const NodePtr& node);
+
+    private:
+        bool _RemoveNode(const NodePtr& node);
+
+        void RemoveNodeWithUndo(const NodePtr& node);
+
+    public:
+        bool CanRemoveNode() const;
 
         /**
          * Removes internal node.
