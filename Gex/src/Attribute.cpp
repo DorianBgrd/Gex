@@ -141,10 +141,6 @@ void Gex::Attribute::SignalChange(AttributeChange change)
 Gex::AttributePtr Gex::Attribute::Copy(const std::string& name, const NodePtr& node,
                                        const AttributePtr& parent) const
 {
-    auto handler = TSys::TypeRegistry::GetRegistry()->GetTypeHandle(Type());
-    if (!handler)
-        return nullptr;
-
     return std::make_shared<Attribute>(
             name, defaultValue, attributeValueType,
             attributeType, attributeIsUserDefined,
@@ -163,13 +159,7 @@ Gex::AttributePtr Gex::Attribute::CopyAsChild(const AttributePtr& ref)
 
 void Gex::Attribute::InitDefaultValue()
 {
-    auto handler = TSys::TypeRegistry::GetRegistry()->GetTypeHandle(Type());
-    if (!handler)
-    {
-        return;
-    }
-
-    defaultValue = handler->InitValue();
+    defaultValue = typeHandle->InitValue();
 }
 
 
@@ -398,8 +388,7 @@ size_t Gex::Attribute::ValueHash(bool followCnx)
     }
     else
     {
-        auto handler = TSys::TypeRegistry::GetRegistry()->GetTypeHandle(Type());
-        boost::hash_combine(res, handler->ValueHash(attributeAnyValue));
+        boost::hash_combine(res, typeHandle->ValueHash(attributeAnyValue));
     }
 
     return res;
