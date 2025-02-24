@@ -76,8 +76,7 @@ target_link_libraries(
         PUBLIC
         Gex
         ${Boost_LIBRARIES}
-        Python::Python
-        Python::Module
+        ${Python_LINK_LIBRARIES}
 
         # Ui library dlls.
         Qt6::Widgets

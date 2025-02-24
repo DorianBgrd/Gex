@@ -33,6 +33,7 @@ target_link_libraries(
         Gex_Python
         PUBLIC
         Gex
+        ${Python_LINK_LIBRARIES}
 )
 
 
