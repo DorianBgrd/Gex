@@ -22,6 +22,8 @@ Gex::Attribute::Attribute(): typeIndex(typeid(TSys::None))
     isInternal = false;
 	attributeAnyValue = std::make_any<TSys::None>(TSys::None());
 	attributeIsUserDefined = false;
+
+    typeHandle = TSys::TypeRegistry::GetRegistry()->GetTypeHandle(typeIndex);
 }
 
 
@@ -39,11 +41,11 @@ Gex::AttrType Gex::Attribute::GetAttrType() const
 
 Gex::Attribute::Attribute(const std::string& name, const std::any& v, const AttrValueType& valueType,
 			              const AttrType& type, bool userDefined, const NodePtr& node,
-                          const AttributePtr& parent): typeIndex(v.type())
+                          const AttributeWkPtr& parent): typeIndex(v.type())
 {
     isInternal = false;
     attributeName = name;
-    if (parent == nullptr)
+    if (!parent)
         attributeLongname = name;
     else
         attributeLongname = parent->Longname() + Config::GetConfig().attributeSeparator + name;
@@ -63,7 +65,7 @@ Gex::Attribute::Attribute(const std::string& name, const std::any& v, const Attr
 
 Gex::Attribute::Attribute(const std::string& name, const std::type_index& vt, const AttrValueType& valueType,
                           const AttrType& type, bool userDefined, const NodePtr& node,
-                          const AttributePtr& parent):
+                          const AttributeWkPtr& parent):
                           Attribute(name, TSys::TypeRegistry::GetRegistry()->GetTypeHandle(vt)->InitValue(),
                                     valueType, type, userDefined, node, parent)
 {
@@ -74,7 +76,7 @@ Gex::Attribute::Attribute(const std::string& name, const std::type_index& vt, co
 Gex::Attribute::Attribute(const std::string& name, const std::string& apiType,
                           const AttrValueType& valueType, const AttrType& type,
                           bool userDefined, const NodePtr& node,
-                          const AttributePtr& parent):
+                          const AttributeWkPtr& parent):
         Attribute(name, TSys::TypeRegistry::GetRegistry()->GetTypeHandle(apiType)->InitValue(),
                   valueType, type, userDefined, node, parent)
 {
@@ -84,14 +86,14 @@ Gex::Attribute::Attribute(const std::string& name, const std::string& apiType,
 
 Gex::Attribute::Attribute(const std::string& name, const AttrType& type, bool multi,
                           bool userDefined, const NodePtr& node,
-                          const AttributePtr& parent):
+                          const AttributeWkPtr& parent):
                           typeIndex(typeid(TSys::None))
 {
     isInternal = false;
     isExternal = true;
     attributeNode = node;
     attributeName = name;
-    if (parent == nullptr)
+    if (!parent)
         attributeLongname = name;
     else
         attributeLongname = parent->Longname() + Config::GetConfig().attributeSeparator + name;
@@ -106,6 +108,7 @@ Gex::Attribute::Attribute(const std::string& name, const AttrType& type, bool mu
 
     attributeType = type;
 
+    typeHandle = TSys::TypeRegistry::GetRegistry()->GetTypeHandle(typeIndex);
     InitDefaultValue();
 }
 
@@ -533,6 +536,25 @@ bool Gex::Attribute::AddChildAttribute(const AttributePtr& child)
 }
 
 
+Gex::AttributeWkPtr Gex::Attribute::CreateChildAttribute(
+        const std::string& name, const std::any& value,
+        const AttrValueType& vType, const AttrType& type,
+        bool userdefined)
+{
+    auto child = std::make_shared<Attribute>(
+            name, value, vType, type, userdefined,
+            attributeNode.lock(), parentAttribute.lock());
+
+    bool success = AddChildAttribute(child);
+    if (!success)
+    {
+        return {};
+    }
+
+    return child;
+}
+
+
 bool Gex::Attribute::HasSource() const
 {
     return source;
@@ -746,28 +768,38 @@ bool  Gex::Attribute::_CanConnectSource(const AttributePtr& source)
     // if current node is an internal node.
     if (CompoundNodePtr sourceCmp = CompoundNode::FromNode(source->Node()))
     {
-        if (sourceCmp->HasNode(Node()) && source->IsInternal())
+        if (sourceCmp->HasNode(Node()))
         {
+            if (!source->IsInternal())
+            {
+                return false;
+            }
+
             return (source->IsInput() && IsInput());
         }
     }
 
     // If current attribute is from a compound AND is internal, check
     // if source node is an internal node.
-    else if (CompoundNodePtr compound = CompoundNode::FromNode(Node()))
+    if (CompoundNodePtr compound = CompoundNode::FromNode(Node()))
     {
-        if (compound->HasNode(source->Node()) && IsInternal())
+        if (compound->HasNode(source->Node()))
         {
+            if (!IsInternal())
+            {
+                return false;
+            }
+
             return (source->IsOutput() && IsOutput());
         }
     }
 
-    else if (!source->IsOutput())
+    if (!source->IsOutput())
     {
         return false;
     }
 
-    else if (source->Node()->Parent() != Node()->Parent())
+    if (source->Node()->Parent() != Node()->Parent())
     {
         return false;
     }
@@ -906,7 +938,7 @@ bool Gex::Attribute::_ConnectDest(const AttributePtr& attribute)
 
 	attribute->source = shared_from_this();
 
-    dests.push_back(attribute);
+    dests.emplace_back(attribute);
 
     SignalChange(AttributeChange::Connected);
 	return true;
@@ -1177,6 +1209,11 @@ bool Gex::Attribute::ValueSet(const std::any& value)
         return false;
     }
 
+    if (HasSource())
+    {
+        return false;
+    }
+
     return SetAnyValue(value);
 }
 
@@ -1258,7 +1295,8 @@ bool Gex::Attribute::_SetAnyValue(const std::any& value)
     if (std::type_index(value.type()) != Type())
     {
         std::any dstval = typeHandle->ConvertFrom(value, attributeAnyValue);
-        if (!dstval.has_value())
+        std::string tn = dstval.type().name();
+        if (!dstval.has_value() || std::type_index(dstval.type()) != Type())
         {
             return false;
         }
@@ -1274,21 +1312,23 @@ bool Gex::Attribute::_SetAnyValue(const std::any& value)
 
 bool Gex::Attribute::SetAnyValue(const std::any& value)
 {
-    auto prev = attributeAnyValue;
+    std::any previous = GetAnyValue();
 
     if (!_SetAnyValue(value))
     {
         return false;
     }
 
-    attributeAnyValue = value;
     SignalChange(AttributeChange::ValueChanged);
 
     if (!Undo::UndoStack::IsDoing())
         Undo::UndoStack::AddUndo(
             Undo::CreateUndo<Undo::SetAttr>(
-                shared_from_this(), value,
-                prev));
+                shared_from_this(),
+                GetAnyValue(),
+                previous
+            )
+        );
 
     return true;
 }

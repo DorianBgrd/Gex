@@ -143,7 +143,8 @@ namespace Gex
         explicit Attribute(const std::string& name, const std::any& v,
                            const AttrValueType& valueType = AttrValueType::Single,
 			               const AttrType& type = AttrType::Static, bool userDefined = false,
-			               const NodePtr& node = nullptr, const AttributePtr& parent=nullptr);
+			               const NodePtr& node = nullptr,
+                           const AttributeWkPtr& parent = AttributeWkPtr());
 
         /**
          * Creates new attribute using specified type.
@@ -158,19 +159,19 @@ namespace Gex
 		template<typename T>
 		explicit Attribute(const std::string& name, const AttrValueType& valueType = AttrValueType::Single,
 			const AttrType& type = AttrType::Static, bool userDefined = false,
-			const NodePtr& node = nullptr, const AttributePtr& parent=nullptr):
+			const NodePtr& node = nullptr, const AttributeWkPtr& parent=AttributeWkPtr()):
             Attribute(name, typeid(T).hash_code(), valueType,
                       type, userDefined, node, parent){}
 
         explicit Attribute(const std::string& name, const std::type_index& t,
                            const AttrValueType& valueType = AttrValueType::Single,
                            const AttrType& type = AttrType::Static, bool userDefined = false,
-                           const NodePtr& node = nullptr, const AttributePtr& parent=nullptr);
+                           const NodePtr& node = nullptr, const AttributeWkPtr& parent=AttributeWkPtr());
 
         explicit Attribute(const std::string& name, const std::string& apiType,
                            const AttrValueType& valueType = AttrValueType::Single,
                            const AttrType& type = AttrType::Static, bool userDefined = false,
-                           const NodePtr& node = nullptr, const AttributePtr& parent=nullptr);
+                           const NodePtr& node = nullptr, const AttributeWkPtr& parent=AttributeWkPtr());
 
     public:
         /**
@@ -185,7 +186,7 @@ namespace Gex
         explicit Attribute(const std::string& name,
                            const AttrType& type = AttrType::Static, bool multi=false,
                            bool userDefined = false, const NodePtr& node = nullptr,
-                           const AttributePtr& parent = nullptr);
+                           const AttributeWkPtr& parent = AttributeWkPtr());
 
         /**
          * Sets current attribute default value.
@@ -415,16 +416,20 @@ namespace Gex
          */
 		bool AddChildAttribute(const AttributePtr& child);
 
-		template<typename Type>
-		AttributeWkPtr CreateChildAttribute(const std::string& name, const AttrValueType& vType = AttrValueType::Single,
-                                        const AttrType& type = AttrType::Static, bool userDefined = false)
+		template<typename T>
+		AttributeWkPtr CreateChildAttribute(
+                const std::string& name,
+                const AttrValueType& vType = AttrValueType::Single,
+                const AttrType& type = AttrType::Static,
+                bool userDefined = false
+        )
 		{
-			auto* rawChild = new Attribute<Type>(name, vType, type, userDefined, attributeNode, parentAttribute);
+            AttributePtr child = new Attribute<T>(
+                    name, vType, type, userDefined,
+                    attributeNode, parentAttribute
+            );
 
-            AttributePtr child = rawChild;
-
-			bool success = AddChildAttribute(child);
-			if (!success)
+			if (!AddChildAttribute(child))
 			{
 				return {};
 			}
@@ -432,23 +437,12 @@ namespace Gex
 			return child;
 		}
 
-		AttributeWkPtr CreateChildAttribute(const std::string& name, const std::any& value,
-                                        const AttrValueType& vType = AttrValueType::Single,
-                                        const AttrType& type = AttrType::Static,
-                                        bool userdefined = false)
-		{
-			auto child = std::make_shared<Attribute>(
-                    name, value, vType, type, userdefined,
-                    attributeNode.lock(), parentAttribute.lock());
-
-			bool success = AddChildAttribute(child);
-			if (!success)
-			{
-				return {};
-			}
-
-			return child;
-		}
+		AttributeWkPtr CreateChildAttribute(
+                const std::string& name, const std::any& value,
+                const AttrValueType& vType = AttrValueType::Single,
+                const AttrType& type = AttrType::Static,
+                bool userdefined = false
+        );
 
 	public:
 		/**
