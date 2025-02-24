@@ -44,7 +44,7 @@ boost::python::object Gex_Node_CreateAttribute(boost::python::tuple args,
     boost::python::object type = args[2];
     Gex::AttrValueType attrValueType = Gex::AttrValueType::Single;
     Gex::AttrType attrType = Gex::AttrType::Input;
-    Gex::AttributePtr parent;
+    Gex::AttributeWkPtr parent;
 
     if (boost::python::len(args) > 3)
     {
@@ -66,17 +66,17 @@ boost::python::object Gex_Node_CreateAttribute(boost::python::tuple args,
 
     if (boost::python::len(args) > 5)
     {
-        parent = boost::python::extract<Gex::AttributePtr>(args[5]);
+        parent = boost::python::extract<Gex::AttributeWkPtr>(args[5]);
     }
     else if (boost::python::object pt = kwargs.get("parent"))
     {
-        parent = boost::python::extract<Gex::AttributePtr>(pt);
+        parent = boost::python::extract<Gex::AttributeWkPtr>(pt);
     }
 
     Gex::Feedback feedback;
     std::any value = InitPythonValue(type, feedback);
 
-    Gex::AttributePtr attribute = self->CreateAttributeFromValue(
+    Gex::AttributeWkPtr attribute = self->CreateAttributeFromValue(
             name, value, attrValueType, attrType, parent);
     if (!attribute)
     {
