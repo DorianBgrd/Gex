@@ -10,7 +10,7 @@
 
 
 Gex::Ui::MultiAttributeWidget::MultiAttributeWidget(
-        const Gex::AttributePtr& attr,
+        const Gex::AttributeWkPtr& attr,
         GraphWidget* graphWidget,
         QWidget* parent): QFrame(parent)
 {
@@ -141,7 +141,7 @@ void Gex::Ui::MultiAttributeWidget::RebuildAttributes()
 }
 
 
-Gex::Ui::AttributeWidget::AttributeWidget(const Gex::AttributePtr& attr,
+Gex::Ui::AttributeWidget::AttributeWidget(const Gex::AttributeWkPtr& attr,
                                           GraphWidget* graphWidget,
                                           QWidget* parent): QWidget(parent)
 {
