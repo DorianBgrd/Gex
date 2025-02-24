@@ -38,7 +38,6 @@ boost::python::object Gex_PluginLoader_RegisterNode(boost::python::tuple args,
 
 bool Gex::Python::PluginLoader_Wrap::RegisterPythonWrapper()
 {
-    std::cout << "[PluginLoader] Python registering : " << pythonRegistered << std::endl;
     if (pythonRegistered)
     {
         return false;
@@ -56,6 +55,5 @@ bool Gex::Python::PluginLoader_Wrap::RegisterPythonWrapper()
             ;
 
     pythonRegistered= true;
-    std::cout << "[PluginLoader] Python registered : " << pythonRegistered << std::endl;
     return true;
 }
