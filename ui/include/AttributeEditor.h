@@ -46,7 +46,7 @@ namespace Gex
             QWidget* subAttributeWidget;
             GraphWidget* graph;
         public:
-            MultiAttributeWidget(const Gex::AttributePtr& attr,
+            MultiAttributeWidget(const Gex::AttributeWkPtr& attr,
                                  GraphWidget* graphWidget,
                                  QWidget* parent=nullptr);
 
@@ -69,7 +69,7 @@ namespace Gex
             QHBoxLayout* mainLayout;
             GraphWidget* graph;
         public:
-            AttributeWidget(const Gex::AttributePtr& attr,
+            AttributeWidget(const Gex::AttributeWkPtr& attr,
                             GraphWidget* graphWidget,
                             QWidget* parent=nullptr);
 
