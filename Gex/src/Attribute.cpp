@@ -1460,7 +1460,6 @@ Gex::AttributePtr Gex::Attribute::DeserializeAttribute(
 // that is connected should not be serialized.
 void Gex::Attribute::Serialize(rapidjson::Value& value, rapidjson::Document& doc)
 {
-	rapidjson::Value resultValue(rapidjson::kObjectType);
     /*
      * If current attribute node is not dynamic, serialize current value,
      * and store it to document.
@@ -1477,49 +1476,68 @@ void Gex::Attribute::Serialize(rapidjson::Value& value, rapidjson::Document& doc
                 rapidjson::Value& resultArrayValue = rapidjson::Value().SetArray();
                 typeHandle->SerializeValue(GetAnyValue(), resultArrayValue, doc);
 
-                rapidjson::Value& attributeValueKey = rapidjson::Value().SetString(
+                rapidjson::Value attributeValueKey(rapidjson::kStringType);
+                attributeValueKey.SetString(
                         Config::GetConfig().attributeValueKey.c_str(),
-                        doc.GetAllocator());
-                value.AddMember(attributeValueKey, resultArrayValue, doc.GetAllocator());
+                        doc.GetAllocator()
+                );
+
+                value.AddMember(attributeValueKey.Move(), resultArrayValue, doc.GetAllocator());
             }
         }
     }
 
     else
     {
-        rapidjson::Value& multiValue = rapidjson::Value().SetObject();
+        rapidjson::Value multiValue(rapidjson::kObjectType);
         for (std::pair<unsigned int, AttributePtr> p : multiValues)
         {
-            rapidjson::Value& subValue = rapidjson::Value().SetObject();
+            rapidjson::Value subValue(rapidjson::kObjectType);
 
             p.second->Serialize(subValue, doc);
 
             std::string idx = std::to_string(p.first);
-            rapidjson::Value& index = rapidjson::Value().SetString(rapidjson::StringRef(idx.c_str()),
-                                                                  doc.GetAllocator());
+            rapidjson::Value& index = rapidjson::Value().SetString(
+                    rapidjson::StringRef(idx.c_str()),
+                    doc.GetAllocator()
+            );
 
-            multiValue.AddMember(index.Move(), subValue, doc.GetAllocator());
+            multiValue.AddMember(index.Move(), subValue.Move(), doc.GetAllocator());
         }
 
         // Only save if some value were stored.
         if (multiValue.MemberCount())
         {
-            rapidjson::Value& multiValueKey = rapidjson::Value().SetString(
+            rapidjson::Value multiValueKey(rapidjson::kStringType);
+            multiValueKey.SetString(
                     Config::GetConfig().attributeMultiValueKey.c_str(),
-                    doc.GetAllocator());
-            value.AddMember(multiValueKey, multiValue, doc.GetAllocator());
+                    doc.GetAllocator()
+            );
+
+            value.AddMember(multiValueKey.Move(), multiValue.Move(), doc.GetAllocator());
         }
     }
 
 	if (HasChildAttributes())
 	{
-		rapidjson::Value& subAttributesValues = rapidjson::Value().SetObject();
-		for (std::pair<std::string, AttributePtr> c : subAttributes)
+		rapidjson::Value subAttributesData(rapidjson::kObjectType);
+		for (std::pair<std::string, AttributePtr> subAttribute : subAttributes)
 		{
-			c.second->Serialize(subAttributesValues, doc);
+            rapidjson::Value subAttributeValues(rapidjson::kObjectType);
+            subAttribute.second->Serialize(subAttributeValues, doc);
+
+            subAttributesData.AddMember(
+                    rapidjson::Value(rapidjson::kStringType).SetString(
+                        subAttribute.first.c_str(), doc.GetAllocator()
+                    ), subAttributeValues, doc.GetAllocator()
+            );
 		}
-		value.AddMember(rapidjson::StringRef(Config::GetConfig().attributeChildrenKey.c_str()),
-                        subAttributesValues, doc.GetAllocator());
+
+		value.AddMember(
+                rapidjson::Value(rapidjson::kStringType).SetString(
+                    Config::GetConfig().attributeChildrenKey.c_str(),
+                    doc.GetAllocator()
+                ),subAttributesData.Move(), doc.GetAllocator());
 	}
 }
 
