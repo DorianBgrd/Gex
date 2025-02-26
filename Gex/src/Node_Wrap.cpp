@@ -153,7 +153,7 @@ Gex::Python::Node_Wrap::Node_Wrap(): Gex::Node(), boost::python::wrapper<Gex::No
 }
 
 
-Gex::Python::Node_Wrap::Node_Wrap(const Gex::Node base) : Gex::Node(base), boost::python::wrapper<Node>()
+Gex::Python::Node_Wrap::~Node_Wrap()
 {
 
 }
@@ -407,6 +407,17 @@ boost::python::object Node_RegisterNodeChangedCallback(
 }
 
 
+boost::python::object Node_Bool(
+        boost::python::tuple args,
+        boost::python::dict kwargs
+)
+{
+    Gex::Node* self = boost::python::extract<Gex::Node*>(args[0]);
+
+    return boost::python::object(bool(self));
+}
+
+
 void Gex::Python::Node_Wrap::RegisterPythonWrapper()
 {
     if (pythonRegistered)
@@ -433,13 +444,13 @@ void Gex::Python::Node_Wrap::RegisterPythonWrapper()
             Gex::Python::WeakPtrToPython<Gex::Node>,
             true>();
 
-    boost::python::class_<Gex::Python::Node_Wrap, Gex::NodePtr>("Node", boost::python::init())
+    boost::python::class_<Gex::Python::Node_Wrap, Gex::NodePtr, boost::noncopyable>("Node", boost::python::init())
             .def(boost::python::init<Gex::NodePtr>())
-            .def("InitAttributes", &Gex::Node::InitAttributes)
-            .def("Evaluate", &Gex::Node::Evaluate)
+            .def("InitAttributes", &Gex::Node::InitAttributes, &Gex::Python::Node_Wrap::InitAttributes)
+            .def("Evaluate", &Gex::Node::Evaluate, &Gex::Python::Node_Wrap::Evaluate)
             .def("Name", &Gex::Node::Name)
-            .def("Type", &Gex::Node::Type)
-            .def("Description", &Gex::Node::Description)
+            .def("Type", &Gex::Node::Type, &Gex::Python::Node_Wrap::Type)
+            .def("Description", &Gex::Node::Description, &Gex::Python::Node_Wrap::Description)
 //            .def("CreateAttributeFromValue", boost::python::raw_function(&NW_Python_CreateAttribute, 3))
             .def("CreateAttributeFromTypeName", boost::python::raw_function(
                     &NW_Python_CreateAttributeFromTypeName, 3))
@@ -455,7 +466,7 @@ void Gex::Python::Node_Wrap::RegisterPythonWrapper()
             .def("RegisterNodeChangedCallback", boost::python::raw_function(&Node_RegisterNodeChangedCallback, 2))
             .def("ToWeakRef", boost::python::raw_function(
                     &Gex::Python::StrongRefToWeak<Gex::NodePtr, Gex::NodeWkPtr>, 1))
-            .def("__bool__", &Gex::NodeWkPtr::operator bool)
+            .def("__bool__", boost::python::raw_function(&Node_Bool, 1))
             ;
 
 //    boost::python::class_<Gex::NodeWkPtr>("NodeWk", boost::python::no_init)
@@ -472,7 +483,7 @@ void Gex::Python::Node_Wrap::RegisterPythonWrapper()
 
 boost::python::object CN_Python_GetInternalNode(boost::python::tuple args, boost::python::dict kwargs)
 {
-    Gex::Python::CompoundNode_Wrap self = boost::python::extract<Gex::Python::CompoundNode_Wrap>(args[0]);
+    const Gex::Python::CompoundNode_Wrap& self = boost::python::extract<const Gex::Python::CompoundNode_Wrap&>(args[0]);
     std::string name = boost::python::extract<std::string>(args[1]);
 
     return boost::python::object(self.GetNode(name));
@@ -510,11 +521,10 @@ Gex::Python::CompoundNode_Wrap::CompoundNode_Wrap(): Gex::CompoundNode(),
 }
 
 
-Gex::Python::CompoundNode_Wrap::CompoundNode_Wrap(const Gex::CompoundNode& base) : Gex::CompoundNode(base),
-     boost::python::wrapper<Gex::CompoundNode>()
+Gex::Python::CompoundNode_Wrap::~CompoundNode_Wrap()
 {
 
-};
+}
 
 
 void Gex::Python::CompoundNode_Wrap::RegisterPythonWrapper()
@@ -528,7 +538,7 @@ void Gex::Python::CompoundNode_Wrap::RegisterPythonWrapper()
     &Gex::Python::CompoundNode_Wrap::RemoveNode;
 
     boost::python::class_<Gex::Python::CompoundNode_Wrap, boost::python::bases<Gex::Node>,
-            Gex::CompoundNodePtr>("CompoundNode", boost::python::init())
+            Gex::CompoundNodePtr, boost::noncopyable>("CompoundNode", boost::python::init())
             .def("CreateNode", &Gex::CompoundNode::CreateNode)
 //            .def("GetNode", boost::python::raw_function(&CN_Python_GetInternalNode, 1))
             .def("GetNode", &Gex::CompoundNode::GetNode)

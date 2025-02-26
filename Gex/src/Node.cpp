@@ -995,6 +995,12 @@ bool Gex::CompoundPostScheduledNode::Evaluate(Gex::GraphContext &context,
 }
 
 
+Gex::CompoundNode::CompoundNode(const NodePtr& parent): Node(parent)
+{
+
+}
+
+
 Gex::CompoundNode::~CompoundNode()
 {
     nodes.clear();

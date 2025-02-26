@@ -17,9 +17,9 @@ namespace  Gex
         public:
             Node_Wrap();
 
+            Node_Wrap(const Node_Wrap& other) = delete;
 
-            Node_Wrap(const Node base);
-
+            ~Node_Wrap() override;
 
             std::string Type() const override;
 
@@ -51,8 +51,9 @@ namespace  Gex
         public:
             CompoundNode_Wrap();
 
+            CompoundNode_Wrap(const CompoundNode& base) = delete;
 
-            CompoundNode_Wrap(const CompoundNode& base);
+            ~CompoundNode_Wrap() override;
 
         private:
             static bool registered;

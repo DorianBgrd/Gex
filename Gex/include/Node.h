@@ -256,7 +256,11 @@ namespace Gex
          * Default constructor.
          */
     public:
+        explicit
 		Node(const NodePtr& parent=nullptr);
+
+        // Non copyable.
+        Node(const Node& other) = delete;
 
     protected:
         void SetParent(const NodePtr& parent);
@@ -600,6 +604,11 @@ namespace Gex
         NodeList nodes;
 
 	public:
+        explicit
+        CompoundNode(const NodePtr& parent=nullptr);
+
+        CompoundNode(const CompoundNode& other) = delete;
+
         ~CompoundNode() override;
 
 		std::string Description() const override
