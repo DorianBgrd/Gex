@@ -56,6 +56,15 @@ boost::python::object Attribute_Bool(
 }
 
 
+boost::python::object At_Node(boost::python::tuple args,
+                              boost::python::dict kwargs)
+{
+    const Gex::AttributePtr& self = boost::python::extract<const Gex::AttributePtr&>(args[0]);
+
+    return boost::python::object(self->Node().ToShared());
+}
+
+
 bool Gex::Python::Attribute_Wrap::RegisterPythonWrapper()
 {
     bool (Gex::Attribute::* ProxyAttr_SimpleHasSource)() const = &Gex::Attribute::HasSource;
@@ -85,7 +94,8 @@ bool Gex::Python::Attribute_Wrap::RegisterPythonWrapper()
             .def("Get", boost::python::raw_function(&Attribute_Python_Get))
             .def("Set", boost::python::raw_function(&Attribute_Python_Set, 1))
             .def("GetIndex", &Gex::Attribute::GetIndexAttribute)
-            .def("Node", &Gex::Attribute::Node)
+//            .def("Node", &Gex::Attribute::Node)
+            .def("Node", boost::python::raw_function(&At_Node, 1))
             .def("HasSource", ProxyAttr_SimpleHasSource)
             .def("HasSourceAtIndex", ProxyAttr_HasIndexSource)
             .def("Source", ProxyAttr_Source)
