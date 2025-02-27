@@ -130,6 +130,26 @@ void Gex::Ui::MultiAttributeWidget::CreateAttributes()
             subAttributeLayout->addWidget(widget);
         }
     }
+
+    if (attribute->IsMulti() && attribute->IsHolder())
+    {
+        return;
+    }
+
+    for (const auto& childAttribute : attr->GetChildAttributes())
+    {
+        if (childAttribute->IsMulti())
+        {
+            auto* multiWidget = new MultiAttributeWidget(childAttribute, graph, this);
+            subAttributeLayout->addWidget(multiWidget);
+        }
+
+        else
+        {
+            auto* widget = new AttributeWidget(childAttribute, graph, this);
+            subAttributeLayout->addWidget(widget);
+        }
+    }
 }
 
 

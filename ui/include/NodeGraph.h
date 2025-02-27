@@ -219,7 +219,6 @@ namespace Gex
 
             AttributeItem* GetSubAttribute(Gex::AttributeWkPtr attr) const;
 
-//        void Adjust();
             void CreateAttributes();
 
             void RebuildAttributes();
@@ -237,6 +236,8 @@ namespace Gex
             void Collapse();
 
             void Expand();
+
+            void AdjustPlacement();
 
             bool Collapsed() const;
 
@@ -280,8 +281,11 @@ namespace Gex
 
         class GEX_UI_API NodeItem: public QGraphicsObject
         {
+            friend AttributeItem;
+
             QVector<LinkItem*> links;
             QVector<AttributeItem*> attributes;
+            QVector<AttributeItem*> allAttributes;
             Gex::NodePtr node;
             NodePlugItem* sourcePlug;
             NodePlugItem* destPlug;
@@ -299,6 +303,11 @@ namespace Gex
 
             bool savePosition = true;
             bool positionChanged = false;
+
+        protected:
+            void RegisterAttribute(AttributeItem* item);
+
+            void DeregisterAttribute(AttributeItem* item);
 
         public:
             static qreal defaultCompTitleOffset;
@@ -888,6 +897,9 @@ namespace Gex
             void ClearContexts();
 
         public:
+            bool InteractiveEvaluation() const;
+
+            void ToggleInteractiveEvaluation(bool state);
 
             void InitIdlePrepare();
 

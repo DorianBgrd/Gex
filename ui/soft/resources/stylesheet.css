@@ -379,6 +379,12 @@ QPushButton#NodeGraphRunButton::pressed
     background-color: #000000;
     border-radius: 5px;
 }
+QPushButton#NodeGraphRunButton::checked
+{
+    background-color: #000000;
+    border-radius: 5px;
+    border: 1px solid white;
+}
 
 
 QWidget#ViewToolbarButton
@@ -395,6 +401,12 @@ QWidget#ViewToolbarButton::pressed
 {
     background-color: #000000;
     border-radius: 5px;
+}
+QPushButton#ViewToolbarButton::checked
+{
+    background-color: #000000;
+    border-radius: 5px;
+    border: 1px solid white;
 }
 
 

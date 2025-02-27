@@ -241,6 +241,8 @@ Gex::Ui::AttributeItem::~AttributeItem()
         links[i]->scene()->removeItem(links[i].get());
         delete links[i];
     }
+
+    parentNode->DeregisterAttribute(this);
 }
 
 
@@ -356,19 +358,20 @@ void Gex::Ui::AttributeItem::Initialize(Gex::AttributeWkPtr attr,
     input->setPos(-plugRect.width(), plugY);
     output->setPos(rect().width(), plugY);
 
+    qreal indent = 14;
     if (attribute->IsMulti() || attribute->IsHolder())
     {
         multiButton = new MultiAttributeItem(this);
         if (attribute->IsInput() || attribute->IsStatic())
         {
-            text->setPos(text->pos().x() + 14,
+            text->setPos(text->pos().x() + indent,
                          text->pos().y());
 
             multiButton->setPos(4, (defaultHeight - multiButton->boundingRect().height())/2);
         }
         else
         {
-            text->setPos(text->pos().x() - 14,
+            text->setPos(text->pos().x() - indent,
                          text->pos().y());
 
             multiButton->setPos(nodeWidth - 4 - multiButton->boundingRect().width(),
@@ -376,8 +379,10 @@ void Gex::Ui::AttributeItem::Initialize(Gex::AttributeWkPtr attr,
         }
 
         text->setPlainText(metrics.elidedText(attribute->Name().c_str(),
-                                              Qt::ElideRight, nodeWidth - 14 - 7));
+                                              Qt::ElideRight, nodeWidth - (indent / 2)));
     }
+
+    parentNode->RegisterAttribute(this);
 
     CreateAttributes();
 }
@@ -486,19 +491,28 @@ void Gex::Ui::AttributeItem::CreateAttributes()
     for (unsigned int index : attribute->ValidIndices())
     {
         auto attr = attribute->GetIndexAttribute(index);
-        AttributeItem* indexAttr = new AttributeItem(attr, this, parentNode);
+        auto* indexAttr = new AttributeItem(attr, this, parentNode);
         indexAttr->SetTextIndent(textIndent + 14);
         indexedAttributes.push_back(indexAttr);
     }
 
     childAttributes.clear();
 
-    for (auto attr : attribute->GetChildAttributes())
+    if (!(attribute->IsHolder() && attribute->IsMulti()))
     {
+        for (const auto& attr : attribute->GetChildAttributes())
+        {
+            auto* childAttr = new AttributeItem(attr, this, parentNode);
 
-        AttributeItem* childAttr = new AttributeItem(attr, this, parentNode);
-        childAttr->SetTextIndent(textIndent + 10);
-        childAttributes.push_back(childAttr);
+            qreal indent = 14;
+            if (!attribute->IsMulti())
+            {
+                indent += 14;
+            }
+
+            childAttr->SetTextIndent(textIndent + indent);
+            childAttributes.push_back(childAttr);
+        }
     }
 
     Collapse();
@@ -674,18 +688,25 @@ void Gex::Ui::AttributeItem::Collapse()
     for (AttributeItem* item : indexedAttributes)
     {
         item->setVisible(false);
-        item->setPos(0, 0);
+//        item->setPos(0, 0);
         item->Collapse();
     }
 
     for (AttributeItem* item : childAttributes)
     {
         item->setVisible(false);
-        item->setPos(0, 0);
+//        item->setPos(0, 0);
         item->Collapse();
     }
 
     collapsed = true;
+
+    AdjustPlacement();
+
+    if (multiButton)
+    {
+        multiButton->update();
+    }
 
     UpdateLinks();
 }
@@ -697,25 +718,57 @@ void Gex::Ui::AttributeItem::Expand()
     for (AttributeItem* item : indexedAttributes)
     {
         item->setVisible(true);
-        item->setPos(0, pos);
-        pos += item->TotalHeight();
+//        item->setPos(0, pos);
+//        pos += item->TotalHeight();
     }
 
     for (AttributeItem* item : childAttributes)
     {
         item->setVisible(true);
-        item->setPos(0, pos);
-        pos += item->TotalHeight();
+//        item->setPos(0, pos);
+//        pos += item->TotalHeight();
     }
 
     collapsed = false;
 
-    UpdateLinks();
+//    UpdateLinks();
+
+    AdjustPlacement();
 
     if (multiButton)
     {
         multiButton->update();
     }
+}
+
+
+void Gex::Ui::AttributeItem::AdjustPlacement()
+{
+    qreal pos = boundingRect().height();
+    for (AttributeItem* item : indexedAttributes)
+    {
+        if (!Collapsed())
+            item->setPos(0, pos);
+        else
+            item->setPos(0, 0);
+        pos += item->TotalHeight();
+    }
+
+    for (AttributeItem* item : childAttributes)
+    {
+        if (!Collapsed())
+            item->setPos(0, pos);
+        else
+            item->setPos(0, 0);
+        pos += item->TotalHeight();
+    }
+
+    if (parentAttribute && parentAttribute->IsMulti())
+    {
+        parentAttribute->AdjustPlacement();
+    }
+
+    UpdateLinks();
 }
 
 
@@ -843,11 +896,22 @@ bool Gex::Ui::NodePlugItem::IsOutputAnchor() const
     return (!isInput);
 }
 
-
 qreal Gex::Ui::NodeItem::defaultCompTitleOffset = 15;
 qreal Gex::Ui::NodeItem::defaultWidth = 100;
 qreal Gex::Ui::NodeItem::defaultSpacing = 10;
 qreal Gex::Ui::NodeItem::defaultFooter = 10;
+
+
+void Gex::Ui::NodeItem::RegisterAttribute(AttributeItem* item)
+{
+    allAttributes.append(item);
+}
+
+
+void Gex::Ui::NodeItem::DeregisterAttribute(AttributeItem* item)
+{
+    allAttributes.removeAll(item);
+}
 
 
 void Gex::Ui::NodeItem::SetDefaultWidth(qreal width)
@@ -1074,7 +1138,7 @@ void Gex::Ui::NodeItem::CreateAttributes()
     for (const Gex::AttributeWkPtr& attr : node->GetAttributes())
     {
         auto* item = new AttributeItem(attr, this);
-        attributes.push_back(item);
+        attributes.append(item);
     }
 }
 
@@ -1087,6 +1151,7 @@ void Gex::Ui::NodeItem::RebuildAttributes()
     }
 
     attributes.clear();
+    allAttributes.clear();
 
     CreateAttributes();
 
@@ -1347,7 +1412,7 @@ Gex::Ui::AttributeItem* Gex::Ui::NodeItem::FindAttribute(std::string longname) c
 
 Gex::Ui::AttributeItem* Gex::Ui::NodeItem::GetAttribute(Gex::AttributeWkPtr searched) const
 {
-    for (auto* at : attributes)
+    for (auto* at : allAttributes)
     {
         if (at->Attribute() == searched)
         {
@@ -2560,7 +2625,7 @@ void Gex::Ui::NodeGraphScene::mouseReleaseEvent(QGraphicsSceneMouseEvent* mouseE
                     unsigned int maxIndex = 0;
                     for (unsigned int index : destItem->Attribute()->ValidIndices())
                     {
-                        Gex::AttributePtr indexAttr = destItem->Attribute()->GetIndexAttribute(index);
+                        Gex::AttributeWkPtr indexAttr = destItem->Attribute()->GetIndexAttribute(index);
                         if (!indexAttr)
                         {
                             continue;
@@ -3815,6 +3880,20 @@ Gex::Ui::GraphWidget::GraphWidget(const Gex::CompoundNodePtr& graph_,
     QObject::connect(createFrameButton, &QPushButton::clicked,
                      scene, &NodeGraphScene::StartFrameMode);
 
+    QPushButton* autoRunButton = toolbar->NewButton();
+    autoRunButton->setIcon(
+            Res::UiRes::GetRes()->GetQtAwesome()->icon(
+                fa::fa_solid, fa::fa_forward
+            )
+    );
+
+    autoRunButton->setCheckable(true);
+
+    autoRunButton->setChecked(interactiveEvalEnabled);
+
+    QObject::connect(autoRunButton, &QPushButton::toggled, this,
+                     &GraphWidget::ToggleInteractiveEvaluation);
+
     QPushButton* runButton = toolbar->NewButton();
     runButton->setIcon(Res::UiRes::GetRes()->GetQtAwesome()->icon(fa::fa_solid, fa::fa_play));
 
@@ -3927,6 +4006,18 @@ void Gex::Ui::GraphWidget::ClearContexts()
     for (auto* ctx : contexts)
         delete ctx;
     contexts.clear();
+}
+
+
+bool Gex::Ui::GraphWidget::InteractiveEvaluation() const
+{
+    return interactiveEvalEnabled;
+}
+
+
+void Gex::Ui::GraphWidget::ToggleInteractiveEvaluation(bool state)
+{
+    interactiveEvalEnabled = state;
 }
 
 

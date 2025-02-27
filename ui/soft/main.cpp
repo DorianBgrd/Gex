@@ -41,7 +41,7 @@ void InitializePython()
     std::string modulePath = path.parent_path().parent_path()
             .append("python").string();
 
-    std::string code = "import sys\nsys.path.append(r\"" + modulePath + "\")";
+    std::string code = "import sys\nsys.path.insert(0, r\"" + modulePath + "\")";
 
     PyRun_SimpleString(code.c_str());
 }
