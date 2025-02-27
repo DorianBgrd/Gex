@@ -143,7 +143,7 @@ bool Exec::ResolveJsonValue(Gex::AttributePtr attr, rapidjson::Value& value)
             attr->CreateIndex(i);
             auto indexAttribute = attr->GetIndexAttribute(i);
 
-            ResolveJsonValue(indexAttribute, *iter);
+            ResolveJsonValue(indexAttribute.ToShared(), *iter);
 
             i++;
         }
