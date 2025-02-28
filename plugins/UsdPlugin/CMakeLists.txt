@@ -39,6 +39,8 @@ add_library(
         options.h
         Geom.h
         Geom.cpp
+        UsdTypes.h
+        UsdTypes.cpp
 
         Ui/UsdUiPlugin.cpp
 #        Ui/Viewers.h

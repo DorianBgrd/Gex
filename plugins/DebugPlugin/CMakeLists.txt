@@ -12,11 +12,6 @@ set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
 set(CMAKE_CXX_FLAGS "/EHsc")
 
 
-add_definitions(
-        /DPipelineLibrary2_EXPORT
-)
-
-
 add_library(
         DebugPlugin
         SHARED

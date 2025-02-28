@@ -8,11 +8,6 @@ set(CMAKE_VS_PLATFORM_NAME "x64")
 set(CMAKE_CXX_FLAGS "/EHsc")
 
 
-add_definitions(
-        /DPipelineLibrary2_IMPORTS
-)
-
-
 add_library(
         StringPlugin
         SHARED

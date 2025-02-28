@@ -9,7 +9,6 @@ set(CMAKE_CXX_FLAGS "/EHsc")
 
 
 add_definitions(
-        /DPipelineLibrary2_EXPORT
         /DQT_NO_KEYWORDS
 )
 

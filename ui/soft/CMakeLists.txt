@@ -297,6 +297,7 @@ add_custom_target(
         --add-extra-directory plugins ${CMAKE_BINARY_DIR}/plugins/ImageManipPlugin/ImageManipPlugin
         --add-extra-directory plugins ${CMAKE_BINARY_DIR}/plugins/InputRelPlugin/InputRelPlugin
         --add-extra-directory plugins ${CMAKE_BINARY_DIR}/plugins/JsonPlugin/JsonPlugin
+        --add-extra-directory plugins ${CMAKE_BINARY_DIR}/plugins/PythonPlugin/PythonPlugin
         ${USD_PLUGIN_RELOC}
         #        --add-extra-directory plugins ${CMAKE_BINARY_DIR}/plugins/InputRel.dll
         #        --add-extra-directory plugins ${CMAKE_BINARY_DIR}/plugins/GraphPlugin/GraphPlugin.dll

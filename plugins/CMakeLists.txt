@@ -46,7 +46,7 @@ add_subdirectory(StringPlugin)
 add_subdirectory(ImageManipPlugin)
 add_subdirectory(InputRelPlugin)
 add_subdirectory(JsonPlugin)
-#add_subdirectory(PythonPlugin)
+add_subdirectory(PythonPlugin)
 
 # Usd plugin does not work in debug mode yet.
 #if (NOT ${CMAKE_BUILD_TYPE} STREQUAL "Debug")
