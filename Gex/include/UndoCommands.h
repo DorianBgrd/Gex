@@ -10,7 +10,7 @@ namespace Gex::Undo
     typedef std::function<bool(const Gex::NodePtr&)> NodeCB;
 
 
-    class CreateNode: public UndoCmd
+    class AddNode: public UndoCmd
     {
         NodePtr parent;
         NodePtr node;
@@ -19,10 +19,10 @@ namespace Gex::Undo
         NodeCB deleteCallback;
 
     public:
-        CreateNode(const NodePtr& parent,
-                   const NodePtr& node,
-                   const NodeCB& createCallback,
-                   const NodeCB& deleteCallback);
+        AddNode(const NodePtr& parent,
+                const NodePtr& node,
+                const NodeCB& createCallback,
+                const NodeCB& deleteCallback);
 
         std::string Name() const override;
 
@@ -31,7 +31,7 @@ namespace Gex::Undo
         void Redo() override;
     };
 
-    class DeleteNode: public UndoCmd
+    class RemoveNode: public UndoCmd
     {
         NodePtr node;
         std::vector<std::pair<AttributePtr, AttributeWkPtr>> sourceConnections;
@@ -42,11 +42,11 @@ namespace Gex::Undo
         NodeCB addNodeCb;
 
     public:
-        DeleteNode(const NodePtr& node,
+        RemoveNode(const NodePtr& node,
                    const NodeCB& removeCB,
                    const NodeCB& addNodeCb);
 
-        DeleteNode(const DeleteNode& other);
+        RemoveNode(const RemoveNode& other);
 
         std::string Name() const override;
 

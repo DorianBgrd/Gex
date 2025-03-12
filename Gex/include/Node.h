@@ -301,7 +301,7 @@ namespace Gex
 		// Destructor.
 		virtual ~Node();
 
-        NodeWkPtr Parent();
+        NodeWkPtr Parent() const;
 
 		bool operator ==(const Node& other);
 
@@ -472,7 +472,7 @@ namespace Gex
          * Creates an evaluation context.
          * @return NodeAttributeData evaluation context.
          */
-        NodeAttributeData createEvalContext();
+        NodeAttributeData CreateEvalContext();
 
     public:
         /**

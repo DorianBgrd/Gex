@@ -1,7 +1,7 @@
 #include "Gex/include/UndoCommands.h"
 
 
-Gex::Undo::CreateNode::CreateNode(
+Gex::Undo::AddNode::AddNode(
         const NodePtr& parent_,
         const NodePtr& node_,
         const NodeCB& createCB,
@@ -14,7 +14,7 @@ Gex::Undo::CreateNode::CreateNode(
 }
 
 
-std::string Gex::Undo::CreateNode::Name() const
+std::string Gex::Undo::AddNode::Name() const
 {
     return ("Creating node with type " +
             node->Type() + " and name " +
@@ -22,19 +22,19 @@ std::string Gex::Undo::CreateNode::Name() const
 }
 
 
-void Gex::Undo::CreateNode::Undo()
+void Gex::Undo::AddNode::Undo()
 {
     deleteCallback(node);
 }
 
 
-void Gex::Undo::CreateNode::Redo()
+void Gex::Undo::AddNode::Redo()
 {
     createCallback(node);
 }
 
 
-Gex::Undo::DeleteNode::DeleteNode(
+Gex::Undo::RemoveNode::RemoveNode(
         const NodePtr& n,
         const NodeCB& rmCallback,
         const NodeCB& addCallback)
@@ -67,7 +67,7 @@ Gex::Undo::DeleteNode::DeleteNode(
 }
 
 
-Gex::Undo::DeleteNode::DeleteNode(const DeleteNode& other):
+Gex::Undo::RemoveNode::RemoveNode(const RemoveNode& other):
     node(other.node),
     removeNodeCb(other.removeNodeCb),
     addNodeCb(other.addNodeCb),
@@ -78,13 +78,13 @@ Gex::Undo::DeleteNode::DeleteNode(const DeleteNode& other):
 }
 
 
-std::string Gex::Undo::DeleteNode::Name() const
+std::string Gex::Undo::RemoveNode::Name() const
 {
     return "Deleting node " + node->Name();
 }
 
 
-void Gex::Undo::DeleteNode::Undo()
+void Gex::Undo::RemoveNode::Undo()
 {
     addNodeCb(node);
 
@@ -104,7 +104,7 @@ void Gex::Undo::DeleteNode::Undo()
 }
 
 
-void Gex::Undo::DeleteNode::Redo()
+void Gex::Undo::RemoveNode::Redo()
 {
     for (const auto& sourceConnection : sourceConnections)
     {

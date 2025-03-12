@@ -71,7 +71,7 @@ Gex::Node::~Node()
 }
 
 
-Gex::NodeWkPtr Gex::Node::Parent()
+Gex::NodeWkPtr Gex::Node::Parent() const
 {
     return parent;
 }
@@ -806,7 +806,7 @@ void Gex::Node::AttributeChanged(const AttributePtr& attribute,
 }
 
 
-Gex::NodeAttributeData Gex::Node::createEvalContext()
+Gex::NodeAttributeData Gex::Node::CreateEvalContext()
 {
     return NodeAttributeData(shared_from_this());
 }
@@ -819,7 +819,7 @@ bool Gex::Node::Compute(GraphContext &context,
     Pull();
     profiler.StopEvent(pullp);
 
-    NodeAttributeData evalContext = createEvalContext();
+    NodeAttributeData evalContext = CreateEvalContext();
 
     auto evalp = profiler.StartEvent("Compute::Evaluate");
     bool success = Evaluate(evalContext, context, profiler);
@@ -1047,7 +1047,7 @@ bool Gex::CompoundNode::AddNode(const NodePtr& node)
     addCb(node);
 
     Gex::Undo::UndoStack::AddUndo(
-        Gex::Undo::CreateUndo<Gex::Undo::CreateNode>(
+        Gex::Undo::CreateUndo<Gex::Undo::AddNode>(
                 thisSharedCompound,
                 node, addCb, rmCB
         )
@@ -1091,7 +1091,7 @@ void Gex::CompoundNode::RemoveNodeWithUndo(const NodePtr& node)
         return thisShared->AddNode(node);
     };
 
-    auto command = Undo::CreateUndo<Undo::DeleteNode>(
+    auto command = Undo::CreateUndo<Undo::RemoveNode>(
             node, rmCallback, addCallback
     );
 
@@ -1326,7 +1326,7 @@ Gex::NodePtr Gex::CompoundNode::ReferenceNode(const std::string& path, std::stri
     addCb(referencedNode);
 
     Gex::Undo::UndoStack::AddUndo(
-            Gex::Undo::CreateUndo<Gex::Undo::CreateNode>(
+            Gex::Undo::CreateUndo<Gex::Undo::AddNode>(
                     thisSharedCompound,
                     referencedNode,
                     addCb, rmCB
@@ -1818,7 +1818,7 @@ bool Gex::CompoundNode::PreEvaluate(NodeAttributeData &ctx,
 bool Gex::CompoundNode::PreCompute(GraphContext &context,
                                    NodeProfiler& profiler)
 {
-    auto data = createEvalContext();
+    auto data = CreateEvalContext();
     return PreEvaluate(data, context, profiler);
 }
 
@@ -1834,7 +1834,7 @@ bool Gex::CompoundNode::PostEvaluate(NodeAttributeData &ctx,
 bool Gex::CompoundNode::PostCompute(GraphContext &context,
                                    NodeProfiler& profiler)
 {
-    auto data = createEvalContext();
+    auto data = CreateEvalContext();
     return PostEvaluate(data, context, profiler);
 }
 
@@ -1855,7 +1855,7 @@ bool Gex::CompoundNode::Compute(GraphContext &context,
                                 NodeProfiler& profiler)
 {
     Pull();
-    NodeAttributeData evalContext = createEvalContext();
+    NodeAttributeData evalContext = CreateEvalContext();
     if (!PreEvaluate(evalContext, context, profiler))
     {
         return false;
