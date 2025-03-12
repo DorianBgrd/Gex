@@ -11,7 +11,7 @@
 
 #include "ArgParse/ArgParse.h"
 
-#include "Python.h"
+#include "boost/python/wrapper.hpp"
 
 #include <windows.h>
 #include "libloaderapi.h"
