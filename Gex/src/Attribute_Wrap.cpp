@@ -67,6 +67,9 @@ boost::python::object At_Node(boost::python::tuple args,
 
 bool Gex::Python::Attribute_Wrap::RegisterPythonWrapper()
 {
+    if (registered)
+        return false;
+
     bool (Gex::Attribute::* ProxyAttr_SimpleHasSource)() const = &Gex::Attribute::HasSource;
     bool (Gex::Attribute::* ProxyAttr_HasIndexSource)(unsigned int) = &Gex::Attribute::HasSource;
     Gex::AttributeWkPtr (Gex::Attribute::* ProxyAttr_Source)() const = &Gex::Attribute::Source;
