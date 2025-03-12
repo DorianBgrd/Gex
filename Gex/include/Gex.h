@@ -17,5 +17,6 @@
 #include "Profiler.h"
 #include "UndoStack.h"
 #include "UndoCommands.h"
+#include "Wrappers.h"
 
 #endif //GEX_GEX_H
