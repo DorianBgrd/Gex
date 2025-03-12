@@ -37,6 +37,7 @@ set(
         include/UndoStack.h
         include/utils.h
         include/wraputils.h
+        include/Wrappers.h
 )
 
 set(
@@ -88,6 +89,8 @@ set(
         src/Status_Wrap.cpp
         src/References_Wrap.cpp
         src/Profiler_Wrap.cpp
+        include/Wrappers.h
+        src/Wrappers.cpp
 )
 
 
