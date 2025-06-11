@@ -1,6 +1,30 @@
 #include "Gex/include/Metadatas.h"
 
 
+bool Gex::NodeMetadata::SetMetadata(const std::string& name, const std::any& value)
+{
+    if (!IsMetadataType(value))
+    {
+        return false;
+    }
+
+    metadata[name] = value;
+    return true;
+}
+
+
+std::any Gex::NodeMetadata::GetMetadata(const std::string& name) const
+{
+    auto iter = metadata.find(name);
+    if (iter == metadata.end())
+    {
+        return {};
+    }
+
+    return iter->second;
+}
+
+
 Gex::JsonValue Gex::NodeMetadata::Serialize(JsonDoc& doc) const
 {
     JsonValue serializedMetadata(rapidjson::kArrayType);
