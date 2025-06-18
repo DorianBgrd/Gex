@@ -3937,6 +3937,8 @@ Gex::Ui::GraphWidget::GraphWidget(const Gex::CompoundNodePtr& graph_,
 Gex::Ui::GraphWidget::~GraphWidget()
 {
     ClearContexts();
+
+    scene->blockSignals(true);
 }
 
 
