@@ -1016,7 +1016,12 @@ Gex::Ui::NodeItem::NodeItem(Gex::NodePtr node_,
     type->setPlainText(node->Type().c_str());
     type->setPos(0, title->boundingRect().bottom());
 
-    type->setPlainText(node->Type().c_str());
+    QFontMetrics typeMetrics(typeFont);
+    type->setPlainText(typeMetrics.elidedText(
+            node->Type().c_str(), Qt::ElideLeft,
+            DefaultWidth() - 4
+        )
+    );
 
     attributesY = (title->boundingRect().height() +
             type->boundingRect().height() + 5);
