@@ -7,7 +7,7 @@
 #include <QTimer>
 #include <QSyntaxHighlighter>
 
-#include "Python.h"
+#include "boost/python/wrapper.hpp"
 #include "softApi.h"
 
 

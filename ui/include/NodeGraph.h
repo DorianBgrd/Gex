@@ -596,6 +596,10 @@ namespace Gex
 
             QVariant itemChange(QGraphicsItem::GraphicsItemChange change,
                                 const QVariant &value) override;
+
+            std::string Save() const;
+
+            void Restore(const std::string& d);
         };
 
 
@@ -645,7 +649,7 @@ namespace Gex
             bool creatingFrame = false;
             QPointF frameTopLeft;
 
-            NodeGraphContext* graphContext;
+            NodeGraphContext* graphContext = nullptr;
             QMap<Gex::NodePtr, NodeItem*> nodeItems;
             QList<FrameItem*> frames;
             NodeItem* input = nullptr;
@@ -684,6 +688,10 @@ namespace Gex
             void StartFrameMode();
 
             void StopFrameMode();
+
+            void SaveFrames();
+
+            void RestoreFrames();
 
             FrameItem* CreateFrame(QPointF topLeft, QPointF bottomRight);
 

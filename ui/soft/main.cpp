@@ -74,8 +74,10 @@ int main(int argc, char** argv)
     else
     {
         graph = Gex::CompoundNode::FromNode(
-                Gex::NodeFactory::GetFactory()->CreateNode("CompoundNode", "Graph")
-                );
+                Gex::NodeFactory::GetFactory()->CreateNode(
+                        "CompoundNode", "Graph"
+                )
+        );
         feedback.status = Gex::Status::Success;
         feedback.message = "Created new graph.";
     }

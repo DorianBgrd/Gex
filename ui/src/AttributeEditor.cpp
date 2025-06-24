@@ -614,10 +614,29 @@ Gex::Ui::AttributeEditor::AttributeEditor(GraphWidget* parent): QWidget(parent)
 }
 
 
+Gex::Ui::AttributeEditor::~AttributeEditor()
+{
+    Clear();
+}
+
+
+void Gex::Ui::AttributeEditor::Clear()
+{
+    for (int i = tab->count() - 1; i >= 0; i--)
+    {
+        auto* widget = tab->widget(i);
+        tab->removeTab(i);
+
+        widget->deleteLater();
+    }
+
+    currentNodes.clear();
+}
+
+
 void Gex::Ui::AttributeEditor::SetNodes(const Gex::NodeWkList& nodes)
 {
-    currentNodes.clear();
-    tab->clear();
+    Clear();
 
     currentNodes = nodes;
     for (const auto& wkNode : nodes)

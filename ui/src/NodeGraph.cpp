@@ -7,6 +7,8 @@
 #include "ui/include/AttributeEditor.h"
 #include "ui/include/Commands.h"
 
+#include <array>
+
 #include <QGridLayout>
 #include <QSplitter>
 #include <QSpinBox>
@@ -25,6 +27,10 @@
 #include <QStyleOptionGraphicsItem>
 
 #include "Gex/include/Evaluation.h"
+
+#include "rapidjson/filewritestream.h"
+#include "rapidjson/writer.h"
+#include "rapidjson/prettywriter.h"
 
 Gex::Ui::PlugItem::PlugItem(AttributeItem* attribute, bool input):
     QGraphicsEllipseItem(attribute)
@@ -2299,7 +2305,7 @@ QVariant Gex::Ui::FrameItem::itemChange(
 
             movedItemsPositions.clear();
 
-            for (const auto item : items)
+            for (const auto& item : items)
             {
                 if (item.isNull())
                     continue;
@@ -2329,12 +2335,107 @@ QVariant Gex::Ui::FrameItem::itemChange(
                     frameItem->SetActive(true);
                 }
             }
-        }
 
+            graphScene->SaveFrames();
+        }
     }
 
     return value;
 }
+
+
+std::string Gex::Ui::FrameItem::Save() const
+{
+    rapidjson::Document doc;
+
+    rapidjson::Value& data = doc.SetArray();
+
+    rapidjson::Value textValue(rapidjson::kStringType);
+    textValue.SetString(textItem->toPlainText().toStdString().c_str(),
+                        textItem->toPlainText().toStdString().size(),
+                        doc.GetAllocator());
+    data.PushBack(textValue, doc.GetAllocator());
+
+    rapidjson::Value originXValue(rapidjson::kNumberType);
+    originXValue.SetDouble(originPos.x());
+    data.PushBack(originXValue, doc.GetAllocator());
+
+    rapidjson::Value originYValue(rapidjson::kNumberType);
+    originYValue.SetDouble(originPos.y());
+    data.PushBack(originYValue, doc.GetAllocator());
+
+    rapidjson::Value posXValue(rapidjson::kNumberType);
+    posXValue.SetDouble(pos().x());
+    data.PushBack(posXValue, doc.GetAllocator());
+
+    rapidjson::Value posYValue(rapidjson::kNumberType);
+    posYValue.SetDouble(pos().y());
+    data.PushBack(posYValue, doc.GetAllocator());
+
+    rapidjson::Value xValue(rapidjson::kNumberType);
+    xValue.SetDouble(rect.x());
+    data.PushBack(xValue, doc.GetAllocator());
+
+    rapidjson::Value yValue(rapidjson::kNumberType);
+    yValue.SetDouble(rect.y());
+    data.PushBack(yValue, doc.GetAllocator());
+
+    rapidjson::Value widthValue(rapidjson::kNumberType);
+    widthValue.SetDouble(rect.width());
+    data.PushBack(widthValue, doc.GetAllocator());
+
+    rapidjson::Value heightValue(rapidjson::kNumberType);
+    heightValue.SetDouble(rect.height());
+    data.PushBack(heightValue, doc.GetAllocator());
+
+    rapidjson::Value colorValue(rapidjson::kStringType);
+    colorValue.SetString(background.name().toStdString().c_str(),
+                         background.name().toStdString().size(),
+                         doc.GetAllocator());
+    data.PushBack(colorValue, doc.GetAllocator());
+
+    rapidjson::Value textColorValue(rapidjson::kStringType);
+    textColorValue.SetString(textColor.name().toStdString().c_str(),
+                             textColor.name().toStdString().size(),
+                             doc.GetAllocator());
+    data.PushBack(textColorValue, doc.GetAllocator());
+
+    rapidjson::StringBuffer buffer;
+    rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
+
+    doc.Accept(writer);
+
+    return buffer.GetString();
+}
+
+void  Gex::Ui::FrameItem::Restore(const std::string& d)
+{
+    rapidjson::Document json;
+    json.Parse(d.c_str());
+
+    rapidjson::Value& data = json.GetArray();
+
+    std::string text = data[0].GetString();
+    textItem->setPlainText(text.c_str());
+
+    originPos.setX(data[1].GetDouble());
+    originPos.setY(data[2].GetDouble());
+
+    setPos(data[3].GetDouble(),
+           data[4].GetDouble());
+
+    rect.setX(data[5].GetDouble());
+    rect.setY(data[6].GetDouble());
+
+    rect.setWidth(data[7].GetDouble());
+    rect.setHeight(data[8].GetDouble());
+
+    background = QColor(data[9].GetString());
+    textColor = QColor(data[10].GetString());
+
+    update();
+}
+
 
 
 Gex::Ui::FrameEditDialog::FrameEditDialog(
@@ -2685,6 +2786,8 @@ void Gex::Ui::NodeGraphScene::mouseReleaseEvent(QGraphicsSceneMouseEvent* mouseE
 
         delete previewFrame;
         previewFrame = nullptr;
+
+        SaveFrames();
     }
 
     else if (mouseZoomingClicked)
@@ -2771,6 +2874,51 @@ void Gex::Ui::NodeGraphScene::StopFrameMode()
 }
 
 
+void Gex::Ui::NodeGraphScene::SaveFrames()
+{
+    if (!CurrentContext())
+        return;
+
+    CurrentContext()->Compound()->SetMetadata(
+            "FrameNumber", (int)frames.size()
+    );
+
+    for (unsigned int i = 0; i < frames.size(); i++)
+    {
+        CurrentContext()->Compound()->SetMetadata(
+                "Frame:" + std::to_string(i),
+                frames[i]->Save()
+        );
+    }
+}
+
+
+void Gex::Ui::NodeGraphScene::RestoreFrames()
+{
+    auto compound = CurrentContext()->Compound();
+
+    Gex::Feedback result;
+
+    int frameNumber = compound->GetMetadata<int>(
+            "FrameNumber", &result
+    );
+
+    if (!result)
+        return;
+
+    for (int i = 0; i < frameNumber; i++)
+    {
+        auto* frame = CreateFrame(QPointF(), QPointF());
+
+        frame->Restore(
+            compound->GetMetadata<std::string>(
+                "Frame:" + std::to_string(i)
+            )
+        );
+    }
+}
+
+
 Gex::Ui::FrameItem* Gex::Ui::NodeGraphScene::CreateFrame(
         QPointF topLeft, QPointF bottomRight)
 {
@@ -2779,7 +2927,7 @@ Gex::Ui::FrameItem* Gex::Ui::NodeGraphScene::CreateFrame(
 
     QPoint rectTopLeft(0, 0);
 
-    FrameItem* frame = new FrameItem(rectTopLeft, width, height, this);
+    auto* frame = new FrameItem(rectTopLeft, width, height, this);
     frame->SetBackgroundColor(QColor(255, 0, 0, 50));
 
     addItem(frame);
@@ -3207,6 +3355,7 @@ void Gex::Ui::NodeGraphView::OnNodePlugClicked(NodePlugItem* plug)
 
 void Gex::Ui::NodeGraphScene::Clear()
 {
+    frames.clear();
     nodeItems.clear();
     input = nullptr;
     output = nullptr;
@@ -3257,6 +3406,8 @@ void Gex::Ui::NodeGraphScene::SwitchGraphContext(NodeGraphContext* context)
     {
         output->InitializeLinks();
     }
+
+    RestoreFrames();
 }
 
 

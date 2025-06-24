@@ -152,6 +152,10 @@ namespace Gex
         public:
             AttributeEditor(GraphWidget* parent=nullptr);
 
+            ~AttributeEditor() override;
+
+            void Clear();
+
             void SetNodes(const Gex::NodeWkList& nodes);
 
             void Update();
