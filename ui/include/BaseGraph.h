@@ -18,11 +18,11 @@
 
 #include <iostream>
 #include "UiStatus.h"
+#include "ViewContexts.h"
 
 
 namespace Gex::Ui
 {
-
     class GEX_UI_API Toolbar: public QFrame
     {
         Q_OBJECT
@@ -32,6 +32,7 @@ namespace Gex::Ui
         QFrame* toolbar;
         QVBoxLayout* toolbarLayout;
         QVariantAnimation* animation;
+
         bool visible;
         bool hiding = false;
 
@@ -72,6 +73,7 @@ namespace Gex::Ui
         void UpdateVisible();
     };
 
+
     class GEX_UI_API Message: public QFrame
     {
         UiFeedback f;
@@ -91,38 +93,94 @@ namespace Gex::Ui
         void Reset();
     };
 
+
+    class MoveContext: public ViewContext
+    {
+        bool zooming = false;
+        QPointF zoomingPos;
+
+        bool AcceptBaseEvents() const override;
+
+        void Setup(BaseGraphView* scene) override;
+
+        void Finalize(BaseGraphView *scene) override;
+
+        void OnPressEvent(QMouseEvent* event) override;
+
+        void OnMoveEvent(QMouseEvent* event) override;
+
+        void OnReleaseEvent(QMouseEvent* event) override;
+    };
+
+
+    class MoveEventFilter: public QObject
+    {
+    public:
+        MoveEventFilter(QObject* p): QObject(p)
+        {
+
+        }
+
+        bool eventFilter(QObject *watched, QEvent *event) override
+        {
+            if (event->type() == QEvent::FocusIn ||
+                event->type() == QEvent::FocusAboutToChange ||
+                event->type() == QEvent::FocusOut ||
+                event->type() == QEvent::KeyPress ||
+                event->type() == QEvent::KeyRelease)
+            {
+                std::string typeName;
+                if (event->type() == QEvent::FocusIn)
+                    typeName = "FocusIn";
+                else if (event->type() == QEvent::FocusAboutToChange)
+                    typeName = "FocusAboutToChange";
+                else
+                    typeName = "FocusOut";
+
+                std::cout << "Focus event " << typeName << std::endl;
+                return true;
+            }
+
+            return false;
+        }
+    };
+
+
+    class SelectContext: public ViewContext
+    {
+        bool AcceptBaseEvents() const override;
+
+        void Setup(BaseGraphView* scene) override;
+
+        void OnPressEvent(QMouseEvent* event) override;
+
+        void OnMoveEvent(QMouseEvent* event) override;
+
+        void OnReleaseEvent(QMouseEvent* event) override;
+    };
+
+
     class GEX_UI_API BaseGraphView: public QGraphicsView
     {
         Q_OBJECT
 
         qreal zoomFactor = 0.9;
-        bool zooming = false;
-        bool dragMode = false;
-        QPoint zoomingPos;
-        QPoint dragPos;
-        QPointF sceneDragPos;
-        QRectF sceneDragRect;
-        qreal scaleX = 1;
-        qreal scaleY = 1;
-
-        QCursor mainCursor;
-        QCursor pressCursor;
-        bool pressed = false;
 
         Toolbar* toolbar = nullptr;
         Message* message = nullptr;
         QTimer* messageTimer = nullptr;
 
-        void SetMainCursor(QCursor c);
-
-        void SetPressCursor(QCursor c);
-
-        void RestoreCursor();
+        ViewContexts* contexts;
 
         QList<QGraphicsItem*> revertSelectItems;
     public:
-        explicit BaseGraphView(QGraphicsScene* scene, QWidget* parent=nullptr,
+        explicit BaseGraphView(QGraphicsScene* scene,
+                               QWidget* parent=nullptr,
                                bool toolbar=false);
+
+        virtual ~BaseGraphView();
+
+        ViewContexts* GetEditors() const;
 
         Toolbar* GetToolbar() const;
 
@@ -164,6 +222,8 @@ namespace Gex::Ui
         void keyPressEvent(QKeyEvent* event) override;
 
         void keyReleaseEvent(QKeyEvent* event) override;
+
+        bool event(QEvent *event) override;
 
         void resizeEvent(QResizeEvent* event) override;
 

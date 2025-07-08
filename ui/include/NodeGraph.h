@@ -705,8 +705,12 @@ namespace Gex
                                 const Gex::AttributeWkPtr& attr,
                                 const Gex::AttributeChange& change);
 
-            void UpdateNodeAttribute(Gex::NodePtr node,
-                                     QString attribute);
+            void UpdateNodeAttribute(const Gex::NodePtr& node,
+                                     const QString& attribute);
+
+            NodeItem* GetInput() const;
+
+            NodeItem* GetOutput() const;
 
             void Clear();
 
@@ -765,6 +769,28 @@ namespace Gex
         };
 
 
+        class ConnectionContext: public ViewContext
+        {
+            PreviewLinkItem* previewLink = nullptr;
+            NodeItem* input = nullptr;
+            NodeItem* output = nullptr;
+
+            QPointF ScenePos(QPoint viewPos);
+
+            QGraphicsItem* SceneItem(QPoint viewPos);
+
+            bool AcceptBaseEvents() const override;
+
+            void Setup(BaseGraphView* scene) override;
+
+            void OnPressEvent(QMouseEvent* event) override;
+
+            void OnMoveEvent(QMouseEvent* event) override;
+
+            void OnReleaseEvent(QMouseEvent* event) override;
+        };
+
+
         class GEX_UI_API NodeGraphView: public BaseGraphView
         {
             Q_OBJECT
@@ -806,6 +832,15 @@ namespace Gex
             QMenu* GetMenu() override;
 
             void keyPressEvent(QKeyEvent* event) override;
+
+            void mousePressEvent(QMouseEvent *event) override;
+
+            void mouseReleaseEvent(QMouseEvent *event) override;
+
+        public:
+            NodeItem* GetInput() const;
+
+            NodeItem* GetOutput() const;
 
         public:
             void OnNodePlugClicked(NodePlugItem* plug);

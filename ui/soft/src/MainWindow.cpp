@@ -15,6 +15,8 @@
 Gex::Editor::MainWindow::MainWindow(Gex::CompoundNodePtr graph_, std::string file,
                                     QWidget* parent): QMainWindow(parent)
 {
+    installEventFilter(new EventFilter(this));
+
     auto* widget = new QWidget(this);
     setCentralWidget(widget);
 
@@ -68,7 +70,12 @@ Gex::Editor::MainWindow::MainWindow(Gex::CompoundNodePtr graph_, std::string fil
     );
 
     auto* menu = new QMenuBar(this);
+    menu->setFocusPolicy(Qt::NoFocus);
+    menu->installEventFilter(new EventFilter(this));
+
     auto* fileMenu =  menu->addMenu("File");
+    fileMenu->setFocusPolicy(Qt::NoFocus);
+
 //    fileMenu->addAction(Res::UiRes::GetRes()->GetQtAwesome()->icon(fa::fa_solid, fa::fa_folder_open),
 //                        "Open", this, &MainWindow::New);
     fileMenu->addAction(Res::UiRes::GetRes()->GetQtAwesome()->icon(fa::fa_solid, fa::fa_file),

@@ -35,6 +35,7 @@ set(
         include/PluginLoader.h
         include/NodeViewer.h
         include/Timeline.h
+        include/ViewContexts.h
 )
 
 add_library(
@@ -51,6 +52,7 @@ add_library(
         src/PluginLoader.cpp
         src/NodeViewer.cpp
         src/Timeline.cpp
+        src/ViewContexts.cpp
 )
 
 add_compile_definitions(Gex_ui PRIVATE GEX_UI_API_EXPORT)

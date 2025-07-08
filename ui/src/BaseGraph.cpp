@@ -257,37 +257,107 @@ void Gex::Ui::Toolbar::UpdateVisible()
 }
 
 
-void Gex::Ui::BaseGraphView::SetMainCursor(QCursor c)
+bool Gex::Ui::MoveContext::AcceptBaseEvents() const
 {
-    mainCursor = c;
-    if (!pressed)
+    return true;
+}
+
+void Gex::Ui::MoveContext::Setup(BaseGraphView* view)
+{
+    CurrentView()->setCursor(Qt::OpenHandCursor);
+}
+
+
+void Gex::Ui::MoveContext::Finalize(BaseGraphView *scene)
+{
+    scene->unsetCursor();
+}
+
+
+void Gex::Ui::MoveContext::OnPressEvent(QMouseEvent* event)
+{
+    if (event->button() == Qt::LeftButton)
     {
-        setCursor(c);
+        CurrentView()->setDragMode(BaseGraphView::ScrollHandDrag);
+    }
+    else if (event->button() == Qt::RightButton)
+    {
+        zooming = true;
+        zoomingPos = event->pos();
+        CurrentView()->setDragMode(BaseGraphView::NoDrag);
+        CurrentView()->setCursor(Qt::SizeBDiagCursor);
     }
 }
 
-void Gex::Ui::BaseGraphView::SetPressCursor(QCursor c)
+void Gex::Ui::MoveContext::OnMoveEvent(QMouseEvent* event)
 {
-    pressCursor = c;
+    if (zooming)
+    {
+        zooming = true;
 
-    if (pressed)
-        setCursor(c);
+        if (event->pos().x() > zoomingPos.x())
+        {
+            CurrentView()->ZoomOut();
+        }
+        else if (event->pos().x() < zoomingPos.x())
+        {
+            CurrentView()->ZoomIn();
+        }
+
+        zoomingPos = event->pos();
+    }
 }
 
-void Gex::Ui::BaseGraphView::RestoreCursor()
+void Gex::Ui::MoveContext::OnReleaseEvent(QMouseEvent* event)
 {
-    setCursor(mainCursor);
+    if (event->button() == Qt::RightButton)
+    {
+        CurrentView()->unsetCursor();
+    }
+}
+
+
+bool Gex::Ui::SelectContext::AcceptBaseEvents() const
+{
+    return true;
+}
+
+void Gex::Ui::SelectContext::Setup(BaseGraphView* view)
+{
+    CurrentView()->setDragMode(QGraphicsView::RubberBandDrag);
+}
+
+void Gex::Ui::SelectContext::OnPressEvent(QMouseEvent* event)
+{
+
+}
+
+void Gex::Ui::SelectContext::OnMoveEvent(QMouseEvent* event)
+{
+
+}
+
+void Gex::Ui::SelectContext::OnReleaseEvent(QMouseEvent* event)
+{
+
 }
 
 
 
 Gex::Ui::BaseGraphView::BaseGraphView(QGraphicsScene* scene, QWidget* parent,
-                                                bool usetoolbar):
+                                      bool usetoolbar):
         QGraphicsView(scene, parent)
 {
+//    installEventFilter(new MoveEventFilter(this)),
+
+    contexts = new ViewContexts(this);
+    contexts->RegisterContext<SelectContext>("Select");
+    contexts->RegisterContext<MoveContext>("Move");
+
+    contexts->SetCurrentContext("Select");
+
     setRenderHint(QPainter::Antialiasing);
 
-    mainCursor = cursor();
     setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
 
@@ -299,8 +369,14 @@ Gex::Ui::BaseGraphView::BaseGraphView(QGraphicsScene* scene, QWidget* parent,
     layout->setAlignment(Qt::AlignLeft);
     setLayout(layout);
 
-//    QObject::connect(this, &QGraphicsView::customContextMenuRequested,
-//                     this, &NodeGraphView::ShowCreateNodeMenu);
+    auto menuCallback = [this](const QPoint& pos)
+    {
+        this->ShowMenu(GetMenu(), pos);
+    };
+
+    QObject::connect(this, &QGraphicsView::customContextMenuRequested,
+                     menuCallback);
+
     message = new Message(this);
     auto policy = message->sizePolicy();
     policy.setRetainSizeWhenHidden(true);
@@ -319,6 +395,18 @@ Gex::Ui::BaseGraphView::BaseGraphView(QGraphicsScene* scene, QWidget* parent,
     }
 
     layout->addWidget(message, 10, 0, 1, 1, Qt::AlignLeft | Qt::AlignBottom);
+}
+
+
+Gex::Ui::BaseGraphView::~BaseGraphView()
+{
+    delete contexts;
+}
+
+
+Gex::Ui::ViewContexts* Gex::Ui::BaseGraphView::GetEditors() const
+{
+    return contexts;
 }
 
 
@@ -398,27 +486,9 @@ void Gex::Ui::BaseGraphView::ViewSelectionSceneRect()
 
 void Gex::Ui::BaseGraphView::mousePressEvent(QMouseEvent* event)
 {
-    pressed = true;
+    contexts->OnPressEvent(event);
 
-    if (event->modifiers() == Qt::AltModifier && event->button() == Qt::RightButton)
-    {
-        zooming = true;
-        zoomingPos = event->pos();
-        SetPressCursor(Qt::SizeBDiagCursor);
-    }
-    else if (dragMode && event->button() == Qt::LeftButton)
-    {
-        setCursor(Qt::ClosedHandCursor);
-        dragPos = event->pos();
-        sceneDragPos = mapToScene(rect()).boundingRect().center();
-
-        QRectF sceneR = mapToScene(rect()).boundingRect();
-        scaleX = sceneR.width() / rect().width();
-        scaleY = sceneR.height() / rect().height();
-
-        SetPressCursor(Qt::ClosedHandCursor);
-    }
-    else
+    if (contexts->AcceptBaseEvents())
     {
         QGraphicsView::mousePressEvent(event);
     }
@@ -427,32 +497,9 @@ void Gex::Ui::BaseGraphView::mousePressEvent(QMouseEvent* event)
 
 void Gex::Ui::BaseGraphView::mouseMoveEvent(QMouseEvent* event)
 {
-    if (zooming)
-    {
-        zooming = true;
+    contexts->OnMoveEvent(event);
 
-        if (event->pos().x() > zoomingPos.x())
-        {
-            ZoomOut();
-        }
-        else if (event->pos().x() < zoomingPos.x())
-        {
-            ZoomIn();
-        }
-
-        zoomingPos = event->pos();
-    }
-    else if (pressed && dragMode)
-    {
-        QPointF delta = event->pos() - dragPos;
-
-        delta = {delta.x() * scaleX,
-                 delta.y() * scaleY};
-
-        QPointF move = sceneDragPos - delta;
-        centerOn(move.x(),move.y());
-    }
-    else
+    if (contexts->AcceptBaseEvents())
     {
         QGraphicsView::mouseMoveEvent(event);
     }
@@ -474,27 +521,33 @@ QList<QGraphicsItem*> Gex::Ui::BaseGraphView::FilterSelectedItems(
 
 void Gex::Ui::BaseGraphView::mouseReleaseEvent(QMouseEvent* event)
 {
-    pressed = false;
+//    pressed = false;
+//
+//    if (zooming)
+//    {
+//        zooming = false;
+//    }
+//    else
+//    {
+//        if (event->button() == Qt::RightButton)
+//        {
+//            auto* menu = GetMenu();
+//            if (menu)
+//            {
+//                ShowMenu(menu, event->pos());
+//            }
+//        }
+//
+//        QGraphicsView::mouseReleaseEvent(event);
+//    }
+//
+//    RestoreCursor();
+    contexts->OnReleaseEvent(event);
 
-    if (zooming)
+    if (contexts->AcceptBaseEvents())
     {
-        zooming = false;
-    }
-    else
-    {
-        if (event->button() == Qt::RightButton)
-        {
-            auto* menu = GetMenu();
-            if (menu)
-            {
-                ShowMenu(menu, event->pos());
-            }
-        }
-
         QGraphicsView::mouseReleaseEvent(event);
     }
-
-    RestoreCursor();
 }
 
 
@@ -604,10 +657,14 @@ void Gex::Ui::BaseGraphView::wheelEvent(QWheelEvent* event)
 
 void Gex::Ui::BaseGraphView::keyPressEvent(QKeyEvent* event)
 {
-    if (event->key() == Qt::Key_Alt)
+    if (event->key() == Qt::Key_Space)
     {
-        dragMode = true;
-        SetMainCursor(Qt::OpenHandCursor);
+        if (!event->isAutoRepeat())
+        {
+            contexts->SetCurrentContext("Move");
+            grabKeyboard();
+        }
+        event->accept();
     }
     else
     {
@@ -617,19 +674,36 @@ void Gex::Ui::BaseGraphView::keyPressEvent(QKeyEvent* event)
 
 void Gex::Ui::BaseGraphView::keyReleaseEvent(QKeyEvent* event)
 {
-    if (event->key() == Qt::Key_Alt)
+    std::cout<< "key release" << std::endl;
+    if (event->key() == Qt::Key_Space)
     {
-        dragMode = false;
-        SetMainCursor(Qt::ArrowCursor);
+        if (!event->isAutoRepeat())
+        {
+            contexts->UnsetCurrentContext();
+            releaseKeyboard();
+        }
+        event->accept();
     }
     else if (event->key() == Qt::Key_F)
     {
         FrameSelection();
+        event->accept();
     }
     else if (event->key() == Qt::Key_A)
     {
         FrameAll();
+        event->accept();
     }
+    else
+    {
+        QGraphicsView::keyReleaseEvent(event);
+    }
+}
+
+
+bool Gex::Ui::BaseGraphView::event(QEvent *event)
+{
+    return QGraphicsView::event(event);
 }
 
 

@@ -11,6 +11,36 @@
 
 namespace Gex::Editor
 {
+    class EventFilter: public QObject
+    {
+    public:
+        EventFilter(QObject* p): QObject(p)
+        {
+
+        }
+
+        bool eventFilter(QObject *watched, QEvent *event) override
+        {
+            if (event->type() == QEvent::FocusIn ||
+                event->type() == QEvent::FocusAboutToChange ||
+                event->type() == QEvent::FocusOut)
+            {
+                std::string typeName;
+                if (event->type() == QEvent::FocusIn)
+                    typeName = "FocusIn";
+                else if (event->type() == QEvent::FocusAboutToChange)
+                    typeName = "FocusAboutToChange";
+                else
+                    typeName = "FocusOut";
+
+                std::cout << "Focus event " << typeName << std::endl;
+                return true;
+            }
+
+            return false;
+        }
+    };
+
     class SOFT_API MainWindow: public QMainWindow
     {
         Q_OBJECT

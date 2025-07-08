@@ -2525,140 +2525,20 @@ Gex::Ui::NodeGraphScene::NodeGraphScene(QObject* parent): QGraphicsScene(parent)
 }
 
 
-void Gex::Ui::NodeGraphScene::mousePressEvent(QGraphicsSceneMouseEvent* mouseEvent)
+void Gex::Ui::NodeGraphScene::mousePressEvent(
+        QGraphicsSceneMouseEvent* mouseEvent
+)
 {
-    pressed = true;
 
-    if (mouseZooming && mouseEvent->button() == Qt::RightButton)
-    {
-        mouseZoomingClicked = true;
-        mouseZoomingPos = mouseEvent->screenPos();
-    }
-
-    else if (creatingFrame)
-    {
-        frameTopLeft = mouseEvent->scenePos();
-        for (auto* view : views())
-        {
-            view->setDragMode(QGraphicsView::NoDrag);
-        }
-
-        previewFrame = addRect(QRectF());
-        previewFrame->setPen(previewFramePen);
-        previewFrame->setBrush(previewFrameBrush);
-        previewFrameStart = mouseEvent->scenePos();
-    }
-
-    else if (QGraphicsItem* item = itemAt(mouseEvent->scenePos(), QTransform()))
-    {
-        PlugItem *plugItem = qgraphicsitem_cast<PlugItem *>(item);
-        if (!previewLink && plugItem)
-        {
-            previewLink = new PreviewLinkItem(plugItem);
-            previewLink->SetState(PreviewLinkItem::State::Default);
-            addItem(previewLink);
-            previewLink->Draw(mouseEvent->scenePos());
-
-            for (auto *view: views())
-            {
-                view->setDragMode(QGraphicsView::NoDrag);
-            }
-        }
-        else
-        {
-            QGraphicsScene::mousePressEvent(mouseEvent);
-        }
-    }
-    else
-    {
-        QGraphicsScene::mousePressEvent(mouseEvent);
-    }
+    QGraphicsScene::mousePressEvent(mouseEvent);
 }
 
 
-void Gex::Ui::NodeGraphScene::mouseMoveEvent(QGraphicsSceneMouseEvent* mouseEvent)
+void Gex::Ui::NodeGraphScene::mouseMoveEvent(
+        QGraphicsSceneMouseEvent* mouseEvent
+)
 {
-
-    if (previewLink)
-    {
-        QGraphicsItem* item = itemAt(mouseEvent->scenePos(), QTransform());
-        if (item)
-        {
-            PlugItem* plugItem = qgraphicsitem_cast<PlugItem*>(item);
-            if (plugItem && (plugItem != previewLink->SourcePlug()))
-            {
-                AttributeItem* destItem = plugItem->Attribute();
-                AttributeItem* sourceItem = previewLink->SourcePlug()->Attribute();
-                if (destItem->Attribute()->IsMulti() == sourceItem->Attribute()->IsMulti())
-                {
-                    // If source plug is an input, then check if the dest attribute can
-                    // be connected to destination.
-                    if (previewLink->SourcePlug()->IsInputAnchor() &&
-                        sourceItem->Attribute()->CanConnectSource(destItem->Attribute()))
-                    {
-                        previewLink->SetState(PreviewLinkItem::State::Valid);
-                    }
-                    // If source plug is an output, check if the destination attribute can
-                    // be connected as a source to the source plug.
-                    else if (previewLink->SourcePlug()->IsOutputAnchor() &&
-                             destItem->Attribute()->CanConnectSource(sourceItem->Attribute()))
-                    {
-                        previewLink->SetState(PreviewLinkItem::State::Valid);
-                    }
-                        // If source plug is an input, is internal and belongs to the current
-                        // compound input, check if the dest attribute can receive it as a
-                        // source attribute.
-                    else if (previewLink->SourcePlug()->IsInputAnchor() &&
-                             sourceItem->Attribute()->IsInternal() &&
-                             sourceItem->ParentNode() == input &&
-                             destItem->Attribute()->CanConnectSource(sourceItem->Attribute()))
-                    {
-                        previewLink->SetState(PreviewLinkItem::State::Valid);
-                    }
-                        // If source plug is an internal output of current compound, check if source
-                        // plug can receive dest as a connection.
-                    else if (previewLink->SourcePlug()->IsOutputAnchor() &&
-                             sourceItem->Attribute()->IsInternal() &&
-                             sourceItem->ParentNode() == output &&
-                             sourceItem->Attribute()->CanConnectSource(destItem->Attribute()))
-                    {
-                        previewLink->SetState(PreviewLinkItem::State::Valid);
-                    }
-                    else
-                    {
-                        previewLink->SetState(PreviewLinkItem::State::Invalid);
-                    }
-                }
-                else if (!sourceItem->IsMulti() && destItem->IsMulti())
-                {
-                    if (!destItem->Attribute()->ValidIndices().empty())
-                    {
-                        destItem->Expand();
-                        destItem->ParentNode()->PlaceAttributes();
-                        previewLink->SetState(PreviewLinkItem::State::Valid);
-                    }
-                }
-                else
-                {
-                    previewLink->SetState(PreviewLinkItem::State::Invalid);
-                }
-            }
-            else
-            {
-                previewLink->SetState(PreviewLinkItem::State::Default);
-            }
-        }
-
-        previewLink->Draw(mouseEvent->scenePos());
-    }
-    else if (creatingFrame && pressed)
-    {
-        previewFrame->setRect(QRectF(previewFrameStart, mouseEvent->scenePos()));
-    }
-    else
-    {
-        QGraphicsScene::mouseMoveEvent(mouseEvent);
-    }
+    QGraphicsScene::mouseMoveEvent(mouseEvent);
 }
 
 
@@ -2674,135 +2554,11 @@ void Connect(Gex::Ui::AttributeItem* source,
 }
 
 
-void Gex::Ui::NodeGraphScene::mouseReleaseEvent(QGraphicsSceneMouseEvent* mouseEvent)
+void Gex::Ui::NodeGraphScene::mouseReleaseEvent(
+        QGraphicsSceneMouseEvent* mouseEvent
+)
 {
-    pressed = false;
-
-    QGraphicsItem *item = itemAt(mouseEvent->scenePos(), QTransform());
-    if (previewLink) {
-        if (item)
-        {
-            PlugItem *plugItem = qgraphicsitem_cast<PlugItem *>(item);
-
-            if (plugItem && (plugItem != previewLink->SourcePlug()))
-            {
-                AttributeItem* destItem = plugItem->Attribute();
-                AttributeItem* sourceItem = previewLink->SourcePlug()->Attribute();
-                if (destItem->IsMulti() == sourceItem->IsMulti())
-                {
-                    // If source plug is an input, then check if the dest attribute can
-                    // be connected to destination.
-                    if (previewLink->SourcePlug()->IsInputAnchor() &&
-                        sourceItem->Attribute()->CanConnectSource(destItem->Attribute()))
-                    {
-                        Connect(destItem, sourceItem);
-                    }
-                        // If source plug is an output, check if the destination attribute can
-                        // be connected as a source to the source plug.
-                    else if (previewLink->SourcePlug()->IsOutputAnchor() &&
-                             destItem->Attribute()->CanConnectSource(sourceItem->Attribute()))
-                    {
-                        Connect(sourceItem, destItem);
-                    }
-                        // If source plug is an input, is internal and belongs to the current
-                        // compound input, check if the dest attribute can receive it as a
-                        // source attribute.
-                    else if (previewLink->SourcePlug()->IsInputAnchor() &&
-                             sourceItem->Attribute()->IsInternal() &&
-                             sourceItem->ParentNode() == input &&
-                             destItem->Attribute()->CanConnectSource(sourceItem->Attribute()))
-                    {
-                        Connect(sourceItem, destItem);
-                    }
-                        // If source plug is an internal output of current compound, check if source
-                        // plug can receive dest as a connection.
-                    else if (previewLink->SourcePlug()->IsOutputAnchor() &&
-                             sourceItem->Attribute()->IsInternal() &&
-                             sourceItem->ParentNode() == output &&
-                             sourceItem->Attribute()->CanConnectSource(destItem->Attribute()))
-                    {
-                        Connect(destItem, sourceItem);
-                    }
-                }
-                else if (!sourceItem->IsMulti() && destItem->IsMulti())
-                {
-                    // Connect to next available index.
-                    bool connected = false;
-                    unsigned int maxIndex = 0;
-                    for (unsigned int index : destItem->Attribute()->ValidIndices())
-                    {
-                        Gex::AttributeWkPtr indexAttr = destItem->Attribute()->GetIndexAttribute(index);
-                        if (!indexAttr)
-                        {
-                            continue;
-                        }
-
-                        if (!indexAttr->HasSource())
-                        {
-                            indexAttr->ConnectSource(sourceItem->Attribute());
-                            connected = true;
-                            break;
-                        }
-                    }
-                    if (!connected)
-                    {
-                        unsigned int newIndex = Gex::Ui::NextMultiAttributeIndex(destItem->Attribute());
-                        if (destItem->Attribute()->CreateIndex(newIndex))
-                        {
-                            auto indexAttr = destItem->Attribute()->GetIndexAttribute(newIndex);
-                            indexAttr->ConnectSource(sourceItem->Attribute());
-
-                            // TODO : Rebuilding attributes should be available from attribute !
-                            auto* nodeItem = destItem->ParentNode();
-                            destItem->RebuildAttributes();
-                        }
-                    }
-                }
-            }
-        }
-
-        removeItem(previewLink);
-        delete previewLink;
-        previewLink = nullptr;
-
-        for (auto* view : views())
-        {
-            view->setDragMode(QGraphicsView::RubberBandDrag);
-        }
-    }
-
-    else if (creatingFrame)
-    {
-        QPointF bottomRight = mouseEvent->scenePos();
-
-        CreateFrame(frameTopLeft, bottomRight);
-
-        creatingFrame = false;
-
-        for (auto* view : views())
-        {
-            view->setDragMode(QGraphicsView::RubberBandDrag);
-        }
-
-        delete previewFrame;
-        previewFrame = nullptr;
-
-        SaveFrames();
-    }
-
-    else if (mouseZoomingClicked)
-    {
-        mouseZoomingClicked = false;
-    }
-
-    else if (auto* nodePlugItem = qgraphicsitem_cast<NodePlugItem*>(item))
-    {
-        Q_EMIT NodePlugClicked(nodePlugItem);
-    }
-    else
-    {
-        QGraphicsScene::mouseReleaseEvent(mouseEvent);
-    }
+    QGraphicsScene::mouseReleaseEvent(mouseEvent);
 }
 
 
@@ -2989,7 +2745,9 @@ void Gex::Ui::NodeGraphScene::OnNodeModified(const Gex::NodeWkPtr& node,
 
 
 void Gex::Ui::NodeGraphScene::UpdateNodeAttribute(
-        Gex::NodePtr node, QString attribute)
+        const Gex::NodePtr& node,
+        const QString& attribute
+)
 {
     NodeItem* nodeItem = nodeItems.value(node, nullptr);
     if (!nodeItem)
@@ -3010,40 +2768,263 @@ void Gex::Ui::NodeGraphScene::UpdateNodeAttribute(
 //}
 
 
+bool Gex::Ui::ConnectionContext::AcceptBaseEvents() const
+{
+    return false;
+}
+
+void Gex::Ui::ConnectionContext::Setup(BaseGraphView* view)
+{
+    if (auto* nodeView = dynamic_cast<NodeGraphView*>(view))
+    {
+        input = nodeView->GetInput();
+        output = nodeView->GetOutput();
+    }
+}
+
+
+QPointF Gex::Ui::ConnectionContext::ScenePos(QPoint viewPos)
+{
+    return CurrentView()->mapToScene(viewPos);
+}
+
+
+QGraphicsItem* Gex::Ui::ConnectionContext::SceneItem(QPoint viewPos)
+{
+    return CurrentView()->scene()->itemAt(
+            ScenePos(viewPos), QTransform()
+    );
+}
+
+
+void Gex::Ui::ConnectionContext::OnPressEvent(QMouseEvent* event)
+{
+    if (QGraphicsItem* item = SceneItem(event->pos()))
+    {
+        auto* plugItem = qgraphicsitem_cast<PlugItem *>(item);
+        if (!previewLink && plugItem) {
+            previewLink = new PreviewLinkItem(plugItem);
+            previewLink->SetState(PreviewLinkItem::State::Default);
+            CurrentView()->scene()->addItem(previewLink);
+            previewLink->Draw(ScenePos(event->pos()));
+        }
+    }
+}
+
+void Gex::Ui::ConnectionContext::OnMoveEvent(QMouseEvent* event)
+{
+    if (previewLink)
+    {
+        QGraphicsItem* item = SceneItem(event->pos());
+        if (item)
+        {
+            auto* plugItem = qgraphicsitem_cast<PlugItem*>(item);
+            if (plugItem && (plugItem != previewLink->SourcePlug()))
+            {
+                AttributeItem* destItem = plugItem->Attribute();
+                AttributeItem* sourceItem = previewLink->SourcePlug()->Attribute();
+                if (destItem->Attribute()->IsMulti() == sourceItem->Attribute()->IsMulti())
+                {
+                    // If source plug is an input, then check if the dest attribute can
+                    // be connected to destination.
+                    if (previewLink->SourcePlug()->IsInputAnchor() &&
+                        sourceItem->Attribute()->CanConnectSource(destItem->Attribute()))
+                    {
+                        previewLink->SetState(PreviewLinkItem::State::Valid);
+                    }
+
+                    // If source plug is an output, check if the destination attribute can
+                    // be connected as a source to the source plug.
+                    else if (previewLink->SourcePlug()->IsOutputAnchor() &&
+                             destItem->Attribute()->CanConnectSource(sourceItem->Attribute()))
+                    {
+                        previewLink->SetState(PreviewLinkItem::State::Valid);
+                    }
+
+                    // If source plug is an input, is internal and belongs to the current
+                    // compound input, check if the dest attribute can receive it as a
+                    // source attribute.
+                    else if (previewLink->SourcePlug()->IsInputAnchor() &&
+                             sourceItem->Attribute()->IsInternal() &&
+                             sourceItem->ParentNode() == input &&
+                             destItem->Attribute()->CanConnectSource(sourceItem->Attribute()))
+                    {
+                        previewLink->SetState(PreviewLinkItem::State::Valid);
+                    }
+
+                    // If source plug is an internal output of current compound, check if source
+                    // plug can receive dest as a connection.
+                    else if (previewLink->SourcePlug()->IsOutputAnchor() &&
+                             sourceItem->Attribute()->IsInternal() &&
+                             sourceItem->ParentNode() == output &&
+                             sourceItem->Attribute()->CanConnectSource(destItem->Attribute()))
+                    {
+                        previewLink->SetState(PreviewLinkItem::State::Valid);
+                    }
+                    else
+                    {
+                        previewLink->SetState(PreviewLinkItem::State::Invalid);
+                    }
+                }
+                else if (!sourceItem->IsMulti() && destItem->IsMulti())
+                {
+                    if (!destItem->Attribute()->ValidIndices().empty())
+                    {
+                        destItem->Expand();
+                        destItem->ParentNode()->PlaceAttributes();
+                        previewLink->SetState(PreviewLinkItem::State::Valid);
+                    }
+                }
+                else
+                {
+                    previewLink->SetState(PreviewLinkItem::State::Invalid);
+                }
+            }
+            else
+            {
+                previewLink->SetState(PreviewLinkItem::State::Default);
+            }
+        }
+
+        previewLink->Draw(ScenePos(event->pos()));
+    }
+}
+
+void Gex::Ui::ConnectionContext::OnReleaseEvent(QMouseEvent* event)
+{
+    QGraphicsItem *item = SceneItem(event->pos());
+    if (previewLink)
+    {
+        if (item)
+        {
+            auto* plugItem = qgraphicsitem_cast<PlugItem *>(item);
+
+            if (plugItem && (plugItem != previewLink->SourcePlug()))
+            {
+                AttributeItem *destItem = plugItem->Attribute();
+                AttributeItem *sourceItem = previewLink->SourcePlug()->Attribute();
+                if (destItem->IsMulti() == sourceItem->IsMulti())
+                {
+
+                    // If source plug is an input, then check if the dest attribute can
+                    // be connected to destination.
+                    if (previewLink->SourcePlug()->IsInputAnchor() &&
+                        sourceItem->Attribute()->CanConnectSource(destItem->Attribute()))
+                    {
+                        Connect(destItem, sourceItem);
+                    }
+
+                    // If source plug is an output, check if the destination attribute can
+                    // be connected as a source to the source plug.
+                    else if (previewLink->SourcePlug()->IsOutputAnchor() &&
+                             destItem->Attribute()->CanConnectSource(sourceItem->Attribute()))
+                    {
+                        Connect(sourceItem, destItem);
+                    }
+
+                    // If source plug is an input, is internal and belongs to the current
+                    // compound input, check if the dest attribute can receive it as a
+                    // source attribute.
+                    else if (previewLink->SourcePlug()->IsInputAnchor() &&
+                             sourceItem->Attribute()->IsInternal() &&
+                             sourceItem->ParentNode() == input &&
+                             destItem->Attribute()->CanConnectSource(sourceItem->Attribute()))
+                    {
+                        Connect(sourceItem, destItem);
+                    }
+
+                    // If source plug is an internal output of current compound, check if source
+                    // plug can receive dest as a connection.
+                    else if (previewLink->SourcePlug()->IsOutputAnchor() &&
+                             sourceItem->Attribute()->IsInternal() &&
+                             sourceItem->ParentNode() == output &&
+                             sourceItem->Attribute()->CanConnectSource(destItem->Attribute()))
+                    {
+                        Connect(destItem, sourceItem);
+                    }
+                }
+
+                else if (!sourceItem->IsMulti() && destItem->IsMulti())
+                {
+                    // Connect to next available index.
+                    bool connected = false;
+                    unsigned int maxIndex = 0;
+                    for (unsigned int index: destItem->Attribute()->ValidIndices())
+                    {
+                        Gex::AttributeWkPtr indexAttr = destItem->Attribute()->GetIndexAttribute(index);
+                        if (!indexAttr)
+                        {
+                            continue;
+                        }
+
+                        if (!indexAttr->HasSource())
+                        {
+                            indexAttr->ConnectSource(sourceItem->Attribute());
+                            connected = true;
+                            break;
+                        }
+                    }
+                    if (!connected)
+                    {
+                        unsigned int newIndex = Gex::Ui::NextMultiAttributeIndex(destItem->Attribute());
+                        if (destItem->Attribute()->CreateIndex(newIndex))
+                        {
+                            auto indexAttr = destItem->Attribute()->GetIndexAttribute(newIndex);
+                            indexAttr->ConnectSource(sourceItem->Attribute());
+
+                            // TODO : Rebuilding attributes should be available from attribute !
+                            auto *nodeItem = destItem->ParentNode();
+                            destItem->RebuildAttributes();
+                        }
+                    }
+                }
+            }
+        }
+
+        CurrentView()->scene()->removeItem(previewLink);
+        delete previewLink;
+        previewLink = nullptr;
+    }
+}
+
+
+
 Gex::Ui::NodeGraphView::NodeGraphView(NodeGraphScene* scene, QWidget* parent):
     BaseGraphView(scene, parent, true)
 {
     graphScene = scene;
 
-    QShortcut* shortcut_1 = new QShortcut(QKeySequence("1"), this);
+    GetEditors()->RegisterContext<ConnectionContext>("Connection");
+
+    auto* shortcut_1 = new QShortcut(QKeySequence("1"), this);
     QObject::connect(shortcut_1, &QShortcut::activated, this,
                      &NodeGraphView::SetSelectedNodesVisAll);
 
-    QShortcut* shortcut_2 = new QShortcut(QKeySequence("2"), this);
+    auto* shortcut_2 = new QShortcut(QKeySequence("2"), this);
     QObject::connect(shortcut_2, &QShortcut::activated, this,
                      &NodeGraphView::SetSelectedNodesVisSettable);
 
-    QShortcut* shortcut_3 = new QShortcut(QKeySequence("3"), this);
+    auto* shortcut_3 = new QShortcut(QKeySequence("3"), this);
     QObject::connect(shortcut_3, &QShortcut::activated, this,
                      &NodeGraphView::SetSelectedNodesVisConnected);
 
-    QShortcut* shortcut_4 = new QShortcut(QKeySequence("Ctrl+D"), this);
+    auto* shortcut_4 = new QShortcut(QKeySequence("Ctrl+D"), this);
     QObject::connect(shortcut_4, &QShortcut::activated, scene,
                      &NodeGraphScene::DuplicateSelectedNodesNoLinks);
 
-    QShortcut* shortcut_5 = new QShortcut(QKeySequence("Shift+D"), this);
+    auto* shortcut_5 = new QShortcut(QKeySequence("Shift+D"), this);
     QObject::connect(shortcut_5, &QShortcut::activated, scene,
                      &NodeGraphScene::DuplicateSelectedNodesAndLinks);
 
-    QShortcut* shortcut_6 = new QShortcut(QKeySequence("Ctrl+Shift+X"), this);
+    auto* shortcut_6 = new QShortcut(QKeySequence("Ctrl+Shift+X"), this);
     QObject::connect(shortcut_6, &QShortcut::activated, scene,
                      &NodeGraphScene::ConvertSelectedNodesToCompound);
 
-    QShortcut* shortcut_7 = new QShortcut(QKeySequence("Ctrl+E"), this);
+    auto* shortcut_7 = new QShortcut(QKeySequence("Ctrl+E"), this);
     QObject::connect(shortcut_7, &QShortcut::activated, this,
                      &NodeGraphView::ExportSelectedNodes);
 
-    QShortcut* shortcut_8 = new QShortcut(QKeySequence("Ctrl+Shift+E"), this);
+    auto* shortcut_8 = new QShortcut(QKeySequence("Ctrl+Shift+E"), this);
     QObject::connect(shortcut_8, &QShortcut::activated, this,
                      &NodeGraphView::ExportSelectedNodesAsCompound);
 }
@@ -3053,7 +3034,7 @@ void Gex::Ui::NodeGraphView::SetSelectedNodesVis(NodeItem::AttributeVisibilityMo
 {
     for (QGraphicsItem* item : scene()->selectedItems())
     {
-        NodeItem* node = qgraphicsitem_cast<NodeItem*>(item);
+        auto* node = qgraphicsitem_cast<NodeItem*>(item);
         if (!node)
         {
             continue;
@@ -3271,6 +3252,44 @@ void Gex::Ui::NodeGraphView::keyPressEvent(QKeyEvent* event)
 }
 
 
+void Gex::Ui::NodeGraphView::mousePressEvent(QMouseEvent *event)
+{
+    if (auto* pressedItem = scene()->itemAt(
+            mapToScene(event->pos()), QTransform())
+    )
+    {
+        if (auto* plugItem = dynamic_cast<PlugItem*>(pressedItem))
+        {
+            GetEditors()->SetCurrentContext("Connection");
+        }
+    }
+
+    BaseGraphView::mousePressEvent(event);
+}
+
+
+void Gex::Ui::NodeGraphView::mouseReleaseEvent(QMouseEvent *event)
+{
+    BaseGraphView::mouseReleaseEvent(event);
+
+    if (GetEditors()->CurrentContext() == "Connection")
+    {
+        GetEditors()->UnsetCurrentContext();
+    }
+}
+
+
+Gex::Ui::NodeItem* Gex::Ui::NodeGraphView::GetInput() const
+{
+    return graphScene->GetInput();
+}
+
+Gex::Ui::NodeItem* Gex::Ui::NodeGraphView::GetOutput() const
+{
+    return graphScene->GetOutput();
+}
+
+
 void Gex::Ui::NodeGraphView::ConnectCallback::DoIt()
 {
     scene->StartPlugLinking(plug);
@@ -3350,6 +3369,16 @@ void Gex::Ui::NodeGraphView::OnNodePlugClicked(NodePlugItem* plug)
     }
 
     plugMenu->deleteLater();
+}
+
+Gex::Ui::NodeItem* Gex::Ui::NodeGraphScene::GetInput() const
+{
+    return input;
+}
+
+Gex::Ui::NodeItem* Gex::Ui::NodeGraphScene::GetOutput() const
+{
+    return output;
 }
 
 
