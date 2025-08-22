@@ -9,6 +9,7 @@
 
 typedef std::mt19937 RGen;
 typedef std::uniform_int_distribution<> NormalDist;
+typedef std::uniform_real_distribution<double> DoubleDist;
 
 
 QImage ImageManip::Manip::RandomNoise(
@@ -876,4 +877,197 @@ QImage ImageManip::Manip::CircallyOrdered(
     painter.end();
 
     return res;
+}
+
+
+struct Vector
+{
+    float x;
+    float y;
+};
+
+
+double SmoothStep(double value)
+{
+    return 6 * std::pow(value, 5) - 15 * std::pow(value, 4) + 10 * std::pow(value, 3);
+}
+
+
+double Lerp(double v1, double v2, double t)
+{
+    return v1 + t * (v2 - v1);
+}
+
+
+
+std::vector<double> ImageManip::Manip::PerlinNoise(
+        int imageWidth,
+        int imageHeight,
+        int frequency,
+        int seed,
+        bool smooth,
+        bool debug
+)
+{
+
+    std::vector<double> perlin;
+
+    std::vector<std::vector<Types::Point>> meshVectors;
+
+    RGen gen(seed);
+
+    DoubleDist dist(-1, 1);
+
+    for (int x = 0; x < frequency + 1; x++)
+    {
+        std::vector<Types::Point> lineVectors;
+        for (int y = 0; y < frequency + 1; y++)
+        {
+            lineVectors.emplace_back(Types::Normalized({dist(gen), dist(gen)}));
+        }
+
+        meshVectors.push_back(lineVectors);
+    }
+
+    double gridWidth = (double)imageWidth / (double)frequency;
+    double gridHeight = (double)imageHeight / (double)frequency;
+
+    for (int y = 0; y < imageHeight; y++)
+    {
+        for (int x = 0; x < imageWidth; x++)
+        {
+            int gridX = (int)std::floor(x / gridWidth);
+            int gridY = (int)std::floor(y / gridHeight);
+
+            double cx = x; // + 0.5;
+            double cy = y; // + 0.5;
+
+            if (smooth)
+            {
+                cx += 0.5;
+                cy += 0.5;
+            }
+
+            Types::Point gridVectorTopLeft = meshVectors.at(gridX).at(gridY);
+            Types::Point gridVectorTopRight = meshVectors.at(gridX + 1).at(gridY);
+            Types::Point gridVectorBottomLeft = meshVectors.at(gridX).at(gridY + 1);
+            Types::Point gridVectorBottomRight = meshVectors.at(gridX + 1).at(gridY + 1);
+
+            Types::Point gridTopLeftToPoint = Types::Normalized({
+                    cx - (gridX * gridWidth),
+                    cy - (gridY * gridHeight)
+            });
+
+            Types::Point gridTopRightToPoint = Types::Normalized({
+                    cx - ((gridX + 1) * gridWidth),
+                    cy - (gridY * gridHeight)
+            });
+
+            Types::Point gridBottomLeftToPoint = Types::Normalized({
+                    cx - (gridX * gridWidth),
+                    cy - ((gridY + 1) * gridHeight)
+            });
+
+            Types::Point gridBottomRightToPoint = Types::Normalized({
+                    cx - ((gridX + 1) * gridWidth),
+                    cy - ((gridY + 1) * gridHeight)
+            });
+
+            double scalarTopLeft = ScalarProduct(
+                    gridVectorTopLeft,
+                    gridTopLeftToPoint
+            );
+
+            double scalarTopRight = ScalarProduct(
+                    gridVectorTopRight,
+                    gridTopRightToPoint
+            );
+
+            double scalarBottomLeft = ScalarProduct(
+                    gridVectorBottomLeft,
+                    gridBottomLeftToPoint
+            );
+
+            double scalarBottomRight = ScalarProduct(
+                    gridVectorBottomRight,
+                    gridBottomRightToPoint
+            );
+
+            double horizontalLerpFactor = SmoothStep((cx - gridX * gridWidth) / gridWidth);
+            double verticalLerpFactor = SmoothStep((cy - gridY * gridHeight) / gridHeight);
+
+            double horizontalLerp = Lerp(scalarTopLeft, scalarTopRight, horizontalLerpFactor);
+
+            double verticalLerp = Lerp(scalarBottomLeft, scalarBottomRight, horizontalLerpFactor);
+
+            double noise = Lerp(horizontalLerp, verticalLerp, verticalLerpFactor);
+
+            perlin.push_back(noise);
+        }
+    }
+
+    return perlin;
+}
+
+
+QImage ImageManip::Manip::FractalPerlinNoise(
+        int imageWidth,
+        int imageHeight,
+        int octave,
+        int frequency,
+        int octaveFrequencyFactor,
+        int seed
+)
+{
+//    int startFrequency = 8;
+//    int octaveFactor = 2;
+
+    NormalDist seedDist;
+    RGen gen(seed);
+
+    QImage perlinImage(imageWidth, imageHeight, QImage::Format_RGBA64);
+
+    std::vector<std::vector<double>> perlin;
+
+    int realOctave = octave; // * 10;
+
+    for (int i = 0; i < realOctave; i++)
+    {
+        auto octavePerlin = PerlinNoise(
+                imageWidth, imageHeight,
+                frequency + i * octaveFrequencyFactor * frequency,
+                seedDist(gen), true
+        );
+
+        perlin.push_back(octavePerlin);
+    }
+
+    for (int y = 0; y < imageHeight; y++)
+    {
+        for (int x = 0; x < imageHeight; x++)
+        {
+            double pixelPerlin = 0;
+
+            for (int f = 0; f < realOctave; f++)
+            {
+                pixelPerlin += perlin.at(f).at(y * imageWidth + x);
+            }
+
+            pixelPerlin = pixelPerlin / realOctave;
+
+            double c = 125.0;
+
+            QColor color(c + pixelPerlin * c,
+                         c + pixelPerlin * c,
+                         c + pixelPerlin * c,
+                         255);
+
+            perlinImage.setPixelColor(
+                    x, y, color
+
+            );
+        }
+    }
+
+    return perlinImage;
 }

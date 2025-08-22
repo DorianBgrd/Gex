@@ -43,6 +43,50 @@ bool ImageManip::Nodes::RandomNoise::Evaluate(
 }
 
 
+void ImageManip::Nodes::PerlinNoise::InitAttributes()
+{
+    ImageManip::Types::Resolution defaultRes = {1024, 1024};
+    CreateAttribute<ImageManip::Types::Resolution>(
+            "Resolution", Gex::AttrValueType::Single,
+            Gex::AttrType::Input)->SetDefaultValue(defaultRes);
+
+    CreateAttribute<int>("Frequency", Gex::AttrValueType::Single,
+                         Gex::AttrType::Input)->SetDefaultValue(10);
+
+    CreateAttribute<int>("Octave", Gex::AttrValueType::Single,
+                         Gex::AttrType::Input)->SetDefaultValue(5);
+
+    CreateAttribute<int>("OctaveFrequencyFactor", Gex::AttrValueType::Single,
+                         Gex::AttrType::Input)->SetDefaultValue(2);
+
+    CreateAttribute<int>("Seed", Gex::AttrValueType::Single,
+                         Gex::AttrType::Input)->SetDefaultValue(1);
+
+    CreateAttribute<QImage>("Image", Gex::AttrValueType::Single,
+                            Gex::AttrType::Output);
+}
+
+
+bool ImageManip::Nodes::PerlinNoise::Evaluate(
+        Gex::NodeAttributeData &context,
+        Gex::GraphContext &graphContext,
+        Gex::NodeProfiler &profiler)
+{
+    auto res = context.GetAttribute("Resolution").GetValue<ImageManip::Types::Resolution>();
+    int seed = context.GetAttribute("Seed").GetValue<int>();
+    int frequency = context.GetAttribute("Frequency").GetValue<int>();
+    int octave = context.GetAttribute("Octave").GetValue<int>();
+    int octaveFrequencyFactor = context.GetAttribute("OctaveFrequencyFactor").GetValue<int>();
+
+    QImage noise = ImageManip::Manip::FractalPerlinNoise(
+            res.at(0), res.at(1), octave,
+            frequency, octaveFrequencyFactor, seed
+    );
+
+    return context.GetAttribute("Image").SetValue<QImage>(noise);
+}
+
+
 void ImageManip::Nodes::DelaunayNoise::InitAttributes()
 {
     ImageManip::Types::Resolution defaultRes = {1024, 1024};

@@ -25,6 +25,24 @@ namespace ImageManip::Nodes
     GENERATE_DEFAULT_BUILDER(RandomNoiseBuilder, RandomNoise)
 
 
+    class Plugin_API PerlinNoise: public Gex::Node
+    {
+        std::string Description() const override
+        {
+            return "Generate a perlin noise.";
+        }
+
+        void InitAttributes() override;
+
+        bool Evaluate(Gex::NodeAttributeData &context,
+                      Gex::GraphContext &graphContext,
+                      Gex::NodeProfiler &profiler)
+        override;
+    };
+
+    GENERATE_DEFAULT_BUILDER(PerlinNoiseBuilder, PerlinNoise)
+
+
     class Plugin_API DelaunayNoise: public Gex::Node
     {
         std::string Description() const override

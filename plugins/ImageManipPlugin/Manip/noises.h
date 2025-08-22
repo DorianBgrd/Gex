@@ -99,6 +99,25 @@ namespace ImageManip::Manip
                            int imageHeight,
                            int frequency,
                            int seed);
+
+
+    std::vector<double> PerlinNoise(
+            int imageWidth,
+            int imageHeight,
+            int frequency,
+            int seed,
+            bool smooth=true,
+            bool debug=false
+    );
+
+    QImage FractalPerlinNoise(
+            int imageWidth,
+            int imageHeight,
+            int octave,
+            int frequency,
+            int octaveFrequencyFactor,
+            int seed
+    );
 }
 
 
