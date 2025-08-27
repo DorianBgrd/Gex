@@ -115,6 +115,8 @@ namespace Gex
 
         std::string referencePath;
 
+        bool modified = false;
+
 	public:
         /**
          * Returns whether this node
@@ -474,7 +476,12 @@ namespace Gex
          */
         NodeAttributeData CreateEvalContext();
 
+    protected:
+        void SetModified();
+
     public:
+        bool IsModified() const;
+
         /**
          * Computes node.
          * @return bool success.

@@ -1290,9 +1290,21 @@ bool Gex::Attribute::_SetAnyValue(const std::any& value)
             return false;
         }
 
+        if (attributeNode)
+            if (!typeHandle->CompareValue(attributeAnyValue, dstval))
+            {
+                attributeNode->SetModified();
+            }
+
         attributeAnyValue = dstval;
         return true;
     }
+
+    if (attributeNode)
+        if (!typeHandle->CompareValue(attributeAnyValue, value))
+        {
+            attributeNode->SetModified();
+        }
 
     attributeAnyValue = value;
     return true;

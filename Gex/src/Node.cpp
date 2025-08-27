@@ -46,6 +46,7 @@ Gex::Node::Node(const NodePtr& parent_)
 {
     parent = parent_;
     nextId = 0;
+    modified = true;
 }
 
 
@@ -710,11 +711,11 @@ void Gex::Node::FactoryReset()
 
 bool Gex::Node::PullAttributes()
 {
-    bool result = true;
+    bool result = false;
     for (const auto& attr : attributes)
     {
-        if (!attr->Pull())
-            result = false;
+        if (attr->Pull())
+            result = true;
     }
 
     return result;
@@ -812,6 +813,18 @@ Gex::NodeAttributeData Gex::Node::CreateEvalContext()
 }
 
 
+void Gex::Node::SetModified()
+{
+    modified = true;
+}
+
+
+bool Gex::Node::IsModified() const
+{
+    return modified;
+}
+
+
 bool Gex::Node::Compute(GraphContext &context,
                         NodeProfiler& profiler)
 {
@@ -820,9 +833,17 @@ bool Gex::Node::Compute(GraphContext &context,
     profiler.StopEvent(pullp);
 
     NodeAttributeData evalContext = CreateEvalContext();
-
     auto evalp = profiler.StartEvent("Compute::Evaluate");
-    bool success = Evaluate(evalContext, context, profiler);
+
+    bool success = true;
+    if  (modified)
+    {
+        success = Evaluate(evalContext, context, profiler);
+
+        if (success)
+            modified = false;
+    }
+
     profiler.StopEvent(evalp);
 
     return success;
