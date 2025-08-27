@@ -1473,8 +1473,8 @@ void Gex::Attribute::Serialize(rapidjson::Value& value, rapidjson::Document& doc
         {
             if (typeHandle)
             {
-                rapidjson::Value& resultArrayValue = rapidjson::Value().SetArray();
-                typeHandle->SerializeValue(GetAnyValue(), resultArrayValue, doc);
+                rapidjson::Value resultAttrValue;
+                typeHandle->SerializeValue(GetAnyValue(), resultAttrValue, doc);
 
                 rapidjson::Value attributeValueKey(rapidjson::kStringType);
                 attributeValueKey.SetString(
@@ -1482,7 +1482,7 @@ void Gex::Attribute::Serialize(rapidjson::Value& value, rapidjson::Document& doc
                         doc.GetAllocator()
                 );
 
-                value.AddMember(attributeValueKey.Move(), resultArrayValue, doc.GetAllocator());
+                value.AddMember(attributeValueKey.Move(), resultAttrValue, doc.GetAllocator());
             }
         }
     }
