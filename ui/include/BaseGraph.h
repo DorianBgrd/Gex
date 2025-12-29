@@ -98,6 +98,7 @@ namespace Gex::Ui
     {
         bool zooming = false;
         QPointF zoomingPos;
+        Qt::ContextMenuPolicy policy;
 
         bool AcceptBaseEvents() const override;
 
