@@ -13,12 +13,15 @@
 namespace Gex::Ui
 {
     class ViewerRegistry;
+    class NodeUiRegistry;
     class ViewerCreator;
 
     class GEX_UI_API UiPluginLoader
     {
         UiTSys::UiTypeEngine* engine;
         ViewerRegistry* registry;
+        NodeUiRegistry* nodeUiRegistry = nullptr;
+
         std::string pluginPath;
 
         static bool initialized;
@@ -68,6 +71,11 @@ namespace Gex::Ui
         {
             RegisterNodeViewer(type, new C());
         }
+
+        void RegisterNodeIcon(const std::string& type,
+                              const QIcon& icon);
+
+        QIcon GetNodeIcon(const std::string& type);
 
         static bool Initialize();
     };

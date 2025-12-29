@@ -31,6 +31,10 @@ namespace Gex
     class ScheduledNode;
     class NodeEvaluator;
 
+    class ParentAttributesListener;
+    class CompoundInputs;
+    class CompoundOutputs;
+
 
     class GEX_API GraphContext
     {
@@ -54,6 +58,7 @@ namespace Gex
         ChildNodeRemoved,
         AttributeAdded,
         AttributeRemoved,
+        ParentChanged,
         Deleted
     };
 
@@ -70,6 +75,7 @@ namespace Gex
 		friend NodeAttributeData;
         friend EvaluationContext;
         friend NodeEvaluator;
+        friend ParentAttributesListener;
 
         bool initializing;
         bool isEditable = true;
@@ -78,12 +84,12 @@ namespace Gex
         /**
          * Starts node initialization.
          */
-        void StartInitialization();
+        virtual void StartInitialization();
 
         /**
          * Ends node initialization.
          */
-        void EndInitialization();
+        virtual void EndInitialization();
 
 		std::string nodeName;
         std::string typeName;
@@ -250,9 +256,9 @@ namespace Gex
          * @param Attribute attr: attribute.
          * @return bool success.
          */
-		bool AddAttribute(const AttributePtr& attr);
+		virtual bool AddAttribute(const AttributePtr& attr);
 
-        bool RemoveAttribute(const AttributePtr& attr);
+        virtual bool RemoveAttribute(const AttributePtr& attr);
 
         /**
          * Default constructor.
@@ -610,6 +616,9 @@ namespace Gex
 
         NodeList nodes;
 
+        NodePtr inputs;
+        NodePtr outputs;
+
 	public:
         explicit
         CompoundNode(const NodePtr& parent=nullptr);
@@ -648,6 +657,15 @@ namespace Gex
 
     private:
         virtual bool _AddNode(const NodePtr& node);
+
+    protected:
+        void StartInitialization() override;
+
+        void EndInitialization() override;
+
+        bool AddAttribute(const AttributePtr& attr) override;
+
+        bool RemoveAttribute(const AttributePtr& attr) override;
 
     public:
         /**
@@ -709,19 +727,6 @@ namespace Gex
          */
         virtual bool HasNode(const std::string& node) const;
 
-        /**
-         * Returns top level internal attributes.
-         * @return std::vector<Attribute*> internal attributes.
-         */
-        AttributeList InternalAttributes() const;
-
-        /**
-         * Returns all internal attributes, including child / indices
-         * attributes.
-         * @return std::vector<Attribute*> internal attributes.
-         */
-        AttributeList AllInternalAttributes() const;
-
     private:
 
         /**
@@ -776,10 +781,6 @@ namespace Gex
     public:
         bool PostCompute(GraphContext &context,
                          NodeProfiler& profiler);
-
-    protected:
-
-        void PullInternalOutputs();
 
     public:
         void AttributeChanged(const AttributePtr& attr, const AttributeChange& change) override;
@@ -843,6 +844,35 @@ namespace Gex
 
         static CompoundNodePtr FromNode(const NodeWkPtr& node);
 	};
+
+
+    class GEX_API CompoundInputs: public Node
+    {
+        std::string Type() const override
+        {
+            return "CompoundInputs";
+        }
+
+        bool Evaluate(NodeAttributeData &ctx,
+                      GraphContext &graphContext,
+                      NodeProfiler& profiler)
+        override;
+    };
+
+
+    class GEX_API CompoundOutputs: public Node
+    {
+        std::string Type() const override
+        {
+            return "CompoundOutputs";
+        }
+
+        bool Evaluate(NodeAttributeData &ctx,
+                      GraphContext &graphContext,
+                      NodeProfiler& profiler)
+        override;
+    };
+
 
     typedef std::function<bool(Gex::NodePtr node)> TraversalCallback;
 

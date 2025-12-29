@@ -41,6 +41,7 @@ namespace Gex
         class LinkItem;
         class NodeItem;
         class AttributeItem;
+        class GraphWidget;
 
         class GEX_UI_API PlugItem: public QGraphicsEllipseItem
         {
@@ -279,6 +280,19 @@ namespace Gex
         };
 
 
+        class NodeIconItem: public QGraphicsEllipseItem
+        {
+            QIcon nodeIcon;
+
+        public:
+            NodeIconItem(const QIcon& icon, QGraphicsItem* parent=nullptr);
+
+            void paint(QPainter *painter,
+                       const QStyleOptionGraphicsItem *option,
+                       QWidget *widget=nullptr) override;
+        };
+
+
         class GEX_UI_API NodeItem: public QGraphicsObject
         {
             friend AttributeItem;
@@ -287,6 +301,7 @@ namespace Gex
             QVector<AttributeItem*> attributes;
             QVector<AttributeItem*> allAttributes;
             Gex::NodePtr node;
+            NodeIconItem* iconItem;
             NodePlugItem* sourcePlug;
             NodePlugItem* destPlug;
             NodeNameItem* title;
@@ -295,6 +310,7 @@ namespace Gex
             bool showInternal = false;
             QColor customBorderColor;
             bool userCustomBorderColor = false;
+            qreal titleHeight;
             qreal attributesY;
 
             Gex::CallbackId cbIndex;
@@ -796,11 +812,13 @@ namespace Gex
             Q_OBJECT
 
             NodeGraphScene* graphScene;
+            GraphWidget* graphWidget;
         public:
 //            NodeGraphView(const NodeGraphView& other);
 
             explicit
-            NodeGraphView(NodeGraphScene* scene, QWidget* parent=nullptr);
+            NodeGraphView(NodeGraphScene* scene,
+                          GraphWidget* graph);
 
         protected:
             struct ConnectCallback: public QObject
@@ -830,6 +848,8 @@ namespace Gex
             void ExportSelectedNodesAsCompound();
 
             QMenu* GetMenu() override;
+
+            void CreateExtraAttribute();
 
             void keyPressEvent(QKeyEvent* event) override;
 

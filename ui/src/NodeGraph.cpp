@@ -6,6 +6,7 @@
 
 #include "ui/include/AttributeEditor.h"
 #include "ui/include/Commands.h"
+#include "ui/include/NodeUiRegistry.h"
 
 #include <array>
 
@@ -902,6 +903,36 @@ bool Gex::Ui::NodePlugItem::IsOutputAnchor() const
     return (!isInput);
 }
 
+
+Gex::Ui::NodeIconItem::NodeIconItem(
+        const QIcon& icon,
+        QGraphicsItem* parent
+): QGraphicsEllipseItem(parent)
+{
+    nodeIcon = icon;
+}
+
+
+void Gex::Ui::NodeIconItem::paint(
+        QPainter *painter,
+        const QStyleOptionGraphicsItem *option,
+        QWidget *widget
+)
+{
+    QGraphicsEllipseItem::paint(painter, option, widget);
+
+    if (!nodeIcon.isNull())
+    {
+        nodeIcon.paint(
+                painter, QGraphicsEllipseItem::boundingRect().toRect().adjusted(2, 2, -4, -4),
+                Qt::AlignCenter, QIcon::Mode::Normal,
+                QIcon::State::Off
+        );
+    }
+}
+
+
+
 qreal Gex::Ui::NodeItem::defaultCompTitleOffset = 15;
 qreal Gex::Ui::NodeItem::defaultWidth = 100;
 qreal Gex::Ui::NodeItem::defaultSpacing = 10;
@@ -971,6 +1002,16 @@ Gex::Ui::NodeItem::NodeItem(Gex::NodePtr node_,
 {
     node = node_;
     graphScene = sc;
+
+    auto icon = NodeUiRegistry::GetRegistry()->GetNodeIcon(node->Type());
+
+    iconItem = new NodeIconItem(icon, this);
+    iconItem->setPen(Qt::NoPen);
+    iconItem->setBrush(QBrush(QColor("#383838")));
+    iconItem->setRect(0, 0, 35, 35);
+    iconItem->setPos(-40, 10);
+    iconItem->setVisible(!icon.isNull());
+
     sourcePlug = new NodePlugItem(this, true);
     sourcePlug->setRect(PLUG_RECT);
     sourcePlug->setPos(-PLUG_RECT.width(), 0);
@@ -1029,8 +1070,12 @@ Gex::Ui::NodeItem::NodeItem(Gex::NodePtr node_,
         )
     );
 
-    attributesY = (title->boundingRect().height() +
-            type->boundingRect().height() + 5);
+    titleHeight = (
+            title->boundingRect().height() +
+            type->boundingRect().height() + 5
+    );
+
+    attributesY = titleHeight + 10;
 
     CreateAttributes();
 
@@ -1059,6 +1104,12 @@ void Gex::Ui::NodeItem::ConnectToNode()
             change == AttributeChange::Disconnected)
             if (AttributeItem* attr = GetAttribute(attribute))
                 attr->InitializeLinks();
+
+        if (change == AttributeChange::AttributeAdded ||
+            change == AttributeChange::AttributeRemoved)
+        {
+            RebuildAttributes();
+        }
 
         Gex::AttributeWkPtr attrWeak = attribute;
         this->graphScene->OnNodeModified(this->node, attrWeak, change);
@@ -1186,20 +1237,10 @@ void Gex::Ui::NodeItem::PlaceAttributes()
         case AttributeVisibilityMode::All:
             for (auto* attr : attributes)
             {
-                if (!attr->Attribute()->IsExternal())
-                {
-                    attr->Collapse();
-                    attr->setVisible(false);
-                    attr->SetTextVisibility(false);
-                    attr->setPos(0, 0);
-                }
-                else
-                {
-                    attr->setVisible(true);
-                    attr->SetTextVisibility(true);
-                    attr->setPos(0, posY);
-                    posY += attr->TotalHeight() + DefaultSpacing();
-                }
+                attr->setVisible(true);
+                attr->SetTextVisibility(true);
+                attr->setPos(0, posY);
+                posY += attr->TotalHeight() + DefaultSpacing();
             }
 
             sourcePlug->setVisible(false);
@@ -1269,8 +1310,7 @@ void Gex::Ui::NodeItem::PlaceAttributes()
             for (auto* attr : attributes)
             {
                 if (attr->Attribute()->IsInput() ||
-                    attr->Attribute()->IsStatic() ||
-                    !attr->Attribute()->IsExternal())
+                    attr->Attribute()->IsStatic())
                 {
                     attr->setVisible(true);
                     attr->SetTextVisibility(true);
@@ -1299,8 +1339,7 @@ void Gex::Ui::NodeItem::PlaceAttributes()
             for (auto* attr : attributes)
             {
                 if (attr->Attribute()->IsOutput() ||
-                    attr->Attribute()->IsStatic() ||
-                    !attr->Attribute()->IsExternal())
+                    attr->Attribute()->IsStatic())
                 {
                     attr->setVisible(true);
                     attr->SetTextVisibility(true);
@@ -1321,50 +1360,6 @@ void Gex::Ui::NodeItem::PlaceAttributes()
                     {
                         skippedOutput = true;
                     }
-                }
-            }
-            break;
-
-        case AttributeVisibilityMode::OnlyInternalInputs:
-            for (auto* attr : attributes)
-            {
-                if (attr->Attribute()->IsInternal() &&
-                    (attr->Attribute()->IsInput() ||
-                     attr->Attribute()->IsStatic()))
-                {
-                    attr->setVisible(true);
-                    attr->SetTextVisibility(true);
-                    attr->setPos(0, posY);
-                    posY += attr->TotalHeight() + DefaultSpacing();
-                }
-                else
-                {
-                    attr->Collapse();
-                    attr->setVisible(false);
-                    attr->SetTextVisibility(false);
-                    attr->setPos(0, 0);
-                }
-            }
-            break;
-
-        case AttributeVisibilityMode::OnlyInternalOutputs:
-            for (auto* attr : attributes)
-            {
-                if (attr->Attribute()->IsInternal() &&
-                    (attr->Attribute()->IsOutput() &&
-                     !attr->Attribute()->IsStatic()))
-                {
-                    attr->setVisible(true);
-                    attr->SetTextVisibility(true);
-                    attr->setPos(0, posY);
-                    posY += attr->TotalHeight() + DefaultSpacing();
-                }
-                else
-                {
-                    attr->Collapse();
-                    attr->setVisible(false);
-                    attr->SetTextVisibility(false);
-                    attr->setPos(0, 0);
                 }
             }
             break;
@@ -1459,9 +1454,6 @@ QSize Gex::Ui::NodeItem::AdjustedSize() const
         case AttributeVisibilityMode::All:
             for (auto* attr : attributes)
             {
-                if (!attr->Attribute()->IsExternal())
-                    continue;
-
                 height += attr->TotalHeight() + defaultSpacing;
             }
             break;
@@ -1490,8 +1482,7 @@ QSize Gex::Ui::NodeItem::AdjustedSize() const
             for (auto* attr : attributes)
             {
                 if (attr->Attribute()->IsInput() ||
-                    attr->Attribute()->IsStatic() ||
-                    !attr->Attribute()->IsExternal())
+                    attr->Attribute()->IsStatic())
                 {
                     height += attr->TotalHeight() + defaultSpacing;
                 }
@@ -1501,30 +1492,7 @@ QSize Gex::Ui::NodeItem::AdjustedSize() const
             for (auto* attr : attributes)
             {
                 if (attr->Attribute()->IsOutput() ||
-                    !attr->Attribute()->IsStatic() ||
-                    !attr->Attribute()->IsExternal())
-                {
-                    height += attr->TotalHeight() + defaultSpacing;
-                }
-            }
-            break;
-        case AttributeVisibilityMode::OnlyInternalInputs:
-            for (auto* attr : attributes)
-            {
-                if (attr->Attribute()->IsInternal() &&
-                    (attr->Attribute()->IsInput() ||
-                     attr->Attribute()->IsStatic()))
-                {
-                    height += attr->TotalHeight() + defaultSpacing;
-                }
-            }
-            break;
-        case AttributeVisibilityMode::OnlyInternalOutputs:
-            for (auto* attr : attributes)
-            {
-                if (attr->Attribute()->IsInternal() &&
-                    (attr->Attribute()->IsOutput() &&
-                     !attr->Attribute()->IsStatic()))
+                    !attr->Attribute()->IsStatic())
                 {
                     height += attr->TotalHeight() + defaultSpacing;
                 }
@@ -1553,24 +1521,8 @@ QRectF Gex::Ui::NodeItem::boundingRect() const
 
 void Gex::Ui::NodeItem::SavePosition(QPointF pos)
 {
-    if (IsShowingInternal())
-    {
-        if (attrVisMode == AttributeVisibilityMode::OnlyInternalInputs)
-        {
-            node->SetMetadata("inputx", pos.x());
-            node->SetMetadata("inputy", pos.y());
-        }
-        else
-        {
-            node->SetMetadata("outputx", pos.x());
-            node->SetMetadata("outputy", pos.y());
-        }
-    }
-    else
-    {
-        node->SetMetadata("x", pos.x());
-        node->SetMetadata("y", pos.y());
-    }
+    node->SetMetadata("x", pos.x());
+    node->SetMetadata("y", pos.y());
 }
 
 
@@ -1579,24 +1531,9 @@ void Gex::Ui::NodeItem::RestorePosition()
     double x = 0;
     double y = 0;
     Feedback res;
-    if (IsShowingInternal())
-    {
-        if (attrVisMode == AttributeVisibilityMode::OnlyInternalInputs)
-        {
-            x = node->GetMetadata<double>("inputx", &res);
-            y = node->GetMetadata<double>("inputy", &res);
-        }
-        else
-        {
-            x = node->GetMetadata<double>("outputx", &res);
-            y = node->GetMetadata<double>("outputy", &res);
-        }
-    }
-    else
-    {
-        x = node->GetMetadata<double>("x", &res);
-        y = node->GetMetadata<double>("y", &res);
-    }
+
+    x = node->GetMetadata<double>("x", &res);
+    y = node->GetMetadata<double>("y", &res);
 
     if (!res)
         return;
@@ -1692,10 +1629,11 @@ bool Gex::Ui::NodeItem::HasCustomBorderColor() const
 
 
 void Gex::Ui::NodeItem::paint(QPainter *painter,
-                                        const QStyleOptionGraphicsItem *option,
-                                        QWidget *widget)
+                              const QStyleOptionGraphicsItem *option,
+                              QWidget *widget)
 {
     QRectF rect = boundingRect();
+    rect.setY(rect.y() + titleHeight);
 
     painter->save();
 
@@ -1718,11 +1656,10 @@ void Gex::Ui::NodeItem::paint(QPainter *painter,
         painter->setBrush(QBrush(border));
         painter->drawRoundedRect(rect, 5, 5);
 
-        QRectF inSet(rect);
-        inSet.setX(2);
-        inSet.setY(2);
-        inSet.setWidth(rect.width() - 4);
-        inSet.setHeight(rect.height() - 4);
+        QRectF inSet(rect.x() + 2, rect.y() + 2,
+                     rect.width() - 4,
+                     rect.height() - 4
+                     );
 
         painter->setBrush(QBrush(QColor("#383838")));
         painter->drawRoundedRect(inSet, 5, 5);
@@ -1776,26 +1713,6 @@ void Gex::Ui::NodeItem::ShowAsInternal(bool internal)
 bool Gex::Ui::NodeItem::IsShowingInternal() const
 {
     return showInternal;
-}
-
-
-void Gex::Ui::NodeItem::ShowAsInternalInput()
-{
-    ShowAsInternal(true);
-
-    internalTitle->setPlainText("(Inputs)");
-
-    SetAttributeVisibility(AttributeVisibilityMode::OnlyInternalInputs);
-}
-
-
-void Gex::Ui::NodeItem::ShowAsInternalOutput()
-{
-    ShowAsInternal(true);
-
-    internalTitle->setPlainText("(Outputs)");
-
-    SetAttributeVisibility(AttributeVisibilityMode::OnlyInternalOutputs);
 }
 
 
@@ -2725,14 +2642,6 @@ void Gex::Ui::NodeGraphScene::UpdateNode(Gex::NodePtr node)
     {
         nodeItem->RebuildAttributes();
     }
-    else if (node == graphContext->Compound())
-    {
-        input->RebuildAttributes();
-        input->ShowAsInternalInput();
-
-        output->RebuildAttributes();
-        output->ShowAsInternalOutput();
-    }
 }
 
 
@@ -2840,27 +2749,6 @@ void Gex::Ui::ConnectionContext::OnMoveEvent(QMouseEvent* event)
                     {
                         previewLink->SetState(PreviewLinkItem::State::Valid);
                     }
-
-                    // If source plug is an input, is internal and belongs to the current
-                    // compound input, check if the dest attribute can receive it as a
-                    // source attribute.
-                    else if (previewLink->SourcePlug()->IsInputAnchor() &&
-                             sourceItem->Attribute()->IsInternal() &&
-                             sourceItem->ParentNode() == input &&
-                             destItem->Attribute()->CanConnectSource(sourceItem->Attribute()))
-                    {
-                        previewLink->SetState(PreviewLinkItem::State::Valid);
-                    }
-
-                    // If source plug is an internal output of current compound, check if source
-                    // plug can receive dest as a connection.
-                    else if (previewLink->SourcePlug()->IsOutputAnchor() &&
-                             sourceItem->Attribute()->IsInternal() &&
-                             sourceItem->ParentNode() == output &&
-                             sourceItem->Attribute()->CanConnectSource(destItem->Attribute()))
-                    {
-                        previewLink->SetState(PreviewLinkItem::State::Valid);
-                    }
                     else
                     {
                         previewLink->SetState(PreviewLinkItem::State::Invalid);
@@ -2921,27 +2809,6 @@ void Gex::Ui::ConnectionContext::OnReleaseEvent(QMouseEvent* event)
                     {
                         Connect(sourceItem, destItem);
                     }
-
-                    // If source plug is an input, is internal and belongs to the current
-                    // compound input, check if the dest attribute can receive it as a
-                    // source attribute.
-                    else if (previewLink->SourcePlug()->IsInputAnchor() &&
-                             sourceItem->Attribute()->IsInternal() &&
-                             sourceItem->ParentNode() == input &&
-                             destItem->Attribute()->CanConnectSource(sourceItem->Attribute()))
-                    {
-                        Connect(sourceItem, destItem);
-                    }
-
-                    // If source plug is an internal output of current compound, check if source
-                    // plug can receive dest as a connection.
-                    else if (previewLink->SourcePlug()->IsOutputAnchor() &&
-                             sourceItem->Attribute()->IsInternal() &&
-                             sourceItem->ParentNode() == output &&
-                             sourceItem->Attribute()->CanConnectSource(destItem->Attribute()))
-                    {
-                        Connect(destItem, sourceItem);
-                    }
                 }
 
                 else if (!sourceItem->IsMulti() && destItem->IsMulti())
@@ -2989,10 +2856,11 @@ void Gex::Ui::ConnectionContext::OnReleaseEvent(QMouseEvent* event)
 
 
 
-Gex::Ui::NodeGraphView::NodeGraphView(NodeGraphScene* scene, QWidget* parent):
+Gex::Ui::NodeGraphView::NodeGraphView(NodeGraphScene* scene, GraphWidget* parent):
     BaseGraphView(scene, parent, true)
 {
     graphScene = scene;
+    graphWidget = parent;
 
     GetEditors()->RegisterContext<ConnectionContext>("Connection");
 
@@ -3194,7 +3062,7 @@ QMenu* Gex::Ui::NodeGraphView::GetMenu()
     {
         QMenu* customMenu = createMenu->addMenu("Compounds");
 
-        for (std::string type : references)
+        for (const std::string& type : references)
         {
             QString nodeType = type.c_str();
             QStringList tokens = nodeType.split(std::filesystem::path::preferred_separator);
@@ -3231,7 +3099,31 @@ QMenu* Gex::Ui::NodeGraphView::GetMenu()
         }
     }
 
+    QAction* action = new QAction(createMenu);
+    action->setText("Add attribute");
+    action->setIcon(
+        Res::UiRes::GetRes()->GetQtAwesome()->icon(
+            fa::fa_solid, fa::fa_plus
+        )
+    );
+
+    QObject::connect(action, &QAction::triggered, this,
+                     &NodeGraphView::CreateExtraAttribute);
+
+    createMenu->addAction(action);
+
     return createMenu;
+}
+
+
+void Gex::Ui::NodeGraphView::CreateExtraAttribute()
+{
+    auto* window = new ExtraAttributeDialog(
+            graphScene->CurrentContext()->Compound(),
+            graphWidget, this);
+
+    window->exec();
+    window->deleteLater();
 }
 
 
@@ -3405,21 +3297,6 @@ void Gex::Ui::NodeGraphScene::SwitchGraphContext(NodeGraphContext* context)
         nodeItems[node] = item;
 
         item->RestorePosition();
-    }
-
-    if (context->Compound())
-    {
-        auto cmpd = context->Compound();
-
-        input = new NodeItem(cmpd, this);
-        addItem(input);
-        input->ShowAsInternalInput();
-        input->RestorePosition();
-
-        output = new NodeItem(cmpd, this);
-        addItem(output);
-        output->ShowAsInternalOutput();
-        output->RestorePosition();
     }
 
     for (auto* item : nodeItems)
@@ -4017,7 +3894,7 @@ Gex::Ui::GraphWidget::GraphWidget(const Gex::CompoundNodePtr& graph_,
     viewLayout->addWidget(contextsWidget);
 
     scene = new NodeGraphScene(this);
-    view = new NodeGraphView(scene, viewWidget);
+    view = new NodeGraphView(scene, this);
     viewLayout->addWidget(view);
 
     QObject::connect(scene, &NodeGraphScene::NodePlugClicked,

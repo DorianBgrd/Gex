@@ -19,7 +19,6 @@
 
 Gex::Attribute::Attribute(): typeIndex(typeid(TSys::None))
 {
-    isInternal = false;
 	attributeAnyValue = std::make_any<TSys::None>(TSys::None());
 	attributeIsUserDefined = false;
 
@@ -43,7 +42,6 @@ Gex::Attribute::Attribute(const std::string& name, const std::any& v, const Attr
 			              const AttrType& type, bool userDefined, const NodePtr& node,
                           const AttributeWkPtr& parent): typeIndex(v.type())
 {
-    isInternal = false;
     attributeName = name;
     if (!parent)
         attributeLongname = name;
@@ -89,8 +87,6 @@ Gex::Attribute::Attribute(const std::string& name, const AttrType& type, bool mu
                           const AttributeWkPtr& parent):
                           typeIndex(typeid(TSys::None))
 {
-    isInternal = false;
-    isExternal = true;
     attributeNode = node;
     attributeName = name;
     if (!parent)
@@ -244,6 +240,15 @@ bool Gex::Attribute::SetDefaultAnyValue(const std::any& v)
 }
 
 
+bool Gex::Attribute::SetAttributeType(AttrType type)
+{
+    CHECK_EDITABLE_BOOL()
+
+    attributeType = type;
+    return true;
+}
+
+
 void Gex::Attribute::Reset()
 {
     CHECK_EDITABLE_SKIP()
@@ -324,38 +329,6 @@ bool Gex::Attribute::IsEditable() const
     }
 
     return attributeNode->IsEditable();
-}
-
-
-bool Gex::Attribute::IsInternal() const
-{
-    return isInternal;
-}
-
-
-bool Gex::Attribute::SetInternal(bool internal)
-{
-    if (!attributeIsUserDefined && !attributeNode.ToShared()->IsInitializing())
-        return false;
-
-    isInternal = internal;
-    return true;
-}
-
-
-bool Gex::Attribute::IsExternal() const
-{
-    return isExternal;
-}
-
-
-bool Gex::Attribute::SetExternal(bool external)
-{
-    if (!attributeIsUserDefined && !attributeNode.ToShared()->IsInitializing())
-        return false;
-
-    isExternal = external;
-    return true;
 }
 
 
@@ -757,15 +730,7 @@ bool  Gex::Attribute::_CanConnectSource(const AttributePtr& source)
     // if current node is an internal node.
     if (CompoundNodePtr sourceCmp = CompoundNode::FromNode(source->Node()))
     {
-        if (sourceCmp->HasNode(Node()))
-        {
-            if (!source->IsInternal())
-            {
-                return false;
-            }
-
-            return (source->IsInput() && IsInput());
-        }
+        return false;
     }
 
     // If current attribute is from a compound AND is internal, check
@@ -774,12 +739,7 @@ bool  Gex::Attribute::_CanConnectSource(const AttributePtr& source)
     {
         if (compound->HasNode(source->Node()))
         {
-            if (!IsInternal())
-            {
-                return false;
-            }
-
-            return (source->IsOutput() && IsOutput());
+            return false;
         }
     }
 
@@ -789,11 +749,6 @@ bool  Gex::Attribute::_CanConnectSource(const AttributePtr& source)
     }
 
     if (source->Node()->Parent() != Node()->Parent())
-    {
-        return false;
-    }
-
-    if (!isExternal)
     {
         return false;
     }
@@ -1193,7 +1148,7 @@ std::vector<Gex::AttributeWkPtr> Gex::Attribute::Dests()
 
 bool Gex::Attribute::ValueSet(const std::any& value)
 {
-    if (attributeType == AttrType::Output || !isExternal)
+    if (attributeType == AttrType::Output)
     {
         return false;
     }
@@ -1377,17 +1332,6 @@ void Gex::Attribute::SerializeAttribute(rapidjson::Value& value, rapidjson::Docu
 		resultValue.AddMember(attrChildrenKey.Move(), childAttributes.Move(), doc.GetAllocator());
 	}
 
-    if (IsInternal())
-    {
-        rapidjson::Value& attrInternalKey = rapidjson::Value().SetString(
-                Config::GetConfig().attributeInternalKey.c_str(),
-                doc.GetAllocator());
-
-        rapidjson::Value& attrInternalValue = rapidjson::Value().SetBool(true);
-        resultValue.AddMember(attrInternalKey.Move(), attrInternalValue.Move(),
-                              doc.GetAllocator());
-    }
-
 	rapidjson::Value& attributeNameKey = rapidjson::Value().SetString(
             attributeName.c_str(), doc.GetAllocator());
 	value.AddMember(attributeNameKey.Move(), resultValue.Move(), doc.GetAllocator());
@@ -1405,7 +1349,6 @@ Gex::AttributePtr Gex::Attribute::DeserializeAttribute(
 	
 	std::string attributeValueStr;
 
-	bool success = false;
 	size_t attributeValueHash;
     std::string apiTypeName;
 
@@ -1433,14 +1376,10 @@ Gex::AttributePtr Gex::Attribute::DeserializeAttribute(
 	}
 
 	auto result = std::make_shared<Attribute>(
-            name, attributeValueHash,
+            name, handler->InitValue(),
             valuetype, type, userDefined,
-            node, parent);
-
-    if (serialValues.HasMember(Config::GetConfig().attributeInternalKey.c_str()))
-    {
-        result->SetInternal(serialValues[Config::GetConfig().attributeInternalKey.c_str()].GetBool());
-    }
+            node, parent
+    );
 
 	if (serialValues.HasMember(Config::GetConfig().attributeChildrenKey.c_str()))
 	{
@@ -1609,12 +1548,6 @@ void Gex::Attribute::Deserialize(rapidjson::Value& value)
 			sub->Deserialize(value[Config::GetConfig().attributeChildrenKey.c_str()][atName.c_str()]);
 		}
 	}
-
-//    if  (value.HasMember(Config::GetConfig().attributeInternalKey.c_str()))
-//    {
-//        bool internal = value[Config::GetConfig().attributeInternalKey.c_str()].GetBool();
-//        SetInternal(internal);
-//    }
 }
 
 

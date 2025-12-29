@@ -98,10 +98,30 @@ class CompoundNodeBuilder: public Gex::NodeBuilder
 };
 
 
+class CompoundInputsBuilder: public Gex::NodeBuilder
+{
+    Gex::Node* CreateNode() const
+    {
+        return new Gex::CompoundInputs();
+    }
+};
+
+
+class CompoundOutputsBuilder: public Gex::NodeBuilder
+{
+    Gex::Node* CreateNode() const
+    {
+        return new Gex::CompoundOutputs();
+    }
+};
+
+
 Gex::NodeFactory::NodeFactory()
 {
     defaultBuilder = nullptr;
     RegisterNodeBuilder("CompoundNode", new CompoundNodeBuilder());
+    RegisterNodeBuilder("CompoundInputs", new CompoundInputsBuilder());
+    RegisterNodeBuilder("CompoundOutputs", new CompoundOutputsBuilder());
 }
 
 

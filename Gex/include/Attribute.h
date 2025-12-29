@@ -68,8 +68,6 @@ namespace Gex
 		std::string attributeName;
 		std::string attributeLongname;
 		bool attributeIsUserDefined;
-        bool isInternal = false;
-        bool isExternal = true;
 		AttrValueType attributeValueType;
 		AttrType attributeType;
 
@@ -199,6 +197,8 @@ namespace Gex
         }
 
         bool SetDefaultAnyValue(const std::any& value);
+
+        bool SetAttributeType(AttrType type);
 
     public:
         /**
@@ -330,38 +330,6 @@ namespace Gex
          * @return bool is editable.
          */
         virtual bool IsEditable() const;
-
-        /**
-         * Returns whether attribute is a compound node
-         * internal attribute.
-         * An internal attribute cannot be accessed from
-         * outside a compound node, but only from the
-         * inside.
-         * @return attribute is internal.
-         */
-        bool IsInternal() const;
-
-        /**
-         * Sets attribute as internal.
-         * @param internal: internal  state.
-         */
-        bool SetInternal(bool internal);
-
-        /**
-         * Returns zhether attribute is external.
-         * All attributes are external by default, and
-         * may be set from the outside. A non external
-         * attribute may only be set from the Evaluate
-         * node method.
-         * @return attribute is external.
-         */
-        bool IsExternal() const;
-
-        /**
-         * Sets attribute as external.
-         * @param external: external  state.
-         */
-        bool SetExternal(bool external);
 
     public:
         /**
