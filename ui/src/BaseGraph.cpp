@@ -265,12 +265,16 @@ bool Gex::Ui::MoveContext::AcceptBaseEvents() const
 void Gex::Ui::MoveContext::Setup(BaseGraphView* view)
 {
     CurrentView()->setCursor(Qt::OpenHandCursor);
+    policy = CurrentView()->contextMenuPolicy();
+
+    CurrentView()->setContextMenuPolicy(Qt::NoContextMenu);
 }
 
 
 void Gex::Ui::MoveContext::Finalize(BaseGraphView *scene)
 {
     scene->unsetCursor();
+    CurrentView()->setContextMenuPolicy(policy);
 }
 
 
@@ -314,6 +318,8 @@ void Gex::Ui::MoveContext::OnReleaseEvent(QMouseEvent* event)
     {
         CurrentView()->unsetCursor();
     }
+
+    zooming = false;
 }
 
 
@@ -657,7 +663,7 @@ void Gex::Ui::BaseGraphView::wheelEvent(QWheelEvent* event)
 
 void Gex::Ui::BaseGraphView::keyPressEvent(QKeyEvent* event)
 {
-    if (event->key() == Qt::Key_Space)
+    if (event->key() == Qt::Key_Alt)
     {
         if (!event->isAutoRepeat())
         {
@@ -674,8 +680,7 @@ void Gex::Ui::BaseGraphView::keyPressEvent(QKeyEvent* event)
 
 void Gex::Ui::BaseGraphView::keyReleaseEvent(QKeyEvent* event)
 {
-    std::cout<< "key release" << std::endl;
-    if (event->key() == Qt::Key_Space)
+    if (event->key() == Qt::Key_Alt)
     {
         if (!event->isAutoRepeat())
         {
