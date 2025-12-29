@@ -246,11 +246,6 @@ void Gex::Ui::ExtraAttributeDialog::Setup()
     multi->setText("Multi");
     vtypeLayout->addWidget(multi);
 
-    internal = new QCheckBox(this);
-    internal->setText("Internal");
-    internal->setVisible(targetNode->IsCompound());
-    vtypeLayout->addWidget(internal);
-
     auto* typeLayout = new QHBoxLayout();
     typeLayout->setContentsMargins(0, 0, 0, 0);
     layout->addLayout(typeLayout);
@@ -341,12 +336,11 @@ void Gex::Ui::ExtraAttributeDialog::CreateAttribute()
     if (multi->isChecked())
         valueType = Gex::AttrValueType::Multi;
 
-    if (targetNode->IsCompound() && internal->isChecked())
+    if (targetNode->IsCompound())
     {
         auto compound = Gex::CompoundNode::FromNode(targetNode);
         auto at = compound->CreateAttributeFromValue(attributeName->text().toStdString(),
                                                      value, valueType, attrType);
-        at->SetInternal(true);
 
     }
     else
