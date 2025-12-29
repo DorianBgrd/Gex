@@ -5,6 +5,36 @@
 #include <stdlib.h>
 
 
+Gex::AttributePtr Gex::Utils::CopyAttribute(
+        const AttributePtr& attr,
+        const NodePtr& destinationNode,
+        std::function<void(AttributePtr)> editor
+)
+{
+    auto copy = attr->Copy(attr->Name(), destinationNode);
+
+    if (editor)
+    {
+        editor(copy);
+    }
+
+    if (attr->IsHolder())
+    {
+        for (const auto& childAttribute : attr->GetChildAttributes())
+        {
+            auto childCopy = CopyAttribute(
+                childAttribute.ToShared(),
+                destinationNode, editor
+            );
+
+            copy->AddChildAttribute(childCopy);
+        }
+    }
+
+    return copy;
+}
+
+
 std::string Gex::Utils::ValidateName(const std::string& name)
 {
     size_t p = std::string::npos;
