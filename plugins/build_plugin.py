@@ -8,7 +8,8 @@ import argparse
 
 def build_config(name, plugin, ptype="C++",
                  env=None, python_env=None,
-                 python_path=None):
+                 python_path=None,
+                 required_plugins=None):
     config = {
         "name": name,
         "plugin": plugin,
@@ -19,10 +20,13 @@ def build_config(name, plugin, ptype="C++",
         config["env"] = env
 
     if python_env:
-        config["python_env"] = python_env
+        config["python-env"] = python_env
 
     if python_path:
         config["python-path"] = python_path
+
+    if required_plugins:
+        config["required-plugin"] = required_plugins
 
     return config
 
@@ -30,10 +34,12 @@ def build_config(name, plugin, ptype="C++",
 def build_plugin_file(directory, name, plugin,
                       ptype="C++", env=None,
                       python_env=None,
-                      python_path=None):
+                      python_path=None,
+                      required_plugins=None):
     config = build_config(name, plugin, ptype=ptype,
                           env=env, python_env=python_env,
-                          python_path=python_path)
+                          python_path=python_path,
+                          required_plugins=required_plugins)
 
     json_file = os.path.join(directory, "{}.json".format(name))
 
@@ -59,7 +65,8 @@ def search_file(filename, paths):
 def build_plugin(destination, name, plugin, plugin_file=None,
                  type="C++", scripts=None, env=None, python_env=None,
                  python_path=None, package=False, search_paths=None,
-                 libs=None, verbose=True, strict=False):
+                 libs=None, required_plugins=None,
+                 verbose=True, strict=False):
     default_paths = os.environ.get("path").split(os.pathsep)
     default_paths.extend(search_paths or [])
     default_paths.insert(0, "")
@@ -136,7 +143,8 @@ def build_plugin(destination, name, plugin, plugin_file=None,
     return build_plugin_file(dest_dir, name, rel_plugin_file,
                              ptype=type, env=env,
                              python_env=python_env,
-                             python_path=python_path)
+                             python_path=python_path,
+                             required_plugins=required_plugins)
 
 
 if __name__ == "__main__":
@@ -167,6 +175,9 @@ if __name__ == "__main__":
 
     parser.add_argument("-pp", "--python-path", type=str, nargs="*",
                         required=False, dest="python_path")
+
+    parser.add_argument("-rp", "--required-plugins", type=str, nargs="*",
+                        required=False, dest="required_plugins")
 
     parser.add_argument("-pc", "--package", action="store_true",
                         required=False, dest="package", default=False)
@@ -200,6 +211,7 @@ if __name__ == "__main__":
     libs = namespace.libs or []
     destination = namespace.destination
     scripts = namespace.scripts or []
+    required_plugins = namespace.required_plugins or []
 
     env = {}
     for k, v in env_args:
@@ -243,6 +255,9 @@ Environment :
 Python-Environment :
 {penv_str or '-'}
 
+-----------------------
+Required-plugins :
+{required_plugins or '-'}
 
 -----------------------
 Default lib search paths:
@@ -261,6 +276,7 @@ Libs :
     build_plugin(destination, name, plugin, plugin_file=plugin_file,
                  type=plugin_type, scripts=scripts, env=env,
                  python_env=python_env, python_path=python_path,
+                 required_plugins=required_plugins,
                  package=package, search_paths=search_paths,
                  libs=libs, verbose=True, strict=False)
 
