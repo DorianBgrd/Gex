@@ -1420,7 +1420,7 @@ void Gex::Attribute::Serialize(rapidjson::Value& value, rapidjson::Document& doc
         /*
          * Only serialize attribute that are not on default.
          */
-        if (!IsDefault())
+        if (!IsDefault() && !HasSource())
         {
             if (typeHandle)
             {
@@ -1495,14 +1495,21 @@ void Gex::Attribute::Serialize(rapidjson::Value& value, rapidjson::Document& doc
 
 void Gex::Attribute::Deserialize(rapidjson::Value& value)
 {
+    if (value.IsNull())
+        return;
+
 	if (value.HasMember(Config::GetConfig().attributeValueKey.c_str()))
 	{
-		std::any v = typeHandle->DeserializeValue(
-                attributeAnyValue,
-                value[Config::GetConfig().attributeValueKey.c_str()]
-        );
+        auto& attrValue = value[Config::GetConfig().attributeValueKey.c_str()];
 
-		attributeAnyValue = v;
+        if (!attrValue.IsNull())
+        {
+            attributeAnyValue = typeHandle->DeserializeValue(
+                    attributeAnyValue, attrValue
+
+            );
+        }
+
 	}
     else
     {
