@@ -47,6 +47,7 @@ add_subdirectory(ImageManipPlugin)
 add_subdirectory(InputRelPlugin)
 add_subdirectory(JsonPlugin)
 add_subdirectory(PythonPlugin)
+add_subdirectory(GeometryPlugin)
 
 # Usd plugin does not work in debug mode yet.
 #if (NOT ${CMAKE_BUILD_TYPE} STREQUAL "Debug")
@@ -55,3 +56,8 @@ add_subdirectory(UsdPlugin)
 #add_subdirectory(InputRel)
 #add_subdirectory(MayaInternalPlugin)
 #add_subdirectory(GraphPlugin)
+
+add_dependencies(
+        GeometryPlugin
+        MayaPlugin
+)
