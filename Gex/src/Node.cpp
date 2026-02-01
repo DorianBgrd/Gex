@@ -268,15 +268,26 @@ void Gex::Node::SetReferencePath(const std::string& path)
 }
 
 
-void Gex::Node::SignalChange(const NodeChange& change, const NodeWkPtr& node) const
+void Gex::Node::NodeChanged(const NodeChange& change,
+                            const NodeWkPtr& node)
+{
+
+}
+
+
+void Gex::Node::SignalChange(const NodeChange& change, const NodeWkPtr& node)
 {
     if (initializing)
         return;
+
+    NodeChanged(change, node);
 
     for (const auto& callback : changeCallbacks)
     {
         callback.second(change, node);
     }
+
+
 }
 
 
@@ -614,6 +625,9 @@ void Gex::Node::Serialize(rapidjson::Value& dict, rapidjson::Document& json) con
         if (!wkattr)
             continue;
 
+        if (!wkattr->IsInput() || wkattr->HasSource())
+            continue;
+
         rapidjson::Value& attrValue = rapidjson::Value(rapidjson::kObjectType).SetObject();
         if (wkattr->IsUserDefined())
         {
@@ -855,7 +869,7 @@ bool Gex::Node::Compute(GraphContext &context,
 }
 
 
-bool Gex::Node::Run(Profiler& profiler,
+bool Gex::Node::Run(const Profiler& profiler,
                     unsigned int threads,
                     NodeCallback nodeStarted,
                     NodeResCallback nodeDone,
@@ -884,6 +898,8 @@ bool Gex::Node::Run(Profiler& profiler,
             scheduledNodes, context, profiler,
             false, threads, nodeStarted,
             nodeDone, finalize);
+
+    evaluator->Reset();
 
     evaluator->Run();
 
@@ -1871,6 +1887,13 @@ void Gex::CompoundNode::AttributeChanged(const AttributePtr& attr, const Attribu
     {
         InvalidateScheduling();
     }
+}
+
+
+void Gex::CompoundNode::NodeChanged(const NodeChange& change,
+                                    const NodeWkPtr& node)
+{
+    InvalidateScheduling();
 }
 
 
