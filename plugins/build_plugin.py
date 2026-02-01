@@ -26,7 +26,7 @@ def build_config(name, plugin, ptype="C++",
         config["python-path"] = python_path
 
     if required_plugins:
-        config["required-plugin"] = required_plugins
+        config["required-plugins"] = required_plugins
 
     return config
 
