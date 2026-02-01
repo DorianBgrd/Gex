@@ -439,17 +439,6 @@ namespace Gex
             QList<QString> HiddenAttributes() const;
 
             void UpdateLinks();
-
-        protected:
-            void ShowAsInternal(bool internal);
-
-        public:
-            bool IsShowingInternal() const;
-
-        public:
-            void ShowAsInternalInput();
-
-            void ShowAsInternalOutput();
         };
 
 

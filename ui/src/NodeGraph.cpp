@@ -395,42 +395,6 @@ void Gex::Ui::AttributeItem::Initialize(Gex::AttributeWkPtr attr,
 }
 
 
-void Gex::Ui::AttributeItem::ShowAsInternal(bool internal)
-{
-    qreal plugY = (defaultHeight - plugRect.height())/2;
-    if (internal)
-    {
-        output->setPos(-plugRect.width(), plugY);
-        input->setPos(rect().width(), plugY);
-        if (attribute->IsStatic())
-        {
-            output->setVisible(false);
-        }
-    }
-    else
-    {
-        input->setPos(-plugRect.width(), plugY);
-        output->setPos(rect().width(), plugY);
-        if (attribute->IsStatic())
-        {
-            output->setVisible(true);
-        }
-    }
-
-    asInternal = internal;
-
-    for (auto* attr : indexedAttributes)
-    {
-        attr->ShowAsInternal(internal);
-    }
-
-    for (auto* attr : childAttributes)
-    {
-        attr->ShowAsInternal(internal);
-    }
-}
-
-
 Gex::Ui::NodeGraphScene* Gex::Ui::AttributeItem::GraphScene() const
 {
     if  (!parentNode)
@@ -924,7 +888,8 @@ void Gex::Ui::NodeIconItem::paint(
     if (!nodeIcon.isNull())
     {
         nodeIcon.paint(
-                painter, QGraphicsEllipseItem::boundingRect().toRect().adjusted(2, 2, -4, -4),
+                painter, QGraphicsEllipseItem::boundingRect()
+                .toRect().adjusted(5, 5, -5, -5),
                 Qt::AlignCenter, QIcon::Mode::Normal,
                 QIcon::State::Off
         );
@@ -1008,8 +973,8 @@ Gex::Ui::NodeItem::NodeItem(Gex::NodePtr node_,
     iconItem = new NodeIconItem(icon, this);
     iconItem->setPen(Qt::NoPen);
     iconItem->setBrush(QBrush(QColor("#383838")));
-    iconItem->setRect(0, 0, 35, 35);
-    iconItem->setPos(-40, 10);
+    iconItem->setRect(0, 0, 25, 25);
+    iconItem->setPos(-30, 15);
     iconItem->setVisible(!icon.isNull());
 
     sourcePlug = new NodePlugItem(this, true);
@@ -1696,23 +1661,6 @@ void Gex::Ui::NodeItem::UpdateLinks()
     {
         attr->UpdateLinks();
     }
-}
-
-
-void Gex::Ui::NodeItem::ShowAsInternal(bool internal)
-{
-    for (auto* attribute : attributes)
-    {
-        attribute->ShowAsInternal(internal);
-    }
-
-    showInternal = internal;
-}
-
-
-bool Gex::Ui::NodeItem::IsShowingInternal() const
-{
-    return showInternal;
 }
 
 
@@ -2526,7 +2474,7 @@ void Gex::Ui::NodeGraphScene::OnItemDoubleClicked(QGraphicsItem* item)
         return;
 
     auto node = Gex::CompoundNode::FromNode(nodeItem->Node());
-    if (!node || nodeItem->IsShowingInternal())
+    if (!node)
     {
         return;
     }
@@ -3020,25 +2968,38 @@ QMenu* Gex::Ui::NodeGraphView::GetMenu()
 {
     auto* createMenu = new QMenu();
 
+    auto* createNodeMenu = new QMenu(createMenu);
+    createNodeMenu->setTitle("Create node");
+    createNodeMenu->setIcon(
+        Res::UiRes::GetRes()->GetQtAwesome()->icon(
+            fa::fa_solid, fa::fa_plus_circle
+        )
+    );
+
+    createMenu->addMenu(createNodeMenu);
+
     QMap<QString, QMenu*> menus;
     for (std::string type : Gex::NodeFactory::GetFactory()->NodeTypes())
     {
         QString nodeType = type.c_str();
         QStringList tokens = nodeType.split("/");
 
-        QMenu* parent = createMenu;
+        QMenu* parent = createNodeMenu;
+
+        QString partialToken = "";
         if (tokens.length() > 1)
         {
             for (int i = 0; i < tokens.length() - 1; i++)
             {
                 QString token = tokens[i];
+                partialToken += "/" + token;
 
-                QMenu* curMenu = menus.value(token, nullptr);
+                QMenu* curMenu = menus.value(partialToken, nullptr);
                 if (!curMenu)
                 {
                     curMenu = parent->addMenu(token);
 //                    curMenu->setTitle(token);
-                    menus[token] = curMenu;
+                    menus[partialToken] = curMenu;
                 }
 
                 parent = curMenu;
@@ -3060,7 +3021,11 @@ QMenu* Gex::Ui::NodeGraphView::GetMenu()
     auto references = Gex::References::GetLoader()->GetAvailableReferences();
     if (!references.empty())
     {
-        QMenu* customMenu = createMenu->addMenu("Compounds");
+        QMenu* customMenu = createMenu->addMenu(
+            Res::UiRes::GetRes()->GetQtAwesome()->icon(
+                 fa::fa_solid, fa::fa_book_bookmark
+            ), "Compounds"
+        );
 
         for (const std::string& type : references)
         {
@@ -3103,7 +3068,7 @@ QMenu* Gex::Ui::NodeGraphView::GetMenu()
     action->setText("Add attribute");
     action->setIcon(
         Res::UiRes::GetRes()->GetQtAwesome()->icon(
-            fa::fa_solid, fa::fa_plus
+            fa::fa_solid, fa::fa_square_plus
         )
     );
 
@@ -3963,7 +3928,7 @@ Gex::Ui::GraphWidget::GraphWidget(const Gex::CompoundNodePtr& graph_,
                      this, &GraphWidget::InteractiveRun);
 
     QPushButton* settingsButton = toolbar->NewButton();
-    settingsButton->setIcon(Res::UiRes::GetRes()->GetQtAwesome()->icon(fa::fa_solid, fa::fa_cogs));
+    settingsButton->setIcon(Res::UiRes::GetRes()->GetQtAwesome()->icon(fa::fa_solid, fa::fa_sliders));
 
     auto* optionMenu = new QMenu(settingsButton);
 
