@@ -38,6 +38,7 @@ set(
         include/utils.h
         include/wraputils.h
         include/Wrappers.h
+        include/Commands.h
 )
 
 set(
@@ -91,6 +92,8 @@ set(
         src/Profiler_Wrap.cpp
         include/Wrappers.h
         src/Wrappers.cpp
+        include/Commands.h
+        src/Commands.cpp
 )
 
 
