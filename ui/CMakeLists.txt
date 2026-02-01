@@ -36,6 +36,7 @@ set(
         include/NodeViewer.h
         include/Timeline.h
         include/ViewContexts.h
+        include/NodeUiRegistry.h
 )
 
 add_library(
@@ -53,6 +54,7 @@ add_library(
         src/NodeViewer.cpp
         src/Timeline.cpp
         src/ViewContexts.cpp
+        src/NodeUiRegistry.cpp
 )
 
 add_compile_definitions(Gex_ui PRIVATE GEX_UI_API_EXPORT)
