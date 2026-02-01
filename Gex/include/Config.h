@@ -34,6 +34,8 @@ namespace Gex
         std::string compoundConnectionsKey = "Connections";
         std::string compoundPluginsKey = "Plugins";
         std::string compoundNodeTypes = "NodeTypes";
+        std::string compoundInputsKey = "CompoundInputs";
+        std::string compoundOutputsKey = "CompoundOutputs";
 
         std::string thisKey = "This";
 
@@ -43,6 +45,7 @@ namespace Gex
         std::string pluginConfEnvKey = "env";
         std::string pluginConfPyEnvKey = "python-env";
         std::string pluginConfPyPathKey = "python-path";
+        std::string pluginConfRequiredPluginsKey = "required-plugins";
 
         static Config GetConfig();
     };
