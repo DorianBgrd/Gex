@@ -247,7 +247,7 @@ namespace Gex
         bool DeregisterNodeChangedCallback(
                 CallbackId index);
 
-        void SignalChange(const NodeChange& change, const NodeWkPtr& node) const;
+        void SignalChange(const NodeChange& change, const NodeWkPtr& node);
 
     protected:
 		// Adds attribute to node.
@@ -304,6 +304,9 @@ namespace Gex
          */
         virtual void AttributeChanged(const AttributePtr& attribute,
                                       const AttributeChange& change);
+
+        virtual void NodeChanged(const NodeChange& change,
+                                 const NodeWkPtr& node);
 
 	public:
 		// Destructor.
@@ -513,7 +516,7 @@ namespace Gex
          *  evaluation is done.
          * @return
          */
-        bool Run(Profiler& profile, unsigned int threads=1,
+        bool Run(const Profiler& profile, unsigned int threads=1,
                  NodeCallback nodeStarted=nullptr,
                  NodeResCallback nodeDone=nullptr,
                  GraphCtxCallback evalDone=nullptr);
@@ -784,6 +787,8 @@ namespace Gex
 
     public:
         void AttributeChanged(const AttributePtr& attr, const AttributeChange& change) override;
+
+        void NodeChanged(const NodeChange& change, const NodeWkPtr& node) override;
 
         ScheduleNodePtrList ToScheduledNodes() override;
 
