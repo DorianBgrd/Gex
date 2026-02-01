@@ -1,4 +1,4 @@
-#ifndef GEX_PLUGINLOADER_WRAP_H
+#ifndef GEX_PLUGINLOADER_H
 #define GEX_PLUGINLOADER_H
 
 #include <string>
@@ -81,4 +81,4 @@ namespace Gex::Ui
     };
 }
 
-#endif //GEX_PLUGINLOADER_WRAP_H
+#endif //GEX_PLUGINLOADER_H
