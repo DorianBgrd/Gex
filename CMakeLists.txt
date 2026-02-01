@@ -8,6 +8,8 @@ add_definitions(/DGEX_API_EXPORT)
 set(BOOST_DIR $ENV{BOOST_DIR})
 
 set(Boost_USE_STATIC_LIBS OFF)
+set(Boost_USE_DEBUG_PYTHON ON)
+set(Boost_DEBUG ON)
 
 set(CMAKE_INSTALL_PREFIX ${CMAKE_BINARY_DIR}/install)
 
@@ -24,11 +26,13 @@ elseif (DEFINED ENV{Python_DEBUG})
     message(STATUS "Python_DEBUG variable is set to ${Python_DEBUG} (From environment)")
     set(Impl_Python_DEBUG $ENV{Python_DEBUG})
 else()
-    set(Impl_Python_DEBUG ON)
+    set(Impl_Python_DEBUG OFF)
 endif()
 
 if (NOT ${Impl_Python_DEBUG})
     set(Python_LINK_LIBRARIES ${Python_LIBRARY_RELEASE})
+#    set(Boost_USE_DEBUG_PYTHON OFF)
+
     message(STATUS "Forced using python release libraries")
 else()
     set(Python_LINK_LIBRARIES ${Python_LIBRARIES})
@@ -36,6 +40,7 @@ endif()
 
 find_package(Boost 1.82.0 COMPONENTS python311 REQUIRED)
 
+message(STATUS "Boost libraries : ${Boost_LIBRARIES}")
 
 string(TOLOWER ${CMAKE_BUILD_TYPE} BUILD_TYPE)
 
