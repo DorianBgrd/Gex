@@ -17,14 +17,14 @@ Gex::Ui::NodeUiRegistry* Gex::Ui::NodeUiRegistry::GetRegistry()
 Gex::Ui::NodeUiRegistry::NodeUiRegistry()
 {
     RegisterNodeIcon(
-            "Inputs",
+            "CompoundInputs",
             Res::UiRes::GetRes()->GetQtAwesome()->icon(
                     fa::fa_solid, fa::fa_arrow_right_to_bracket
             )
     );
 
     RegisterNodeIcon(
-            "Outputs",
+            "CompoundOutputs",
             Res::UiRes::GetRes()->GetQtAwesome()->icon(
                     fa::fa_solid, fa::fa_arrow_right_from_bracket
             )
