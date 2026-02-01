@@ -390,6 +390,48 @@ Gex::PluginLoader* Gex::PluginLoader::LoadPlugin(
         return nullptr;
     }
 
+    if (dict.HasMember(conf.pluginConfRequiredPluginsKey.c_str()))
+    {
+        rapidjson::Value& requiredPlugins = dict[conf.pluginConfRequiredPluginsKey.c_str()];
+
+        std::vector<std::string> requiredPluginNames;
+
+        if (requiredPlugins.IsString())
+        {
+            requiredPluginNames = {requiredPlugins.GetString()};
+        }
+
+        else if (requiredPlugins.IsArray())
+        {
+            for (unsigned int i = 0; i < requiredPlugins.Size(); i++)
+            {
+                requiredPluginNames.emplace_back(
+                        requiredPlugins[i].GetString()
+                );
+            }
+        }
+
+        for (auto localPlugin : requiredPluginNames)
+        {
+            Feedback localFeedback;
+
+            LoadPlugin(localPlugin, &localFeedback);
+
+            if (!localFeedback)
+            {
+                result->Set(
+                    Status::Failed,
+                    ("Could not load plugin " +
+                     pluginFile + " : required plugin " +
+                     localPlugin + " could not be loaded.")
+                );
+
+                return nullptr;
+            }
+        }
+
+    }
+
     std::string start = pluginPath.parent_path().string();
 
     std::string pluginPilePath = ToAbsolutePath(dict[conf.pluginConfPlugKey.c_str()].GetString(), start);
