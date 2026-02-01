@@ -59,5 +59,5 @@ add_subdirectory(UsdPlugin)
 
 add_dependencies(
         GeometryPlugin
-        MayaPlugin
+        MathPlugin
 )
