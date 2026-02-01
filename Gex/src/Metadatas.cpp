@@ -43,7 +43,7 @@ Gex::JsonValue Gex::NodeMetadata::Serialize(JsonDoc& doc) const
                 mv.first.c_str(), doc.GetAllocator());
         JsonValue& type = rapidjson::Value(rapidjson::kStringType).SetString(
                 handler->ApiName().c_str(), doc.GetAllocator());
-        JsonValue& value = rapidjson::Value().SetArray();
+        JsonValue value;
 
         handler->SerializeValue(anyval, value, doc);
 
