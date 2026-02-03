@@ -670,6 +670,18 @@ namespace Gex
 
         bool RemoveAttribute(const AttributePtr& attr) override;
 
+        virtual Gex::NodePtr CreateCompoundInputs() const;
+
+        virtual void EditCompoundInputs(const Gex::NodePtr& inputs);
+
+        virtual Gex::NodePtr CreateCompoundOutputs() const;
+
+        virtual void EditCompoundOutputs(const Gex::NodePtr& outputs);
+
+        Gex::NodePtr GetInputs() const;
+
+        Gex::NodePtr GetOutputs() const;
+
     public:
         /**
          * Adds node pointer as internal node.
@@ -740,6 +752,7 @@ namespace Gex
          * @return bool: success.
          */
         virtual bool PreEvaluate(NodeAttributeData& ctx,
+                                 NodeAttributeData& inputCtx,
                                  GraphContext &graphContext,
                                  NodeProfiler& profiler);
 
@@ -778,6 +791,7 @@ namespace Gex
          * @return bool: success.
          */
         virtual bool PostEvaluate(NodeAttributeData& ctx,
+                                  NodeAttributeData& outputCtx,
                                   GraphContext &graphContext,
                                   NodeProfiler& profiler);
 

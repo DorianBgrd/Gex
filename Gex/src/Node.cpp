@@ -1066,17 +1066,52 @@ bool Gex::CompoundNode::_AddNode(const NodePtr& node)
 }
 
 
+Gex::NodePtr Gex::CompoundNode::CreateCompoundInputs() const
+{
+    return std::make_shared<Gex::CompoundInputs>();
+}
+
+
+void Gex::CompoundNode::EditCompoundInputs(const Gex::NodePtr& inputs)
+{
+
+}
+
+
+Gex::NodePtr Gex::CompoundNode::CreateCompoundOutputs() const
+{
+    return std::make_shared<Gex::CompoundOutputs>();
+}
+
+
+void Gex::CompoundNode::EditCompoundOutputs(const Gex::NodePtr& outputs)
+{
+
+}
+
+
+Gex::NodePtr Gex::CompoundNode::GetInputs() const
+{
+    return inputs;
+}
+
+Gex::NodePtr Gex::CompoundNode::GetOutputs() const
+{
+    return outputs;
+}
+
+
 void Gex::CompoundNode::StartInitialization()
 {
     Gex::Node::StartInitialization();
 
-    inputs = std::make_shared<CompoundInputs>();
+    inputs = CreateCompoundInputs();
     inputs->SetName("Inputs");
     inputs->SetType("CompoundInputs");
     inputs->SetParent(shared_from_this());
     inputs->StartInitialization();
 
-    outputs = std::make_shared<CompoundOutputs>();
+    outputs = CreateCompoundOutputs();
     outputs->SetName("Outputs");
     outputs->SetType("CompoundOutputs");
     outputs->SetParent(shared_from_this());
@@ -1869,7 +1904,7 @@ Gex::Feedback Gex::CompoundNode::CheckLoadStatus(rapidjson::Value& dict)
 
 
 bool Gex::CompoundNode::Evaluate(NodeAttributeData &ctx,
-                                 GraphContext &graphCtx,
+                                 GraphContext& graphCtx,
                                  NodeProfiler& profiler)
 {
     return true;
@@ -1904,25 +1939,6 @@ Gex::ScheduleNodePtrList Gex::CompoundNode::ToScheduledNodes()
     auto* preScheduleNode = new CompoundPreScheduledNode(shared_from_this());
     auto* postScheduleNode = new CompoundPostScheduledNode(shared_from_this());
 
-    // For scheduled nodes, if any has the current compound as input,
-    // replace it with preScheduled. Use postScheduled if they have
-    // output.
-    NodeWkPtr weakThis =weak_from_this();
-    for (const auto& schel : schelNodes)
-    {
-        auto srcs = schel->node->UpstreamNodes();
-        if (WkInVector(srcs, weakThis))
-        {
-            schel->previousNodes.emplace_back(preScheduleNode);
-        }
-
-        auto dsts = schel->node->DownstreamNodes();
-        if (WkInVector(dsts, weakThis))
-        {
-            schel->futureNodes.emplace_back(postScheduleNode);
-        }
-    }
-
     schelNodes.emplace(schelNodes.begin(), preScheduleNode);
     schelNodes.emplace_back(postScheduleNode);
 
@@ -1931,6 +1947,7 @@ Gex::ScheduleNodePtrList Gex::CompoundNode::ToScheduledNodes()
 
 
 bool Gex::CompoundNode::PreEvaluate(NodeAttributeData &ctx,
+                                    NodeAttributeData& inputCtx,
                                     GraphContext &graphContext,
                                     NodeProfiler& profiler)
 {
@@ -1942,11 +1959,13 @@ bool Gex::CompoundNode::PreCompute(GraphContext &context,
                                    NodeProfiler& profiler)
 {
     auto data = CreateEvalContext();
-    return PreEvaluate(data, context, profiler);
+    auto inputData = inputs->CreateEvalContext();
+    return PreEvaluate(data, inputData, context, profiler);
 }
 
 
 bool Gex::CompoundNode::PostEvaluate(NodeAttributeData &ctx,
+                                     NodeAttributeData& outputCtx,
                                      GraphContext &graphContext,
                                      NodeProfiler& profiler)
 {
@@ -1958,7 +1977,8 @@ bool Gex::CompoundNode::PostCompute(GraphContext &context,
                                    NodeProfiler& profiler)
 {
     auto data = CreateEvalContext();
-    return PostEvaluate(data, context, profiler);
+    auto outputData = outputs->CreateEvalContext();
+    return PostEvaluate(data, outputData, context, profiler);
 }
 
 
@@ -1966,18 +1986,29 @@ bool Gex::CompoundNode::Compute(GraphContext &context,
                                 NodeProfiler& profiler)
 {
     Pull();
+
+    if (!isScheduled)
+    {
+        Schedule();
+    }
+
     NodeAttributeData evalContext = CreateEvalContext();
-    if (!PreEvaluate(evalContext, context, profiler))
+    NodeAttributeData inputEvalContext = inputs->CreateEvalContext();
+    NodeAttributeData outputEvalContext = outputs->CreateEvalContext();
+    if (!PreEvaluate(evalContext, inputEvalContext,
+                     context, profiler))
     {
         return false;
     }
 
-    if (!Evaluate(evalContext, context, profiler))
+    if (!Evaluate(evalContext,
+                  context, profiler))
     {
         return false;
     }
 
-    return PostEvaluate(evalContext, context, profiler);
+    return PostEvaluate(evalContext, outputEvalContext,
+                        context, profiler);
 }
 
 
