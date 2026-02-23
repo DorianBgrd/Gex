@@ -115,16 +115,13 @@ void Gex::ScheduledNode::ReceiveEvaluated()
 }
 
 
-typedef std::unordered_map<Gex::NodePtr, Gex::ScheduledNode*> ScheduledNodesDict;
-
-
 typedef Gex::ScheduledNodePtr SchelNode;
 typedef std::vector<Gex::ScheduledNodePtr> SchelNodeList;
 typedef std::map<SchelNode, unsigned int> SchelNodeDict;
 typedef std::map<unsigned int, SchelNodeList> SchelNodeSortedDict;
 
 
-void ResolveNodesLevels(SchelNode node, SchelNodeDict& nodes, unsigned int level)
+void ResolveNodesLevels(const SchelNode& node, SchelNodeDict& nodes, unsigned int level)
 {
     if (nodes.find(node) != nodes.end())
     {
@@ -141,7 +138,7 @@ void ResolveNodesLevels(SchelNode node, SchelNodeDict& nodes, unsigned int level
 
     for (const auto& nextNode : node->futureNodes)
     {
-        ResolveNodesLevels(nextNode, nodes, level + 1);
+        ResolveNodesLevels(nextNode.ToShared(), nodes, level + 1);
     }
 }
 
@@ -224,8 +221,8 @@ Gex::ScheduleNodePtrList Gex::ScheduleNodes(const NodeList& nodes, bool expand)
             }
 
             auto scheclSrc = indx->second;
-            sn.second->previousNodes.push_back(scheclSrc);
-            scheclSrc->futureNodes.push_back(sn.second);
+            sn.second->previousNodes.emplace_back(scheclSrc);
+            scheclSrc->futureNodes.emplace_back(sn.second);
         }
     }
 
@@ -265,36 +262,44 @@ Gex::ScheduleNodePtrList Gex::ScheduleNodes(const NodeList& nodes, bool expand)
                 // Transform the compound to a series of scheduled nodes.
                 auto cmpSchels = lockedNode->ToScheduledNodes();
 
-                // Append resulting scheduled nodes from resulting scheduled.
-                scheduledNodes.insert(scheduledNodes.end(), cmpSchels.begin(), cmpSchels.end());
-
-                // Previous nodes of the first compound series node is the current
-                // node previous nodes.
-                cmpSchels.front()->previousNodes = n->previousNodes;
-
-                // Then, for each previous nodes of current node, remove it from
-                // their own future nodes and replace it with the first nodes from
-                // compound series.
-                for (const auto& src : n->previousNodes)
+                if (!cmpSchels.empty()) // Indicate that this compound node does not expand.
                 {
-                    auto srcindex = std::remove(src->futureNodes.begin(), src->futureNodes.end(), n);
-                    if (srcindex == src->futureNodes.end())
-                        continue;
+                    // Append resulting scheduled nodes from resulting scheduled.
+                    scheduledNodes.insert(scheduledNodes.end(), cmpSchels.begin(), cmpSchels.end());
 
-                    src->futureNodes.push_back(cmpSchels.front());
+                    // Previous nodes of the first compound series node is the current
+                    // node previous nodes.
+                    cmpSchels.front()->previousNodes = n->previousNodes;
+
+                    // Then, for each previous nodes of current node, remove it from
+                    // their own future nodes and replace it with the first nodes from
+                    // compound series.
+                    for (const auto& src : n->previousNodes)
+                    {
+                        auto srcindex = std::remove(src->futureNodes.begin(), src->futureNodes.end(), n);
+                        if (srcindex == src->futureNodes.end())
+                            continue;
+
+                        src->futureNodes.emplace_back(cmpSchels.front());
+                    }
+
+                    // Then, for each future nodes of current node, remove it from
+                    // their own previous nodes and replace it with the last nodes
+                    // from compound series.
+                    cmpSchels.back()->futureNodes = n->futureNodes;
+                    for (const auto& src : n->futureNodes)
+                    {
+                        auto dstindex = std::remove(src->previousNodes.begin(), src->previousNodes.end(), n);
+                        if (dstindex == src->previousNodes.end())
+                            continue;
+
+                        src->previousNodes.emplace_back(cmpSchels.back());
+                    }
                 }
 
-                // Then, for each future nodes of current node, remove it from
-                // their own previous nodes and replace it with the last nodes
-                // from compound series.
-                cmpSchels.back()->futureNodes = n->futureNodes;
-                for (const auto& src : n->futureNodes)
+                else
                 {
-                    auto dstindex = std::remove(src->previousNodes.begin(), src->previousNodes.end(), n);
-                    if (dstindex == src->previousNodes.end())
-                        continue;
-
-                    src->previousNodes.push_back(cmpSchels.back());
+                    scheduledNodes.push_back(n);
                 }
             }
             else
@@ -346,10 +351,11 @@ Gex::ScheduleNodePtrList Gex::SubScheduledNodes(const ScheduleNodePtrList& list,
         auto currentNode = (*iter);
         auto previousNodes = currentNode->previousNodes;
 
-        ScheduleNodePtrList newPreviousNodes;
+        ScheduleNodeWkPtrList newPreviousNodes;
         for (const auto& previousNode : previousNodes)
         {
-            if (search.find(previousNode) != search.end())
+            auto shared = previousNode.ToShared();
+            if (search.find(shared) != search.end())
             {
                 newPreviousNodes.push_back(previousNode);
             }
