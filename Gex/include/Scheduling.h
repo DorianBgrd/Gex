@@ -19,6 +19,8 @@ namespace Gex
         bool evaluated = false;
         bool success = false;
 
+        ScheduledNode() = default;
+
         explicit ScheduledNode(const NodeWkPtr& node);
 
         explicit ScheduledNode(const ScheduledNode& other);
