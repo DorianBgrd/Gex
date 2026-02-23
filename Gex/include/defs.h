@@ -33,7 +33,7 @@ namespace Gex
     typedef std::vector<NodePtr> NodeList;
     typedef std::vector<NodeWkPtr> NodeWkList;
     typedef std::shared_ptr<ScheduledNode> ScheduledNodePtr;
-    typedef std::shared_ptr<ScheduledNode> ScheduledNodeWkPtr;
+    typedef BaseWkPtr<ScheduledNode> ScheduledNodeWkPtr;
     typedef std::vector<std::shared_ptr<ScheduledNode>> ScheduleNodePtrList;
     typedef std::vector<ScheduledNodeWkPtr> ScheduleNodeWkPtrList;
 
