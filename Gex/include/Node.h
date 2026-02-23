@@ -561,6 +561,9 @@ namespace Gex
         virtual void Schedule();
 
     public:
+        ScheduleNodePtrList GetScheduledNodes();
+
+    public:
         ScheduledNodePtr ToScheduledNode();
 
         virtual ScheduleNodePtrList ToScheduledNodes();
