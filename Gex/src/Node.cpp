@@ -950,6 +950,12 @@ void Gex::Node::Schedule()
 }
 
 
+Gex::ScheduleNodePtrList Gex::Node::GetScheduledNodes()
+{
+    return scheduledNodes;
+}
+
+
 Gex::ScheduledNodePtr Gex::Node::ToScheduledNode()
 {
     return std::make_shared<ScheduledNode>(shared_from_this());
@@ -958,7 +964,7 @@ Gex::ScheduledNodePtr Gex::Node::ToScheduledNode()
 
 Gex::ScheduleNodePtrList Gex::Node::ToScheduledNodes()
 {
-    return {ToScheduledNode()};
+    return {};
 }
 
 
@@ -1205,6 +1211,10 @@ bool Gex::CompoundNode::RemoveAttribute(
 
 void Gex::CompoundNode::EndInitialization()
 {
+    EditCompoundInputs(inputs);
+
+    EditCompoundOutputs(outputs);
+
     Gex::Node::EndInitialization();
 
     inputs->EndInitialization();
@@ -1934,15 +1944,7 @@ void Gex::CompoundNode::NodeChanged(const NodeChange& change,
 
 Gex::ScheduleNodePtrList Gex::CompoundNode::ToScheduledNodes()
 {
-    auto schelNodes = Gex::ScheduleNodes(nodes);
-
-    auto* preScheduleNode = new CompoundPreScheduledNode(shared_from_this());
-    auto* postScheduleNode = new CompoundPostScheduledNode(shared_from_this());
-
-    schelNodes.emplace(schelNodes.begin(), preScheduleNode);
-    schelNodes.emplace_back(postScheduleNode);
-
-    return schelNodes;
+    return Gex::ScheduleNodes(nodes);
 }
 
 
@@ -1986,11 +1988,6 @@ bool Gex::CompoundNode::Compute(GraphContext &context,
                                 NodeProfiler& profiler)
 {
     Pull();
-
-    if (!isScheduled)
-    {
-        Schedule();
-    }
 
     NodeAttributeData evalContext = CreateEvalContext();
     NodeAttributeData inputEvalContext = inputs->CreateEvalContext();
