@@ -129,7 +129,7 @@ namespace Gex::Undo
 
 
     template<class T, typename... Args>
-    UndoPtr GEX_API CreateUndo(Args... args)
+    UndoPtr CreateUndo(Args... args)
     {
         return std::make_shared<T>(args...);
     }
