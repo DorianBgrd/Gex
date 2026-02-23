@@ -728,10 +728,10 @@ bool  Gex::Attribute::_CanConnectSource(const AttributePtr& source)
 {
     // If source attribute is from a compound AND is internal, check
     // if current node is an internal node.
-    if (CompoundNodePtr sourceCmp = CompoundNode::FromNode(source->Node()))
-    {
-        return false;
-    }
+//    if (CompoundNodePtr sourceCmp = CompoundNode::FromNode(source->Node()))
+//    {
+//        return false;
+//    }
 
     // If current attribute is from a compound AND is internal, check
     // if source node is an internal node.
