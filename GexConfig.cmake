@@ -31,8 +31,9 @@ set(
         ${GEX_THIRD_PARTIES_INCLUDES}
 )
 
+if (DEFINED )
 
-set(GEX_ROOT_LIBRARY_DIR ${CMAKE_CURRENT_LIST_DIR}/cmake-build-${LIB_BUILD_TYPE})
+set(GEX_ROOT_LIBRARY_DIR ${CMAKE_CURRENT_LIST_DIR}/cmake-build-${LIB_BUILD_TYPE}${BUILD_SUFFIX})
 
 
 set(
@@ -44,3 +45,15 @@ set(
 #        ${GEX_ROOT_LIBRARY_DIR}/ui
         ${GEX_THIRD_PARTIES_LIBRARY_DIRS}
 )
+
+set(
+        GEX_LIBRARIES
+
+        Gex
+        TSys
+        ${Boost_LIBRARIES}
+        ${Python_LINK_LIBRARIES}
+)
+
+
+message("-- Gex libraries : ${GEX_LIBRARIES}")

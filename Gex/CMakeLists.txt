@@ -146,7 +146,7 @@ target_link_libraries(
         PUBLIC
         ${Boost_LIBRARIES}
         ${Python_LINK_LIBRARIES}
-        TSys
+        ${TSYS_LIBRARIES}
 )
 
 
@@ -180,7 +180,7 @@ target_link_libraries(
         PUBLIC
         ${Boost_LIBRARIES}
         ${Python_LINK_LIBRARIES}
-        TSys_Static
+        ${TSYS_STATIC_LIBRARIES}
 )
 
 
