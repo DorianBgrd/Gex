@@ -10,7 +10,7 @@ SoftPython::PythonOutputPtr SoftPython::PythonOutput::instance;
 SoftPython::PythonOutputPtr SoftPython::PythonOutput::GetInstance()
 {
     if (!instance)
-        instance.reset(new PythonOutput());
+        instance = std::make_shared<PythonOutput>(PythonOutput());
 
     return instance;
 }
