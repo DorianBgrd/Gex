@@ -22,8 +22,14 @@ Gex::Ui::GraphView::GraphView(Gex::CompoundNodePtr graph_, QWidget* parent): QWi
     profileView = new ProfileView(this);
     tab->addTab(profileView, "Profiler");
 
+    scheduleViewer = new ScheduleViewer(this);
+    tab->addTab(scheduleViewer, "Scheduling");
+
     QObject::connect(graphView, &GraphWidget::GraphEvaluated,
                      profileView, &ProfileView::FromContext);
+
+    QObject::connect(graphView, &GraphWidget::ViewedGraphChanged,
+                     scheduleViewer, &ScheduleViewer::LoadCompound);
 }
 
 

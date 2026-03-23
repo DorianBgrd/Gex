@@ -7,6 +7,7 @@
 
 #include "ui/include/NodeGraph.h"
 #include "ui/include/ProfileViewer.h"
+#include "ui/include/ScheduleGraph.h"
 
 namespace Gex::Ui
 {
@@ -18,6 +19,7 @@ namespace Gex::Ui
         Gex::CompoundNodePtr graph;
         GraphWidget* graphView;
         ProfileView* profileView;
+        ScheduleViewer* scheduleViewer;
 
     public:
         GraphView(Gex::CompoundNodePtr graph,

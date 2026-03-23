@@ -988,6 +988,8 @@ namespace Gex
 
             Q_SIGNAL void SelectedNodeChanged(const Gex::NodeWkList& nodes);
 
+            Q_SIGNAL void ViewedGraphChanged(const Gex::NodeWkPtr& node);
+
             void Select(const Gex::NodeWkList& nodes, bool notify=true);
 
             Gex::NodeWkList CurrentSelection() const;

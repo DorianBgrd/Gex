@@ -4073,6 +4073,8 @@ void Gex::Ui::GraphWidget::SwitchGraph(const Gex::CompoundNodePtr& graph_)
     ClearContexts();
 
     Initialize();
+
+    Q_EMIT ViewedGraphChanged(graph);
 }
 
 
