@@ -244,11 +244,12 @@ endif()
 #        ${Qt_Deploy_Executable} ${Qt_DeployFlag} ${CMAKE_CURRENT_BINARY_DIR}/Gex_Software/bin/Gex_Software.exe
 #)
 
+if (${Build_UsdPlugin})
+    set(PXR_LIBRARY_DIR ${PXR_ROOT}/lib)
 
-set(PXR_LIBRARY_DIR ${PXR_ROOT}/lib)
-set(USD_PLUGIN_RELOC --add-extra-directory plugins ${CMAKE_BINARY_DIR}/plugins/UsdPlugin/UsdPlugin
-        --library-search-dir ${PXR_LIBRARY_DIR})
-
+    set(USD_PLUGIN_RELOC --add-extra-directory plugins ${CMAKE_BINARY_DIR}/plugins/UsdPlugin/UsdPlugin
+            --library-search-dir ${PXR_LIBRARY_DIR})
+endif()
 
 add_custom_target(
         Deploy
@@ -298,6 +299,7 @@ add_custom_target(
         --add-extra-directory plugins ${CMAKE_BINARY_DIR}/plugins/InputRelPlugin/InputRelPlugin
         --add-extra-directory plugins ${CMAKE_BINARY_DIR}/plugins/JsonPlugin/JsonPlugin
         --add-extra-directory plugins ${CMAKE_BINARY_DIR}/plugins/PythonPlugin/PythonPlugin
+        --add-extra-directory plugins ${CMAKE_BINARY_DIR}/plugins/GeometryPlugin/GeometryPlugin
         ${USD_PLUGIN_RELOC}
         #        --add-extra-directory plugins ${CMAKE_BINARY_DIR}/plugins/InputRel.dll
         #        --add-extra-directory plugins ${CMAKE_BINARY_DIR}/plugins/GraphPlugin/GraphPlugin.dll
