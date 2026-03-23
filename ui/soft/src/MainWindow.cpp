@@ -92,6 +92,16 @@ Gex::Editor::MainWindow::MainWindow(Gex::CompoundNodePtr graph_, std::string fil
 
     saveAction->setEnabled(!currentFile.empty());
 
+    auto* windowsMenu =  menu->addMenu("Windows");
+
+    windowsMenu->addAction(dock->toggleViewAction());
+    windowsMenu->addAction(timeline->toggleViewAction());
+    windowsMenu->addAction(interpreter->toggleViewAction());
+
+    dock->hide();
+    timeline->hide();
+    interpreter->hide();
+
     auto* pluginMenu = menu->addMenu("Plugins");
     pluginMenu->addAction("Load plugin", this, &MainWindow::LoadPlugin);
 
