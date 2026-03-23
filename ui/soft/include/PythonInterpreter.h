@@ -24,6 +24,23 @@ namespace GexSoftware
         void highlightBlock(const QString &text) override;
     };
 
+    class PythonInterpreter;
+
+    class PyOutputCallback: public QObject
+    {
+    Q_OBJECT
+        PythonInterpreter* edit;
+
+    public:
+        PyOutputCallback(GexSoftware::PythonInterpreter* interpreter,
+                         QObject* parent=nullptr);
+
+//        void Exec(const std::string& output) const;
+        Q_SIGNAL void SendEvent(const std::string& output);
+
+        void ReceiveEvent(const std::string& output);
+    };
+
     class SOFT_API PythonInterpreter: public QDockWidget
     {
         QTextEdit* read;

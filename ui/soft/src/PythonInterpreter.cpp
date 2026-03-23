@@ -164,6 +164,23 @@ void GexSoftware::PythonInterpreter::RunCurrentEditorCode()
 }
 
 
+GexSoftware::PyOutputCallback::PyOutputCallback(
+        PythonInterpreter* interpreter,
+        QObject* parent
+): QObject(parent)
+{
+        edit = interpreter;
+}
+
+
+void GexSoftware::PyOutputCallback::ReceiveEvent(
+        const std::string& output
+)
+{
+    Q_EMIT SendEvent(output);
+}
+
+
 void GexSoftware::PythonInterpreter::Initialize()
 {
     int res = PyRun_SimpleString("import SoftApi\n"
@@ -178,5 +195,15 @@ void GexSoftware::PythonInterpreter::Initialize()
 
     auto output = SoftPython::PythonOutput::GetInstance();
 
-    output->RegisterCallback([this](std::string msg){this->Write(msg);});
+    auto *callback = new PyOutputCallback(this, this);
+
+    auto cb = [callback](const std::string& content)
+    {
+        callback->ReceiveEvent(content);
+    };
+
+    QObject::connect(callback, &PyOutputCallback::SendEvent,
+                     this, &PythonInterpreter::Write);
+
+    output->RegisterCallback(cb);
 }
