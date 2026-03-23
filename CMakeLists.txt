@@ -74,8 +74,9 @@ add_dependencies(
 )
 
 #if (NOT ${CMAKE_BUILD_TYPE} STREQUAL "Debug")
-add_dependencies(
-        Gex_Software
-        UsdPlugin
-)
-#endif()
+if (${Build_UsdPlugin})
+    add_dependencies(
+            Gex_Software
+            UsdPlugin
+    )
+endif()
