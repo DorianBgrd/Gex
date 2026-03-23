@@ -435,34 +435,6 @@ bool Gex::Ui::BaseGraphView::DeleteMenuOnHide() const
 }
 
 
-QRect ItemsRect(QList<QGraphicsItem*> items)
-{
-    qreal minx = items[0]->sceneBoundingRect().topLeft().x();
-    qreal miny = items[0]->sceneBoundingRect().topLeft().y();
-    qreal maxx = items[0]->sceneBoundingRect().bottomRight().x();
-    qreal maxy = items[0]->sceneBoundingRect().bottomRight().y();
-    QList<QRectF> rects;
-    for (int i = 1; i < items.length(); i++)
-    {
-        QRectF boundingRect = items[i]->sceneBoundingRect();
-        qreal minx_ = boundingRect.topLeft().x();
-        qreal miny_ = boundingRect.topLeft().y();
-        qreal maxx_ = boundingRect.bottomRight().x();
-        qreal maxy_ = boundingRect.bottomRight().y();
-        if (minx_ < minx)
-            minx = minx_;
-        if (miny_ < miny)
-            miny = miny_;
-        if (maxx_ > maxx)
-            maxx = maxx_;
-        if (maxy_ > maxy)
-            maxy = maxy_;
-    }
-
-    return QRect(minx, miny, maxx - minx, maxy - miny);
-}
-
-
 void Gex::Ui::BaseGraphView::ViewUsedSceneRect()
 {
     QRect usedSceneRect;
@@ -473,7 +445,7 @@ void Gex::Ui::BaseGraphView::ViewUsedSceneRect()
         return;
     }
 
-    fitInView(ItemsRect(FilterSelectedItems(items_)), Qt::KeepAspectRatio);
+    fitInView(ItemsBoundingRect(FilterSelectedItems(items_)), Qt::KeepAspectRatio);
 }
 
 
@@ -486,7 +458,7 @@ void Gex::Ui::BaseGraphView::ViewSelectionSceneRect()
         return;
     }
 
-    fitInView(ItemsRect(FilterSelectedItems(selection)), Qt::KeepAspectRatio);
+    fitInView(ItemsBoundingRect(FilterSelectedItems(selection)), Qt::KeepAspectRatio);
 }
 
 
@@ -599,7 +571,7 @@ void Gex::Ui::BaseGraphView::ZoomOut()
 }
 
 
-QRectF UnitedRect(QList<QRectF> rects)
+QRectF Gex::Ui::BoundingRect(const QList<QRectF>& rects)
 {
     QRectF rect = rects[0];
 
@@ -609,6 +581,32 @@ QRectF UnitedRect(QList<QRectF> rects)
     }
 
     return rect;
+}
+
+
+QRectF Gex::Ui::Scaled(const QRectF& rect, qreal value)
+{
+    auto width = rect.width();
+    auto height = rect.height();
+
+    return {
+           rect.x() - (width * (value - 1.0) / 2.0),
+           rect.y() - (height * (value - 1.0) / 2.0),
+           width * value, height * value
+    };
+}
+
+
+QRectF Gex::Ui::ItemsBoundingRect(const QList<QGraphicsItem*>& items)
+{
+    QList<QRectF> rects;
+
+    for (const auto* item : items)
+    {
+        rects.append(item->sceneBoundingRect());
+    }
+
+    return Gex::Ui::BoundingRect(rects);
 }
 
 
@@ -624,7 +622,7 @@ void Gex::Ui::BaseGraphView::FrameSelection()
     if (rects.empty())
         return;
 
-    auto frameRect = UnitedRect(rects);
+    auto frameRect = BoundingRect(rects);
     fitInView(frameRect, Qt::KeepAspectRatio);
 }
 
@@ -641,7 +639,7 @@ void Gex::Ui::BaseGraphView::FrameAll()
     if (rects.empty())
         return;
 
-    auto frameRect = UnitedRect(rects);
+    auto frameRect = BoundingRect(rects);
     fitInView(frameRect, Qt::KeepAspectRatio);
 }
 
