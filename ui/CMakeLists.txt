@@ -37,6 +37,7 @@ set(
         include/Timeline.h
         include/ViewContexts.h
         include/NodeUiRegistry.h
+        include/ScheduleGraph.h
 )
 
 add_library(
@@ -55,6 +56,7 @@ add_library(
         src/Timeline.cpp
         src/ViewContexts.cpp
         src/NodeUiRegistry.cpp
+        src/ScheduleGraph.cpp
 )
 
 add_compile_definitions(Gex_ui PRIVATE GEX_UI_API_EXPORT)
