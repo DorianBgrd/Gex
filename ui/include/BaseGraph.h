@@ -161,6 +161,15 @@ namespace Gex::Ui
     };
 
 
+    QRectF ItemsBoundingRect(const QList<QGraphicsItem*>& items);
+
+
+    QRectF BoundingRect(const QList<QRectF>& rects);
+
+
+    QRectF Scaled(const QRectF& rect, qreal value);
+
+
     class GEX_UI_API BaseGraphView: public QGraphicsView
     {
         Q_OBJECT
