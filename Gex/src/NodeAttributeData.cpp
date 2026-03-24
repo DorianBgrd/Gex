@@ -58,6 +58,15 @@ std::any Gex::NodeAttributeData::GetAnyValue(Feedback* status)
 }
 
 
+TSys::TypeHandlerPtr Gex::NodeAttributeData::GetTypeHandle() const
+{
+    if (!attribute)
+        return {};
+
+    return attribute->TypeHandle();
+}
+
+
 bool Gex::NodeAttributeData::SetAnyValue(const std::any& value)
 {
     if(!attribute)

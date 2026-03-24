@@ -35,9 +35,9 @@ namespace Gex
     public:
         NodePtr GetNode() const;
 
-
         std::any GetAnyValue(Feedback* success=nullptr);
 
+        TSys::TypeHandlerPtr GetTypeHandle() const;
 
         template<class T> T GetValue(Feedback* success=nullptr) const
         {
@@ -67,6 +67,8 @@ namespace Gex
 
             return SetAnyValue(std::make_any<T>(value));
         }
+
+        bool SetnValue(boost::python::object value);
 
 
         std::vector<unsigned int> GetIndices(Feedback* status=nullptr);
