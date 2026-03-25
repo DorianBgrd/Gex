@@ -625,14 +625,15 @@ void Gex::Node::Serialize(rapidjson::Value& dict, rapidjson::Document& json) con
         if (!wkattr)
             continue;
 
-        if (!wkattr->IsInput() || wkattr->HasSource())
-            continue;
-
-        rapidjson::Value& attrValue = rapidjson::Value(rapidjson::kObjectType).SetObject();
         if (wkattr->IsUserDefined())
         {
             wkattr->SerializeAttribute(customAttrs, json);
         }
+
+        if (!wkattr->IsInput() || wkattr->HasSource())
+            continue;
+
+        rapidjson::Value& attrValue = rapidjson::Value(rapidjson::kObjectType).SetObject();
 
         wkattr->Serialize(attrValue, json);
 
