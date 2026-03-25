@@ -51,8 +51,9 @@ add_subdirectory(GeometryPlugin)
 
 # Usd plugin does not work in debug mode yet.
 #if (NOT ${CMAKE_BUILD_TYPE} STREQUAL "Debug")
-add_subdirectory(UsdPlugin)
-#endif()
+if (${Build_UsdPlugin})
+    add_subdirectory(UsdPlugin)
+endif()
 #add_subdirectory(InputRel)
 #add_subdirectory(MayaInternalPlugin)
 #add_subdirectory(GraphPlugin)
