@@ -115,6 +115,7 @@ add_custom_command(
         --python-path ./scripts
 
         --libs-search-path
+        ${CMAKE_BINARY_DIR}/plugins
         ${CMAKE_BINARY_DIR}/ui
         $ENV{UI_RES_DIR}/UiRes/cmake-build-${BUILD_TYPE}
         $ENV{UI_TSYS_DIR}/UiTSys/cmake-build-${BUILD_TYPE}
