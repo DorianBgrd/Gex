@@ -66,6 +66,6 @@ add_custom_command(
         --name InputRel --search_directories ${CMAKE_BINARY_DIR}/plugins ${BUILD_PACKAGE_DEPENDENCIES_DIRS} ${Boost_LIBRARY_DIRS}
         ${CMAKE_BINARY_DIR} ${CMAKE_CURRENT_BINARY_DIR} ${TSYS_LIBRARY_DIR} ${CMAKE_BINARY_DIR}/Gex
         --library ${CMAKE_BINARY_DIR}/plugins/InputRel_Python.dll
-        --dependencies Gex.dll InputRel.dll
+        --dependencies Gex.dll InputRelPlugin.dll
 )
 
