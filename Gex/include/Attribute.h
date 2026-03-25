@@ -635,6 +635,18 @@ namespace Gex
 			return ValueSet(std::make_any<T>(value));
 		}
 
+        template<class T>
+        bool IsOfType() const
+        {
+            return typeHandle->ManagesType<T>();
+        }
+
+        template<class T>
+        bool AcceptType() const
+        {
+            return typeHandle->CanConvertFrom<T>();
+        }
+
     private:
         std::any ValueGet(const std::type_info& dest, Feedback* status=nullptr) const;
 
