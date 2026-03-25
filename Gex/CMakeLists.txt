@@ -82,6 +82,8 @@ set(
         src/io_Wrap.cpp
         include/Node_Wrap.h
         src/Node_Wrap.cpp
+        include/NodeAttributeData_Wrap.h
+        src/NodeAttributeData_Wrap.cpp
         include/NodeFactory_Wrap.h
         src/NodeFactory_Wrap.cpp
         include/PluginLoader_Wrap.h
