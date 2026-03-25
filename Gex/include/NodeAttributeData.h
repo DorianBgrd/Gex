@@ -68,11 +68,9 @@ namespace Gex
             return SetAnyValue(std::make_any<T>(value));
         }
 
-        bool SetnValue(boost::python::object value);
-
+        bool SetValue(const boost::python::object& value);
 
         std::vector<unsigned int> GetIndices(Feedback* status=nullptr);
-
 
         bool CreateIndex(unsigned int index)
         {

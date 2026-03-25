@@ -78,6 +78,26 @@ bool Gex::NodeAttributeData::SetAnyValue(const std::any& value)
 }
 
 
+bool Gex::NodeAttributeData::SetValue(const boost::python::object& pyValue)
+{
+    auto typeHandle = GetTypeHandle();
+
+    if (!typeHandle)
+        return false;
+
+    try
+    {
+        return SetAnyValue(typeHandle->FromPython(pyValue));
+    }
+    catch (boost::python::error_already_set&)
+    {
+        PyErr_Print();
+        return false;
+    }
+
+}
+
+
 std::vector<unsigned int> Gex::NodeAttributeData::GetIndices(Feedback* status)
 {
     if (!attribute)
