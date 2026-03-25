@@ -162,11 +162,6 @@ namespace Gex::InputRel
     template<typename T>
     struct FuncWrapper: public TSys::TypeHandler
     {
-        virtual std::string PythonName() const override
-        {
-            return ApiName();
-        }
-
         void SerializeValue(const std::any& v, rapidjson::Value& value,
                             rapidjson::Document& document)
                             const override
