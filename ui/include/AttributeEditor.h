@@ -6,7 +6,7 @@
 #include "Gex/include/Gex.h"
 #include "BaseGraph.h"
 
-#include "UiTsys/include/uitsys.h"
+#include "UiTsys/uitsys.h"
 
 #include <QVector>
 #include <QWidget>

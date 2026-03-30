@@ -6,7 +6,7 @@
 #include "Gex/include/Gex.h"
 #include "jsonDefs.h"
 
-#include "Tsys/include/defaultTypes.h"
+#include "Tsys/defaultTypes.h"
 
 #include "editor.h"
 

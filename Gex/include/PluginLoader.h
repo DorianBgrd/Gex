@@ -8,7 +8,7 @@
 #include "api.h"
 #include "Status.h"
 #include "NodeFactory.h"
-#include "Tsys/include/tsys.h"
+#include "Tsys/tsys.h"
 
 
 #define PLUGIN_PATHS_ENV "GEX_PLUGIN_PATHS"

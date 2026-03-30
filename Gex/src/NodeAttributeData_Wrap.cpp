@@ -2,7 +2,7 @@
 
 #include "boost/python.hpp"
 
-#include "Tsys/include/defaultTypes.h"
+#include "Tsys/defaultTypes.h"
 
 
 bool Gex::Python::NodeAttributeData_Wrap::pythonRegistered = false;

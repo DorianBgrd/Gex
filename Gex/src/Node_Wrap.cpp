@@ -2,7 +2,7 @@
 #include "Gex/include/Node_Wrap.h"
 #include "Gex/include/Attribute.h"
 
-#include "Tsys/include/tsys.h"
+#include "Tsys/tsys.h"
 
 #include "Gex/include/wraputils.h"
 

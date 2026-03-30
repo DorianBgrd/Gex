@@ -7,7 +7,7 @@
 #include <QPointF>
 #include <QPolygon>
 
-#include "Tsys/include/tsys.h"
+#include "Tsys/tsys.h"
 
 
 #include "../export.h"

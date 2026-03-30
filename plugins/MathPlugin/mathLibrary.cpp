@@ -5,6 +5,9 @@
 #include <iostream>
 
 #include "Gex/include/Gex.h"
+#include "UiRes/uires.h"
+#include "ui/include/ui.h"
+#include "ui/include/PluginLoader.h"
 
 #include "../export.h"
 

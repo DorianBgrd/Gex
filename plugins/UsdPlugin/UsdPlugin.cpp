@@ -21,8 +21,8 @@
 #undef max
 #endif
 
-#include "Tsys/include/tsys.h"
-#include "Tsys/include/defaultTypes.h"
+#include "Tsys/tsys.h"
+#include "Tsys/defaultTypes.h"
 #include "Gex/include/Gex.h"
 
 #include <filesystem>

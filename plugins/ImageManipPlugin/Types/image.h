@@ -1,7 +1,7 @@
 #ifndef GEX_IMAGE_H
 #define GEX_IMAGE_H
 
-#include "Tsys/include/tsys.h"
+#include "Tsys/tsys.h"
 #include <QPixmap>
 
 #include "../export.h"

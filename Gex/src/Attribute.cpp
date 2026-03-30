@@ -5,8 +5,8 @@
 #include "rapidjson/prettywriter.h"
 #include "Gex/include/Config.h"
 
-#include "Tsys/include/tsys.h"
-#include "Tsys/include/defaultTypes.h"
+#include "Tsys/tsys.h"
+#include "Tsys/defaultTypes.h"
 
 #include <boost/container_hash/hash.hpp>
 

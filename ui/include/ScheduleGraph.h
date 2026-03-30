@@ -16,7 +16,7 @@
 
 #include "Gex/include/Gex.h"
 #include "ui/include/BaseGraph.h"
-#include "UiRes/include/uires.h"
+#include "UiRes/uires.h"
 
 namespace Gex::Ui
 {

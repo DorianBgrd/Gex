@@ -9,8 +9,7 @@
 #include "Gex/include/PluginLoader.h"
 #include "Gex/include/UndoCommands.h"
 
-#include "Tsys/include/tsys.h"
-#include "Tsys/include/defaultTypes.h"
+#include "Tsys/tsys.h"
 
 #include <iterator>
 #include <filesystem>

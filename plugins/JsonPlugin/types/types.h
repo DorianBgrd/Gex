@@ -4,7 +4,7 @@
 #include <memory>
 #include <vector>
 
-#include "Tsys/include/tsys.h"
+#include "Tsys/tsys.h"
 #include "rapidjson/document.h"
 
 #include "jsonDefs.h"

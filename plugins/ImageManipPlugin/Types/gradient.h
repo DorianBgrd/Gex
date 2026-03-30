@@ -4,7 +4,7 @@
 #include <map>
 #include <QColor>
 
-#include "Tsys/include/tsys.h"
+#include "Tsys/tsys.h"
 
 
 #include "../export.h"

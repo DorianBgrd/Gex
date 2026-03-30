@@ -83,7 +83,12 @@ add_custom_command(
         --library-search-dir $ENV{UI_RES_DIR}/UiRes/cmake-build-${BUILD_TYPE}
         --library-search-dir $ENV{UI_TSYS_DIR}/UiTSys/cmake-build-${BUILD_TYPE}
         --library-search-dir ${CMAKE_BINARY_DIR}
+        --library-search-dir ${Tsys_LIBRARY_DIRS}
+        --library-search-dir ${UiRes_LIBRARY_DIRS}
+        --library-search-dir ${UiTsys_LIBRARY_DIRS}
 
         --library ${CMAKE_BINARY_DIR}/Gex/Gex.dll
-        --library ${TSYS_LIBRARY_DIR}/TSys.dll
+        --library Tsys
+        --library UiTsys
+        --library UiRes
 )

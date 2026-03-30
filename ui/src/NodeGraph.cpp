@@ -1,8 +1,8 @@
 #include "Gex/include/Config.h"
 #include "ui/include/NodeGraph.h"
 
-#include "UiTsys/include/uitsys.h"
-#include "UiRes/include/uires.h"
+#include "UiTsys/uitsys.h"
+#include "UiRes/uires.h"
 
 #include "ui/include/AttributeEditor.h"
 #include "ui/include/Commands.h"

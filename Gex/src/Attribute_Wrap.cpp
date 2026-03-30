@@ -1,6 +1,6 @@
 #include "Gex/include/Attribute_Wrap.h"
 #include "Gex/include/Node.h"
-#include "Tsys/include/tsys.h"
+#include "Tsys/tsys.h"
 
 #include "Gex/include/ptrs.h"
 

@@ -1,5 +1,5 @@
 #include "nodes.h"
-#include "Tsys/include/defaultTypes.h"
+#include "Tsys/defaultTypes.h"
 
 #include "Gex/include/Gex.h"
 #include "Gex/include/Graph_Wrap.h"

@@ -1,11 +1,8 @@
 #include "Gex/include/Wrappers.h"
 
-#include "Tsys/include/tsys.h"
+#include "Tsys/tsys.h"
 
 #include "boost/python.hpp"
-
-
-#include "Tsys/include/tsys.h"
 
 
 boost::python::object GetAvailableTypes(

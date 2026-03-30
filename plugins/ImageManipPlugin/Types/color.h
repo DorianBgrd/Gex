@@ -1,7 +1,7 @@
 #ifndef GEX_IMP_COLOR_H
 #define GEX_IMP_COLOR_H
 
-#include "Tsys/include/tsys.h"
+#include "Tsys/tsys.h"
 
 #include "../export.h"
 

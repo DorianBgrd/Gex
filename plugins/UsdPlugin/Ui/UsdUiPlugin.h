@@ -1,7 +1,7 @@
 #ifndef PIPELINELIBRARY2COMPLETE_USDUIPLUGIN_H
 #define PIPELINELIBRARY2COMPLETE_USDUIPLUGIN_H
 
-#include "UiTsys/include/uitsys.h"
+#include "UiTsys/uitsys.h"
 
 #include <QSpinBox>
 

@@ -1,7 +1,7 @@
 #ifndef GEX_IMP_RESOLUTION_H
 #define GEX_IMP_RESOLUTION_H
 
-#include "Tsys/include/tsys.h"
+#include "Tsys/tsys.h"
 
 #include "../export.h"
 

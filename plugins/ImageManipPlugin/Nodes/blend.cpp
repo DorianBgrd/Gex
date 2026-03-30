@@ -4,7 +4,7 @@
 
 #include <QPixmap>
 
-#include "Tsys/include/defaultTypes.h"
+#include "Tsys/defaultTypes.h"
 
 
 void ImageManip::Nodes::BlendImages::InitAttributes()

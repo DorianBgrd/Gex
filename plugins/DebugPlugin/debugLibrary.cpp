@@ -4,7 +4,7 @@
 #include <iostream>
 
 #include "Gex/include/Gex.h"
-#include "Tsys/include/defaultTypes.h"
+#include "Tsys/defaultTypes.h"
 
 #include "../export.h"
 

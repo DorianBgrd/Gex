@@ -1,7 +1,7 @@
 #ifndef GEX_UI_TYPES_H
 #define GEX_UI_TYPES_H
 
-#include "UiTsys/include/uitsys.h"
+#include "UiTsys/uitsys.h"
 
 #include "../export.h"
 

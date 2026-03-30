@@ -219,10 +219,10 @@ add_custom_command(
 #        --library-search-dir ${Boost_LIBRARY_DIRS}
         --library-search-dir ${Python_LIBRARY_DIRS}
         --library-search-dir ${CMAKE_CURRENT_SOURCE_DIR}
-        --library-search-dir ${TSYS_LIBRARY_DIR}
+        --library-search-dir ${Tsys_LIBRARY_DIRS}
         --library-search-dir ${CMAKE_BINARY_DIR}
 
-        --library ${TSYS_LIBRARY_DIR}/TSys.dll
+        --library Tsys
         --library ${CMAKE_BINARY_DIR}/Gex/Gex.dll
 
 )

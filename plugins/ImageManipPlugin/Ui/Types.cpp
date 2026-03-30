@@ -5,7 +5,7 @@
 #include <QPainter>
 #include <QPainterPath>
 
-#include "UiRes/include/uires.h"
+#include "UiRes/uires.h"
 
 
 ImageManip::Ui::Types::ImageViewer::ImageViewer(

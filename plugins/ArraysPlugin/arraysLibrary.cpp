@@ -3,8 +3,8 @@
 
 #include "../export.h"
 #include "Gex/include/Gex.h"
-#include "Tsys/include/tsys.h"
-#include "Tsys/include/defaultTypes.h"
+#include "Tsys/tsys.h"
+#include "Tsys/defaultTypes.h"
 
 namespace Arrays
 {

@@ -1,5 +1,5 @@
 #include "FuncViewer.h"
-#include "UiRes/include/uires.h"
+#include "UiRes/uires.h"
 
 #include <QShortcut>
 

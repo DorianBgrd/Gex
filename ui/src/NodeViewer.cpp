@@ -4,7 +4,7 @@
 #include <QPushButton>
 #include <QVBoxLayout>
 
-#include "UiRes/include/uires.h"
+#include "UiRes/uires.h"
 
 Gex::Ui::ViewerRegistry* Gex::Ui::ViewerRegistry::instance;
 

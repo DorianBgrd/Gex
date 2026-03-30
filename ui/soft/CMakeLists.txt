@@ -134,8 +134,8 @@ target_link_libraries(
         SoftPython
         PUBLIC
 
-#        ${Boost_LIBRARIES}
-#        ${Python_LINK_LIBRARIES}
+        ${Boost_LIBRARIES}
+        ${Python_LINK_LIBRARIES}
 
         SoftApi
 
@@ -218,6 +218,7 @@ target_link_libraries(
         SoftPython
         ${Boost_LIBRARIES}
         ${SoftApi_LIBRARY}
+        ${Python_LINK_LIBRARIES}
 )
 
 #add_custom_command(
@@ -262,21 +263,21 @@ add_custom_target(
 
 #        --library-search-dir ${Boost_LIBRARY_DIRS}
         --library-search-dir ${Python_LIBRARY_DIRS}
+        --library-search-dir ${Python_ROOT_DIR}
         --library-search-dir ${CMAKE_CURRENT_SOURCE_DIR}
         --library-search-dir ${CMAKE_BINARY_DIR}/plugins
-        --library-search-dir ${TSYS_LIBRARY_DIR}
-        --library-search-dir $ENV{UI_RES_DIR}/UiRes/cmake-build-${BUILD_TYPE}
-        --library-search-dir $ENV{UI_TSYS_DIR}/UiTSys/cmake-build-${BUILD_TYPE}
+        --library-search-dir ${UiRes_LIBRARY_DIRS}
+        --library-search-dir ${Tsys_LIBRARY_DIRS}
         --library-search-dir ${CMAKE_BINARY_DIR}
 
         --library ${CMAKE_BINARY_DIR}/ui/Gex_Ui.dll
-        --library ${TSYS_LIBRARY_DIR}/TSys.dll
+        --library Tsys
         --library $ENV{UI_RES_DIR}/UiRes/cmake-build-${BUILD_TYPE}/UiRes.dll
         --library $ENV{UI_TSYS_DIR}/UiTSys/cmake-build-${BUILD_TYPE}/UiTSys.dll
         --library ${CMAKE_BINARY_DIR}/Gex/Gex.dll
         --library ${QT_AWESOME_LIBRARY_DIR}/QtAwesome.dll
         --library ${CMAKE_BINARY_DIR}/ui/SoftApi.dll
-        --library ${Boost_LIBRARIES}
+        --library Python${Python_VERSION_NUMBER}.dll
 
         --extra-directory ui
         --extra-directory plugins
@@ -310,7 +311,7 @@ add_custom_target(
         --directory ${CMAKE_CURRENT_BINARY_DIR}/Gex_Software/python
         --template-init ${CMAKE_CURRENT_SOURCE_DIR}/resources/__init__.py
         --search_directories ${CMAKE_CURRENT_BINARY_DIR} ${Boost_LIBRARY_DIRS}
-        ${CMAKE_BINARY_DIR} ${CMAKE_CURRENT_BINARY_DIR} ${TSYS_LIBRARY_DIR}
+        ${CMAKE_BINARY_DIR} ${CMAKE_CURRENT_BINARY_DIR} ${Tsys_LIBRARY_DIRS}
         ${CMAKE_BINARY_DIR}/Gex
 
         --library ${CMAKE_BINARY_DIR}/ui/SoftPython.dll

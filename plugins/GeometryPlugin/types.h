@@ -4,7 +4,7 @@
 
 #include "MathPlugin/types.h"
 
-#include "Tsys/include/tsys.h"
+#include "Tsys/tsys.h"
 
 
 namespace Geometry::Types

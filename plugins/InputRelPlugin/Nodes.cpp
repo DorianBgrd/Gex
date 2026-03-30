@@ -2,7 +2,7 @@
 #include "Func.h"
 #include "BezierFunc.h"
 
-#include "Tsys/include/defaultTypes.h"
+#include "Tsys/defaultTypes.h"
 
 
 std::string Gex::InputRel::LinearRel::Description() const

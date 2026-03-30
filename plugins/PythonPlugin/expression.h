@@ -7,7 +7,7 @@
 
 #include "boost/python.hpp"
 
-#include "Tsys/include/defaultTypes.h"
+#include "Tsys/defaultTypes.h"
 
 #include "Gex/include/Gex.h"
 

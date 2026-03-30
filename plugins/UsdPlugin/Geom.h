@@ -1,4 +1,4 @@
-#include "Tsys/include/tsys.h"
+#include "Tsys/tsys.h"
 #include "Gex/include/Gex.h"
 
 #include "pxr/usd/usdGeom/mesh.h"

@@ -4,7 +4,7 @@
 #include <QFileDialog>
 #include <QShortcut>
 
-#include "UiRes/include/uires.h"
+#include "UiRes/uires.h"
 
 #include "Gex/include/Gex.h"
 

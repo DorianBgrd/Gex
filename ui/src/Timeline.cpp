@@ -5,7 +5,7 @@
 #include <QTimerEvent>
 #include <QApplication>
 
-#include "UiRes/include/uires.h"
+#include "UiRes/uires.h"
 
 
 Gex::Ui::Timeline::Timeline(QWidget* parent):

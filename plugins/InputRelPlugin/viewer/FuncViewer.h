@@ -8,7 +8,7 @@
 
 #include "plugins/export.h"
 
-#include "UiTsys/include/uitsys.h"
+#include "UiTsys/uitsys.h"
 
 #include <QWidget>
 #include <QGraphicsView>

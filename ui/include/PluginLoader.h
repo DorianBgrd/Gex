@@ -7,7 +7,7 @@
 
 #include "ui/include/api.h"
 
-#include "UiTsys/include/uitsys.h"
+#include "UiTsys/uitsys.h"
 
 
 namespace Gex::Ui

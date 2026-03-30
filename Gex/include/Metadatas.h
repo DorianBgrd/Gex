@@ -13,7 +13,7 @@
 
 #include "rapidjson/document.h"
 
-#include "Tsys/include/tsys.h"
+#include "Tsys/tsys.h"
 
 #define M_TYPES int, float, double, std::string, std::vector<int>, std::vector<float>, std::vector<double>,
 #define IsAvailableType(T)

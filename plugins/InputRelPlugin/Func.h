@@ -3,7 +3,7 @@
 
 #include "plugins/export.h"
 
-#include "Tsys/include/tsys.h"
+#include "Tsys/tsys.h"
 #include "rapidjson/document.h"
 #include "Gex/include/ptrs.h"
 

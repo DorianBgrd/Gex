@@ -2,7 +2,7 @@
 #define GEX_LEVEL_H
 
 #include "plugins/export.h"
-#include "Tsys/include/tsys.h"
+#include "Tsys/tsys.h"
 
 
 namespace ImageManip::Types

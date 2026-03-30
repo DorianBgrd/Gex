@@ -1,5 +1,5 @@
 #include "ui/include/NodeUiRegistry.h"
-#include "UiRes/include/uires.h"
+#include "UiRes/uires.h"
 
 
 Gex::Ui::NodeUiRegistry* Gex::Ui::NodeUiRegistry::registry = nullptr;

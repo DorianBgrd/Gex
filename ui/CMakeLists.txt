@@ -81,7 +81,7 @@ target_include_directories(
         ${Qt6Gui_INCLUDE_DIRS}
         ${Qt6Svg_INCLUDE_DIRS}
         ${Qt6SvgWidgets_INCLUDE_DIRS}
-        $ENV{TSYS_DIR}
+        ${Tsys_INCLUDE_DIRS}
         $ENV{UI_RES_DIR}
         $ENV{UI_TSYS_DIR}
         $ENV{QT_AWESOME_DIR}
@@ -108,9 +108,9 @@ target_link_libraries(
         Qt6::Gui
         Qt6::Svg
         Qt6::SvgWidgets
-        TSys
-        UiTSys
-        UiRes
+        Tsys::Tsys
+        UiTsys::UiTsys
+        UiRes::UiRes
         Gex
         QtAwesome
 )
