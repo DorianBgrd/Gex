@@ -4,7 +4,6 @@
 #include "api.h"
 #include "defs.h"
 #include "Metadatas.h"
-#include "boost/python.hpp"
 #include "NodeAttributeData.h"
 #include "Attribute.h"
 #include "Profiler.h"

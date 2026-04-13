@@ -1,38 +1,34 @@
 #include "Gex/include/UndoStack_Wrap.h"
 
 bool  Gex::Python::UndoStack_Wrap::registered = false;
+Gex::Python::PyClassRegistry Gex::Python::UndoStack_Wrap::registry;
 
 
-bool Gex::Python::UndoStack_Wrap::RegisterPythonWrapper()
+bool Gex::Python::UndoStack_Wrap::RegisterPythonWrapper(pybind11::module_& mod,
+                                                        PyThreadState* state)
 {
-    if (registered)
+    if (registry.IsRegistered(state))
         return false;
 
-    boost::python::class_<Gex::Undo::UndoStack>("Undo", boost::python::no_init)
-            .def("Undo", &Gex::Undo::UndoStack::Undo)
-            .staticmethod("Undo")
-            .def("Redo", &Gex::Undo::UndoStack::Redo)
-            .staticmethod("Redo")
-            .def("IsUndoing", &Gex::Undo::UndoStack::IsUndoing)
-            .staticmethod("IsUndoing")
-            .def("IsRedoing", &Gex::Undo::UndoStack::IsRedoing)
-            .staticmethod("IsRedoing")
-            .def("Clear", &Gex::Undo::UndoStack::Clear)
-            .staticmethod("Clear")
-            .def("IsActive", &Gex::Undo::UndoStack::IsActive)
-            .staticmethod("IsActive")
-            .def("SetActive", &Gex::Undo::UndoStack::SetActive)
-            .staticmethod("SetActive")
-            .def("Enable", &Gex::Undo::UndoStack::Enable)
-            .staticmethod("Enable")
-            .def("Disable", &Gex::Undo::UndoStack::Disable)
-            .staticmethod("Disable")
-            .def("OpenGroup", &Gex::Undo::UndoStack::OpenGroup)
-            .staticmethod("OpenGroup")
-            .def("CloseGroup", &Gex::Undo::UndoStack::CloseGroup)
-            .staticmethod("CloseGroup")
+    pybind11::class_<Gex::Undo::UndoStack>(mod, "Undo", pybind11::module_local(false))
+            .def_static("Undo", &Gex::Undo::UndoStack::Undo)
+            .def_static("Redo", &Gex::Undo::UndoStack::Redo)
+            .def_static("IsUndoing", &Gex::Undo::UndoStack::IsUndoing)
+            .def_static("IsRedoing", &Gex::Undo::UndoStack::IsRedoing)
+            .def_static("Clear", &Gex::Undo::UndoStack::Clear)
+            .def_static("IsActive", &Gex::Undo::UndoStack::IsActive)
+            .def_static("SetActive", &Gex::Undo::UndoStack::SetActive)
+            .def_static("Enable", &Gex::Undo::UndoStack::Enable)
+            .def_static("Disable", &Gex::Undo::UndoStack::Disable)
+            .def_static("OpenGroup", &Gex::Undo::UndoStack::OpenGroup)
+            .def_static("CloseGroup", &Gex::Undo::UndoStack::CloseGroup)
             ;
 
-    registered = true;
-    return true;
+    return registry.Register(state);
+}
+
+
+bool Gex::Python::UndoStack_Wrap::IsRegistered()
+{
+    return registered;
 }

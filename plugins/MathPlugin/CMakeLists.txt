@@ -11,8 +11,15 @@ set(CMAKE_CXX_FLAGS "/EHsc")
 add_library(
         MathPlugin
         SHARED
+
+        nodes.h
+        types.h
+
+        nodes.cpp
+        types.cpp
+
         mathLibrary.cpp
-        )
+        LocalApi.h)
 
 
 target_include_directories(
@@ -22,6 +29,10 @@ target_include_directories(
         ${Boost_INCLUDE_DIRS}
         ${Python_INCLUDE_DIRS}
         ${ThirdParties_INCLUDE_DIRS}
+
+        $ENV{TSYS_DIR}
+
+        $ENV{UI_RES_DIR}
 )
 
 
@@ -31,6 +42,10 @@ target_link_directories(
         ${CMAKE_BINARY_DIR}
         ${Boost_LIBRARY_DIRS}
         ${Python_LIBRARY_DIRS}
+
+        $ENV{TSYS_DIR}/Tsys/cmake-build-${BUILD_TYPE}
+
+        $ENV{UI_RES_DIR}/UiRes/cmake-build-${BUILD_TYPE}
         )
 
 
@@ -38,8 +53,12 @@ target_link_libraries(
         MathPlugin
         PUBLIC
         Gex
-        ${Boost_LIBRARIES}
+
         ${Python_LINK_LIBRARIES}
+
+        Tsys::Tsys
+        UiRes::UiRes
+        Gex_ui
 )
 
 
@@ -55,4 +74,5 @@ add_custom_command(
         --plugin MathPlugin.dll
         --plugin-file ${CMAKE_BINARY_DIR}/plugins/MathPlugin.dll
         --type C++
+#        --required-plugins IterPlugin
 )

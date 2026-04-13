@@ -12,7 +12,6 @@ add_library(
         PythonPlugin
         SHARED
         nodes.cpp
-        expression.cpp
         Plugin.cpp
 )
 

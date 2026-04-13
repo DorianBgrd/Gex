@@ -1,7 +1,7 @@
 #ifndef GEX_WRAPPER_H
 #define GEX_WRAPPER_H
 
-#include "boost/python.hpp"
+#include "pybind11/pybind11.h"
 
 namespace Gex::InputRel::Python
 {

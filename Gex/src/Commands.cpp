@@ -2,8 +2,6 @@
 
 #include "Gex/include/io.h"
 
-#include "boost/python.hpp"
-
 
 bool Gex::RunGraph(const NodePtr& graph,
                    const AttributeValues& values,
@@ -93,60 +91,55 @@ bool Gex::LoadAndRunGraph(const std::string& filepath,
 static bool registered = false;
 
 
-boost::python::object Python_RunGraph(
-        boost::python::tuple args,
-        boost::python::dict kwargs
+pybind11::object Python_RunGraph(
+        pybind11::tuple args,
+        pybind11::dict kwargs
 )
 {
-    Gex::NodePtr graph = boost::python::extract<Gex::NodePtr>(args[0]);
+    Gex::NodePtr graph = args[0].cast<Gex::NodePtr>();
 
-    boost::python::dict attrValues;
+    pybind11::dict attrValues;
 
-    int length = boost::python::len(args);
+    int length = pybind11::len(args);
 
     if (length > 1)
     {
-        attrValues = boost::python::dict(args[1]);
+        attrValues = pybind11::dict(args[1]);
     }
-    else
+    else if (kwargs.contains("attributeValues"))
     {
-        attrValues = boost::python::dict(
-                kwargs.get(
-                        "attributeValues",
-                        boost::python::dict()
-                )
+        attrValues = pybind11::dict(
+                kwargs["attributeValues"]
         );
     }
 
     int threadNumber = 1;
     if (length > 2)
     {
-        threadNumber = boost::python::extract<int>(args[2]);
+        threadNumber = args[2].cast<int>();
     }
     else
     {
-        auto thn = kwargs.get("threadNumber");
-        if (thn)
+        if (kwargs.contains("threadNumber"))
         {
-            threadNumber = boost::python::extract<int>(thn);
+            threadNumber = kwargs["threadNumber"].cast<int>();
         }
     }
 
     Gex::Profiler profiler;
     if (length > 3)
     {
-        profiler = boost::python::extract<Gex::Profiler>(args[3]);
+        profiler = args[3].cast<Gex::Profiler>();
     }
     else
     {
-        auto thn = kwargs.get("threadNumber");
-        if (thn)
+        if (kwargs.contains("threadNumber"))
         {
-            profiler = boost::python::extract<Gex::Profiler>(thn);
+            profiler = kwargs["threadNumber"].cast<Gex::Profiler>();
         }
     }
 
-    return boost::python::object(
+    return pybind11::cast(
             Gex::RunGraph(graph, threadNumber, profiler)
     );
 }
@@ -154,9 +147,9 @@ boost::python::object Python_RunGraph(
 
 
 
-boost::python::object Python_LoadAndRunGraph(
-        boost::python::tuple args,
-        boost::python::dict kwargs
+pybind11::object Python_LoadAndRunGraph(
+        pybind11::tuple args,
+        pybind11::dict kwargs
 )
 {
     return {};
@@ -170,7 +163,7 @@ void Gex::Python::Commands::RegisterPythonWrapper()
         return;
     }
 
-//    boost::python::def()
+//    pybind11::def()
 
     registered = true;
 }

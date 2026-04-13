@@ -5,7 +5,7 @@
 
 
 #include "Gex/include/Gex.h"
-#include "ui/include/PluginLoader.h"
+#include "Gex_ui/include/PluginLoader.h"
 #include "Ui/Viewers/Viewers.h"
 
 
@@ -51,6 +51,8 @@ void RegisterUiPlugin(Gex::Ui::UiPluginLoader* loader)
     loader->RegisterNodeViewer<ImageManip::Viewers::ImageNodeViewerBuilder>("Image/Modifiers/RGBMask");
     loader->RegisterNodeViewer<ImageManip::Viewers::ImageNodeViewerBuilder>("Image/Modifiers/AlphaMask");
     loader->RegisterNodeViewer<ImageManip::Viewers::ImageNodeViewerBuilder>("Image/Modifiers/Blur/BoxBlur");
+    loader->RegisterNodeViewer<ImageManip::Viewers::ImageNodeViewerBuilder>("Image/Noises/PerlinNoise");
+    loader->RegisterNodeViewer<ImageManip::Viewers::ImageNodeViewerBuilder>("Image/Noises/CloudNoise");
     loader->RegisterNodeViewer<ImageManip::Viewers::ImageNodeViewerBuilder>("Image/Noises/RandomNoise");
     loader->RegisterNodeViewer<ImageManip::Viewers::ImageNodeViewerBuilder>("Image/Noises/VoronoiCells");
     loader->RegisterNodeViewer<ImageManip::Viewers::ImageNodeViewerBuilder>("Image/Noises/DelaunayNoise");

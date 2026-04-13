@@ -1,7 +1,7 @@
 #include "writers.h"
 
 
-std::string JsonPlugin::JsonDict::Description() const
+std::string JsonPlugin::Writers::JsonDict::Description() const
 {
     return ("Generates a Json dict from provided Key/Value pair. "
             "Keys are string value and Values are json data, "
@@ -9,7 +9,7 @@ std::string JsonPlugin::JsonDict::Description() const
 }
 
 
-void JsonPlugin::JsonDict::InitAttributes()
+void JsonPlugin::Writers::JsonDict::InitAttributes()
 {
     auto holder = CreateAttribute(
             "Members",
@@ -34,7 +34,7 @@ void JsonPlugin::JsonDict::InitAttributes()
 }
 
 
-bool JsonPlugin::JsonDict::Evaluate(
+bool JsonPlugin::Writers::JsonDict::Evaluate(
         Gex::NodeAttributeData &context,
         Gex::GraphContext &graphContext,
         Gex::NodeProfiler &profiler
@@ -62,7 +62,7 @@ bool JsonPlugin::JsonDict::Evaluate(
 }
 
 
-std::string JsonPlugin::JsonList::Description() const
+std::string JsonPlugin::Writers::JsonList::Description() const
 {
     return ("Generates a Json list from provided values. "
             "Values are json data, converted from scalars "
@@ -70,7 +70,7 @@ std::string JsonPlugin::JsonList::Description() const
 }
 
 
-void JsonPlugin::JsonList::InitAttributes()
+void JsonPlugin::Writers::JsonList::InitAttributes()
 {
     {
         CreateAttribute<EditorPtr>(
@@ -86,7 +86,7 @@ void JsonPlugin::JsonList::InitAttributes()
 }
 
 
-bool JsonPlugin::JsonList::Evaluate(
+bool JsonPlugin::Writers::JsonList::Evaluate(
         Gex::NodeAttributeData &context,
         Gex::GraphContext &graphContext,
         Gex::NodeProfiler &profiler
@@ -108,13 +108,13 @@ bool JsonPlugin::JsonList::Evaluate(
 }
 
 
-std::string JsonPlugin::JsonWriteToString::Description() const
+std::string JsonPlugin::Writers::JsonWriteToString::Description() const
 {
     return ("Serializes Json data to string.");
 }
 
 
-void JsonPlugin::JsonWriteToString::InitAttributes()
+void JsonPlugin::Writers::JsonWriteToString::InitAttributes()
 {
     {
         CreateAttribute<EditorPtr>(
@@ -135,7 +135,7 @@ void JsonPlugin::JsonWriteToString::InitAttributes()
 }
 
 
-bool JsonPlugin::JsonWriteToString::Evaluate(
+bool JsonPlugin::Writers::JsonWriteToString::Evaluate(
         Gex::NodeAttributeData &context,
         Gex::GraphContext &graphContext,
         Gex::NodeProfiler &profiler

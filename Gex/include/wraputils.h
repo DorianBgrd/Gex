@@ -1,30 +1,29 @@
 #ifndef GEX_WRAPUTILS_H
 #define GEX_WRAPUTILS_H
 
-#include <boost/python.hpp>
 #include <memory>
 
 namespace Gex::Python
 {
     template<class T>
-    boost::python::object WeakRefToStrong(boost::python::tuple args,
-                                          boost::python::dict kwargs)
+    pybind11::object WeakRefToStrong(pybind11::args args,
+                                     pybind11::kwargs kwargs)
     {
-        T wkObj = boost::python::extract<T>(args[0]);
+        T wkObj = args[0].cast<T>();
         if (wkObj.expired())
             return {};
 
-        return boost::python::object(wkObj.lock());
+        return pybind11::object(wkObj.lock());
     }
 
     template<class T, class WT>
-    boost::python::object StrongRefToWeak(boost::python::tuple args,
-                                          boost::python::dict kwargs)
+    pybind11::object StrongRefToWeak(pybind11::args args,
+                                          pybind11::kwargs kwargs)
     {
-        T sharedObj =  boost::python::extract<T>(args[0]);
+        T sharedObj =  args[0].cast<T>();
 
         WT weakObj = sharedObj;
-        return boost::python::object(weakObj);
+        return pybind11::object(weakObj);
     }
 }
 

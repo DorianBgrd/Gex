@@ -1,65 +1,66 @@
 #include "Gex/include/io_Wrap.h"
 #include "Gex/include/io.h"
-#include "boost/python.hpp"
 
 
 bool Gex::Python::IO::pythonRegistered = false;
+Gex::Python::PyClassRegistry Gex::Python::IO::registry;
 
 
-boost::python::object Python_SaveGraph(boost::python::tuple args,
-                                       boost::python::dict kwargs)
+
+pybind11::object Python_SaveGraph(pybind11::args args,
+                                  pybind11::kwargs kwargs)
 {
-    Gex::CompoundNodePtr graph = boost::python::extract<Gex::CompoundNodePtr>(args[0]);
-    std::string filepath = boost::python::extract<std::string>(args[1]);
+    Gex::CompoundNodePtr graph = args[0].cast<Gex::CompoundNodePtr>();
+    std::string filepath = args[1].cast<std::string>();
 
-    return boost::python::object(Gex::Feedback(
+    return pybind11::cast(Gex::Feedback(
             Gex::SaveGraph(graph, filepath)));
 }
 
 
-boost::python::object Python_LoadGraph(boost::python::tuple args,
-                                       boost::python::dict kwargs)
+pybind11::object Python_LoadGraph(pybind11::args args,
+                                  pybind11::kwargs kwargs)
 {
-    std::string filepath = boost::python::extract<std::string>(args[0]);
-    boost::python::object pyfeedback;
+    std::string filepath = args[0].cast<std::string>();
+    pybind11::object pyfeedback;
 
     auto* feedback = new Gex::Feedback();
-    if (boost::python::len(args) > 1)
+    if (pybind11::len(args) > 1)
     {
         pyfeedback = args[1];
     }
-    else
+    else if (kwargs.contains("feedback"))
     {
-        pyfeedback = kwargs.get("feedback");
+        pyfeedback = kwargs["feedback"];
     }
 
     if (pyfeedback)
-        feedback = boost::python::extract<Gex::Feedback*>(pyfeedback);
+        feedback = pyfeedback.cast<Gex::Feedback*>();
 
     Gex::NodePtr graph = Gex::LoadGraph(filepath, feedback);
     if (!graph)
         return {};
 
 
-    return boost::python::object(Gex::CompoundNode::FromNode(graph));
+    return pybind11::cast(Gex::CompoundNode::FromNode(graph));
 }
 
 
-boost::python::object Python_ReloadNode(
-        boost::python::tuple args,
-        boost::python::dict kwargs)
+pybind11::object Python_ReloadNode(
+        pybind11::args args,
+        pybind11::kwargs kwargs)
 {
-    Gex::NodePtr node = boost::python::extract<Gex::NodePtr>(args[0]);
+    Gex::NodePtr node = args[0].cast<Gex::NodePtr>();
 
-    return boost::python::object(Gex::ReloadNode(node));
+    return pybind11::cast(Gex::ReloadNode(node));
 }
 
 
-//boost::python::object Python_ListAvailableReferences(
-//        boost::python::tuple args,
-//        boost::python::dict kwargs)
+//pybind11::object Python_ListAvailableReferences(
+//        pybind11::tuple args,
+//        pybind11::dict kwargs)
 //{
-//    boost::python::list refs;
+//    pybind11::list refs;
 //
 //    for (const auto& r : Gex::ListAvailableReferences())
 //    {
@@ -70,18 +71,24 @@ boost::python::object Python_ReloadNode(
 //}
 
 
-bool Gex::Python::IO::RegisterPythonWrapper()
+bool Gex::Python::IO::RegisterPythonWrapper(pybind11::module_& mod,
+                                            PyThreadState* state)
 {
-    if (pythonRegistered)
+    if (registry.IsRegistered(state))
     {
         return false;
     }
 
-    boost::python::def("SaveGraph", boost::python::raw_function(&Python_SaveGraph, 1));
-    boost::python::def("LoadGraph", boost::python::raw_function(&Python_LoadGraph, 1));
-    boost::python::def("ReloadNode", boost::python::raw_function(&Python_ReloadNode, 1));
-//    boost::python::def("ListAvailableReferences", boost::python::raw_function(&Python_ListAvailableReferences, 0));
+    mod.def("SaveGraph", &Python_SaveGraph);
+    mod.def("LoadGraph", &Python_LoadGraph);
+    mod.def("ReloadNode", &Python_ReloadNode);
+//    pybind11::def("ListAvailableReferences", pybind11::raw_function(&Python_ListAvailableReferences, 0));
 
-    pythonRegistered = true;
-    return true;
+    return registry.Register(state);
+}
+
+
+bool Gex::Python::IO::IsRegistered()
+{
+    return pythonRegistered;
 }

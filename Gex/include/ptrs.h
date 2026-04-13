@@ -4,9 +4,6 @@
 #include <vector>
 #include <memory>
 
-#include "boost/weak_ptr.hpp"
-
-#include <boost/python.hpp>
 
 namespace Gex
 {
@@ -135,25 +132,6 @@ namespace Gex
         }
 
         return res;
-    }
-
-    namespace Python
-    {
-        template<class T>
-        struct WeakPtrToPython
-        {
-            static PyObject* convert(Gex::BaseWkPtr<T> const& x)
-            {
-                return boost::python::converter::registered<T>::converters.to_python(
-                        x.ToShared().get()
-                );
-            }
-
-            static PyTypeObject const* get_pytype()
-            {
-                return boost::python::converter::registered<T>::converters.get_class_object();
-            }
-        };
     }
 }
 

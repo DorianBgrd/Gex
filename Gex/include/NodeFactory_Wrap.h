@@ -3,16 +3,21 @@
 
 #include "api.h"
 #include "PluginLoader.h"
+#include "Gex/python/utils.h"
+
+#include "pybind11/pybind11.h"
 
 namespace Gex
 {
     namespace Python
     {
         struct GEX_API NodeBuilder_Wrap: public DefaultNodeBuilder,
-                public boost::python::wrapper<DefaultNodeBuilder>
+                public pybind11::trampoline_self_life_support
         {
         private:
             static bool pythonRegistered;
+            static PyClassRegistry registry;
+
         public:
             NodeBuilder_Wrap();
 
@@ -21,7 +26,10 @@ namespace Gex
             Node* CreateNode() const override;
 
         public:
-            static bool RegisterPythonWrapper();
+            static bool RegisterPythonWrapper(pybind11::module_& mod,
+                                              PyThreadState* state=nullptr);
+
+            static bool IsRegistered();
         };
 
 
@@ -29,8 +37,13 @@ namespace Gex
         {
         private:
             static bool pythonRegistered;
+            static PyClassRegistry registry;
+
         public:
-            static bool RegisterPythonWrapper();
+            static bool RegisterPythonWrapper(pybind11::module_& mod,
+                                              PyThreadState* state=nullptr);
+
+            static bool IsRegistered();
         };
     }
 }

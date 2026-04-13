@@ -8,7 +8,7 @@
 #include "Tsys/tsys.h"
 #include "Tsys/defaultTypes.h"
 
-#include <boost/container_hash/hash.hpp>
+#include "Gex/include/utils.h"
 
 #include "Gex/include/UndoCommands.h"
 
@@ -340,14 +340,14 @@ size_t Gex::Attribute::ValueHash(bool followCnx)
     {
         for (unsigned int i : ValidIndices())
         {
-            boost::hash_combine(res, GetIndexAttribute(i)->ValueHash());
+            Gex::Utils::hash_combine(res, GetIndexAttribute(i)->ValueHash());
         }
     }
     else if (IsHolder())
     {
         for (const auto& at : GetChildAttributes())
         {
-            boost::hash_combine(res, at->ValueHash());
+            Gex::Utils::hash_combine(res, at->ValueHash());
         }
     }
 
@@ -356,12 +356,12 @@ size_t Gex::Attribute::ValueHash(bool followCnx)
         if (auto at = Source())
         {
             auto handler = TSys::TypeRegistry::GetRegistry()->GetTypeHandle(at->Type());
-            boost::hash_combine(res, handler->ValueHash(at->GetAnyValue()));
+            Gex::Utils::hash_combine(res, handler->ValueHash(at->GetAnyValue()));
         }
     }
     else
     {
-        boost::hash_combine(res, typeHandle->ValueHash(attributeAnyValue));
+        Gex::Utils::hash_combine(res, typeHandle->ValueHash(attributeAnyValue));
     }
 
     return res;

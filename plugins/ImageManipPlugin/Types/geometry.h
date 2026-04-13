@@ -98,9 +98,14 @@ namespace ImageManip::Types
 
     double Distance(double x1, double y1, double x2, double y2);
 
+    double ScalarProduct(const Point& vec1, const Point& vec2);
+
+    double NormalizedScalarProduct(const Point& vec1, const Point& vec2);
 
     double NormalizedAngle(const Point& vector1,
                            const Point& vector2);
+
+    Point Normalized(const Point vector);
 
     double Angle(const Point& vector1,
                  const Point& vector2);
@@ -158,15 +163,13 @@ namespace ImageManip::Types
 
         bool CompareValue(const std::any&, const std::any&) const override;
 
-        std::any FromPython(const boost::python::object&) const override;
+        std::any FromPython(const pybind11::object&) const override;
 
-        boost::python::object ToPython(const std::any&) const override;
+        pybind11::object ToPython(const std::any&) const override;
 
         std::any CopyValue(const std::any& source) const override;
 
         size_t Hash() const override;
-
-        std::string PythonName() const override;
 
         std::string ApiName() const override;
 

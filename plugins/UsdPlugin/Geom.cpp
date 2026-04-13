@@ -31,16 +31,16 @@ bool UsdPlugin::UsdGeom::UsdGeomMeshType::CompareValue(const std::any& v1, const
                 std::any_cast<pxr::UsdGeomMesh>(v2).GetPrim());
 }
 
-std::any UsdPlugin::UsdGeom::UsdGeomMeshType::FromPython(const boost::python::object& o) const
+std::any UsdPlugin::UsdGeom::UsdGeomMeshType::FromPython(const pybind11::object& o) const
 {
-    pxr::UsdGeomMesh fpy = boost::python::extract<pxr::UsdGeomMesh>(o);
+    pxr::UsdGeomMesh fpy = o.cast<pxr::UsdGeomMesh>();
     return fpy;
 }
 
 
-boost::python::object UsdPlugin::UsdGeom::UsdGeomMeshType::ToPython(const std::any& o) const
+pybind11::object UsdPlugin::UsdGeom::UsdGeomMeshType::ToPython(const std::any& o) const
 {
-    return boost::python::object(std::any_cast<pxr::UsdGeomMesh>(o));
+    return pybind11::cast(std::any_cast<pxr::UsdGeomMesh>(o));
 }
 
 
@@ -55,11 +55,6 @@ size_t UsdPlugin::UsdGeom::UsdGeomMeshType::Hash() const
     return typeid(pxr::UsdGeomMesh).hash_code();
 }
 
-
-std::string UsdPlugin::UsdGeom::UsdGeomMeshType::PythonName() const
-{
-    return "GeomMesh";
-}
 
 std::string UsdPlugin::UsdGeom::UsdGeomMeshType::ApiName() const
 {
@@ -361,16 +356,16 @@ std::vector<UsdPlugin::UsdGeom::Triangle> UsdPlugin::UsdGeom::UsdTriangulatedMes
 }
 
 
-std::any UsdPlugin::UsdGeom::MeshToUsdTriangulatedMesh::Convert(
-        std::any from, std::any to) const
+std::any UsdPlugin::UsdGeom::MeshToUsdTriangulatedMesh::operator()(
+        const std::any& from, const std::any& to) const
 {
     return std::make_any<UsdTriangulatedMesh>(
             std::any_cast<pxr::UsdGeomMesh>(from));
 }
 
 
-std::any UsdPlugin::UsdGeom::UsdTriangulatedMeshToMesh::Convert(
-        std::any from, std::any to) const
+std::any UsdPlugin::UsdGeom::UsdTriangulatedMeshToMesh::operator()(
+        const std::any& from, const std::any& to) const
 {
     return std::make_any<pxr::UsdGeomMesh>(
             std::any_cast<UsdTriangulatedMesh>(from)
@@ -408,13 +403,13 @@ bool UsdPlugin::UsdGeom::UsdTriangulatedMeshType::CompareValue(
 
 
 std::any UsdPlugin::UsdGeom::UsdTriangulatedMeshType::FromPython(
-        const boost::python::object& o) const
+        const pybind11::object& o) const
 {
     return {};
 }
 
 
-boost::python::object UsdPlugin::UsdGeom::UsdTriangulatedMeshType::ToPython(const std::any&) const
+pybind11::object UsdPlugin::UsdGeom::UsdTriangulatedMeshType::ToPython(const std::any&) const
 {
     return {};
 }
@@ -431,12 +426,6 @@ size_t UsdPlugin::UsdGeom::UsdTriangulatedMeshType::Hash() const
 {
     auto h = typeid(UsdTriangulatedMesh).hash_code();
     return h;
-}
-
-
-std::string UsdPlugin::UsdGeom::UsdTriangulatedMeshType::PythonName() const
-{
-    return ApiName();
 }
 
 
@@ -482,12 +471,6 @@ bool UsdPlugin::UsdGeom::UsdGeomMakeTriangulatedMesh::Evaluate(
 std::string UsdPlugin::UsdGeom::UsdGeomPoints::ApiName() const
 {
     return "PointList";
-}
-
-
-std::string UsdPlugin::UsdGeom::UsdGeomPoints::PythonName() const
-{
-    return "";
 }
 
 
@@ -554,14 +537,14 @@ std::any UsdPlugin::UsdGeom::UsdGeomPoints::InitValue() const
 
 
 std::any UsdPlugin::UsdGeom::UsdGeomPoints::FromPython(
-        const boost::python::object& o) const
+        const pybind11::object& o) const
 {
-    boost::python::list l(o);
+    pybind11::list l(o);
 
     PointList pl;
-    for (unsigned int i = 0; i < boost::python::len(l); i++)
+    for (unsigned int i = 0; i < pybind11::len(l); i++)
     {
-        int v = boost::python::extract<int>(l[i]);
+        int v = l[i].cast<int>();
         pl.push_back(v);
     }
 
@@ -569,12 +552,12 @@ std::any UsdPlugin::UsdGeom::UsdGeomPoints::FromPython(
 }
 
 
-boost::python::object UsdPlugin::UsdGeom::UsdGeomPoints::ToPython(
+pybind11::object UsdPlugin::UsdGeom::UsdGeomPoints::ToPython(
         const std::any& value) const
 {
     PointList l = std::any_cast<PointList>(value);
 
-    boost::python::list pyl;
+    pybind11::list pyl;
     for (auto v : l)
     {
         pyl.append(v);

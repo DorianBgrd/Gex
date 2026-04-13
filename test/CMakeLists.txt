@@ -64,31 +64,28 @@ target_link_libraries(
 #)
 
 
-add_custom_command(
-        TARGET
-        Test
-
-        POST_BUILD
+add_custom_target(
+        Test-deploy
         COMMAND
         python $ENV{BUILD_UTILS_DIR}/BuildUtils/deploy.py
 
         --name Gex
-        --executable ${CMAKE_CURRENT_BINARY_DIR}/Test.exe
+        --executable ${CMAKE_BINARY_DIR}/test/Test.exe
         --destination ${CMAKE_CURRENT_BINARY_DIR}
 
         --library-search-dir ${Python_LIBRARY_DIRS}
         --library-search-dir ${CMAKE_CURRENT_SOURCE_DIR}
         --library-search-dir ${CMAKE_BINARY_DIR}/plugins
-        --library-search-dir ${TSYS_LIBRARY_DIR}
-        --library-search-dir $ENV{UI_RES_DIR}/UiRes/cmake-build-${BUILD_TYPE}
-        --library-search-dir $ENV{UI_TSYS_DIR}/UiTSys/cmake-build-${BUILD_TYPE}
         --library-search-dir ${CMAKE_BINARY_DIR}
         --library-search-dir ${Tsys_LIBRARY_DIRS}
         --library-search-dir ${UiRes_LIBRARY_DIRS}
         --library-search-dir ${UiTsys_LIBRARY_DIRS}
 
         --library ${CMAKE_BINARY_DIR}/Gex/Gex.dll
-        --library Tsys
-        --library UiTsys
-        --library UiRes
+        --library ${Tsys_LIBRARY}
+        --library ${UiRes_LIBRARY}
+        --library ${UiTsys_LIBRARY}
+
+        DEPENDS
+        Test
 )

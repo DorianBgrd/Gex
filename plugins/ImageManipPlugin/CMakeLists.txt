@@ -24,6 +24,8 @@ set(
         Manip/level.cpp
         Manip/tile.cpp
         Manip/channels.cpp
+        Manip/pixelEngine.cpp
+        Manip/scatter.cpp
 
         Types/image.cpp
         Types/color.cpp

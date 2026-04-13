@@ -55,18 +55,18 @@ bool Geometry::Types::IndexHandler::CompareValue(
 }
 
 std::any Geometry::Types::IndexHandler::FromPython(
-        const boost::python::object& v
+        const pybind11::object& v
 ) const
 {
-    Index index = boost::python::extract<Index>(v);
+    Index index = v.cast<Index>();
     return std::make_any<Index>(index);
 }
 
-boost::python::object Geometry::Types::IndexHandler::ToPython(
+pybind11::object Geometry::Types::IndexHandler::ToPython(
         const std::any& value
 ) const
 {
-    boost::python::object i(std::any_cast<Index>(value));
+    pybind11::object i = pybind11::cast(std::any_cast<Index>(value));
 
     return i;
 }
@@ -196,13 +196,13 @@ bool Geometry::Types::FaceHandler::CompareValue(
 }
 
 std::any Geometry::Types::FaceHandler::FromPython(
-        const boost::python::object&
+        const pybind11::object&
 ) const
 {
     return {};
 }
 
-boost::python::object Geometry::Types::FaceHandler::ToPython(
+pybind11::object Geometry::Types::FaceHandler::ToPython(
         const std::any&
 ) const
 {
@@ -372,6 +372,12 @@ Geometry::Types::PointArray Geometry::Types::Mesh::GetPoints() const
 void Geometry::Types::Mesh::SetPoints(const PointArray& pnts)
 {
     points = pnts;
+}
+
+
+size_t Geometry::Types::Mesh::GetPointCount() const
+{
+    return points.size();
 }
 
 
@@ -645,13 +651,13 @@ bool Geometry::Types::MeshHandler::CompareValue(
 }
 
 std::any Geometry::Types::MeshHandler::FromPython(
-        const boost::python::object& value
+        const pybind11::object& value
 ) const
 {
     return InitValue();
 }
 
-boost::python::object Geometry::Types::MeshHandler::ToPython(
+pybind11::object Geometry::Types::MeshHandler::ToPython(
         const std::any& value
 ) const
 {

@@ -106,18 +106,17 @@ std::any ImageManip::Types::LevelMapHandler::InitValue() const
 }
 
 
-std::any ImageManip::Types::LevelMapHandler::FromPython(const boost::python::object& o) const
+std::any ImageManip::Types::LevelMapHandler::FromPython(const pybind11::object& o) const
 {
-    ImageManip::Types::LevelMap map_ = boost::python::extract<
-            ImageManip::Types::LevelMap>(o);
+    ImageManip::Types::LevelMap map_ = o.cast<ImageManip::Types::LevelMap>();
 
     return std::make_any<ImageManip::Types::LevelMap>(map_);
 }
 
 
-boost::python::object ImageManip::Types::LevelMapHandler::ToPython(const std::any& v) const
+pybind11::object ImageManip::Types::LevelMapHandler::ToPython(const std::any& v) const
 {
-    return boost::python::object(std::any_cast<ImageManip::Types::LevelMap>(v));
+    return pybind11::cast(std::any_cast<ImageManip::Types::LevelMap>(v));
 }
 
 
@@ -134,10 +133,10 @@ size_t ImageManip::Types::LevelMapHandler::Hash() const
 }
 
 
-std::string ImageManip::Types::LevelMapHandler::PythonName() const
-{
-    return "LevelMap";
-}
+//std::string ImageManip::Types::LevelMapHandler::PythonName() const
+//{
+//    return "LevelMap";
+//}
 
 
 std::string ImageManip::Types::LevelMapHandler::ApiName() const

@@ -15,10 +15,17 @@
 #include "rapidjson/prettywriter.h"
 
 
-namespace JsonPlugin
+namespace JsonPlugin::Writers
 {
 
 //    typedef std::variant<std::string, int, float, double> JsonVariant;
+
+
+    class JsonPair: public Gex::Node
+    {
+        std::string Description() const override;
+    };
+
 
     class JsonDict: public Gex::Node
     {

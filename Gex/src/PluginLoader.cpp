@@ -6,10 +6,10 @@
 #include <libloaderapi.h>
 #include <filesystem>
 
-#include "boost/python.hpp"
 #include "Gex/include/NodeFactory.h"
 
 #include "Gex/include/PluginLoader_Wrap.h"
+#include "Gex/include/Interpreter.h"
 
 #include <fstream>
 #include <cstdlib>
@@ -228,28 +228,10 @@ void Gex::PluginLoader::LoadCppPlugin(const std::string& name, PluginLoader* loa
 }
 
 
-void InitPython(Gex::Feedback* result=nullptr)
-{
-    if (!Py_IsInitialized())
-    {
-        Py_InitializeEx(1);
-        PyObject* main = PyImport_AddModule("__main__");
-        if (!main)
-        {
-            if (result)
-                result->Set(Gex::Status::Failed, "Could not initialize python.");
-            return;
-        }
-
-        Gex::Python::PluginLoader_Wrap::RegisterPythonWrapper();
-    }
-}
-
-
 void Gex::PluginLoader::LoadPythonPlugin(const std::string& name, PluginLoader* loader, Feedback* result)
 {
 
-    InitPython();
+    Gex::Python::Interpreter::Initialize();
 
     PyObject* mod = PyImport_ImportModule(name.c_str());
     if (!mod)
@@ -272,8 +254,21 @@ void Gex::PluginLoader::LoadPythonPlugin(const std::string& name, PluginLoader* 
         return;
     }
 
-    boost::python::object o = boost::python::object(
-            boost::python::ptr(loader));
+    if (!Gex::Python::PluginLoader_Wrap::IsRegistered())
+    {
+        if (result)
+        {
+            result->Set(
+                    Status::Failed, "Failed loading python module "
+                                    + name + " PluginLoader class is not accessible : did "
+                                             "you import Gex python module in this plugin module ?"
+            );
+        }
+
+        return;
+    }
+
+    pybind11::object o = pybind11::cast(loader);
 
     PyObject* res = PyObject_CallOneArg(func, o.ptr());
     if (!res)
@@ -281,6 +276,11 @@ void Gex::PluginLoader::LoadPythonPlugin(const std::string& name, PluginLoader* 
         if (result)
             result->Set(Status::Failed, "Failed calling " +
                 std::string(REGISTER_PLUGIN_FUNC_NAME));
+    }
+
+    if (PyErr_Occurred())
+    {
+        PyErr_Print();
     }
 
     if (result)
@@ -417,7 +417,7 @@ Gex::PluginLoader* Gex::PluginLoader::LoadPlugin(
 
             LoadPlugin(localPlugin, &localFeedback);
 
-            if (!localFeedback)
+            if (!localFeedback && result)
             {
                 result->Set(
                     Status::Failed,
@@ -479,7 +479,7 @@ Gex::PluginLoader* Gex::PluginLoader::LoadPlugin(
 
     if (dict.HasMember(conf.pluginConfPyEnvKey.c_str()))
     {
-        InitPython();
+        Gex::Python::Interpreter::Initialize();
 
         PyObject* osModule = PyImport_ImportModule("os");
         PyObject* osEnviron = PyDict_GetItem(PyModule_GetDict(osModule),
@@ -517,7 +517,7 @@ Gex::PluginLoader* Gex::PluginLoader::LoadPlugin(
 
     if (dict.HasMember(conf.pluginConfPyPathKey.c_str()))
     {
-        InitPython();
+        Gex::Python::Interpreter::Initialize();
 
         PyObject* sysModule = PyImport_ImportModule("sys");
         PyObject* sysPath = PyDict_GetItem(PyModule_GetDict(sysModule),

@@ -6,7 +6,7 @@
 #include <QSpinBox>
 
 #include "plugins/export.h"
-#include "ui/include/PluginLoader.h"
+#include "Gex_ui/include/PluginLoader.h"
 
 #include "pxr/base/gf/half.h"
 #include "pxr/usd/usd/prim.h"

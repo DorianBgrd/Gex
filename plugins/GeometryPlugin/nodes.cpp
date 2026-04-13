@@ -2,6 +2,8 @@
 
 #include "types.h"
 
+#include "Gex/include/Scheduling.h"
+
 
 std::string Geometry::Nodes::Index::Description() const
 {
@@ -238,9 +240,130 @@ bool Geometry::Nodes::MeshPointNormal::Evaluate(
     auto index = context.GetAttribute("Index")
             .GetValue<Geometry::Types::Index>();
 
-
     return context.GetAttribute("Normal").SetValue(
             mesh.GetPointNormal(index)
     );
 }
+
+
+void Geometry::Nodes::IterMeshPoint::InitAttributes()
+{
+    CreateAttribute<Geometry::Types::Mesh>("InMesh",
+                                           Gex::AttrValueType::Single,
+                                           Gex::AttrType::Input);
+    CreateAttribute<Geometry::Types::Mesh>("OutMesh",
+                                           Gex::AttrValueType::Single,
+                                           Gex::AttrType::Output);
+}
+
+
+void Geometry::Nodes::IterMeshPoint::EditCompoundInputs(
+        const Gex::NodePtr &inputs
+)
+{
+    inputs->CreateAttribute<Geometry::Types::Point3>(
+            "InputPoint", Gex::AttrValueType::Single,
+            Gex::AttrType::Output
+    );
+}
+
+
+void Geometry::Nodes::IterMeshPoint::EditCompoundOutputs(
+        const Gex::NodePtr &outputs
+)
+{
+    outputs->CreateAttribute<Geometry::Types::Point3>(
+            "OutputPoint", Gex::AttrValueType::Single,
+            Gex::AttrType::Input
+    );
+}
+
+
+void Geometry::Nodes::IterMeshPoint::Schedule()
+{
+    scheduledNodes = Gex::ScheduleNodes(GetNodes());
+
+    ValidateScheduling();
+}
+
+
+bool Geometry::Nodes::IterMeshPoint::Compute(
+        Gex::GraphContext &context,
+        Gex::NodeProfiler& profiler
+)
+{
+    Pull();
+
+    length = GetAttribute("InMesh")
+            ->Get<Types::Mesh>()
+            .GetPointCount();
+
+    if (!length)
+    {
+        return true;
+    }
+
+    mesh = GetAttribute("InMesh")->Get<Types::Mesh>();
+
+    for (index = 0; index < length; index++)
+    {
+        if (!Gex::CompoundNode::Compute(context, profiler))
+        {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+
+bool Geometry::Nodes::IterMeshPoint::PreEvaluate(
+        Gex::NodeAttributeData &ctx,
+        Gex::NodeAttributeData &inputCtx,
+        Gex::GraphContext &graphContext,
+        Gex::NodeProfiler &profiler
+)
+{
+    Schedule();
+
+    return inputCtx.GetAttribute("InputPoint").SetValue(mesh.GetPoint(index));
+}
+
+bool Geometry::Nodes::IterMeshPoint::Evaluate(
+        Gex::NodeAttributeData &ctx,
+        Gex::GraphContext &graphContext,
+        Gex::NodeProfiler &profiler
+)
+{
+    Gex::NodeEvaluator evaluator(
+            scheduledNodes, graphContext,
+            profiler.GetProfiler(),
+            false, 1
+    );
+
+    evaluator.Run();
+
+    return evaluator.Done();
+}
+
+bool Geometry::Nodes::IterMeshPoint::PostEvaluate(
+        Gex::NodeAttributeData &ctx,
+        Gex::NodeAttributeData &outputCtx,
+        Gex::GraphContext &graphContext,
+        Gex::NodeProfiler &profiler
+)
+{
+    auto point = outputCtx.GetAttribute("OutputPoint").GetValue<Types::Point3>();
+
+    mesh.GetPoint(index).Swap(point);
+
+    return ctx.GetAttribute("OutMesh").SetValue<Types::Mesh>(mesh);
+}
+
+
+Gex::ScheduleNodePtrList Geometry::Nodes::IterMeshPoint::ToScheduledNodes()
+{
+    return {};
+}
+
 

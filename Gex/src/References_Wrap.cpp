@@ -1,28 +1,28 @@
 #include "Gex/include/References_Wrap.h"
 
-#include "boost/python.hpp"
-
 
 bool Gex::Python::References_Wrap::registered = false;
+Gex::Python::PyClassRegistry Gex::Python::References_Wrap::registry;
 
 
-boost::python::object Python_ReferencesGetLoader(
-        boost::python::tuple args,
-        boost::python::dict kwargs)
+
+pybind11::object Python_ReferencesGetLoader(
+        pybind11::args args,
+        pybind11::kwargs kwargs)
 {
     auto* refs = Gex::References::GetLoader();
 
-    return boost::python::object(boost::python::ptr(refs));
+    return pybind11::cast(refs);
 }
 
 
-boost::python::object Python_ReferencesAvailableRefs(
-        boost::python::tuple args,
-        boost::python::dict kwargs)
+pybind11::object Python_ReferencesAvailableRefs(
+        pybind11::args args,
+        pybind11::kwargs kwargs)
 {
-    boost::python::list dirs;
+    pybind11::list dirs;
 
-    Gex::References* refs = boost::python::extract<Gex::References*>(args[0]);
+    Gex::References* refs = args[0].cast<Gex::References*>();
 
     for (auto d : refs->GetAvailableReferences())
     {
@@ -33,13 +33,13 @@ boost::python::object Python_ReferencesAvailableRefs(
 }
 
 
-boost::python::object Python_ReferencesGetDirectories(
-        boost::python::tuple args,
-        boost::python::dict kwargs)
+pybind11::object Python_ReferencesGetDirectories(
+        pybind11::args args,
+        pybind11::kwargs kwargs)
 {
-    boost::python::list dirs;
+    pybind11::list dirs;
 
-    Gex::References* refs = boost::python::extract<Gex::References*>(args[0]);
+    Gex::References* refs = args[0].cast<Gex::References*>();
 
     for (auto d : refs->GetDirectories())
     {
@@ -50,23 +50,26 @@ boost::python::object Python_ReferencesGetDirectories(
 }
 
 
-bool Gex::Python::References_Wrap::RegisterPythonWrapper()
+bool Gex::Python::References_Wrap::RegisterPythonWrapper(pybind11::module_& mod,
+                                                         PyThreadState* state)
 {
-    if (registered)
+    if (registry.IsRegistered(state))
         return false;
 
-    boost::python::class_<Gex::References>("References", boost::python::no_init)
-            .def("GetLoader", boost::python::raw_function(&Python_ReferencesGetLoader))
-             .staticmethod("GetLoader")
+    pybind11::class_<Gex::References>(mod, "References", pybind11::module_local(false))
+            .def_static("GetLoader", &Python_ReferencesGetLoader)
              .def("AddDirectory", &Gex::References::AddDirectory)
              .def("RemDirectory", &Gex::References::RemDirectory)
-             .def("GetAvailableReferences", boost::python::raw_function(
-                     &Python_ReferencesAvailableRefs, 1))
-             .def("GetDirectories", boost::python::raw_function(
-                     &Python_ReferencesGetDirectories, 1))
+             .def("GetAvailableReferences", &Python_ReferencesAvailableRefs)
+             .def("GetDirectories", &Python_ReferencesGetDirectories)
              .def("ResolvePath", &Gex::References::ResolvePath)
              ;
 
-    registered = true;
-    return true;
+    return registry.Register(state);
+}
+
+
+bool Gex::Python::References_Wrap::IsRegistered()
+{
+    return registered;
 }

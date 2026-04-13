@@ -56,8 +56,11 @@ void ImageManip::Nodes::PerlinNoise::InitAttributes()
     CreateAttribute<int>("Octave", Gex::AttrValueType::Single,
                          Gex::AttrType::Input)->SetDefaultValue(5);
 
-    CreateAttribute<int>("OctaveFrequencyFactor", Gex::AttrValueType::Single,
+    CreateAttribute<double>("Lacunarity", Gex::AttrValueType::Single,
                          Gex::AttrType::Input)->SetDefaultValue(2);
+
+    CreateAttribute<double>("Persistence", Gex::AttrValueType::Single,
+                            Gex::AttrType::Input)->SetDefaultValue(0.5);
 
     CreateAttribute<int>("Seed", Gex::AttrValueType::Single,
                          Gex::AttrType::Input)->SetDefaultValue(1);
@@ -76,11 +79,66 @@ bool ImageManip::Nodes::PerlinNoise::Evaluate(
     int seed = context.GetAttribute("Seed").GetValue<int>();
     int frequency = context.GetAttribute("Frequency").GetValue<int>();
     int octave = context.GetAttribute("Octave").GetValue<int>();
-    int octaveFrequencyFactor = context.GetAttribute("OctaveFrequencyFactor").GetValue<int>();
+    double lacunarity = context.GetAttribute("Lacunarity").GetValue<int>();
+    double octavePersistence = context.GetAttribute("Persistence").GetValue<double>();
 
     QImage noise = ImageManip::Manip::FractalPerlinNoise(
             res.at(0), res.at(1), octave,
-            frequency, octaveFrequencyFactor, seed
+            frequency, lacunarity,
+            octavePersistence,seed
+    );
+
+    return context.GetAttribute("Image").SetValue<QImage>(noise);
+}
+
+
+void ImageManip::Nodes::CloudNoise::InitAttributes()
+{
+    ImageManip::Types::Resolution defaultRes = {1024, 1024};
+    CreateAttribute<ImageManip::Types::Resolution>(
+            "Resolution", Gex::AttrValueType::Single,
+            Gex::AttrType::Input)->SetDefaultValue(defaultRes);
+
+    CreateAttribute<int>("Frequency", Gex::AttrValueType::Single,
+                         Gex::AttrType::Input)->SetDefaultValue(10);
+
+    CreateAttribute<int>("Octave", Gex::AttrValueType::Single,
+                         Gex::AttrType::Input)->SetDefaultValue(5);
+
+    CreateAttribute<double>("Lacunarity", Gex::AttrValueType::Single,
+                            Gex::AttrType::Input)->SetDefaultValue(2);
+
+    CreateAttribute<double>("SmoothLevel", Gex::AttrValueType::Single,
+                            Gex::AttrType::Input)->SetDefaultValue(2);
+
+    CreateAttribute<double>("Persistence", Gex::AttrValueType::Single,
+                         Gex::AttrType::Input)->SetDefaultValue(0.5);
+
+    CreateAttribute<int>("Seed", Gex::AttrValueType::Single,
+                         Gex::AttrType::Input)->SetDefaultValue(1);
+
+    CreateAttribute<QImage>("Image", Gex::AttrValueType::Single,
+                            Gex::AttrType::Output);
+}
+
+
+bool ImageManip::Nodes::CloudNoise::Evaluate(
+        Gex::NodeAttributeData &context,
+        Gex::GraphContext &graphContext,
+        Gex::NodeProfiler &profiler)
+{
+    auto res = context.GetAttribute("Resolution").GetValue<ImageManip::Types::Resolution>();
+    double smoothLevel = context.GetAttribute("SmoothLevel").GetValue<double>();
+    int seed = context.GetAttribute("Seed").GetValue<int>();
+    int frequency = context.GetAttribute("Frequency").GetValue<int>();
+    int octave = context.GetAttribute("Octave").GetValue<int>();
+    double octaveFrequencyFactor = context.GetAttribute("Lacunarity").GetValue<double>();
+    double octavePersistence = context.GetAttribute("Persistence").GetValue<double>();
+
+    QImage noise = ImageManip::Manip::FractalCloudNoise(
+            res.at(0), res.at(1), octave,
+            frequency, octaveFrequencyFactor,
+            smoothLevel, octavePersistence, seed
     );
 
     return context.GetAttribute("Image").SetValue<QImage>(noise);

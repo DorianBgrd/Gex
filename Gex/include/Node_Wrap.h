@@ -3,16 +3,22 @@
 
 #include "api.h"
 #include "Node.h"
-#include "boost/python.hpp"
+#include "pybind11/pybind11.h"
+
+#include "Gex/python/utils.h"
+
+
+WEAK_PTR_CONVERTER(Gex::NodeWkPtr)
+
 
 namespace  Gex
 {
     namespace Python
     {
-        struct GEX_API Node_Wrap: public Gex::Node,
-                public boost::python::wrapper<Gex::Node>
+        struct GEX_API Node_Wrap: public Gex::Node
         {
             static bool pythonRegistered;
+            static PyClassRegistry registry;
 
         public:
             Node_Wrap();
@@ -40,12 +46,14 @@ namespace  Gex
                                   const AttributeChange& change) override;
 
 
-            static void RegisterPythonWrapper();
+            static bool RegisterPythonWrapper(pybind11::module_& mod,
+                                              PyThreadState* state=nullptr);
+
+            static bool IsRegistered();
         };
 
 
-        class GEX_API CompoundNode_Wrap: public Gex::CompoundNode,
-            public boost::python::wrapper<Gex::CompoundNode>
+        class GEX_API CompoundNode_Wrap: public Gex::CompoundNode
         {
 
         public:
@@ -57,8 +65,13 @@ namespace  Gex
 
         private:
             static bool registered;
+            static PyClassRegistry registry;
+
         public:
-            static void RegisterPythonWrapper();
+            static bool RegisterPythonWrapper(pybind11::module_& mod,
+                                              PyThreadState* state=nullptr);
+
+            static bool IsRegistered();
         };
 
     }

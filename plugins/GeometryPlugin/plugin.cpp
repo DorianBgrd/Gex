@@ -1,7 +1,7 @@
 #include "Gex/include/Gex.h"
 #include "UiRes/uires.h"
-#include "ui/include/ui.h"
-#include "ui/include/PluginLoader.h"
+#include "Gex_ui/include/ui.h"
+#include "Gex_ui/include/PluginLoader.h"
 
 #include "../export.h"
 
@@ -30,4 +30,6 @@ extern EXPORT RegisterPlugin(Gex::PluginLoader* loader)
     loader->RegisterNode<Geometry::Nodes::EditMeshPointBuilder>("Geometry/Mesh/SetMeshPoint");
 
     loader->RegisterNode<Geometry::Nodes::MeshPointNormalBuilder>("Geometry/Mesh/MeshPointNormal");
+
+    loader->RegisterNode<Geometry::Nodes::IterMeshPointBuilder>("Geometry/Mesh/IterMeshPoints");
 }

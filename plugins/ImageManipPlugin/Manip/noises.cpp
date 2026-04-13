@@ -1,5 +1,8 @@
 #include "noises.h"
 
+
+#include <iostream>
+
 #include <random>
 #include <set>
 #include <map>
@@ -880,13 +883,6 @@ QImage ImageManip::Manip::CircallyOrdered(
 }
 
 
-struct Vector
-{
-    float x;
-    float y;
-};
-
-
 double SmoothStep(double value)
 {
     return 6 * std::pow(value, 5) - 15 * std::pow(value, 4) + 10 * std::pow(value, 3);
@@ -899,114 +895,78 @@ double Lerp(double v1, double v2, double t)
 }
 
 
+auto GetGradient(const ImageManip::Manip::PerlinNoiseOptions& options, int x, int y)
+{
+    auto pe1 = options.permutations.at(y % 256);
+    auto pe2 = ((x + pe1) % 256);
 
-std::vector<double> ImageManip::Manip::PerlinNoise(
-        int imageWidth,
-        int imageHeight,
-        int frequency,
-        int seed,
-        bool smooth,
-        bool debug
+    return options.vectors.at(options.permutations.at(pe2));
+};
+
+
+double ImageManip::Manip::PerlinNoise(
+        double x, double y,
+        const PerlinNoiseOptions& options
 )
 {
-
-    std::vector<double> perlin;
-
     std::vector<std::vector<Types::Point>> meshVectors;
 
-    RGen gen(seed);
 
-    DoubleDist dist(-1, 1);
 
-    for (int x = 0; x < frequency + 1; x++)
-    {
-        std::vector<Types::Point> lineVectors;
-        for (int y = 0; y < frequency + 1; y++)
-        {
-            lineVectors.emplace_back(Types::Normalized({dist(gen), dist(gen)}));
-        }
+    double x0 = std::floor(x);
+    double y0 = std::floor(y);
+    double x1 = x0 + 1.0;
+    double y1 = y0 + 1.0;
 
-        meshVectors.push_back(lineVectors);
-    }
+    Types::Point gridVectorTopLeft = GetGradient(options, (int)x0, (int)y0);
+    Types::Point gridVectorTopRight = GetGradient(options, (int)x1, (int)y0);
+    Types::Point gridVectorBottomLeft = GetGradient(options, (int)x0, (int)y1);
+    Types::Point gridVectorBottomRight = GetGradient(options, (int)x1, (int)y1);
 
-    double gridWidth = (double)imageWidth / (double)frequency;
-    double gridHeight = (double)imageHeight / (double)frequency;
+    Types::Point gridTopLeftToPoint = Types::Normalized({
+            x - x0, y - y0
+    });
 
-    for (int y = 0; y < imageHeight; y++)
-    {
-        for (int x = 0; x < imageWidth; x++)
-        {
-            int gridX = (int)std::floor(x / gridWidth);
-            int gridY = (int)std::floor(y / gridHeight);
+    Types::Point gridTopRightToPoint = Types::Normalized({
+            x - x1, y - y0
+    });
 
-            double cx = x; // + 0.5;
-            double cy = y; // + 0.5;
+    Types::Point gridBottomLeftToPoint = Types::Normalized({
+            x - x0, y - y1
+    });
 
-            if (smooth)
-            {
-                cx += 0.5;
-                cy += 0.5;
-            }
+    Types::Point gridBottomRightToPoint = Types::Normalized({
+            x - x1, y - y1
+    });
 
-            Types::Point gridVectorTopLeft = meshVectors.at(gridX).at(gridY);
-            Types::Point gridVectorTopRight = meshVectors.at(gridX + 1).at(gridY);
-            Types::Point gridVectorBottomLeft = meshVectors.at(gridX).at(gridY + 1);
-            Types::Point gridVectorBottomRight = meshVectors.at(gridX + 1).at(gridY + 1);
+    double scalarTopLeft = ScalarProduct(
+            gridVectorTopLeft,
+            gridTopLeftToPoint
+    );
 
-            Types::Point gridTopLeftToPoint = Types::Normalized({
-                    cx - (gridX * gridWidth),
-                    cy - (gridY * gridHeight)
-            });
+    double scalarTopRight = ScalarProduct(
+            gridVectorTopRight,
+            gridTopRightToPoint
+    );
 
-            Types::Point gridTopRightToPoint = Types::Normalized({
-                    cx - ((gridX + 1) * gridWidth),
-                    cy - (gridY * gridHeight)
-            });
+    double scalarBottomLeft = ScalarProduct(
+            gridVectorBottomLeft,
+            gridBottomLeftToPoint
+    );
 
-            Types::Point gridBottomLeftToPoint = Types::Normalized({
-                    cx - (gridX * gridWidth),
-                    cy - ((gridY + 1) * gridHeight)
-            });
+    double scalarBottomRight = ScalarProduct(
+            gridVectorBottomRight,
+            gridBottomRightToPoint
+    );
 
-            Types::Point gridBottomRightToPoint = Types::Normalized({
-                    cx - ((gridX + 1) * gridWidth),
-                    cy - ((gridY + 1) * gridHeight)
-            });
+    double horizontalLerpFactor = SmoothStep((x - x0));
+    double verticalLerpFactor = SmoothStep((y - y0));
 
-            double scalarTopLeft = ScalarProduct(
-                    gridVectorTopLeft,
-                    gridTopLeftToPoint
-            );
+    double horizontalLerp = Lerp(scalarTopLeft, scalarTopRight, horizontalLerpFactor);
 
-            double scalarTopRight = ScalarProduct(
-                    gridVectorTopRight,
-                    gridTopRightToPoint
-            );
+    double verticalLerp = Lerp(scalarBottomLeft, scalarBottomRight, horizontalLerpFactor);
 
-            double scalarBottomLeft = ScalarProduct(
-                    gridVectorBottomLeft,
-                    gridBottomLeftToPoint
-            );
-
-            double scalarBottomRight = ScalarProduct(
-                    gridVectorBottomRight,
-                    gridBottomRightToPoint
-            );
-
-            double horizontalLerpFactor = SmoothStep((cx - gridX * gridWidth) / gridWidth);
-            double verticalLerpFactor = SmoothStep((cy - gridY * gridHeight) / gridHeight);
-
-            double horizontalLerp = Lerp(scalarTopLeft, scalarTopRight, horizontalLerpFactor);
-
-            double verticalLerp = Lerp(scalarBottomLeft, scalarBottomRight, horizontalLerpFactor);
-
-            double noise = Lerp(horizontalLerp, verticalLerp, verticalLerpFactor);
-
-            perlin.push_back(noise);
-        }
-    }
-
-    return perlin;
+    return Lerp(horizontalLerp, verticalLerp, verticalLerpFactor);
 }
 
 
@@ -1015,51 +975,79 @@ QImage ImageManip::Manip::FractalPerlinNoise(
         int imageHeight,
         int octave,
         int frequency,
-        int octaveFrequencyFactor,
-        int seed
+        double lacunarity,
+        double persistence,
+        int seed,
+        ModifierFunction modifier
 )
 {
-//    int startFrequency = 8;
-//    int octaveFactor = 2;
-
-    NormalDist seedDist;
     RGen gen(seed);
 
     QImage perlinImage(imageWidth, imageHeight, QImage::Format_RGBA64);
 
-    std::vector<std::vector<double>> perlin;
+    PerlinNoiseOptions options;
 
-    int realOctave = octave; // * 10;
+    DoubleDist dist(-1, 1);
 
-    for (int i = 0; i < realOctave; i++)
+    for (int v = 0; v < 256; v++)
     {
-        auto octavePerlin = PerlinNoise(
-                imageWidth, imageHeight,
-                frequency + i * octaveFrequencyFactor * frequency,
-                seedDist(gen), true
-        );
+        options.vectors[v] = Types::Normalized({dist(gen), dist(gen)});
+    }
 
-        perlin.push_back(octavePerlin);
+    // Generate permutation table.
+    NormalDist permutationDist(0, 256);
+    RGen permutationGen(seed);
+
+    for (int p=0; p < 256; p++)
+    {
+        options.permutations[p] = permutationDist(permutationGen);
+    }
+
+    for (int v = 256; v < 512; v++)
+    {
+        options.permutations[v] = options.permutations.at(v % 256);
     }
 
     for (int y = 0; y < imageHeight; y++)
     {
-        for (int x = 0; x < imageHeight; x++)
+        for (int x = 0; x < imageWidth; x++)
         {
-            double pixelPerlin = 0;
 
-            for (int f = 0; f < realOctave; f++)
+            double amplitude = 1.0;
+            double amplitudeSum = 0.0;
+            double octaveFrequency = frequency;
+
+            double perlin = 0;
+            for (int o = 0; o < octave; o++)
             {
-                pixelPerlin += perlin.at(f).at(y * imageWidth + x);
+                double ox = (double)x / ((double)imageWidth) * octaveFrequency;
+                double oy = (double)y / ((double)imageHeight) * octaveFrequency;
+
+                double octavePerlin = PerlinNoise(
+                        ox, oy, options
+                );
+
+                perlin += octavePerlin * amplitude;
+                amplitudeSum += amplitude;
+
+                amplitude *= persistence;
+                octaveFrequency *= lacunarity;
             }
 
-            pixelPerlin = pixelPerlin / realOctave;
+            perlin = perlin / amplitudeSum;
+
+            if (modifier)
+            {
+                perlin = modifier(perlin);
+            }
+
+            perlin = std::clamp(perlin, -1.0, 1.0);
 
             double c = 125.0;
 
-            QColor color(c + pixelPerlin * c,
-                         c + pixelPerlin * c,
-                         c + pixelPerlin * c,
+            QColor color(c + perlin * c,
+                         c + perlin * c,
+                         c + perlin * c,
                          255);
 
             perlinImage.setPixelColor(
@@ -1070,4 +1058,36 @@ QImage ImageManip::Manip::FractalPerlinNoise(
     }
 
     return perlinImage;
+}
+
+
+QImage ImageManip::Manip::FractalCloudNoise(
+        int imageWidth,
+        int imageHeight,
+        int octave,
+        int frequency,
+        int octaveFrequencyFactor,
+        double smoothLevel,
+        double octavePersistence,
+        int seed
+)
+{
+//    auto modifier = [](double noise)
+//    {
+//        return 1.0 - std::pow(1.0 - noise, 2);
+//    };
+
+    auto modifier = [smoothLevel](double noise)
+    {
+        return std::abs(std::pow(noise, smoothLevel));
+    };
+
+    return FractalPerlinNoise(
+        imageWidth,
+        imageHeight,
+        octave, frequency,
+        octaveFrequencyFactor,
+        octavePersistence,
+        seed, modifier
+    );
 }

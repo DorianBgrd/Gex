@@ -33,9 +33,9 @@ namespace Geometry::Types
 
         bool CompareValue(const std::any&, const std::any&) const override;
 
-        std::any FromPython(const boost::python::object&) const override;
+        std::any FromPython(const pybind11::object&) const override;
 
-        boost::python::object ToPython(const std::any&) const override;
+        pybind11::object ToPython(const std::any&) const override;
 
         std::any CopyValue(const std::any& source) const override;
 
@@ -72,9 +72,9 @@ namespace Geometry::Types
 
         bool CompareValue(const std::any&, const std::any&) const override;
 
-        std::any FromPython(const boost::python::object&) const override;
+        std::any FromPython(const pybind11::object&) const override;
 
-        boost::python::object ToPython(const std::any&) const override;
+        pybind11::object ToPython(const std::any&) const override;
 
         std::any CopyValue(const std::any& source) const override;
 
@@ -111,6 +111,8 @@ namespace Geometry::Types
         PointArray GetPoints() const;
 
         void SetPoints(const PointArray& points);
+
+        size_t GetPointCount() const;
 
         FaceArray GetFaces() const;
 
@@ -161,9 +163,9 @@ namespace Geometry::Types
 
         bool CompareValue(const std::any&, const std::any&) const override;
 
-        std::any FromPython(const boost::python::object&) const override;
+        std::any FromPython(const pybind11::object&) const override;
 
-        boost::python::object ToPython(const std::any&) const override;
+        pybind11::object ToPython(const std::any&) const override;
 
         std::any CopyValue(const std::any& source) const override;
 

@@ -53,15 +53,13 @@ namespace UsdPlugin
             bool CompareValue(const std::any& v1, const std::any& v2) const override;
 
             //
-            std::any FromPython(const boost::python::object& o) const override;
+            std::any FromPython(const pybind11::object& o) const override;
 
-            boost::python::object ToPython(const std::any&) const override;
+            pybind11::object ToPython(const std::any&) const override;
 
             std::any CopyValue(const std::any& source) const override;
 
             size_t Hash() const override;
-
-            std::string PythonName() const override;
 
             std::string ApiName() const override;
 
@@ -163,15 +161,15 @@ namespace UsdPlugin
         };
 
 
-        struct MeshToUsdTriangulatedMesh: public TSys::TypeConverter
+        struct MeshToUsdTriangulatedMesh
         {
-            std::any Convert(std::any from, std::any to) const;
+            std::any operator()(const std::any& from, const std::any& to) const;
         };
 
 
-        struct UsdTriangulatedMeshToMesh: public TSys::TypeConverter
+        struct UsdTriangulatedMeshToMesh
         {
-            std::any Convert(std::any from, std::any to) const;
+            std::any operator()(const std::any& from, const std::any& to) const;
         };
 
 
@@ -188,15 +186,13 @@ namespace UsdPlugin
             bool CompareValue(const std::any& v1, const std::any& v2) const override;
 
             //
-            std::any FromPython(const boost::python::object& o) const override;
+            std::any FromPython(const pybind11::object& o) const override;
 
-            boost::python::object ToPython(const std::any&) const override;
+            pybind11::object ToPython(const std::any&) const override;
 
             std::any CopyValue(const std::any& source) const override;
 
             size_t Hash() const override;
-
-            std::string PythonName() const override;
 
             std::string ApiName() const override;
 
@@ -232,8 +228,6 @@ namespace UsdPlugin
         {
             std::string ApiName() const override;
 
-            std::string PythonName() const override;
-
             void SerializeValue(const std::any& v, rapidjson::Value& value,
                                 rapidjson::Document& document) const override;
 
@@ -246,9 +240,9 @@ namespace UsdPlugin
 
             std::any InitValue() const override;
 
-            std::any FromPython(const boost::python::object&) const override;
+            std::any FromPython(const pybind11::object&) const override;
 
-            boost::python::object ToPython(const std::any&) const override;
+            pybind11::object ToPython(const std::any&) const override;
 
             std::any CopyValue(const std::any& source) const override;
 

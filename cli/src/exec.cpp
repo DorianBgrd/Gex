@@ -9,13 +9,13 @@ int Exec::ExecuteGraph(int argc, char** argv, int start) {
                    "using {attribute: value}.");
 
     parser.AddFlag("-tn", "--thread-number", 1,
-                   "Overrides execution thread number, default : 1");
+                   "Overrides execution thread number, default : 8");
 
     parser.AddFlag("-v", "--verbose", 0, "Execution verbosity.");
 
     parser.Parse(argc, argv, start);
 
-    int thnb = 1;
+    int thnb = 8;
     bool verbose = parser.FlagFound("-v");
 
     if (parser.FlagFound("-tn"))
@@ -39,7 +39,7 @@ int Exec::ExecuteGraph(int argc, char** argv, int start) {
     }
 
     std::vector<Gex::NodePtr> gexGraphs;
-    for (auto filepath: files)
+    for (const auto& filepath: files)
     {
         Gex::Feedback result;
         auto graph = Gex::LoadGraph(filepath, &result);
@@ -69,7 +69,7 @@ int Exec::ExecuteGraph(int argc, char** argv, int start) {
     }
 
     bool globalSuccess = true;
-    for (auto graph: gexGraphs)
+    for (const auto& graph: gexGraphs)
     {
         std::string attrValues = parser.FlagResult("-iv");
         if (!attrValues.empty())
@@ -92,15 +92,18 @@ int Exec::ExecuteGraph(int argc, char** argv, int start) {
                         continue;
                     }
 
-                    ResolveJsonValue(attr.ToShared(), member->value);
+                    auto val = attr->TypeHandle()->DeserializeValue(
+                            attr->GetAnyValue(),
+                            member->value
+                    );
+
+                    attr->SetAnyValue(val);
                 }
             }
             else
             {
                 std::cout << "Warning : Malformed attribute value description, skipping." << std::endl;
             }
-
-
         }
 
         auto scheduled = graph->ToScheduledNodes();
@@ -117,7 +120,7 @@ int Exec::ExecuteGraph(int argc, char** argv, int start) {
 }
 
 
-void Exec::VerboseNodeEnd(Gex::NodePtr node, bool success)
+void Exec::VerboseNodeEnd(const Gex::NodePtr& node, bool success)
 {
     std::string msg = "Successfully evaluated";
     if (!success)
@@ -127,13 +130,13 @@ void Exec::VerboseNodeEnd(Gex::NodePtr node, bool success)
 }
 
 
-void Exec::VerboseNodeStart(Gex::NodePtr node)
+void Exec::VerboseNodeStart(const Gex::NodePtr& node)
 {
     std::cout << "Starting evaluating " << node->Name() << std::endl;
 }
 
 
-bool Exec::ResolveJsonValue(Gex::AttributePtr attr, rapidjson::Value& value)
+bool Exec::ResolveJsonValue(const Gex::AttributePtr& attr, rapidjson::Value& value)
 {
     if (value.IsArray())
     {

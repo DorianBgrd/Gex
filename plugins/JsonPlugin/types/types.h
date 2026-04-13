@@ -11,6 +11,34 @@
 
 namespace JsonPlugin
 {
+    class JsonValueReader
+    {
+    private:
+        rapidjson::Value value;
+        rapidjson::Document::AllocatorType alloc;
+
+    public:
+        JsonValueReader() = default;
+
+        JsonValueReader(rapidjson::Value& value,
+                        rapidjson::Document& document)
+        {
+            alloc = document.GetAllocator();
+            value.CopyFrom(value, alloc);
+        }
+
+        JsonValueReader(const JsonValueReader& other)
+        {
+            alloc = other.alloc;
+            value.CopyFrom(other.value, alloc);
+        }
+
+        rapidjson::Value& Get()
+        {
+            return value;
+        }
+    };
+
 
     class JsonValueHandler: public TSys::TypeHandler
     {
@@ -31,9 +59,9 @@ namespace JsonPlugin
 
         bool CompareValue(const std::any& v1, const std::any& v2) const override;
 
-        std::any FromPython(const boost::python::object&) const override;
+        std::any FromPython(const pybind11::object&) const override;
 
-        boost::python::object ToPython(const std::any&) const override;
+        pybind11::object ToPython(const std::any&) const override;
 
         std::any CopyValue(const std::any& source) const override;
 
@@ -64,9 +92,41 @@ namespace JsonPlugin
 
         bool CompareValue(const std::any& v1, const std::any& v2) const override;
 
-        std::any FromPython(const boost::python::object&) const override;
+        std::any FromPython(const pybind11::object&) const override;
 
-        boost::python::object ToPython(const std::any&) const override;
+        pybind11::object ToPython(const std::any&) const override;
+
+        std::any CopyValue(const std::any& source) const override;
+
+        size_t Hash() const override;
+
+        std::string ApiName() const override;
+
+        size_t ValueHash(const std::any& val) const override;
+    };
+
+
+    class JsonReaderHandler: public TSys::TypeHandler
+    {
+        JsonReaderHandler();
+
+        void SerializeValue(const std::any& v, rapidjson::Value& value,
+                            rapidjson::Document& document) const override;
+
+        std::any DeserializeValue(const std::any& v, rapidjson::Value& value) const override;
+
+        void SerializeConstruction(const std::any& v, rapidjson::Value& value,
+                                   rapidjson::Document& document) const override;
+
+        std::any DeserializeConstruction(rapidjson::Value& value) const override;
+
+        std::any InitValue() const override;
+
+        bool CompareValue(const std::any& v1, const std::any& v2) const override;
+
+        std::any FromPython(const pybind11::object&) const override;
+
+        pybind11::object ToPython(const std::any&) const override;
 
         std::any CopyValue(const std::any& source) const override;
 

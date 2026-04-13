@@ -4,13 +4,16 @@
 
 #include "Gex/include/ptrs.h"
 
+#include "pybind11/pybind11.h"
+
 bool Gex::Python::Attribute_Wrap::registered = false;
+Gex::Python::PyClassRegistry Gex::Python::Attribute_Wrap::registry;
 
 
-boost::python::object Attribute_Python_Get(boost::python::tuple args,
-                                           boost::python::dict kwargs)
+pybind11::object Attribute_Python_Get(pybind11::args args,
+                                      pybind11::kwargs kwargs)
 {
-    Gex::Attribute* attribute = boost::python::extract<Gex::Attribute*>(args[0]);
+    Gex::Attribute* attribute = args[0].cast<Gex::Attribute*>();
     if (!attribute)
     {
         return {};
@@ -20,10 +23,10 @@ boost::python::object Attribute_Python_Get(boost::python::tuple args,
 }
 
 
-bool Attribute_Python_Set(boost::python::tuple args,
-                          boost::python::dict kwargs)
+bool Attribute_Python_Set(pybind11::args args,
+                          pybind11::kwargs kwargs)
 {
-    Gex::Attribute* attribute = boost::python::extract<Gex::Attribute*>(args[0]);
+    Gex::Attribute* attribute = args[0].cast<Gex::Attribute*>();
     if (!attribute)
     {
         return false;
@@ -34,7 +37,7 @@ bool Attribute_Python_Set(boost::python::tuple args,
         return false;
     }
 
-    boost::python::object value = args[1];
+    pybind11::object value = args[1];
 
     std::any _v = attribute->TypeHandle()->FromPython(value);
 
@@ -43,31 +46,32 @@ bool Attribute_Python_Set(boost::python::tuple args,
 }
 
 
-boost::python::object Attribute_Bool(
-        boost::python::tuple args,
-        boost::python::dict kwargs
+pybind11::object Attribute_Bool(
+        pybind11::tuple args,
+        pybind11::dict kwargs
 )
 {
-    Gex::Attribute* attribute = boost::python::extract<Gex::Attribute*>(args[0]);
+    Gex::Attribute* attribute = args[0].cast<Gex::Attribute*>();
 
-    return boost::python::object(
+    return pybind11::cast(
         attribute != Gex::AttributeWkPtr::invalid.get()
     );
 }
 
 
-boost::python::object At_Node(boost::python::tuple args,
-                              boost::python::dict kwargs)
+pybind11::object At_Node(pybind11::args args,
+                         pybind11::kwargs kwargs)
 {
-    const Gex::AttributePtr& self = boost::python::extract<const Gex::AttributePtr&>(args[0]);
+    const Gex::AttributePtr& self = args[0].cast<const Gex::AttributePtr&>();
 
-    return boost::python::object(self->Node().ToShared());
+    return pybind11::cast(self->Node().ToShared());
 }
 
 
-bool Gex::Python::Attribute_Wrap::RegisterPythonWrapper()
+bool Gex::Python::Attribute_Wrap::RegisterPythonWrapper(pybind11::module_& mod,
+                                                        PyThreadState* state)
 {
-    if (registered)
+    if(registry.IsRegistered(state))
         return false;
 
     bool (Gex::Attribute::* ProxyAttr_SimpleHasSource)() const = &Gex::Attribute::HasSource;
@@ -86,19 +90,13 @@ bool Gex::Python::Attribute_Wrap::RegisterPythonWrapper()
     bool (Gex::Attribute::* ProxyAttr_CanConnectSource)(const Gex::AttributePtr& a) =
     &Gex::Attribute::CanConnectSource;
 
-    boost::python::to_python_converter<
-            Gex::AttributeWkPtr,
-            Gex::Python::WeakPtrToPython<Gex::Attribute>,
-            true>();
-
-    boost::python::class_<Gex::Python::Attribute_Wrap, Gex::AttributePtr>
-            ("Attribute", boost::python::no_init)
+    pybind11::class_<Gex::Attribute, Gex::AttributePtr>(mod, "Attribute", pybind11::module_local(false))
             .def("Name", &Gex::Attribute::Name)
-            .def("Get", boost::python::raw_function(&Attribute_Python_Get))
-            .def("Set", boost::python::raw_function(&Attribute_Python_Set, 1))
+            .def("Get", &Attribute_Python_Get)
+            .def("Set", &Attribute_Python_Set)
             .def("GetIndex", &Gex::Attribute::GetIndexAttribute)
 //            .def("Node", &Gex::Attribute::Node)
-            .def("Node", boost::python::raw_function(&At_Node, 1))
+            .def("Node", &At_Node)
             .def("HasSource", ProxyAttr_SimpleHasSource)
             .def("HasSourceAtIndex", ProxyAttr_HasIndexSource)
             .def("Source", ProxyAttr_Source)
@@ -116,40 +114,44 @@ bool Gex::Python::Attribute_Wrap::RegisterPythonWrapper()
             .def("HasChildAttributes", &Gex::Attribute::HasChildAttributes)
             .def("ChildAttributeNames", &Gex::Attribute::ChildAttributesNames)
             .def("GetAttribute", &Gex::Attribute::GetAttribute)
-//            .def("ToWeakRef", boost::python::raw_function(&MakeSharedRef, 1))
-            .def("__bool__", boost::python::raw_function(Attribute_Bool))
+//            .def("ToWeakRef", pybind11::raw_function(&MakeSharedRef, 1))
+            .def("__bool__", &Attribute_Bool)
             ;
 
-//    boost::python::class_<Gex::AttributeWkPtr, boost::python::bases<Gex::AttributePtr>>
-//            ("AttributeWk", boost::python::no_init)
+//    pybind11::class_<Gex::AttributeWkPtr, pybind11::bases<Gex::AttributePtr>>
+//            ("AttributeWk", pybind11::no_init)
 //            .def("IsWkValid", &Gex::AttributeWkPtr::expired)
 //            .def("ToAttribute", &Gex::AttributeWkPtr::lock)
 //            .def("__call__", &Gex::AttributeWkPtr::lock)
 //            .def("__bool__", &Gex::AttributeWkPtr::operator bool)
 //            ;
 
-    boost::python::enum_<Gex::AttrValueType>("AttrValueType")
+    pybind11::enum_<Gex::AttrValueType>(mod, "AttrValueType", pybind11::module_local(false))
             .value("Single", Gex::AttrValueType::Single)
             .value("Multi", Gex::AttrValueType::Multi)
             .value("Holder", Gex::AttrValueType::Holder)
             .value("MultiHolder", Gex::AttrValueType::MultiHolder)
             ;
 
-    boost::python::enum_<Gex::AttrType>("AttrType")
+    pybind11::enum_<Gex::AttrType>(mod, "AttrType", pybind11::module_local(false))
             .value("Input", Gex::AttrType::Input)
             .value("Output", Gex::AttrType::Output)
             .value("Static", Gex::AttrType::Static)
             ;
 
-    boost::python::enum_<Gex::AttributeChange>("AttributeChange")
+    pybind11::enum_<Gex::AttributeChange>(mod, "AttributeChange", pybind11::module_local(false))
             .value("Connected", Gex::AttributeChange::Connected)
             .value("Disconnected", Gex::AttributeChange::Disconnected)
             .value("ValueChanged", Gex::AttributeChange::ValueChanged)
             .value("IndexAdded", Gex::AttributeChange::IndexAdded)
-            .value("IndexAdded", Gex::AttributeChange::IndexAdded)
             .value("IndexRemoved", Gex::AttributeChange::IndexRemoved)
             ;
 
-    registered = true;
-    return registered;
+    return registry.Register(state);
+}
+
+
+bool Gex::Python::Attribute_Wrap::IsRegistered()
+{
+    return registry.IsRegistered();
 }

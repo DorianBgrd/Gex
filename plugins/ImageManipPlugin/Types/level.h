@@ -52,15 +52,15 @@ namespace ImageManip::Types
     {
         std::any InitValue() const override;
 
-        std::any FromPython(const boost::python::object&) const override;
+        std::any FromPython(const pybind11::object&) const override;
 
-        boost::python::object ToPython(const std::any&) const override;
+        pybind11::object ToPython(const std::any&) const override;
 
         std::any CopyValue(const std::any& source) const override;
 
         size_t Hash() const override;
 
-        std::string PythonName() const override;
+//        std::string PythonName() const override;
 
         std::string ApiName() const override;
 

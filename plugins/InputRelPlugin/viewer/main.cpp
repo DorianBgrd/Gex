@@ -2,7 +2,7 @@
 #include "LinearFunc.h"
 #include "BezierFunc.h"
 //#include "BezierFunc.h"
-#include "ui/include/PluginLoader.h"
+#include "Gex_ui/include/PluginLoader.h"
 
 #include "Viewer.h"
 

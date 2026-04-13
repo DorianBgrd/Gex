@@ -39,12 +39,6 @@ add_dependencies(
 add_subdirectory(test)
 
 
-add_dependencies(
-        Test
-        Gex
-)
-
-
 add_subdirectory(
         cli
 )
@@ -56,11 +50,28 @@ add_dependencies(
 )
 
 
-add_subdirectory(ui)
+add_subdirectory(Gex_ui)
+add_subdirectory(
+        Gex_app
+)
 
 
 add_dependencies(
-        Gex_Software
+        Gex_App
+        App
+)
+
+
+add_dependencies(
+        Gex_App
+        Gex_ui
+        App
+)
+
+
+
+add_dependencies(
+        Gex_App
         Gex
         Gex_ui
         ArraysPlugin
@@ -76,7 +87,20 @@ add_dependencies(
 #if (NOT ${CMAKE_BUILD_TYPE} STREQUAL "Debug")
 if (${Build_UsdPlugin})
     add_dependencies(
-            Gex_Software
+            Gex_App
             UsdPlugin
     )
 endif()
+
+
+
+add_dependencies(
+        Test
+        Gex
+        Gex_App
+)
+
+add_dependencies(
+        Test-deploy
+        Test
+)

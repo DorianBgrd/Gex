@@ -3,18 +3,29 @@
 
 #include "api.h"
 #include "Attribute.h"
-#include "boost/python.hpp"
+#include "pybind11/pybind11.h"
+
+#include "Gex/python/utils.h"
+
+
+WEAK_PTR_CONVERTER(Gex::AttributeWkPtr)
+
 
 namespace Gex::Python
 {
-    struct GEX_API Attribute_Wrap: public Gex::Attribute,
-        public boost::python::wrapper<Gex::Attribute>
+
+
+    struct GEX_API Attribute_Wrap
     {
         protected:
         static bool registered;
+        static PyClassRegistry registry;
 
         public:
-        static bool RegisterPythonWrapper();
+        static bool RegisterPythonWrapper(pybind11::module_& mod,
+                                          PyThreadState* state=nullptr);
+
+        static bool IsRegistered();
     };
 }
 

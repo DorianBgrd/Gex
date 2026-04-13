@@ -5,7 +5,7 @@
 #include "Gex/include/Gex.h"
 
 
-namespace PythonPlugin::Nodes
+namespace GexPython::Nodes
 {
 //    class PythonNode: public Gex::Node
 //    {
@@ -32,6 +32,20 @@ namespace PythonPlugin::Nodes
     };
 
     GENERATE_DEFAULT_BUILDER(ExpressionBuilder, Expression)
+
+
+    class InlineExpression: public Gex::Node
+    {
+    public:
+        void InitAttributes() override;
+
+        bool Evaluate(Gex::NodeAttributeData &context,
+                      Gex::GraphContext &graphContext,
+                      Gex::NodeProfiler &profiler)
+        override;
+    };
+
+    GENERATE_DEFAULT_BUILDER(InlineExpressionBuilder, InlineExpression)
 }
 
 #endif //GEX_PYTHON_NODES_H

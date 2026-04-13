@@ -58,14 +58,35 @@ namespace ImageManip::Types
             return std::any_cast<Resolution>(v1) == std::any_cast<Resolution>(v2);
         }
 
-        std::any FromPython(const boost::python::object&) const override
+        std::any FromPython(const pybind11::object& p) const override
         {
-            return InitValue();
+            PyObject* pyList = p.ptr();
+            if ((!PyList_Check(pyList)) || PyList_GET_SIZE(pyList) != 2)
+            {
+                return InitValue();
+            }
+
+            PyObject* width = PyList_GetItem(pyList, 0);
+            PyObject* height = PyList_GetItem(pyList, 1);
+
+            if (!PyLong_Check(width) || !PyLong_Check(height))
+            {
+                return InitValue();
+            }
+
+            Resolution res = {PyLong_AsLong(width), PyLong_AsLong(height)};
+            return std::make_any<Resolution>(res);
         }
 
-        boost::python::object ToPython(const std::any&) const override
+        pybind11::object ToPython(const std::any& v) const override
         {
-            return {};
+            pybind11::list pyResolution;
+            Resolution res = std::any_cast<Resolution>(v);
+
+            pyResolution.append(res.at(0));
+            pyResolution.append(res.at(1));
+
+            return pyResolution;
         }
 
         std::any CopyValue(const std::any& source) const override
@@ -78,10 +99,10 @@ namespace ImageManip::Types
             return typeid(Resolution).hash_code();
         }
 
-        std::string PythonName() const override
-        {
-            return "Resolution";
-        }
+//        std::string PythonName() const override
+//        {
+//            return "Resolution";
+//        }
 
         std::string ApiName() const override
         {

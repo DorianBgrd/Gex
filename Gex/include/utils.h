@@ -16,6 +16,13 @@ namespace Gex::Utils
     std::string UniqueName(const std::string& name, const NodeList& nodes);
 
     std::string GetEnv(const std::string& name);
+
+    template <class T>
+    inline void hash_combine(std::size_t& seed, const T& v)
+    {
+        std::hash<T> hasher;
+        seed ^= hasher(v) + 0x9e3779b9 + (seed<<6) + (seed>>2);
+    }
 }
 
 #endif //GEX_UTILS_H

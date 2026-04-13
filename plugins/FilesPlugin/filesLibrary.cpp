@@ -155,6 +155,47 @@ namespace FileNodes
 
 
     GENERATE_DEFAULT_BUILDER(CreateFileBuilder, CreateFile)
+
+
+    class SaveToFile: public Gex::Node
+    {
+        void InitAttributes() override
+        {
+            CreateAttribute<std::string>(
+                    "Path", Gex::AttrValueType::Single,
+                    Gex::AttrType::Static
+            );
+
+            CreateAttribute<std::string>(
+                    "Content", Gex::AttrValueType::Single,
+                    Gex::AttrType::Input
+            );
+        }
+
+        bool Evaluate(Gex::NodeAttributeData &context,
+                      Gex::GraphContext &graphContext,
+                      Gex::NodeProfiler &profiler) override
+        {
+            std::filesystem::path filePath = GetAttribute("Path")->Get<std::string>();
+
+            auto directory = filePath.parent_path();
+            if (!std::filesystem::exists(directory) || !std::filesystem::is_directory(directory))
+            {
+                return false;
+            }
+
+            std::ofstream fileStream(filePath.string());
+
+            fileStream << GetAttribute("Content")->Get<std::string>();
+
+            fileStream.close();
+
+            return true;
+        }
+    };
+
+
+    GENERATE_DEFAULT_BUILDER(SaveToFileBuilder, SaveToFile)
 }
 
 
@@ -164,4 +205,6 @@ extern EXPORT RegisterPlugin(Gex::PluginLoader* loader)
     loader->RegisterNode<FileNodes::SaveToPyhonFileBuilder>("Files/SaveToPython");
 
     loader->RegisterNode<FileNodes::CreateFileBuilder>("Files/CreateFile");
+
+    loader->RegisterNode<FileNodes::SaveToFileBuilder>("Files/SaveToFile");
 }

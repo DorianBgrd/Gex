@@ -7,10 +7,7 @@
 #include "Gex/include/wraputils.h"
 
 
-#include "boost/python/suite/indexing/vector_indexing_suite.hpp"
-
-
-std::any InitPythonValue(boost::python::object pythonType, Gex::Feedback& feedback)
+std::any InitPythonValue(pybind11::object pythonType, Gex::Feedback& feedback)
 {
     auto handler = TSys::TypeRegistry::GetRegistry()->GetTypeHandle(pythonType);
     if (!handler)
@@ -22,9 +19,10 @@ std::any InitPythonValue(boost::python::object pythonType, Gex::Feedback& feedba
 
     std::any value;
 
-    std::string pyTypeName = boost::python::extract<std::string>(
-            pythonType.attr("__class__").attr("__name__")
-    );
+    std::string pyTypeName = pythonType
+            .attr("__class__")
+            .attr("__name__")
+            .cast<std::string>();
 
     if (pyTypeName == "type")  // An object type has been passed, init a default value.
         value = handler->InitValue();
@@ -36,41 +34,42 @@ std::any InitPythonValue(boost::python::object pythonType, Gex::Feedback& feedba
 }
 
 
-boost::python::object Gex_Node_CreateAttribute(boost::python::tuple args,
-                                               boost::python::dict kwargs)
+pybind11::object Gex_Node_CreateAttribute(pybind11::tuple args,
+                                               pybind11::dict kwargs)
 {
-    Gex::Node* self = boost::python::extract<Gex::Node*>(args[0]);
-    std::string name = boost::python::extract<std::string>(args[1]);
-    boost::python::object type = args[2];
+    Gex::Node* self = args[0].cast<Gex::Node*>();
+    std::string name = args[1].cast<std::string>();
+    pybind11::object type = args[2];
     Gex::AttrValueType attrValueType = Gex::AttrValueType::Single;
     Gex::AttrType attrType = Gex::AttrType::Input;
     Gex::AttributeWkPtr parent;
 
-    if (boost::python::len(args) > 3)
+    if (pybind11::len(args) > 3)
     {
-        attrValueType = boost::python::extract<Gex::AttrValueType>(args[3]);
+        attrValueType = args[3].cast<Gex::AttrValueType>();
     }
-    else if (boost::python::object vt = kwargs.get("valueType"))
+    else if (kwargs.contains("valueType"))
     {
-        attrValueType = boost::python::extract<Gex::AttrValueType>(vt);
-    }
-
-    if (boost::python::len(args) > 4)
-    {
-        attrType = boost::python::extract<Gex::AttrType>(args[4]);
-    }
-    else if (boost::python::object vty = kwargs.get("type"))
-    {
-        attrType = boost::python::extract<Gex::AttrType>(vty);
+        attrValueType = kwargs["valueType"].cast<Gex::AttrValueType>();
     }
 
-    if (boost::python::len(args) > 5)
+    if (pybind11::len(args) > 4)
     {
-        parent = boost::python::extract<Gex::AttributeWkPtr>(args[5]);
+        attrType = args[4].cast<Gex::AttrType>();
     }
-    else if (boost::python::object pt = kwargs.get("parent"))
+    else if (kwargs.contains("type"))
     {
-        parent = boost::python::extract<Gex::AttributeWkPtr>(pt);
+        attrType = kwargs["type"].cast<Gex::AttrType>();
+    }
+
+    pybind11::object pt;
+    if (pybind11::len(args) > 5)
+    {
+        parent = args[5].cast<Gex::AttributeWkPtr>();
+    }
+    else if (kwargs.contains("parent"))
+    {
+        parent = kwargs["parent"].cast<Gex::AttributeWkPtr>();
     }
 
     Gex::Feedback feedback;
@@ -83,46 +82,46 @@ boost::python::object Gex_Node_CreateAttribute(boost::python::tuple args,
         return {};
     }
 
-    return boost::python::object(attribute);
+    return pybind11::cast(attribute);
 }
 
 
 
-//boost::python::object Gex_CompoundNode_CreateInternalAttribute(boost::python::tuple args,
-//                                                               boost::python::dict kwargs)
+//pybind11::object Gex_CompoundNode_CreateInternalAttribute(pybind11::tuple args,
+//                                                               pybind11::dict kwargs)
 //{
-//    Gex::CompoundNode* self = boost::python::extract<Gex::CompoundNode*>(args[0]);
-//    std::string name = boost::python::extract<std::string>(args[1]);
-//    boost::python::object type = args[2];
+//    Gex::CompoundNode* self = pybind11::extract<Gex::CompoundNode*>(args[0]);
+//    std::string name = pybind11::extract<std::string>(args[1]);
+//    pybind11::object type = args[2];
 //    Gex::AttrValueType attrValueType = Gex::AttrValueType::Single;
 //    Gex::AttrType attrType = Gex::AttrType::Input;
 //    Gex::Attribute* parent = nullptr;
 //
-//    if (boost::python::len(args) > 3)
+//    if (pybind11::len(args) > 3)
 //    {
-//        attrValueType = boost::python::extract<Gex::AttrValueType>(args[3]);
+//        attrValueType = pybind11::extract<Gex::AttrValueType>(args[3]);
 //    }
-//    else if (boost::python::object vt = kwargs.get("valueType"))
+//    else if (pybind11::object vt = kwargs.get("valueType"))
 //    {
-//        attrValueType = boost::python::extract<Gex::AttrValueType>(vt);
-//    }
-//
-//    if (boost::python::len(args) > 4)
-//    {
-//        attrType = boost::python::extract<Gex::AttrType>(args[4]);
-//    }
-//    else if (boost::python::object vty = kwargs.get("type"))
-//    {
-//        attrType = boost::python::extract<Gex::AttrType>(vty);
+//        attrValueType = pybind11::extract<Gex::AttrValueType>(vt);
 //    }
 //
-//    if (boost::python::len(args) > 5)
+//    if (pybind11::len(args) > 4)
 //    {
-//        parent = boost::python::extract<Gex::Attribute*>(args[5]);
+//        attrType = pybind11::extract<Gex::AttrType>(args[4]);
 //    }
-//    else if (boost::python::object pt = kwargs.get("parent"))
+//    else if (pybind11::object vty = kwargs.get("type"))
 //    {
-//        parent = boost::python::extract<Gex::Attribute*>(pt);
+//        attrType = pybind11::extract<Gex::AttrType>(vty);
+//    }
+//
+//    if (pybind11::len(args) > 5)
+//    {
+//        parent = pybind11::extract<Gex::Attribute*>(args[5]);
+//    }
+//    else if (pybind11::object pt = kwargs.get("parent"))
+//    {
+//        parent = pybind11::extract<Gex::Attribute*>(pt);
 //    }
 //
 //    Gex::Feedback feedback;
@@ -135,19 +134,21 @@ boost::python::object Gex_Node_CreateAttribute(boost::python::tuple args,
 //        return {};
 //    }
 //
-//    return boost::python::object(attribute);
+//    return pybind11::object(attribute);
 //}
 //
 
 
 
 bool Gex::Python::Node_Wrap::pythonRegistered = false;
+Gex::Python::PyClassRegistry Gex::Python::Node_Wrap::registry;
 
 
 bool Gex::Python::CompoundNode_Wrap::registered = false;
+Gex::Python::PyClassRegistry Gex::Python::CompoundNode_Wrap::registry;
 
 
-Gex::Python::Node_Wrap::Node_Wrap(): Gex::Node(), boost::python::wrapper<Gex::Node>()
+Gex::Python::Node_Wrap::Node_Wrap(): Gex::Node()
 {
 
 }
@@ -161,38 +162,31 @@ Gex::Python::Node_Wrap::~Node_Wrap()
 
 std::string Gex::Python::Node_Wrap::Type() const
 {
-    if (boost::python::override func = boost::python::wrapper<Gex::Node>::get_override("Type"))
-    {
-        return func();
-    }
-
-    return Node::Type();
+    PYBIND11_OVERRIDE(
+            std::string,
+            Gex::Node,
+            Type
+    );
 }
 
 
 std::string Gex::Python::Node_Wrap::Description() const
 {
-    if (boost::python::override func = this->get_override("Description"))
-    {
-        boost::python::object r = func();
-        std::string res = boost::python::extract<std::string>(r);
-        return res;
-    }
-
-    return this->Node::Description();
+    PYBIND11_OVERRIDE(
+            std::string,
+            Gex::Node,
+            Description
+    );
 }
 
 
 void Gex::Python::Node_Wrap::InitAttributes()
 {
-    if (boost::python::override func = boost::python::wrapper<Gex::Node>::get_override("InitAttributes"))
-    {
-        func();
-    }
-    else
-    {
-        Node::InitAttributes();
-    }
+    PYBIND11_OVERRIDE(
+            void,
+            Gex::Node,
+            InitAttributes
+    );
 }
 
 
@@ -200,66 +194,56 @@ bool Gex::Python::Node_Wrap::Evaluate(NodeAttributeData &evalCtx,
                                       GraphContext &graphCtx,
                                       NodeProfiler& profiler)
 {
-    if (boost::python::override func = boost::python::wrapper<Gex::Node>::get_override("Evaluate"))
-    {
-        try
-        {
-            boost::python::object res = func(evalCtx, graphCtx);
-            bool result = boost::python::extract<bool>(res);
-            return result;
-        }
-        catch(const boost::python::error_already_set&)
-        {
-            PyErr_Print();
-            return false;
-        }
-
-    }
-
-    return Node::Evaluate(evalCtx, graphCtx, profiler);
+    PYBIND11_OVERRIDE(
+            bool,
+            Gex::Node,
+            Evaluate,
+            evalCtx,
+            graphCtx,
+            profiler
+    );
 }
 
 
 void Gex::Python::Node_Wrap::AttributeChanged(const Gex::AttributePtr& attribute,
                                               const Gex::AttributeChange& change)
 {
-    if (boost::python::override func = boost::python::wrapper<Gex::Node>::get_override("AttributeChanged"))
-    {
-        func(attribute, change);
-    }
-    else
-    {
-        Node::AttributeChanged(attribute, change);
-    }
+    PYBIND11_OVERRIDE(
+            void,
+            Gex::Node,
+            AttributeChanged,
+            attribute,
+            change
+    );
 }
 
 
-boost::python::object NW_Python_CreateAttribute(boost::python::tuple args,
-                                                boost::python::dict kwargs)
+pybind11::object NW_Python_CreateAttribute(pybind11::args args,
+                                           pybind11::kwargs kwargs)
 {
-    Gex::Node* self = boost::python::extract<Gex::Node*>(args[0]);
-    std::string name = boost::python::extract<std::string>(args[1]);
-    boost::python::object type = args[2];
+    Gex::Node* self = args[0].cast<Gex::Node*>();
+    std::string name = args[1].cast<std::string>();
+    pybind11::object type = args[2];
     Gex::AttrType attrType = Gex::AttrType::Static;
     Gex::AttrValueType attrValueType = Gex::AttrValueType::Single;
     Gex::AttributePtr parent = nullptr;
 
-    int length = boost::python::len(args);
+    int length = pybind11::len(args);
     if (length > 3)
-        attrType = boost::python::extract<Gex::AttrType>(args[3]);
-    else if (kwargs.has_key("type"))
-        attrType = boost::python::extract<Gex::AttrType>(kwargs["type"]);
+        attrType = args[3].cast<Gex::AttrType>();
+    else if (kwargs.contains("type"))
+        attrType = kwargs["type"].cast<Gex::AttrType>();
 
     if (length > 4)
-        attrValueType = boost::python::extract<Gex::AttrValueType>(args[4]);
-    else if (kwargs.has_key("valueType"))
-        attrValueType = boost::python::extract<Gex::AttrValueType>(kwargs["valueType"]);
+        attrValueType = args[4].cast<Gex::AttrValueType>();
+    else if (kwargs.contains("valueType"))
+        attrValueType = kwargs["valueType"].cast<Gex::AttrValueType>();
 
 
     if (length > 5)
-        parent = boost::python::extract<Gex::AttributePtr>(args[5]);
-    else if (kwargs.has_key("parent"))
-        parent = boost::python::extract<Gex::AttributePtr>(kwargs["parent"]);
+        parent = args[5].cast<Gex::AttributePtr>();
+    else if (kwargs.contains("parent"))
+        parent = kwargs["parent"].cast<Gex::AttributePtr>();
 
     Gex::Feedback feedback;
     std::any value = InitPythonValue(type, feedback);
@@ -268,54 +252,54 @@ boost::python::object NW_Python_CreateAttribute(boost::python::tuple args,
         return {};
     }
 
-    return boost::python::object(self->CreateAttributeFromValue(
+    return pybind11::cast(self->CreateAttributeFromValue(
             name, value, attrValueType, attrType, parent));
 }
 
 
-boost::python::object NW_Python_CreateAttributeFromTypeName(
-        boost::python::tuple args,
-        boost::python::dict kwargs
+pybind11::object NW_Python_CreateAttributeFromTypeName(
+        pybind11::tuple args,
+        pybind11::dict kwargs
 )
 {
-    Gex::Node* self = boost::python::extract<Gex::Node*>(args[0]);
-    std::string name = boost::python::extract<std::string>(args[1]);
-    boost::python::object type = args[2];
+    Gex::Node* self = args[0].cast<Gex::Node*>();
+    std::string name = args[1].cast<std::string>();
+    pybind11::object type = args[2];
     Gex::AttrType attrType = Gex::AttrType::Static;
     Gex::AttrValueType attrValueType = Gex::AttrValueType::Single;
     Gex::AttributePtr parent = nullptr;
 
-    int length = boost::python::len(args);
+    int length = pybind11::len(args);
     if (length > 3)
-        attrType = boost::python::extract<Gex::AttrType>(args[3]);
-    else if (kwargs.has_key("type"))
-        attrType = boost::python::extract<Gex::AttrType>(kwargs["type"]);
+        attrType = args[3].cast<Gex::AttrType>();
+    else if (kwargs.contains("type"))
+        attrType = kwargs["type"].cast<Gex::AttrType>();
 
     if (length > 4)
-        attrValueType = boost::python::extract<Gex::AttrValueType>(args[4]);
-    else if (kwargs.has_key("valueType"))
-        attrValueType = boost::python::extract<Gex::AttrValueType>(kwargs["valueType"]);
+        attrValueType = args[4].cast<Gex::AttrValueType>();
+    else if (kwargs.contains("valueType"))
+        attrValueType = kwargs["valueType"].cast<Gex::AttrValueType>();
 
     if (length > 5)
-        parent = boost::python::extract<Gex::AttributePtr>(args[5]);
-    else if (kwargs.has_key("parent"))
-        parent = boost::python::extract<Gex::AttributePtr>(kwargs["parent"]);
+        parent = args[5].cast<Gex::AttributePtr>();
+    else if (kwargs.contains("parent"))
+        parent = kwargs["parent"].cast<Gex::AttributePtr>();
 
 //    std::any value = InitPythonValue(type, feedback);
-    std::string apiType = boost::python::extract<std::string>(type);
+    std::string apiType = type.cast<std::string>();
 
-    return boost::python::object(self->CreateAttributeFromTypeName(
+    return pybind11::cast(self->CreateAttributeFromTypeName(
             name, apiType, attrValueType, attrType, parent));
 }
 
 
 template<class T>
-inline boost::python::list PtrVectorToBoostPtrList(std::vector<T*> vec)
+inline pybind11::list PtrVectorToBoostPtrList(std::vector<T*> vec)
 {
-    boost::python::list l;
+    pybind11::list l;
     for (T* value : vec)
     {
-        l.append(boost::python::object(value));
+        l.append(pybind11::object(value));
     }
 
     return l;
@@ -323,9 +307,9 @@ inline boost::python::list PtrVectorToBoostPtrList(std::vector<T*> vec)
 
 
 template<class T>
-inline boost::python::list VectorToBoostList(std::vector<T> vec)
+inline pybind11::list VectorToBoostList(std::vector<T> vec)
 {
-    boost::python::list l;
+    pybind11::list l;
     for (T value : vec)
     {
         l.append(value);
@@ -335,93 +319,94 @@ inline boost::python::list VectorToBoostList(std::vector<T> vec)
 }
 
 
-boost::python::object NW_Python_GetAttributes(boost::python::tuple args,
-                                              boost::python::dict kwargs)
+pybind11::object NW_Python_GetAttributes(pybind11::args args,
+                                         pybind11::kwargs kwargs)
 {
-    Gex::NodePtr self = boost::python::extract<Gex::NodePtr>(args[0]);
+    Gex::NodePtr self = args[0].cast<Gex::NodePtr>();
 
     return VectorToBoostList(self->GetAllAttributes());
 }
 
 
-boost::python::object NW_Python_UpstreamNodes(boost::python::tuple args,
-                                              boost::python::dict kwargs)
+pybind11::object NW_Python_UpstreamNodes(pybind11::args args,
+                                         pybind11::kwargs kwargs)
 {
-    Gex::NodePtr self = boost::python::extract<Gex::NodePtr>(args[0]);
+    Gex::NodePtr self = args[0].cast<Gex::NodePtr>();
 
     return VectorToBoostList(self->UpstreamNodes());
 }
 
 
-boost::python::object MakeWeakReference(boost::python::tuple args,
-                                        boost::python::dict kwargs)
+pybind11::object MakeWeakReference(pybind11::args args,
+                                   pybind11::kwargs kwargs)
 {
-    Gex::NodePtr node = boost::python::extract<Gex::NodePtr>(args[0]);
+    Gex::NodePtr node = args[0].cast<Gex::NodePtr>();
 
     Gex::NodeWkPtr wknode = node;
 
-    return boost::python::object(wknode);
+    return pybind11::cast(wknode);
 }
 
 
-boost::python::object Node_RegisterAttributeCallback(
-        boost::python::tuple args,
-        boost::python::dict kwargs
+pybind11::object Node_RegisterAttributeCallback(
+        pybind11::args args,
+        pybind11::kwargs kwargs
 )
 {
-    Gex::Node* self = boost::python::extract<Gex::Node*>(args[0]);
+    Gex::Node* self = args[0].cast<Gex::Node*>();
 
-    boost::python::object callable = args[1];
+    pybind11::object callable = args[1];
 
     auto id = self->RegisterAttributeCallback(
             [callable](const Gex::AttributePtr& attribute,
                        const Gex::AttributeChange& change)
             {
-                callable(boost::python::object(attribute),
-                         boost::python::object(change));
+                callable(pybind11::cast(attribute),
+                         pybind11::cast(change));
             }
     );
 
-    return boost::python::object(id);
+    return pybind11::cast(id);
 }
 
 
-boost::python::object Node_RegisterNodeChangedCallback(
-        boost::python::tuple args,
-        boost::python::dict kwargs
+pybind11::object Node_RegisterNodeChangedCallback(
+        pybind11::args args,
+        pybind11::kwargs kwargs
 )
 {
-    Gex::Node* self = boost::python::extract<Gex::Node*>(args[0]);
+    Gex::Node* self = args[0].cast<Gex::Node*>();
 
-    boost::python::object callable = args[1];
+    pybind11::object callable = args[1];
 
     auto id = self->RegisterNodeChangedCallback(
             [callable](const Gex::NodeChange& c, const Gex::NodeWkPtr& n)
             {
-                callable(boost::python::object(c),
-                         boost::python::object(n));
+                callable(pybind11::cast(c),
+                         pybind11::cast(n));
             }
     );
 
-    return boost::python::object(id);
+    return pybind11::cast(id);
 }
 
 
-boost::python::object Node_Bool(
-        boost::python::tuple args,
-        boost::python::dict kwargs
+pybind11::object Node_Bool(
+        pybind11::tuple args,
+        pybind11::dict kwargs
 )
 {
-    Gex::Node* self = boost::python::extract<Gex::Node*>(args[0]);
+    Gex::Node* self = args[0].cast<Gex::Node*>();
 
-    return boost::python::object(bool(self));
+    return pybind11::cast(bool(self));
 }
 
 
-void Gex::Python::Node_Wrap::RegisterPythonWrapper()
+bool Gex::Python::Node_Wrap::RegisterPythonWrapper(pybind11::module_& mod,
+                                                   PyThreadState* state)
 {
-    if (pythonRegistered)
-        return;
+    if (registry.IsRegistered(state))
+        return false;
 
     /*
      * ChildNodeAdded,
@@ -431,7 +416,7 @@ void Gex::Python::Node_Wrap::RegisterPythonWrapper()
         Deleted
      */
 
-    boost::python::enum_<Gex::NodeChange>("NodeChange")
+    pybind11::enum_<Gex::NodeChange>(mod, "NodeChange", pybind11::module_local(false))
             .value("ChildNodeAdded", Gex::NodeChange::ChildNodeAdded)
             .value("ChildNodeRemoved", Gex::NodeChange::ChildNodeRemoved)
             .value("AttributeAdded", Gex::NodeChange::AttributeAdded)
@@ -439,83 +424,80 @@ void Gex::Python::Node_Wrap::RegisterPythonWrapper()
             .value("Deleted", Gex::NodeChange::Deleted)
             ;
 
-    boost::python::to_python_converter<
-            Gex::NodeWkPtr,
-            Gex::Python::WeakPtrToPython<Gex::Node>,
-            true>();
 
-    boost::python::class_<Gex::Python::Node_Wrap, Gex::NodePtr, boost::noncopyable>("Node", boost::python::init())
-            .def(boost::python::init<Gex::NodePtr>())
-            .def("InitAttributes", &Gex::Node::InitAttributes, &Gex::Python::Node_Wrap::InitAttributes)
-            .def("Evaluate", &Gex::Node::Evaluate, &Gex::Python::Node_Wrap::Evaluate)
+    pybind11::class_<Gex::Node, Gex::Python::Node_Wrap, Gex::NodePtr>(mod, "Node", pybind11::module_local(false))
+            .def(pybind11::init<>())
+            .def("InitAttributes", &Gex::Node::InitAttributes)
+            .def("Evaluate", &Gex::Node::Evaluate)
             .def("Name", &Gex::Node::Name)
-            .def("Type", &Gex::Node::Type, &Gex::Python::Node_Wrap::Type)
-            .def("Description", &Gex::Node::Description, &Gex::Python::Node_Wrap::Description)
-//            .def("CreateAttributeFromValue", boost::python::raw_function(&NW_Python_CreateAttribute, 3))
-            .def("CreateAttributeFromTypeName", boost::python::raw_function(
-                    &NW_Python_CreateAttributeFromTypeName, 3))
-            .def("GetAttributes", boost::python::raw_function(&NW_Python_GetAttributes, 1))
+            .def("Type", &Gex::Node::Type)
+            .def("Description", &Gex::Node::Description)
+//            .def("CreateAttributeFromValue", pybind11::raw_function(&NW_Python_CreateAttribute, 3))
+            .def("CreateAttributeFromTypeName", &NW_Python_CreateAttributeFromTypeName)
+            .def("GetAttributes", &NW_Python_GetAttributes)
             .def("GetAttribute", &Gex::Node::GetAttribute)
             .def("IsEditable", &Gex::Node::IsEditable)
             .def("SetEditable", &Gex::Node::SetEditable)
             .def("Compute", &Gex::Node::Compute)
-            .def("UpstreamNodes", boost::python::raw_function(&NW_Python_UpstreamNodes, 1))
+            .def("UpstreamNodes", &NW_Python_UpstreamNodes)
             .def("HasAttribute", &Gex::Node::HasAttribute)
             .def("AttributeChanged", &Gex::Node::AttributeChanged)
-            .def("RegisterAttributeChangedCallback", boost::python::raw_function(&Node_RegisterAttributeCallback, 2))
-            .def("RegisterNodeChangedCallback", boost::python::raw_function(&Node_RegisterNodeChangedCallback, 2))
-            .def("ToWeakRef", boost::python::raw_function(
-                    &Gex::Python::StrongRefToWeak<Gex::NodePtr, Gex::NodeWkPtr>, 1))
-            .def("__bool__", boost::python::raw_function(&Node_Bool, 1))
+            .def("RegisterAttributeChangedCallback", &Node_RegisterAttributeCallback)
+            .def("RegisterNodeChangedCallback", &Node_RegisterNodeChangedCallback)
+            .def("__bool__", &Node_Bool)
             ;
 
-//    boost::python::class_<Gex::NodeWkPtr>("NodeWk", boost::python::no_init)
+//    pybind11::class_<Gex::NodeWkPtr>("NodeWk", pybind11::no_init)
 //            .def("IsWkValid", &Gex::NodeWkPtr::expired)
 //            .def("ToNode", &Gex::NodeWkPtr::lock)
 //            .def("__call__", &Gex::NodeWkPtr::lock)
 //            .def("__bool__", &Gex::NodeWkPtr::operator bool)
 //            ;
 
-    pythonRegistered = true;
+    return registry.Register(state);
 }
 
 
-
-boost::python::object CN_Python_GetInternalNode(boost::python::tuple args, boost::python::dict kwargs)
+bool Gex::Python::Node_Wrap::IsRegistered()
 {
-    const Gex::Python::CompoundNode_Wrap& self = boost::python::extract<const Gex::Python::CompoundNode_Wrap&>(args[0]);
-    std::string name = boost::python::extract<std::string>(args[1]);
-
-    return boost::python::object(self.GetNode(name));
+    return pythonRegistered;
 }
 
 
-boost::python::object CN_Python_FromNode(boost::python::tuple args, boost::python::dict kwargs)
+pybind11::object CN_Python_GetInternalNode(pybind11::args args, pybind11::kwargs kwargs)
 {
-    Gex::NodePtr self = boost::python::extract<Gex::NodePtr>(args[0]);
+    const Gex::Python::CompoundNode_Wrap& self = args[0].cast<const Gex::Python::CompoundNode_Wrap&>();
+    std::string name = args[1].cast<std::string>();
 
-    return boost::python::object(Gex::CompoundNode::FromNode(self));
+    return pybind11::cast(self.GetNode(name));
 }
 
 
-boost::python::object CN_Python_GetNodes(boost::python::tuple args, boost::python::dict kwargs)
+pybind11::object CN_Python_FromNode(pybind11::args args, pybind11::kwargs kwargs)
 {
-    Gex::CompoundNode* self = boost::python::extract<Gex::CompoundNode*>(args[0]);
+    Gex::NodePtr self = args[0].cast<Gex::NodePtr>();
+
+    return pybind11::cast(Gex::CompoundNode::FromNode(self));
+}
+
+
+pybind11::object CN_Python_GetNodes(pybind11::args args, pybind11::kwargs kwargs)
+{
+    Gex::CompoundNode* self = args[0].cast<Gex::CompoundNode*>();
 
     return VectorToBoostList(self->GetNodes());
 }
 
 
-boost::python::object CN_Python_GetNodeNames(boost::python::tuple args, boost::python::dict kwargs)
+pybind11::object CN_Python_GetNodeNames(pybind11::args args, pybind11::kwargs kwargs)
 {
-    Gex::CompoundNode* self = boost::python::extract<Gex::CompoundNode*>(args[0]);
+    Gex::CompoundNode* self = args[0].cast<Gex::CompoundNode*>();
 
     return VectorToBoostList(self->GetNodeNames());
 }
 
 
-Gex::Python::CompoundNode_Wrap::CompoundNode_Wrap(): Gex::CompoundNode(),
-     boost::python::wrapper<Gex::CompoundNode>()
+Gex::Python::CompoundNode_Wrap::CompoundNode_Wrap(): Gex::CompoundNode()
 {
 
 }
@@ -527,29 +509,36 @@ Gex::Python::CompoundNode_Wrap::~CompoundNode_Wrap()
 }
 
 
-void Gex::Python::CompoundNode_Wrap::RegisterPythonWrapper()
+bool Gex::Python::CompoundNode_Wrap::RegisterPythonWrapper(pybind11::module_& mod,
+                                                           PyThreadState* state)
 {
-    if (registered)
-        return;
+    if (registry.IsRegistered(state))
+        return false;
 
     bool (CompoundNode_Wrap::*_RemoveInternalNode)(const std::string&) =
     &Gex::Python::CompoundNode_Wrap::RemoveNode;
-    bool (CompoundNode_Wrap::*_IsInternalNode)(const std::string&) =
-    &Gex::Python::CompoundNode_Wrap::RemoveNode;
+//    bool (CompoundNode_Wrap::*_HasNode)(const std::string&) =
+//    &Gex::Python::CompoundNode_Wrap::HasNode;
 
-    boost::python::class_<Gex::Python::CompoundNode_Wrap, boost::python::bases<Gex::Node>,
-            Gex::CompoundNodePtr, boost::noncopyable>("CompoundNode", boost::python::init())
+    pybind11::class_<Gex::CompoundNode, Gex::Python::CompoundNode_Wrap, Gex::Node,
+            Gex::CompoundNodePtr>(mod, "CompoundNode", pybind11::module_local(false))
+            .def(pybind11::init<>())
             .def("CreateNode", &Gex::CompoundNode::CreateNode)
-//            .def("GetNode", boost::python::raw_function(&CN_Python_GetInternalNode, 1))
+//            .def("GetNode", pybind11::raw_function(&CN_Python_GetInternalNode, 1))
             .def("GetNode", &Gex::CompoundNode::GetNode)
-            .def("GetNodes", boost::python::raw_function(&CN_Python_GetNodes, 1))
-            .def("GetNodeNames", boost::python::raw_function(&CN_Python_GetNodeNames, 1))
-            .def("HasNode", _IsInternalNode)
-            .def("RemoveNode", _RemoveInternalNode)
-//            .def("CreateInternalAttribute", boost::python::raw_function(&Gex_CompoundNode_CreateInternalAttribute, 3))
-            .def("FromNode", boost::python::raw_function(&CN_Python_FromNode, 1))
-            .staticmethod("FromNode")
+            .def("GetNodes", &CN_Python_GetNodes)
+            .def("GetNodeNames", &CN_Python_GetNodeNames)
+//            .def("HasNode", _HasNode)
+//            .def("RemoveNode", _RemoveInternalNode)
+//            .def("CreateInternalAttribute", pybind11::raw_function(&Gex_CompoundNode_CreateInternalAttribute, 3))
+            .def_static("FromNode", &CN_Python_FromNode)
             ;
 
-    registered = true;
+    return registry.Register(state);
+}
+
+
+bool Gex::Python::CompoundNode_Wrap::IsRegistered()
+{
+    return registered;
 }

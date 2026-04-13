@@ -8,5 +8,6 @@ extern EXPORT RegisterPlugin(Gex::PluginLoader* loader)
 {
 //    loader->RegisterNode<PythonPlugin::Nodes::PythonNodeBuilder>("Python/PythonNode");
 
-    loader->RegisterNode<PythonPlugin::Nodes::ExpressionBuilder>("Python/Expression");
+    loader->RegisterNode<GexPython::Nodes::ExpressionBuilder>("Python/Expression");
+    loader->RegisterNode<GexPython::Nodes::InlineExpressionBuilder>("Python/InlineExpression");
 }

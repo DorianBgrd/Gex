@@ -1,19 +1,18 @@
 #include "Gex/include/NodeAttributeData_Wrap.h"
 
-#include "boost/python.hpp"
-
 #include "Tsys/defaultTypes.h"
 
 
 bool Gex::Python::NodeAttributeData_Wrap::pythonRegistered = false;
+Gex::Python::PyClassRegistry Gex::Python::NodeAttributeData_Wrap::registry;
 
 
-boost::python::object NAD_GetValue(
-        boost::python::tuple args,
-        boost::python::dict kwargs
+pybind11::object NAD_GetValue(
+        pybind11::tuple args,
+        pybind11::dict kwargs
 )
 {
-    Gex::NodeAttributeData* context = boost::python::extract<Gex::NodeAttributeData*>(args[0]);
+    Gex::NodeAttributeData* context = args[0].cast<Gex::NodeAttributeData*>();
 
     auto handle = TSys::TypeRegistry::GetRegistry()
             ->GetTypeHandle(
@@ -27,14 +26,14 @@ boost::python::object NAD_GetValue(
 }
 
 
-boost::python::object NAD_GetIndexValue(
-        boost::python::tuple args,
-        boost::python::dict kwargs
+pybind11::object NAD_GetIndexValue(
+        pybind11::tuple args,
+        pybind11::dict kwargs
 )
 {
-    Gex::NodeAttributeData* context = boost::python::extract<Gex::NodeAttributeData*>(args[0]);
+    Gex::NodeAttributeData* context = args[0].cast<Gex::NodeAttributeData*>();
 
-    int index = boost::python::extract<int>(args[1]);
+    int index = args[1].cast<int>();
 
     auto handle = TSys::TypeRegistry::GetRegistry()
             ->GetTypeHandle(
@@ -48,61 +47,60 @@ boost::python::object NAD_GetIndexValue(
 }
 
 
-boost::python::object NAD_SetValue(
-        boost::python::tuple args,
-        boost::python::dict kwargs
+pybind11::object NAD_SetValue(
+        pybind11::args args,
+        pybind11::kwargs kwargs
 )
 {
-    Gex::NodeAttributeData* context = boost::python::extract<Gex::NodeAttributeData*>(args[0]);
+    Gex::NodeAttributeData* context = args[0].cast<Gex::NodeAttributeData*>();
 
-    boost::python::object value = args[1];
+    pybind11::object value = args[1];
 
-    int size = boost::python::len(args);
-
-    int pval = PyLong_AsLong(value.ptr());
-
-    int val = boost::python::extract<int>(value);
-
-    auto val2 = TSys::ExtractPythonToAny<int>(value);
-
-    bool success = context->SetValue(value);
+    context->SetValue(value);
 
     return {};
 }
 
 
-boost::python::object NAD_SetIndexValue(
-        boost::python::tuple args,
-        boost::python::dict kwargs
+pybind11::object NAD_SetIndexValue(
+        pybind11::args args,
+        pybind11::kwargs kwargs
 )
 {
-    Gex::NodeAttributeData* context = boost::python::extract<Gex::NodeAttributeData*>(args[0]);
+    Gex::NodeAttributeData* context = args[0].cast<Gex::NodeAttributeData*>();
 
-    int index = boost::python::extract<int>(args[1]);
+    int index = args[1].cast<int>();
 
     TSys::AnyValue value;
-    value.Python_Set(args[2]);
+    context->GetIndex(index).SetValue(args[2]);
 
-    return boost::python::object(context->SetValue(value));
+    return pybind11::cast(context->SetValue(value));
 }
 
 
-bool Gex::Python::NodeAttributeData_Wrap::RegisterPythonWrapper()
+bool Gex::Python::NodeAttributeData_Wrap::RegisterPythonWrapper(pybind11::module_& mod,
+                                                                PyThreadState* state)
 {
-    if (pythonRegistered)
+//    if (pythonRegistered)
+//        return false;
+    auto reg = registry;
+    if (registry.IsRegistered(state))
         return false;
 
-    boost::python::class_<Gex::NodeAttributeData>("NodeAttributeData", boost::python::no_init)
-        .def("GetAttribute", &Gex::NodeAttributeData::GetAttribute,
-             (boost::python::arg("attribute"),
-              boost::python::args("feedback")=boost::python::object()))
+    pybind11::class_<Gex::NodeAttributeData>(mod, "NodeAttributeData", pybind11::module_local(false))
+        .def("GetAttribute", &Gex::NodeAttributeData::GetAttribute)
         .def("GetNode", &Gex::NodeAttributeData::GetNode)
         .def("GetIndex", &Gex::NodeAttributeData::GetIndex)
-        .def("GetValue", boost::python::raw_function(&NAD_GetValue, 1))
-        .def("SetValue", boost::python::raw_function(&NAD_SetValue, 2))
-        .def("GetIndexValue", boost::python::raw_function(&NAD_GetIndexValue, 1))
-        .def("SetIndexValue", boost::python::raw_function(&NAD_SetIndexValue, 2));
+        .def("GetValue", &NAD_GetValue)
+        .def("SetValue", &NAD_SetValue)
+        .def("GetIndexValue", &NAD_GetIndexValue)
+        .def("SetIndexValue", &NAD_SetIndexValue);
 
-    pythonRegistered = true;
-    return true;
+    return registry.Register(state);
+}
+
+
+bool Gex::Python::NodeAttributeData_Wrap::IsRegistered()
+{
+    return registry.IsRegistered();
 }

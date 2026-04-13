@@ -101,22 +101,41 @@ namespace ImageManip::Manip
                            int seed);
 
 
-    std::vector<double> PerlinNoise(
-            int imageWidth,
-            int imageHeight,
-            int frequency,
-            int seed,
-            bool smooth=true,
-            bool debug=false
+    struct PerlinNoiseOptions
+    {
+        std::array<Types::Point, 256> vectors;
+        std::array<int, 512> permutations;
+    };
+
+
+    double PerlinNoise(
+            double x, double y,
+            const PerlinNoiseOptions& options
     );
+
+    typedef std::function<double(double)> ModifierFunction;
 
     QImage FractalPerlinNoise(
             int imageWidth,
             int imageHeight,
             int octave,
             int frequency,
+            double lacunarity,
+            double persistence=0.5,
+            int seed=0,
+            ModifierFunction func=nullptr
+    );
+
+
+    QImage FractalCloudNoise(
+            int imageWidth,
+            int imageHeight,
+            int octave,
+            int frequency,
             int octaveFrequencyFactor,
-            int seed
+            double smoothLevel,
+            double octavePersistence=0.5,
+            int seed=0
     );
 }
 

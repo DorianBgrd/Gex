@@ -2,172 +2,184 @@
 
 
 bool Gex::Python::Event_Wrap::registered = false;
+Gex::Python::PyClassRegistry Gex::Python::Event_Wrap::registry;
+
 bool Gex::Python::EvaluationProfiler_Wrap::registered = false;
+Gex::Python::PyClassRegistry Gex::Python::EvaluationProfiler_Wrap::registry;
+
 bool Gex::Python::EvaluationNodeProfiler_Wrap::registered = false;
+Gex::Python::PyClassRegistry Gex::Python::EvaluationNodeProfiler_Wrap::registry;
 
 
 
 
-Gex::Python::Event_Wrap::Event_Wrap(): Gex::Event(), boost::python::wrapper<Gex::Event>()
+
+Gex::Python::Event_Wrap::Event_Wrap(): 
+    Gex::Event(), pybind11::trampoline_self_life_support()
 {
 
 }
 
 
-Gex::Python::Event_Wrap::Event_Wrap(const Gex::Event& base) : Gex::Event(base), boost::python::wrapper<Event>()
+Gex::Python::Event_Wrap::Event_Wrap(const Gex::Event& base): 
+    Gex::Event(base), pybind11::trampoline_self_life_support()
 {
 
 }
 
 
-boost::python::object E_Duration(boost::python::tuple args,
-                                 boost::python::dict kwargs)
+pybind11::object E_Duration(pybind11::args args,
+                            pybind11::kwargs kwargs)
 {
-    const Gex::Event& evnt = boost::python::extract<
-            const Gex::Event&>(args[0]);
+    const Gex::Event& evnt = args[0].cast<const Gex::Event&>();
 
-    return boost::python::object(
+    return pybind11::cast(
             evnt.Duration().count()
     );
 }
 
 
-boost::python::object E_StartTime(boost::python::tuple args,
-                                  boost::python::dict kwargs)
+pybind11::object E_StartTime(pybind11::args args,
+                             pybind11::kwargs kwargs)
 {
-    const Gex::Event& evnt = boost::python::extract<
-            const Gex::Event&>(args[0]);
+    const Gex::Event& evnt = args[0].cast<const Gex::Event&>();
 
-    return boost::python::object(
+    return pybind11::cast(
             evnt.StartTime().time_since_epoch()
     );
 }
 
 
-boost::python::object E_EndTime(boost::python::tuple args,
-                                boost::python::dict kwargs)
+pybind11::object E_EndTime(pybind11::args args,
+                                pybind11::kwargs kwargs)
 {
-    const Gex::Event& evnt = boost::python::extract<
-            const Gex::Event&>(args[0]);
+    const Gex::Event& evnt = args[0].cast<const Gex::Event&>();
 
-    return boost::python::object(
+    return pybind11::cast(
             evnt.EndTime().time_since_epoch()
     );
 }
 
 
-void Gex::Python::Event_Wrap::RegisterPythonWrapper()
+bool Gex::Python::Event_Wrap::RegisterPythonWrapper(pybind11::module_& mod,
+                                                    PyThreadState* state)
 {
-    if (registered)
-        return;
+    if (registry.IsRegistered(state))
+        return false;
 
-    boost::python::class_<Event>("Event", boost::python::init())
+    pybind11::class_<Event>(mod, "Event", pybind11::module_local(false))
+            .def(pybind11::init<>())
             .def("Start", &Event::Start)
             .def("Stop", &Event::Stop)
-            .def("Duration", boost::python::raw_function(E_Duration))
+            .def("Duration", E_Duration)
             .def("Running", &Event::Running)
-            .def("StartTime", boost::python::raw_function(E_StartTime))
-            .def("EndTime", boost::python::raw_function(E_EndTime))
+            .def("StartTime", E_StartTime)
+            .def("EndTime", E_EndTime)
             .def_readwrite("name", &Event::name)
             .def_readwrite("category", &Event::category)
             ;
 
-    registered = true;
+    return registry.Register(state);
+}
+
+
+bool Gex::Python::Event_Wrap::IsRegistered()
+{
+    return registered;
 }
 
 
 
 Gex::Python::EvaluationProfiler_Wrap::EvaluationProfiler_Wrap():
-    Gex::EvaluationProfiler(),
-    boost::python::wrapper<Gex::EvaluationProfiler>()
+    Gex::EvaluationProfiler()
 {
 
 }
 
 
 Gex::Python::EvaluationProfiler_Wrap::EvaluationProfiler_Wrap(const Gex::EvaluationProfiler& base) :
-    Gex::EvaluationProfiler(base), boost::python::wrapper<EvaluationProfiler>()
+    Gex::EvaluationProfiler(base)
 {
 
 }
 
 
-boost::python::object EP_Result(
-        boost::python::tuple args,
-        boost::python::dict kwargs
+pybind11::object EP_Result(
+        pybind11::args args,
+        pybind11::kwargs kwargs
 )
 {
-    const Gex::EvaluationProfiler& self = boost::python::extract<
-            const Gex::EvaluationProfiler&>(args[0]);
+    const Gex::EvaluationProfiler& self = args[0].cast<
+            const Gex::EvaluationProfiler&>();
 
-    boost::python::dict pyResult;
+    pybind11::dict pyResult;
     for (const auto& pair : self.Result())
     {
-        boost::python::list pyEvents;
+        pybind11::list pyEvents;
         for (const auto& event : pair.second)
         {
             pyEvents.append(event);
         }
 
-        pyResult[pair.first] = pyEvents;
+        pyResult[pybind11::cast(pair.first)] = pyEvents;
     }
 
     return pyResult;
 }
 
 
-boost::python::object EP_Duration(boost::python::tuple args,
-                                  boost::python::dict kwargs)
+pybind11::object EP_Duration(pybind11::args args,
+                                  pybind11::kwargs kwargs)
 {
-    const Gex::EvaluationProfiler& p = boost::python::extract<
-            const Gex::EvaluationProfiler&>(args[0]);
+    const Gex::EvaluationProfiler& p = args[0].cast<
+            const Gex::EvaluationProfiler&>();
 
-    return boost::python::object(
+    return pybind11::cast(
             p.Duration().count()
     );
 }
 
 
-boost::python::object EP_StartTime(boost::python::tuple args,
-                                   boost::python::dict kwargs)
+pybind11::object EP_StartTime(pybind11::args args,
+                              pybind11::kwargs kwargs)
 {
-    const Gex::EvaluationProfiler& p = boost::python::extract<
-            const Gex::EvaluationProfiler&>(args[0]);
+    const Gex::EvaluationProfiler& p = args[0].cast<
+            const Gex::EvaluationProfiler&>();
 
-    return boost::python::object(p.StartTime().time_since_epoch());
+    return pybind11::cast(p.StartTime().time_since_epoch());
 }
 
 
-boost::python::object EP_EndTime(boost::python::tuple args,
-                                 boost::python::dict kwargs)
+pybind11::object EP_EndTime(pybind11::args args,
+                                 pybind11::kwargs kwargs)
 {
-    const Gex::EvaluationProfiler& p = boost::python::extract<
-            const Gex::EvaluationProfiler&>(args[0]);
+    const Gex::EvaluationProfiler& p = args[0].cast<
+            const Gex::EvaluationProfiler&>();
 
-    return boost::python::object(
+    return pybind11::cast(
             p.EndTime().time_since_epoch()
     );
 }
 
 
-boost::python::object EP_StartEvent(boost::python::tuple args,
-                                    boost::python::dict kwargs)
+pybind11::object EP_StartEvent(pybind11::args args,
+                                    pybind11::kwargs kwargs)
 {
-    Gex::EvaluationProfiler* self = boost::python::extract<Gex::EvaluationProfiler*>(args[0]);
-    std::string category = boost::python::extract<std::string>(args[1]);
-    std::string name = boost::python::extract<std::string>(args[2]);
+    Gex::EvaluationProfiler* self = args[0].cast<Gex::EvaluationProfiler*>();
+    std::string category = args[1].cast<std::string>();
+    std::string name = args[2].cast<std::string>();
 
     int idx = static_cast<int>(self->StartEvent(category, name));
 
-    return boost::python::object(idx);
+    return pybind11::cast(idx);
 }
 
 
-boost::python::object EP_StopEvent(boost::python::tuple args,
-                                   boost::python::dict kwargs)
+pybind11::object EP_StopEvent(pybind11::args args,
+                              pybind11::kwargs kwargs)
 {
-    Gex::EvaluationProfiler* self = boost::python::extract<Gex::EvaluationProfiler*>(args[0]);
-    int idx = boost::python::extract<int>(args[1]);
+    Gex::EvaluationProfiler* self = args[0].cast<Gex::EvaluationProfiler*>();
+    int idx = args[1].cast<int>();
 
     self->StopEvent(idx);
 
@@ -175,47 +187,55 @@ boost::python::object EP_StopEvent(boost::python::tuple args,
 }
 
 
-void Gex::Python::EvaluationProfiler_Wrap::RegisterPythonWrapper()
+bool Gex::Python::EvaluationProfiler_Wrap::RegisterPythonWrapper(pybind11::module_& mod,
+                                                                 PyThreadState* state)
 {
-    if (registered)
-        return;
+    if (registry.IsRegistered(state))
+        return false;
 
-    boost::python::class_<Gex::Python::EvaluationProfiler_Wrap, Gex::Profiler>("EvaluationProfiler", boost::python::no_init)
-            .def("StartEvent", boost::python::raw_function(&EP_StartEvent))
-            .def("StopEvent", boost::python::raw_function(&EP_StopEvent))
+    pybind11::class_<Gex::EvaluationProfiler, Gex::Python::EvaluationProfiler_Wrap, Profiler>(
+            mod, "EvaluationProfiler", pybind11::module_local(false))
+            .def("StartEvent", &EP_StartEvent)
+            .def("StopEvent", &EP_StopEvent)
             .def("Start", &Gex::EvaluationProfiler::Start)
             .def("Stop", &Gex::EvaluationProfiler::Stop)
-            .def("StartTime", boost::python::raw_function(EP_StartTime))
-            .def("EndTime", boost::python::raw_function(EP_EndTime))
-            .def("Duration", boost::python::raw_function(EP_Duration))
-            .def("Result", boost::python::raw_function(EP_Result))
+            .def("StartTime", &EP_StartTime)
+            .def("EndTime", &EP_EndTime)
+            .def("Duration", &EP_Duration)
+            .def("Result", &EP_Result)
             ;
 
-    boost::python::def("MakeProfiler", &Gex::MakeProfiler);
+    mod.def("MakeProfiler", &Gex::MakeProfiler);
 
-    registered = true;
+    return registry.Register(state);
+}
+
+
+bool Gex::Python::EvaluationProfiler_Wrap::IsRegistered()
+{
+    return registered;
 }
 
 
 
 Gex::Python::EvaluationNodeProfiler_Wrap::EvaluationNodeProfiler_Wrap(const Gex::EvaluationNodeProfiler& base) :
-        Gex::EvaluationNodeProfiler(base), boost::python::wrapper<EvaluationNodeProfiler>()
+        Gex::EvaluationNodeProfiler(base), pybind11::trampoline_self_life_support()
 {
 
 }
 
 
-boost::python::object ENP_Create(boost::python::tuple args,
-                                 boost::python::dict)
+pybind11::object ENP_Create(pybind11::args args,
+                            pybind11::dict)
 {
-    Gex::EvaluationProfiler* profiler = boost::python::extract<
-            Gex::EvaluationProfiler*>(args[0]);
+    Gex::EvaluationProfiler* profiler = args[0].cast<
+            Gex::EvaluationProfiler*>();
 
-    Gex::Node* node = boost::python::extract<Gex::Node*>(args[1]);
+    Gex::Node* node = args[1].cast<Gex::Node*>();
 
-    std::string thread = boost::python::extract<std::string>(args[2]);
+    std::string thread = args[2].cast<std::string>();
 
-    return boost::python::object(
+    return pybind11::cast(
             Gex::EvaluationNodeProfiler(
                     profiler->shared_from_this(),
                     node->shared_from_this(),
@@ -225,19 +245,25 @@ boost::python::object ENP_Create(boost::python::tuple args,
 }
 
 
-void Gex::Python::EvaluationNodeProfiler_Wrap::RegisterPythonWrapper()
+bool Gex::Python::EvaluationNodeProfiler_Wrap::RegisterPythonWrapper(pybind11::module_& mod,
+                                                                     PyThreadState* state)
 {
-    if (registered)
-        return;
+    if (registry.IsRegistered(state))
+        return false;
 
-    boost::python::class_<Gex::Python::EvaluationNodeProfiler_Wrap>
-            ("NodeProfiler", boost::python::no_init)
+    pybind11::class_<Gex::Python::EvaluationNodeProfiler_Wrap>
+            (mod, "NodeProfiler", pybind11::module_local(false))
             .def("StartEvent", &EvaluationNodeProfiler::StartEvent)
             .def("StopEvent", &EvaluationNodeProfiler::StopEvent)
             .def("GetProfiler", &EvaluationNodeProfiler::GetProfiler)
-            .def("Create", boost::python::raw_function(&ENP_Create))
-            .staticmethod("Create")
+            .def_static("Create", &ENP_Create)
             ;
 
-    registered = true;
+    return registry.Register(state);
+}
+
+
+bool Gex::Python::EvaluationNodeProfiler_Wrap::IsRegistered()
+{
+    return registered;
 }

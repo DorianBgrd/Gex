@@ -66,6 +66,8 @@ namespace Gex
     public:
         EvaluationProfiler() = default;
 
+        virtual ~EvaluationProfiler() {};
+
     protected:
         unsigned int StartEvent(unsigned int thread,
                                 const std::string& category,

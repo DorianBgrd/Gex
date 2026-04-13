@@ -17,8 +17,12 @@ add_library(
         types/types.cpp
         nodes/writers.h
         nodes/writers.cpp
+        nodes/readers.h
+        nodes/readers.cpp
         editor.h
         editor.cpp
+        reader.h
+        reader.cpp
 )
 
 

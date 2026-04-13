@@ -1,17 +1,18 @@
 #include "Gex/include/Graph_Wrap.h"
 #include "Gex/include/Node.h"
-#include "boost/python.hpp"
 
 
 bool Gex::Python::GraphContext_Wrap::pythonRegistered = false;
+Gex::Python::PyClassRegistry Gex::Python::GraphContext_Wrap::registry;
 
 
-boost::python::object GraphContext_Resources(boost::python::tuple args,
-                                             boost::python::dict kwargs)
+
+pybind11::object GraphContext_Resources(pybind11::args args,
+                                        pybind11::kwargs kwargs)
 {
-    Gex::GraphContext* context = boost::python::extract<Gex::GraphContext*>(args[0]);
+    Gex::GraphContext* context = args[0].cast<Gex::GraphContext*>();
 
-    boost::python::list pythonResources;
+    pybind11::list pythonResources;
     auto resources = context->Resources();
     for (auto r : resources)
     {
@@ -22,17 +23,23 @@ boost::python::object GraphContext_Resources(boost::python::tuple args,
 }
 
 
-bool Gex::Python::GraphContext_Wrap::RegisterPythonWrapper()
+bool Gex::Python::GraphContext_Wrap::RegisterPythonWrapper(pybind11::module_& mod,
+                                                           PyThreadState* state)
 {
-    if (pythonRegistered)
+    if (registry.IsRegistered(state))
         return false;
 
-    boost::python::class_<Gex::GraphContext, boost::noncopyable>("GraphContext", boost::python::no_init)
+    pybind11::class_<Gex::GraphContext>(mod, "GraphContext", pybind11::module_local(false))
             .def("RegisterResource", &Gex::GraphContext::RegisterResource)
-            .def("Resources", boost::python::raw_function(&GraphContext_Resources));
+            .def("Resources", &GraphContext_Resources);
 
-    pythonRegistered  = true;
-    return true;
+    return registry.Register(state);
+}
+
+
+bool Gex::Python::GraphContext_Wrap::IsRegistered()
+{
+    return pythonRegistered;
 }
 
 

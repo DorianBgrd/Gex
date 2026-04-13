@@ -1,8 +1,6 @@
 #include "Gex/include/Node.h"
 #include "Gex/include/Attribute.h"
 #include "Gex/include/NodeFactory.h"
-#include <boost/python/detail/wrap_python.hpp>
-#include <boost/python.hpp>
 #include "Gex/include/Evaluation.h"
 #include "Gex/include/Config.h"
 #include "Gex/include/utils.h"

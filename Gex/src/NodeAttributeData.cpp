@@ -78,7 +78,7 @@ bool Gex::NodeAttributeData::SetAnyValue(const std::any& value)
 }
 
 
-bool Gex::NodeAttributeData::SetValue(const boost::python::object& pyValue)
+bool Gex::NodeAttributeData::SetValue(const pybind11::object& pyValue)
 {
     auto typeHandle = GetTypeHandle();
 
@@ -89,7 +89,7 @@ bool Gex::NodeAttributeData::SetValue(const boost::python::object& pyValue)
     {
         return SetAnyValue(typeHandle->FromPython(pyValue));
     }
-    catch (boost::python::error_already_set&)
+    catch (pybind11::error_already_set&)
     {
         PyErr_Print();
         return false;

@@ -45,7 +45,7 @@ namespace Gex
         }
     };
 
-    void LogFeedback(const Feedback& feedback);
+    void GEX_API LogFeedback(const Feedback& feedback);
 }
 
 

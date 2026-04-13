@@ -2,35 +2,33 @@
 
 #include "Tsys/tsys.h"
 
-#include "boost/python.hpp"
+#include "pybind11/pybind11.h"
 
 
-boost::python::object GetAvailableTypes(
-        boost::python::tuple args,
-        boost::python::dict kwargs
+pybind11::object GetAvailableTypes(
+        pybind11::args args,
+        pybind11::kwargs kwargs
 )
 {
-    boost::python::list types;
+    pybind11::list types;
     for (const std::string& t : TSys::TypeRegistry::GetRegistry()->RegisteredTypes())
     {
-        types.append(boost::python::object(t));
+        types.append(pybind11::cast(t));
     }
 
     return types;
 }
 
 
-BOOST_PYTHON_MODULE(Gex_Python)
+PYBIND11_MODULE(Gex_Python, mod, pybind11::multiple_interpreters::per_interpreter_gil())
 {
 
-    boost::python::def(
+    mod.def(
             "GetAvailableTypes",
-            boost::python::raw_function(
-                    GetAvailableTypes
-            )
+            &GetAvailableTypes
     );
 
 
-    Gex::Python::RegisterPythonWrappers();
+    Gex::Python::RegisterPythonWrappers(mod, nullptr);
 
 }

@@ -3,57 +3,63 @@
 
 
 bool Gex::Python::PluginLoader_Wrap::pythonRegistered = false;
+Gex::Python::PyClassRegistry Gex::Python::PluginLoader_Wrap::registry;
 
 
-bool Gex_PluginLoader_LoadPlugin(boost::python::tuple args,
-                                 boost::python::dict kwargs)
+bool Gex_PluginLoader_LoadPlugin(pybind11::args args,
+                                 pybind11::kwargs kwargs)
 {
-    const std::string name = boost::python::extract<const std::string>(args[0]);
-//    const Gex::PluginType type = boost::python::extract<const Gex::PluginType>(args[1]);
+    const std::string name = args[0].cast<const std::string>();
+//    const Gex::PluginType type = pybind11::extract<const Gex::PluginType>(args[1]);
 
     Gex::Feedback* res = nullptr;
-    if (boost::python::len(args) > 1)
-        res = boost::python::extract<Gex::Feedback*>(args[1]);
+    if (pybind11::len(args) > 1)
+        res = args[1].cast<Gex::Feedback*>();
 
     return Gex::PluginLoader::LoadPlugin(name, res);
 }
 
 
-boost::python::object Gex_PluginLoader_RegisterNode(boost::python::tuple args,
-                                                    boost::python::dict kwargs)
+pybind11::object Gex_PluginLoader_RegisterNode(pybind11::args args,
+                                               pybind11::kwargs kwargs)
 {
-    Gex::PluginLoader* loader = boost::python::extract<Gex::PluginLoader*>(args[0]);
-    std::string type = boost::python::extract<std::string>(args[1]);
-    boost::python::object builderType = args[2];
+    Gex::PluginLoader* loader = args[0].cast<Gex::PluginLoader*>();
+    std::string type = args[1].cast<std::string>();
+    pybind11::object builderType = args[2];
 
-    boost::python::object builderInst = builderType();
+    pybind11::object builderInst = builderType();
     Py_IncRef(builderInst.ptr());
 
-    Gex::Python::NodeBuilder_Wrap* builder = boost::python::extract<Gex::Python::NodeBuilder_Wrap*>(builderInst);
+    Gex::Python::NodeBuilder_Wrap* builder = builderInst.cast<Gex::Python::NodeBuilder_Wrap*>();
 
     loader->RegisterNode(type, builder);
     return {};
 }
 
 
-bool Gex::Python::PluginLoader_Wrap::RegisterPythonWrapper()
+bool Gex::Python::PluginLoader_Wrap::RegisterPythonWrapper(pybind11::module_& mod,
+                                                           PyThreadState* state)
 {
-    if (pythonRegistered)
+    if (registry.IsRegistered(state))
     {
         return false;
     }
 
-    boost::python::enum_<Gex::PluginType>("PluginType")
+    pybind11::enum_<Gex::PluginType>(mod, "PluginType", pybind11::module_local(false))
             .value("Library", Gex::PluginType::Library)
             .value("Python", Gex::PluginType::Python)
             ;
 
-    boost::python::class_<Gex::PluginLoader>("PluginLoader", boost::python::no_init)
-            .def("RegisterNode", boost::python::raw_function(&Gex_PluginLoader_RegisterNode, 2))
-            .def("LoadPlugin", boost::python::raw_function(Gex_PluginLoader_LoadPlugin, 2))
-            .staticmethod("LoadPlugin")
+    pybind11::class_<Gex::PluginLoader>(mod, "PluginLoader", pybind11::module_local(false))
+            .def("RegisterNode", &Gex_PluginLoader_RegisterNode)
+            .def_static("LoadPlugin", &Gex_PluginLoader_LoadPlugin)
             ;
 
-    pythonRegistered= true;
-    return true;
+    return registry.Register(state);
+}
+
+
+bool Gex::Python::PluginLoader_Wrap::IsRegistered()
+{
+    return pythonRegistered;
 }

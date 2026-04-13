@@ -1,267 +1,158 @@
-//
-// Created by Dorian on 2/22/2022.
-//
-
 #include <iostream>
 
 #include "Gex/include/Gex.h"
 #include "UiRes/uires.h"
-#include "ui/include/ui.h"
-#include "ui/include/PluginLoader.h"
+#include "Gex_ui/include/ui.h"
+#include "Gex_ui/include/PluginLoader.h"
 
 #include "../export.h"
 
 
-namespace MathNodes
-{
-    class Plugin_API ConstantInt: public Gex::Node
-    {
-    public:
-        using Node::Node;
-
-        std::string Description() const override
-        {
-            return "Node containing constant int value.";
-        }
-
-        void InitAttributes() override
-        {
-            CreateAttribute<int>("Output", Gex::AttrValueType::Single,
-                                 Gex::AttrType::Static);
-        }
-    };
-
-
-    class Plugin_API ConstantIntBuilder: public Gex::DefaultNodeBuilder
-    {
-        Gex::Node* CreateNode() const override
-        {
-            return new ConstantInt();
-        }
-    };
-
-
-    class Plugin_API ConstantFloat: public Gex::Node
-    {
-    public:
-        using Node::Node;
-
-        std::string Description() const override
-        {
-            return "Node containing constant float value.";
-        }
-
-        void InitAttributes() override
-        {
-            CreateAttribute<float>("Output", Gex::AttrValueType::Single,
-                                 Gex::AttrType::Static);
-        }
-    };
-
-
-    class Plugin_API ConstantFloatBuilder: public Gex::DefaultNodeBuilder
-    {
-        Gex::Node* CreateNode() const override
-        {
-            return new ConstantFloat();
-        }
-    };
-
-
-    class Plugin_API ConstantDouble: public Gex::Node
-    {
-    public:
-        using Node::Node;
-
-        std::string Description() const override
-        {
-            return "Node containing constant double value.";
-        }
-
-        void InitAttributes() override
-        {
-            CreateAttribute<float>("Output", Gex::AttrValueType::Single,
-                                   Gex::AttrType::Static);
-        }
-    };
-
-
-    class Plugin_API ConstantDoubleBuilder: public Gex::DefaultNodeBuilder
-    {
-        Gex::Node* CreateNode() const override
-        {
-            return new ConstantDouble();
-        }
-    };
-
-
-    class Plugin_API Add2Ints: public Gex::Node
-    {
-    public:
-        using Node::Node;
-
-        std::string Description() const override
-        {
-            return "Dynamic node adding 2 int values.";
-        }
-
-        void InitAttributes() override
-        {
-            CreateAttribute<int>("Input1", Gex::AttrValueType::Single,
-                                   Gex::AttrType::Input);
-            CreateAttribute<int>("Input2", Gex::AttrValueType::Single,
-                                   Gex::AttrType::Input);
-            CreateAttribute<int>("Output", Gex::AttrValueType::Single,
-                                   Gex::AttrType::Output);
-       }
-
-        bool Evaluate(Gex::NodeAttributeData &ctx,
-                      Gex::GraphContext &graph,
-                      Gex::NodeProfiler& profiler) override
-        {
-            auto input1 = ctx.GetAttribute("Input1").GetValue<int>();
-            auto input2 = ctx.GetAttribute("Input2").GetValue<int>();
-            return ctx.GetAttribute("Output").SetValue(input1 + input2);
-        }
-    };
-
-
-    class Plugin_API Add2IntsBuilder: public Gex::DefaultNodeBuilder
-    {
-        Gex::Node* CreateNode() const override
-        {
-            return new Add2Ints();
-        }
-    };
-
-
-    class Plugin_API Add2Floats: public Gex::Node
-    {
-    public:
-        using Node::Node;
-
-        std::string Description() const override
-        {
-            return "Dynamic node adding 2 float values.";
-        }
-
-        void InitAttributes() override
-        {
-            CreateAttribute<float>("Input1", Gex::AttrValueType::Single,
-                                   Gex::AttrType::Input);
-            CreateAttribute<float>("Input2", Gex::AttrValueType::Single,
-                                   Gex::AttrType::Input);
-            CreateAttribute<float>("Output", Gex::AttrValueType::Single,
-                                   Gex::AttrType::Output);
-        }
-
-        bool Evaluate(Gex::NodeAttributeData &ctx,
-                      Gex::GraphContext &,
-                      Gex::NodeProfiler& profiler) override
-        {
-            auto input1 = ctx.GetAttribute("Input1").GetValue<float>();
-            auto input2 = ctx.GetAttribute("Input2").GetValue<float>();
-            return ctx.GetAttribute("Output").SetValue(input1 + input2);
-        }
-    };
-
-
-    class Plugin_API Add2FloatsBuilder: public Gex::DefaultNodeBuilder
-    {
-        Gex::Node* CreateNode() const override
-        {
-            return new Add2Floats();
-        }
-    };
-
-
-    class Plugin_API Add2Doubles: public Gex::Node
-    {
-    public:
-        using Node::Node;
-
-        std::string Description() const override
-        {
-            return "Dynamic node adding 2 double values.";
-        }
-
-        void InitAttributes() override
-        {
-            CreateAttribute<double>("Input1", Gex::AttrValueType::Single,
-                                   Gex::AttrType::Input);
-            CreateAttribute<double>("Input2", Gex::AttrValueType::Single,
-                                   Gex::AttrType::Input);
-            CreateAttribute<double>("Output", Gex::AttrValueType::Single,
-                                   Gex::AttrType::Output);
-        }
-
-        bool Evaluate(Gex::NodeAttributeData &ctx,
-                      Gex::GraphContext &,
-                      Gex::NodeProfiler& profiler) override
-        {
-            auto input1 = ctx.GetAttribute("Input1").GetValue<double>();
-            auto input2 = ctx.GetAttribute("Input2").GetValue<double>();
-            return ctx.GetAttribute("Output").SetValue(input1 + input2);
-        }
-    };
-
-
-    class Plugin_API Add2DoublesBuilder: public Gex::DefaultNodeBuilder
-    {
-        Gex::Node* CreateNode() const override
-        {
-            return new Add2Doubles();
-        }
-    };
-
-    class Plugin_API IntDynamicManual: public Gex::Node
-    {
-    public:
-        using Node::Node;
-
-        void InitAttributes() override
-        {
-            CreateAttribute<int>("Input", Gex::AttrValueType::Single,
-                                 Gex::AttrType::Input, nullptr);
-            CreateAttribute<int>("Output", Gex::AttrValueType::Single,
-                                 Gex::AttrType::Output, nullptr);
-        }
-
-        bool Evaluate(Gex::NodeAttributeData &ctx,
-                      Gex::GraphContext &,
-                      Gex::NodeProfiler& profiler) override
-        {
-            int value = ctx.GetAttribute("Input").GetValue<int>();
-            ctx.GetAttribute("Output").SetValue<int>(value);
-            return true;
-        }
-    };
-
-
-    class Plugin_API IntDynamicManualBuilder: public Gex::DefaultNodeBuilder
-    {
-        Gex::Node* CreateNode() const override
-        {
-            return new IntDynamicManual();
-        }
-    };
-}
+#include "nodes.h"
+#include "types.h"
 
 
 extern EXPORT RegisterPlugin(Gex::PluginLoader* loader)
 {
-    loader->RegisterNode<MathNodes::ConstantIntBuilder>("Math/ConstantInt");
+    loader->RegisterTypeHandler<Math::Types::Point2, Math::Types::Point2Handle>();
 
-    loader->RegisterNode<MathNodes::ConstantFloatBuilder>("Math/ConstantFloat");
+    loader->RegisterTypeHandler<Math::Types::Vector2, Math::Types::Vector2Handle>();
 
-    loader->RegisterNode<MathNodes::ConstantDoubleBuilder>("Math/ConstantDouble");
+    loader->RegisterTypeHandler<Math::Types::Point3, Math::Types::Point3Handle>();
 
-    loader->RegisterNode<MathNodes::Add2IntsBuilder>("Math/Add2Ints");
+    loader->RegisterTypeHandler<Math::Types::Vector3, Math::Types::Vector3Handle>();
 
-    loader->RegisterNode<MathNodes::Add2FloatsBuilder>("Math/Add2Floats");
 
-    loader->RegisterNode<MathNodes::Add2DoublesBuilder>("Math/Add2Doubles");
+    loader->RegisterNode<Math::Nodes::ConstantIntBuilder>("Math/Constants/Int");
 
-    loader->RegisterNode<MathNodes::IntDynamicManualBuilder>("Math/IntDynamicManual");
+    loader->RegisterNode<Math::Nodes::ConstantFloatBuilder>("Math/Constants/Float");
+
+    loader->RegisterNode<Math::Nodes::ConstantDoubleBuilder>("Math/Constants/Double");
+
+    loader->RegisterNode<Math::Nodes::AddBuilder>("Math/Operators/Add");
+
+    loader->RegisterNode<Math::Nodes::SubtractBuilder>("Math/Operators/Subtract");
+
+    loader->RegisterNode<Math::Nodes::MultiplyBuilder>("Math/Operators/Multiply");
+
+    loader->RegisterNode<Math::Nodes::DivideBuilder>("Math/Operators/Divide");
+
+    loader->RegisterNode<Math::Nodes::CosBluider>("Math/Operators/Cos");
+
+    loader->RegisterNode<Math::Nodes::AcosBuilder>("Math/Operators/Acos");
+
+    loader->RegisterNode<Math::Nodes::DegreeToRadianBuilder>("Math/Operators/DegreeToRadian");
+
+    loader->RegisterNode<Math::Nodes::RadianToDegreeBuilder>("Math/Operators/RadianToDegree");
+
+
+    loader->RegisterNode<Math::Nodes::ComposePoint2Builder>("Math/Point2/Compose");
+
+    loader->RegisterNode<Math::Nodes::DecomposePoint2Builder>("Math/Point2/Decompose");
+
+    loader->RegisterNode<Math::Nodes::Point2DistanceBuilder>("Math/Point2/Distance");
+
+
+    loader->RegisterNode<Math::Nodes::ComposeVector2Builder>("Math/Vector2/Compose");
+
+    loader->RegisterNode<Math::Nodes::DecomposeVector2Builder>("Math/Vector2/Decompose");
+
+    loader->RegisterNode<Math::Nodes::ConstantVector2Builder>("Math/Vector2/Constant");
+
+    loader->RegisterNode<Math::Nodes::Vector2MagnitudeBuilder>("Math/Vector2/Magnitude");
+
+    loader->RegisterNode<Math::Nodes::NormalizeVector2Builder>("Math/Vector2/Normalize");
+
+    loader->RegisterNode<Math::Nodes::Vector2DotProductBuilder>("Math/Vector2/DotProduct");
+
+    loader->RegisterNode<Math::Nodes::AngleVector2Builder>("Math/Vector2/Angle");
+
+    loader->RegisterNode<Math::Nodes::Vector2AddBuilder>("Math/Vector2/Add");
+
+    loader->RegisterNode<Math::Nodes::Vector2SubtractBuilder>("Math/Vector2/Subtract");
+
+    loader->RegisterNode<Math::Nodes::Vector2DivideBuilder>("Math/Vector2/Divide");
+
+    loader->RegisterNode<Math::Nodes::Vector2MultiplyBuilder>("Math/Vector2/Multiply");
+
+
+    loader->RegisterNode<Math::Nodes::ComposePoint3Builder>("Math/Point3/Compose");
+
+    loader->RegisterNode<Math::Nodes::DecomposePoint3Builder>("Math/Point3/Decompose");
+
+    loader->RegisterNode<Math::Nodes::Point3DistanceBuilder>("Math/Point3/Distance");
+
+
+    loader->RegisterNode<Math::Nodes::ComposeVector3Builder>("Math/Vector3/Compose");
+
+    loader->RegisterNode<Math::Nodes::DecomposeVector3Builder>("Math/Vector3/Decompose");
+
+    loader->RegisterNode<Math::Nodes::ConstantVector3Builder>("Math/Vector3/Constant");
+
+    loader->RegisterNode<Math::Nodes::Vector3DotProductBuilder>("Math/Vector3/DotProduct");
+
+    loader->RegisterNode<Math::Nodes::Vector3AddBuilder>("Math/Vector3/Add");
+
+    loader->RegisterNode<Math::Nodes::Vector3SubtractBuilder>("Math/Vector3/Subtract");
+
+    loader->RegisterNode<Math::Nodes::Vector3DivideBuilder>("Math/Vector3/Divide");
+
+    loader->RegisterNode<Math::Nodes::Vector3MultiplyBuilder>("Math/Vector3/Multiply");
+
+    loader->RegisterNode<Math::Nodes::Vector3CrossProductBuilder>("Math/Vector3/CrossProduct");
+
+    loader->RegisterNode<Math::Nodes::Vector3MagnitudeBuilder>("Math/Vector3/Magnitude");
+
+    loader->RegisterNode<Math::Nodes::AngleVector3Builder>("Math/Vector3/Angle");
+
+    loader->RegisterNode<Math::Nodes::NormalizeVector3Builder>("Math/Vector3/Normalize");
+
+
+
 }
 
+
+extern EXPORT  RegisterUiPlugin(Gex::Ui::UiPluginLoader* loader)
+{
+    loader->RegisterNodeIcon(
+            "Math/Constants/Int",
+            Res::UiRes::GetRes()->GetQtAwesome()
+            ->icon(fa::fa_solid, fa::fa_1)
+    );
+
+    loader->RegisterNodeIcon(
+            "Math/Constants/Float",
+            Res::UiRes::GetRes()->GetQtAwesome()
+            ->icon(fa::fa_solid, fa::fa_1)
+    );
+
+    loader->RegisterNodeIcon(
+            "Math/Constants/Double",
+            Res::UiRes::GetRes()->GetQtAwesome()
+            ->icon(fa::fa_solid, fa::fa_1)
+    );
+
+    loader->RegisterNodeIcon(
+            "Math/Operators/Add",
+            Res::UiRes::GetRes()->GetQtAwesome()
+            ->icon(fa::fa_solid, fa::fa_plus)
+    );
+
+    loader->RegisterNodeIcon(
+            "Math/Operators/Subtract",
+            Res::UiRes::GetRes()->GetQtAwesome()
+            ->icon(fa::fa_solid, fa::fa_minus)
+    );
+
+    loader->RegisterNodeIcon(
+            "Math/Operators/Multiply",
+            Res::UiRes::GetRes()->GetQtAwesome()
+            ->icon(fa::fa_solid, fa::fa_times)
+    );
+
+    loader->RegisterNodeIcon(
+            "Math/Operators/Divide",
+            Res::UiRes::GetRes()->GetQtAwesome()
+            ->icon(fa::fa_solid, fa::fa_divide)
+    );
+}

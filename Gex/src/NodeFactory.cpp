@@ -6,8 +6,6 @@
 #include "Gex/include/PluginLoader.h"
 #include "Gex/include/Status.h"
 
-#include <boost/python.hpp>
-
 
 std::string Gex::NodeBuilder::Plugin() const
 {

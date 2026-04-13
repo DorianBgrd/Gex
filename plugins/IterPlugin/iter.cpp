@@ -31,19 +31,14 @@ namespace iter
             auto idxat = CreateAttribute<int>(
                     "index", Gex::AttrValueType::Single,
                     Gex::AttrType::Input);
-            idxat->SetInternal(true);
 
             auto in = CreateAttribute<TSys::AnyValue>(
                     "in", Gex::AttrValueType::Single,
                     Gex::AttrType::Input);
-            in->SetInternal(true);
-            in->SetExternal(false);
 
             auto out = CreateAttribute<TSys::AnyValue>(
                     "out", Gex::AttrValueType::Single,
                      Gex::AttrType::Output);
-            out->SetInternal(true);
-            out->SetExternal(false);
 
             CreateAttribute<TSys::AnyValue>(
                     "output", Gex::AttrValueType::Multi,
@@ -60,6 +55,7 @@ namespace iter
 
 
         bool PreEvaluate(Gex::NodeAttributeData &ctx,
+                         Gex::NodeAttributeData &inputctx,
                          Gex::GraphContext &graphContext,
                          Gex::NodeProfiler &profiler)
                          override
@@ -90,6 +86,7 @@ namespace iter
 
 
         bool PostEvaluate(Gex::NodeAttributeData &ctx,
+                          Gex::NodeAttributeData &outputctx,
                          Gex::GraphContext &graphContext,
                          Gex::NodeProfiler &profiler)
                         override
@@ -150,14 +147,10 @@ namespace iter
             auto v = CreateAttribute<TSys::AnyValue>(
                     "Value", Gex::AttrValueType::Single,
                     Gex::AttrType::Input);
-            v->SetInternal(true);
-            v->SetExternal(false);
 
             auto ov = CreateAttribute<TSys::AnyValue>(
                     "OutValue", Gex::AttrValueType::Single,
                     Gex::AttrType::Output);
-            ov->SetInternal(true);
-            ov->SetExternal(false);
 
             CreateAttribute<TSys::AnyValue>(
                     "OutArray", Gex::AttrValueType::Multi,
@@ -165,6 +158,7 @@ namespace iter
         }
 
         bool PreEvaluate(Gex::NodeAttributeData &ctx,
+                         Gex::NodeAttributeData &inputctx,
                          Gex::GraphContext &graphContext,
                          Gex::NodeProfiler &profiler) override
         {
@@ -216,8 +210,6 @@ namespace iter
 //                    return false;
 //                }
 
-                PullInternalOutputs();
-
                 auto ov = ctx.GetAttribute("OutValue").GetAnyValue();
 
                 ctx.GetAttribute("OutArray").CreateIndex(index);
@@ -229,6 +221,7 @@ namespace iter
         }
 
         bool PostEvaluate(Gex::NodeAttributeData &ctx,
+                          Gex::NodeAttributeData &outputctx,
                           Gex::GraphContext &graphContext,
                           Gex::NodeProfiler &profiler) override
         {
@@ -259,33 +252,21 @@ namespace iter
 
             auto p = CreateAttribute<int>("Position", Gex::AttrValueType::Single,
                                               Gex::AttrType::Input);
-            p->SetInternal(true);
-            p->SetExternal(false);
 
             auto s = CreateAttributeFromValue("Space", std::make_any<TSys::Enum>(space),
                                                Gex::AttrValueType::Single, Gex::AttrType::Input);
-            s->SetInternal(true);
-            s->SetExternal(false);
 
             auto n = CreateAttribute<int>("Normale", Gex::AttrValueType::Single,
                                               Gex::AttrType::Input);
-            n->SetInternal(true);
-            n->SetExternal(false);
 
             auto w = CreateAttribute<float>("Weight",  Gex::AttrValueType::Single,
                                              Gex::AttrType::Input);
-            w->SetInternal(true);
-            w->SetExternal(false);
 
             auto m = CreateAttribute<int>("Matrix",  Gex::AttrValueType::Single,
                                                Gex::AttrType::Input);
-            m->SetInternal(true);
-            m->SetExternal(false);
 
             auto op = CreateAttribute<int>("OutPosition",  Gex::AttrValueType::Single,
                                                Gex::AttrType::Output);
-            op->SetInternal(true);
-            m->SetExternal(false);
         }
     };
 
@@ -311,8 +292,6 @@ namespace iter
                                  Gex::AttrType::Input);
             auto c = CreateAttribute<int>("Current", Gex::AttrValueType::Single,
                                  Gex::AttrType::Input);
-            c->SetInternal(true);
-            c->SetExternal(false);
         }
 
         bool Evaluate(Gex::NodeAttributeData &ctx,
@@ -340,7 +319,6 @@ namespace iter
                 eval.Run();
                 
                 // Pull values.
-                PullInternalOutputs();
             }
 
             return true;

@@ -200,22 +200,22 @@ namespace Gex::InputRel
             return false;
         }
 
-        std::any FromPython(const boost::python::object& v) const override
+        std::any FromPython(const pybind11::object& v) const override
         {
 //            std::shared_ptr<T> value = boost::python::extract<std::shared_ptr<T>>(v);
 //            return std::make_any<std::shared_ptr<T>>(value);
-            std::shared_ptr<T> p = boost::python::extract<std::shared_ptr<T>>(v);
+            std::shared_ptr<T> p = v.cast<std::shared_ptr<T>>();
 
             return std::make_any<std::shared_ptr<T>>(p);
         }
 
-        boost::python::object ToPython(const std::any& v) const override
+        pybind11::object ToPython(const std::any& v) const override
         {
             T::RegisterPythonWrapper();
 
             std::shared_ptr<T> p = std::any_cast<std::shared_ptr<T>>(v);
 
-            return boost::python::object(p);
+            return pybind11::cast(p);
         }
 
         virtual std::any CopyValue(const std::any& source) const override

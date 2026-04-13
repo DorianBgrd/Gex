@@ -122,12 +122,12 @@ namespace ImageManip::Types
             return false;
         }
 
-        std::any FromPython(const boost::python::object&) const override
+        std::any FromPython(const pybind11::object&) const override
         {
             return InitValue();
         }
 
-        boost::python::object ToPython(const std::any&) const override
+        pybind11::object ToPython(const std::any&) const override
         {
             return {};
         }
@@ -143,10 +143,10 @@ namespace ImageManip::Types
             return typeid(LinearGradient).hash_code();
         }
 
-        std::string PythonName() const override
-        {
-            return "LinearGradient";
-        }
+//        std::string PythonName() const override
+//        {
+//            return "LinearGradient";
+//        }
 
         std::string ApiName() const override
         {

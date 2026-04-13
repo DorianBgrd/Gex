@@ -61,12 +61,12 @@ namespace ImageManip::Types
             return std::any_cast<QColor>(v1) == std::any_cast<QColor>(v2);
         }
 
-        std::any FromPython(const boost::python::object&) const override
+        std::any FromPython(const pybind11::object&) const override
         {
             return InitValue();
         }
 
-        boost::python::object ToPython(const std::any&) const override
+        pybind11::object ToPython(const std::any&) const override
         {
             return {};
         }
@@ -79,11 +79,6 @@ namespace ImageManip::Types
         size_t Hash() const override
         {
             return typeid(QColor).hash_code();
-        }
-
-        std::string PythonName() const override
-        {
-            return "QColor";
         }
 
         std::string ApiName() const override

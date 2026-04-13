@@ -18,10 +18,9 @@ add_definitions(
         /DTBB_USE_DEBUG=0
 )
 
-set(PXR_DIR "$ENV{PXR_ROOT}-${CMAKE_BUILD_TYPE}")
+set(pxr_DIR "$ENV{PXR_ROOT}-${CMAKE_BUILD_TYPE}")
 
-find_package(pxr COMPONENTS Usd UsdGeom Tf REQUIRED HINTS PXR_DIR)
-
+find_package(pxr COMPONENTS Usd UsdGeom Tf REQUIRED HINTS pxr_DIR)
 
 # Find Qt package -------------------------------------------------------------
 #find_package(Qt6 COMPONENTS Widgets Core Gui Svg SvgWidgets REQUIRED)

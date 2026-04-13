@@ -109,13 +109,13 @@ bool JsonPlugin::JsonValueHandler::CompareValue(const std::any& v1, const std::a
 }
 
 
-std::any JsonPlugin::JsonValueHandler::FromPython(const boost::python::object&) const
+std::any JsonPlugin::JsonValueHandler::FromPython(const pybind11::object&) const
 {
     return InitValue();
 }
 
 
-boost::python::object JsonPlugin::JsonValueHandler::ToPython(const std::any&) const
+pybind11::object JsonPlugin::JsonValueHandler::ToPython(const std::any&) const
 {
     return {};
 }
@@ -254,13 +254,13 @@ bool JsonPlugin::JsonEditorHandler::CompareValue(const std::any& v1, const std::
 }
 
 
-std::any JsonPlugin::JsonEditorHandler::FromPython(const boost::python::object&) const
+std::any JsonPlugin::JsonEditorHandler::FromPython(const pybind11::object&) const
 {
     return InitValue();
 }
 
 
-boost::python::object JsonPlugin::JsonEditorHandler::ToPython(const std::any&) const
+pybind11::object JsonPlugin::JsonEditorHandler::ToPython(const std::any&) const
 {
     return {};
 }
@@ -285,6 +285,123 @@ std::string JsonPlugin::JsonEditorHandler::ApiName() const
 
 
 size_t JsonPlugin::JsonEditorHandler::ValueHash(const std::any& val) const
+{
+    return 0;
+}
+
+
+JsonPlugin::JsonReaderHandler::JsonReaderHandler(): TSys::TypeHandler()
+{
+//    RegisterConverter<std::string>(
+//            [](const std::any& v, const std::any& c)
+//            {
+//                return MakeEditorFromAny<StringEditor, std::string>(v);
+//            }
+//    );
+//
+//    RegisterConverter<int>(
+//            [](const std::any& v, const std::any& c)
+//            {
+//                return MakeEditorFromAny<IntEditor, int>(v);
+//            }
+//    );
+//
+//    RegisterConverter<float>(
+//            [](const std::any& v, const std::any& c)
+//            {
+//                return MakeEditorFromAny<FloatEditor, float>(v);
+//            }
+//    );
+//
+//    RegisterConverter<double>(
+//            [](const std::any& v, const std::any& c)
+//            {
+//                return MakeEditorFromAny<DoubleEditor, double>(v);
+//            }
+//    );
+}
+
+
+void JsonPlugin::JsonReaderHandler::SerializeValue(
+        const std::any& v, rapidjson::Value& value,
+        rapidjson::Document& document
+) const
+{
+
+}
+
+
+std::any JsonPlugin::JsonReaderHandler::DeserializeValue(
+        const std::any& v,
+        rapidjson::Value& value
+) const
+{
+    return InitValue();
+}
+
+
+void JsonPlugin::JsonReaderHandler::SerializeConstruction(
+        const std::any& v, rapidjson::Value& value,
+        rapidjson::Document& document
+) const
+{
+
+}
+
+
+std::any JsonPlugin::JsonReaderHandler::DeserializeConstruction(
+        rapidjson::Value& value
+) const
+{
+    return InitValue();
+}
+
+
+std::any JsonPlugin::JsonReaderHandler::InitValue() const
+{
+    EditorPtr editor = std::make_shared<EmptyEditor>();
+    return editor;
+}
+
+
+bool JsonPlugin::JsonReaderHandler::CompareValue(const std::any& v1, const std::any& v2) const
+{
+//    return std::any_cast<JsonEditorPtr>(v1) == std::any_cast<JsonEditorPtr>(v2);
+    return false;
+}
+
+
+std::any JsonPlugin::JsonReaderHandler::FromPython(const pybind11::object&) const
+{
+    return InitValue();
+}
+
+
+pybind11::object JsonPlugin::JsonReaderHandler::ToPython(const std::any&) const
+{
+    return {};
+}
+
+
+std::any JsonPlugin::JsonReaderHandler::CopyValue(const std::any& source) const
+{
+    return source;
+}
+
+
+size_t JsonPlugin::JsonReaderHandler::Hash() const
+{
+    return typeid(EditorPtr).hash_code();
+}
+
+
+std::string JsonPlugin::JsonReaderHandler::ApiName() const
+{
+    return "JsonReader";
+}
+
+
+size_t JsonPlugin::JsonReaderHandler::ValueHash(const std::any& val) const
 {
     return 0;
 }

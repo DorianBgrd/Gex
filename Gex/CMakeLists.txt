@@ -39,6 +39,7 @@ set(
         include/wraputils.h
         include/Wrappers.h
         include/Commands.h
+        include/Interpreter.h
 )
 
 set(
@@ -96,6 +97,9 @@ set(
         src/Wrappers.cpp
         include/Commands.h
         src/Commands.cpp
+
+        include/Interpreter.h
+        src/Interpreter.cpp
 )
 
 
@@ -106,7 +110,7 @@ set(
         $ENV{RAPIDJSON_DIR}
         ${Tsys_INCLUDE_DIRS}
         $ENV{SAFEPTRS_DIR}
-        ${Boost_INCLUDE_DIRS}
+        ${pybind11_INCLUDE_DIRS}
         ${Python_INCLUDE_DIRS}
 )
 

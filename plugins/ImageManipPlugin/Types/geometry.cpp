@@ -152,17 +152,44 @@ ImageManip::Types::Circle ImageManip::Types::CircumCircle(
 }
 
 
-double ImageManip::Types::Distance(double x1, double y1, double x2, double y2)
+double ImageManip::Types::Distance(
+        double x1, double y1,
+        double x2, double y2
+)
 {
     return std::sqrt(std::pow(x1 - x2, 2) + std::pow(y1 - y2, 2));
 }
 
 
-ImageManip::Types::Point Normalized(const ImageManip::Types::Point vector)
+ImageManip::Types::Point ImageManip::Types::Normalized(
+        const ImageManip::Types::Point vector
+)
 {
     double vNorm = std::sqrt(std::pow(vector.x, 2) + std::pow(vector.y, 2));
+    if (vNorm == 0)
+        return {0, 0};
 
     return {vector.x / vNorm, vector.y / vNorm};
+}
+
+
+double ImageManip::Types::ScalarProduct(
+        const ImageManip::Types::Point& vec1,
+        const ImageManip::Types::Point& vec2
+)
+{
+    return vec1.x * vec2.x + vec1.y * vec2.y;
+}
+
+
+double ImageManip::Types::NormalizedScalarProduct(
+        const ImageManip::Types::Point& vec1,
+        const ImageManip::Types::Point& vec2
+)
+{
+    auto nrm1 = Normalized(vec1);
+    auto nrm2 = Normalized(vec2);
+    return ScalarProduct(nrm1, nrm2);
 }
 
 
@@ -405,12 +432,12 @@ bool ImageManip::Types::PointHandler::CompareValue(const std::any& v1, const std
     return std::any_cast<Point>(v1) == std::any_cast<Point>(v2);
 }
 
-std::any ImageManip::Types::PointHandler::FromPython(const boost::python::object&) const
+std::any ImageManip::Types::PointHandler::FromPython(const pybind11::object&) const
 {
     return {};
 }
 
-boost::python::object ImageManip::Types::PointHandler::ToPython(const std::any&) const
+pybind11::object ImageManip::Types::PointHandler::ToPython(const std::any&) const
 {
     return {};
 }
@@ -425,10 +452,10 @@ size_t ImageManip::Types::PointHandler::Hash() const
     return typeid(Point).hash_code();
 }
 
-std::string ImageManip::Types::PointHandler::PythonName() const
-{
-    return "Point";
-}
+//std::string ImageManip::Types::PointHandler::PythonName() const
+//{
+//    return "Point";
+//}
 
 std::string ImageManip::Types::PointHandler::ApiName() const
 {
