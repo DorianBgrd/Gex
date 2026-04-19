@@ -486,7 +486,14 @@ void Gex::Ui::BaseGraphView::mouseMoveEvent(QMouseEvent* event)
 
 void Gex::Ui::BaseGraphView::ShowMenu(QMenu* menu, const QPoint& pos)
 {
+    menuPos = pos;
     menu->exec(mapToGlobal(pos));
+}
+
+
+QPoint Gex::Ui::BaseGraphView::GetMenuPos() const
+{
+    return menuPos;
 }
 
 

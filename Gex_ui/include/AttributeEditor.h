@@ -87,10 +87,9 @@ namespace Gex
             UiTSys::TypedInitWidget* initWidget = nullptr;
             std::type_index typeIndex;
             GraphWidget* graphWidget;
-            QCheckBox* input;
-            QCheckBox* output;
-            QCheckBox* multi;
-            QCheckBox* internal;
+            QComboBox* comboType;
+            QComboBox* comboValue;
+            QPushButton* createButton;
 
         public:
             ExtraAttributeDialog(const Gex::NodePtr& node,
@@ -103,6 +102,8 @@ namespace Gex
             void SetType(const QString& type);
 
             void CreateAttribute();
+
+            void ValidateName(const QString& name);
         };
 
 

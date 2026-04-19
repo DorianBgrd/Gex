@@ -175,6 +175,7 @@ namespace Gex::Ui
         Q_OBJECT
 
         qreal zoomFactor = 0.9;
+        QPoint menuPos;
 
         Toolbar* toolbar = nullptr;
         Message* message = nullptr;
@@ -199,6 +200,8 @@ namespace Gex::Ui
         virtual bool DeleteMenuOnHide() const;
 
         void ShowMenu(QMenu* menu, const QPoint& pos);
+
+        QPoint GetMenuPos() const;
 
     public:
         virtual QList<QGraphicsItem*> FilterSelectedItems(

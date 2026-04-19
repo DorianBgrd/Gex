@@ -851,6 +851,8 @@ namespace Gex
 
             NodeItem* GetOutput() const;
 
+            NodeItem* GetNodeAtPosition(const QPointF& position) const;
+
         public:
             void OnNodePlugClicked(NodePlugItem* plug);
         };

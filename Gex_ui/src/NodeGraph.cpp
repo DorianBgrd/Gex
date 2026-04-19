@@ -3083,9 +3083,28 @@ QMenu* Gex::Ui::NodeGraphView::GetMenu()
 
 void Gex::Ui::NodeGraphView::CreateExtraAttribute()
 {
+    auto selection = graphScene->SelectedNodes();
+
+    Gex::NodePtr targetNode = graphScene->CurrentContext()->Compound();
+    if (!selection.empty())
+    {
+        targetNode = (selection.at(selection.size() - 1));
+    }
+    else
+    {
+        QPointF cursorPos = mapFromGlobal(QCursor::pos());
+
+        if (
+            Gex::Ui::NodeItem* mouseItem = GetNodeAtPosition(GetMenuPos())
+        )
+        {
+            targetNode = mouseItem->Node();
+        }
+    }
+
     auto* window = new ExtraAttributeDialog(
-            graphScene->CurrentContext()->Compound(),
-            graphWidget, this);
+            targetNode, graphWidget, this
+    );
 
     window->exec();
     window->deleteLater();
@@ -3144,6 +3163,33 @@ Gex::Ui::NodeItem* Gex::Ui::NodeGraphView::GetInput() const
 Gex::Ui::NodeItem* Gex::Ui::NodeGraphView::GetOutput() const
 {
     return graphScene->GetOutput();
+}
+
+
+Gex::Ui::NodeItem* Gex::Ui::NodeGraphView::GetNodeAtPosition(
+        const QPointF& position
+) const
+{
+    QPointF scenePos = mapToScene(position.toPoint());
+    auto items = graphScene->items(
+            scenePos, Qt::IntersectsItemShape,
+            Qt::DescendingOrder, transform()
+    );
+
+    if (items.empty())
+    {
+        return nullptr;
+    }
+
+    for (auto* item : items)
+    {
+        if (auto* nodeitem = qgraphicsitem_cast<NodeItem*>(item))
+        {
+            return nodeitem;
+        }
+    }
+
+    return nullptr;
 }
 
 

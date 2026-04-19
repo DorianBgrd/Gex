@@ -61,9 +61,6 @@ Gex::Ui::MultiAttributeWidget::MultiAttributeWidget(
 }
 
 
-
-
-
 void Gex::Ui::MultiAttributeWidget::AddMultiIndex(bool)
 {
     if (!attribute)
@@ -234,33 +231,39 @@ void Gex::Ui::ExtraAttributeDialog::Setup()
     vtypeLayout->setContentsMargins(0, 0, 0, 0);
     layout->addLayout(vtypeLayout);
 
-    input = new QCheckBox(this);
-    input->setText("Input");
-    vtypeLayout->addWidget(input);
-
-    output = new QCheckBox(this);
-    output->setText("Output");
-    vtypeLayout->addWidget(output);
-
-    multi = new QCheckBox(this);
-    multi->setText("Multi");
-    vtypeLayout->addWidget(multi);
-
-    auto* typeLayout = new QHBoxLayout();
-    typeLayout->setContentsMargins(0, 0, 0, 0);
-    layout->addLayout(typeLayout);
-
-    auto* typeLabel = new QLabel();
-    typeLabel->setObjectName("defaultLabel");
-    typeLabel->setText("Type :");
-    typeLayout->addWidget(typeLabel);
-
     auto* typecb = new QComboBox(this);
     for (auto t : UiTSys::UiTypeEngine::GetEngine()->UiTypes())
     {
         typecb->addItem(UiTSys::UiTypeEngine::GetEngine()->UiName(t).c_str());
     }
-    typeLayout->addWidget(typecb);
+    vtypeLayout->addWidget(typecb);
+
+    comboType = new QComboBox(this);
+
+    QVariant inputData;
+    inputData.setValue(Gex::AttrType::Input);
+    comboType->addItem("Input", inputData);
+
+    QVariant outputData;
+    outputData.setValue(Gex::AttrType::Output);
+    comboType->addItem("Output", outputData);
+
+    QVariant staticData;
+    staticData.setValue(Gex::AttrType::Static);
+    comboType->addItem("Static", staticData);
+    vtypeLayout->addWidget(comboType);
+
+    comboValue = new QComboBox(this);
+
+    QVariant singleData;
+    singleData.setValue(Gex::AttrValueType::Single);
+    comboValue->addItem("Single", singleData);
+
+    QVariant multiData;
+    multiData.setValue(Gex::AttrValueType::Multi);
+    comboValue->addItem("Multi", multiData);
+
+    vtypeLayout->addWidget(comboValue);
 
     initWidgetLayout = new QVBoxLayout();
     initWidgetLayout->setContentsMargins(0, 0, 0, 0);
@@ -270,7 +273,7 @@ void Gex::Ui::ExtraAttributeDialog::Setup()
     buttonsLayout->setContentsMargins(0, 0, 0, 0);
     layout->addLayout(buttonsLayout);
 
-    auto* createButton = new QPushButton(this);
+    createButton = new QPushButton(this);
     createButton->setIcon(Res::UiRes::GetRes()->GetQtAwesome()->icon(fa::fa_solid, fa::fa_add));
     createButton->setText("Create");
     buttonsLayout->addWidget(createButton);
@@ -288,6 +291,13 @@ void Gex::Ui::ExtraAttributeDialog::Setup()
 
     QObject::connect(cancelButton, &QPushButton::clicked,
                      this, &ExtraAttributeDialog::reject);
+
+    QObject::connect(attributeName, &QLineEdit::textChanged,
+                     this, &ExtraAttributeDialog::ValidateName);
+
+    createButton->setEnabled(false);
+
+    SetType(typecb->currentText());
 }
 
 
@@ -322,31 +332,24 @@ void Gex::Ui::ExtraAttributeDialog::CreateAttribute()
         value = initWidget->CreateValue();
     }
 
-    Gex::AttrType attrType;
-    if (input->isChecked() && output->isChecked())
-        attrType = Gex::AttrType::Static;
-    else if (input->isChecked())
-        attrType = Gex::AttrType::Input;
-    else if (output->isChecked())
-        attrType = Gex::AttrType::Output;
-    else
-        attrType = Gex::AttrType::Static;
-
-    Gex::AttrValueType valueType = Gex::AttrValueType::Single;
-    if (multi->isChecked())
-        valueType = Gex::AttrValueType::Multi;
+    auto attrType = comboType->currentData().value<Gex::AttrType>();
+    auto valueType = comboValue->currentData().value<Gex::AttrValueType>();
 
     if (targetNode->IsCompound())
     {
         auto compound = Gex::CompoundNode::FromNode(targetNode);
-        auto at = compound->CreateAttributeFromValue(attributeName->text().toStdString(),
-                                                     value, valueType, attrType);
+        auto at = compound->CreateAttributeFromValue(
+                attributeName->text().toStdString(),
+                value, valueType, attrType
+        );
 
     }
     else
     {
-        targetNode->CreateAttributeFromValue(attributeName->text().toStdString(),
-                                             value, valueType, attrType);
+        targetNode->CreateAttributeFromValue(
+                attributeName->text().toStdString(),
+                value, valueType, attrType
+        );
     }
 
     if (updateWidget)
@@ -361,6 +364,12 @@ void Gex::Ui::ExtraAttributeDialog::CreateAttribute()
     graphWidget->UpdateNode(targetNode);
 
     accept();
+}
+
+
+void Gex::Ui::ExtraAttributeDialog::ValidateName(const QString& name)
+{
+    createButton->setEnabled(name.length());
 }
 
 
@@ -465,10 +474,9 @@ void Gex::Ui::AttributeTab::Setup(const Gex::NodePtr& node_)
     inputAttributesWidget->setContentsMargins(0, 0, 0, 0);
     attributesWidgetLayout->addWidget(inputAttributesWidget);
 
-    inputWidgetsLayout = new QVBoxLayout();
+    inputWidgetsLayout = new QVBoxLayout(inputAttributesWidget);
     inputWidgetsLayout->setContentsMargins(0, 0, 0, 0);
     inputWidgetsLayout->setAlignment(Qt::AlignTop);
-    inputAttributesWidget->setLayout(inputWidgetsLayout);
 
     auto* outputsTitle = new AttributeTypeTitle(
             "Outputs", fa::fa_arrow_right_from_bracket);
@@ -478,10 +486,9 @@ void Gex::Ui::AttributeTab::Setup(const Gex::NodePtr& node_)
     outputAttributesWidget->setContentsMargins(0, 0, 0, 0);
     attributesWidgetLayout->addWidget(outputAttributesWidget);
 
-    outputWidgetsLayout = new QVBoxLayout();
+    outputWidgetsLayout = new QVBoxLayout(outputAttributesWidget);
     outputWidgetsLayout->setContentsMargins(0, 0, 0, 0);
     outputWidgetsLayout->setAlignment(Qt::AlignTop);
-    outputAttributesWidget->setLayout(outputWidgetsLayout);
 
     auto* extraAttr = new QPushButton(this);
     extraAttr->setIcon(Res::UiRes::GetRes()->GetQtAwesome()->icon(fa::fa_solid, fa::fa_add));
