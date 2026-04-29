@@ -4,6 +4,11 @@ QWidget {
     border: none;
 }
 
+QWidget:disabled
+{
+    color: grey;
+}
+
 QLabel#defaultLabel {
     color: white;
     background-color: transparent;
@@ -65,11 +70,11 @@ QPushButton {
     border-radius: 3px;
     padding: 5px;
 }
-QPushButton::hover
+QPushButton:hover
 {
     background-color: #585C63;
 }
-QPushButton::pressed
+QPushButton:pressed
 {
     background-color: #000000;
 }
@@ -82,12 +87,18 @@ QPushButton::menu-indicator
     image: none;
     width: 0px;
 }
+QPushButton:disabled {
+    color: grey;
+}
 
 
 QTextEdit {
     color: #FFFFFF;
     background-color: #000000;
     border: none;
+}
+QTextEdit:disabled {
+    color: grey;
 }
 
 
@@ -101,10 +112,16 @@ QLabel {
     color: #FFFFFF;
     background-color: transparent;
 }
+QLabel:disabled {
+    color: grey;
+}
 
 QLabel#DefaultLabel {
     color: #FFFFFF;
     background-color: transparent;
+}
+QLabel#DefaultLabel:disabled {
+    color: grey;
 }
 
 QFrame#AttributeCategoryLine
@@ -210,15 +227,40 @@ QMenu::item:selected
 
 QComboBox {
     color: #FFFFFF;
+    background-color: #494C52;
+    border-radius: 3px;
+    padding: 3px;
+}
+QComboBox::down-arrow
+{
+    image: none;
+    width: 0px;
+}
+QComboBox::drop-down
+{
+    width: 0px;
+}
+QComboBox:hover {
+    color: #FFFFFF;
+    background-color: #585C63;
+    border-radius: 3px;
 }
 QComboBox::item {
     color: #FFFFFF;
+}
+QComboBox:disabled
+{
+    color: grey;
 }
 
 
 QListView{
     color: #FFFFFF;
     border: none;
+}
+QListView:disabled
+{
+    color: grey;
 }
 
 QTreeView{
@@ -237,12 +279,19 @@ QLineEdit {
     background-color: #000000;
     border: none;
 }
+QLineEdit:disabled {
+    color: grey;
+}
 
 
 QSpinBox {
     color:#FFFFFF;
     background-color: #000000;
     border: none;
+}
+QSpinBox:disabled
+{
+    color: grey;
 }
 
 
@@ -251,10 +300,18 @@ QDoubleSpinBox {
     background-color: #000000;
     border: none;
 }
+QDoubleSpinBox:disabled
+{
+    color: grey;
+}
 
 
 QCheckBox {
     color: #FFFFFF;
+}
+QCheckBox:disabled
+{
+    color: grey;
 }
 
 
@@ -342,12 +399,12 @@ QPushButton#NodeGraphContextButton
     background-color: transparent;
     border: none;
 }
-QPushButton#NodeGraphContextButton::hover
+QPushButton#NodeGraphContextButton:hover
 {
     background-color: #585C63;
     border-radius: 5px;
 }
-QPushButton#NodeGraphContextButton::pressed
+QPushButton#NodeGraphContextButton:pressed
 {
     background-color: #000000;
     border-radius: 5px;
@@ -369,17 +426,17 @@ QPushButton#NodeGraphRunButton
     max-width: 25px;
     max-height: 25px;
 }
-QPushButton#NodeGraphRunButton::hover
+QPushButton#NodeGraphRunButton:hover
 {
     background-color: #3b3b3b;
     border-radius: 5px;
 }
-QPushButton#NodeGraphRunButton::pressed
+QPushButton#NodeGraphRunButton:pressed
 {
     background-color: #000000;
     border-radius: 5px;
 }
-QPushButton#NodeGraphRunButton::checked
+QPushButton#NodeGraphRunButton:checked
 {
     background-color: #000000;
     border-radius: 5px;
@@ -392,17 +449,18 @@ QWidget#ViewToolbarButton
     background-color: transparent;
     border: none;
 }
-QWidget#ViewToolbarButton::hover
+QWidget#ViewToolbarButton:hover
 {
     background-color: #3b3b3b;
     border-radius: 5px;
 }
-QWidget#ViewToolbarButton::pressed
+QWidget#ViewToolbarButton:pressed
 {
     background-color: #000000;
     border-radius: 5px;
 }
-QPushButton#ViewToolbarButton::checked
+
+QPushButton#ViewToolbarButton:checked
 {
     background-color: #000000;
     border-radius: 5px;
