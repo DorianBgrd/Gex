@@ -1,7 +1,7 @@
 #ifndef GEX_USD_VIEWERS_H
 #define GEX_USD_VIEWERS_H
 
-#include "plugins/export.h"
+#include "Gex_plugins/export.h"
 #include <QtOpenGLWidgets/QOpenGLWidget>
 
 #include "Gex_ui/include/NodeViewer.h"

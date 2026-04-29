@@ -3,7 +3,7 @@
 
 #include "Gex/include/Gex.h"
 
-#include "GeometryPlugin/types.h"
+#include "Gex_plugins/GeometryPlugin/types.h"
 
 
 namespace Geometry::Nodes

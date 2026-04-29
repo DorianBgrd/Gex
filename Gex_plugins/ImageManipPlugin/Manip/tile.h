@@ -3,7 +3,7 @@
 
 #include <QImage>
 
-#include "plugins/export.h"
+#include "Gex_plugins/export.h"
 
 
 namespace ImageManip::Manip

@@ -2,11 +2,11 @@
 #define GEX_FUNC_VIEWER_H
 
 
-#include "plugins/InputRelPlugin/Func.h"
-#include "plugins/InputRelPlugin/Nodes.h"
+#include "Gex_plugins/InputRelPlugin/Func.h"
+#include "Gex_plugins/InputRelPlugin/Nodes.h"
 #include "Gex/include/Gex.h"
 
-#include "plugins/export.h"
+#include "Gex_plugins/export.h"
 
 #include "UiTsys/uitsys.h"
 

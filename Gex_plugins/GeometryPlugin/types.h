@@ -2,7 +2,7 @@
 #define GEX_GEOMPLUGIN_TYPES_H
 
 
-#include "MathPlugin/types.h"
+#include "Gex_plugins/MathPlugin/types.h"
 
 #include "Tsys/tsys.h"
 

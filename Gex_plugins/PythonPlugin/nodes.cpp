@@ -226,7 +226,7 @@ bool GexPython::Nodes::InlineExpression::Evaluate(
     {
         pybind11::object val = inputContext
                 .GetIndexValue<TSys::AnyValue>(index)
-                .Python_Get();
+                .GetPython();
 
         PyList_SetItem(pythonValues, index, val.ptr());
     }
@@ -274,7 +274,7 @@ bool GexPython::Nodes::InlineExpression::Evaluate(
 
     TSys::AnyValue out;
     if (output)
-        out.Python_Set(pybind11::reinterpret_steal<pybind11::object>(output));
+        out.Set(pybind11::reinterpret_steal<pybind11::object>(output));
     context.GetAttribute("Output").SetValue(out);
 
     context.GetAttribute("exception").SetValue(traceback);

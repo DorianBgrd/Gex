@@ -27,7 +27,7 @@
 
 #include <filesystem>
 
-#include "plugins/export.h"
+#include "Gex_plugins/export.h"
 
 #include "UsdTypes.h"
 

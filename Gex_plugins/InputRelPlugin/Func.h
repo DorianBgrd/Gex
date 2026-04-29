@@ -1,7 +1,7 @@
 #ifndef GEX_FUNC_H
 #define GEX_FUNC_H
 
-#include "plugins/export.h"
+#include "Gex_plugins/export.h"
 
 #include "Tsys/tsys.h"
 #include "rapidjson/document.h"

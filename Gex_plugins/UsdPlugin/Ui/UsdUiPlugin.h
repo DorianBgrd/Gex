@@ -5,7 +5,7 @@
 
 #include <QSpinBox>
 
-#include "plugins/export.h"
+#include "Gex_plugins/export.h"
 #include "Gex_ui/include/PluginLoader.h"
 
 #include "pxr/base/gf/half.h"

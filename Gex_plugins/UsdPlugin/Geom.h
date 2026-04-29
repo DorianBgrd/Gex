@@ -3,7 +3,7 @@
 
 #include "pxr/usd/usdGeom/mesh.h"
 
-#include "plugins/export.h"
+#include "Gex_plugins/export.h"
 
 
 namespace UsdPlugin

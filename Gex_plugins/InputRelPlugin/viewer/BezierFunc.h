@@ -2,11 +2,11 @@
 #define GEX_UI_BEZIERFUNC_H
 
 
-#include "plugins/InputRelPlugin/BezierFunc.h"
-#include "plugins/InputRelPlugin/Nodes.h"
+#include "Gex_plugins/InputRelPlugin/BezierFunc.h"
+#include "Gex_plugins/InputRelPlugin/Nodes.h"
 #include "Gex/include/Gex.h"
 
-#include "plugins/export.h"
+#include "Gex_plugins/export.h"
 
 #include "UiTsys/uitsys.h"
 

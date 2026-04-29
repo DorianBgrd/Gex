@@ -1,7 +1,7 @@
 #ifndef GEX_SHAPES_H
 #define GEX_SHAPES_H
 
-#include "plugins/export.h"
+#include "Gex_plugins/export.h"
 
 #include "Gex/include/Gex.h"
 

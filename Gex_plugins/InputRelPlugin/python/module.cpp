@@ -1,7 +1,7 @@
 #include "pybind11/pybind11.h"
 
-#include "plugins/InputRelPlugin/Func.h"
-#include "plugins/InputRelPlugin/BezierFunc.h"
+#include "Gex_plugins/InputRelPlugin/Func.h"
+#include "Gex_plugins/InputRelPlugin/BezierFunc.h"
 
 
 #define DECL_GET(name, func) \

@@ -1,7 +1,7 @@
 #ifndef GEX_NODE_TILE_H
 #define GEX_NODE_TILE_H
 
-#include "plugins/export.h"
+#include "Gex_plugins/export.h"
 #include "Gex/include/Gex.h"
 
 

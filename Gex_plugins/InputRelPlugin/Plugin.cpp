@@ -3,7 +3,7 @@
 #include "Nodes.h"
 #include "Gex/include/Gex.h"
 
-#include "plugins/export.h"
+#include "Gex_plugins/export.h"
 
 
 extern EXPORT RegisterPlugin(Gex::PluginLoader* loader)
