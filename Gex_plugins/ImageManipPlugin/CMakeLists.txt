@@ -133,7 +133,7 @@ add_custom_command(
         ImageManipPlugin
         POST_BUILD
         COMMAND
-        python ${CMAKE_SOURCE_DIR}/plugins/build_plugin.py
+        python ${CMAKE_SOURCE_DIR}/Gex_plugins/build_plugin.py
 
         --package
         --name ImageManipPlugin
@@ -221,10 +221,9 @@ add_custom_command(
 #        --library-search-dir ${Boost_LIBRARY_DIRS}
         --library-search-dir ${Python_LIBRARY_DIRS}
         --library-search-dir ${CMAKE_CURRENT_SOURCE_DIR}
-        --library-search-dir ${Tsys_LIBRARY_DIRS}
         --library-search-dir ${CMAKE_BINARY_DIR}
 
-        --library Tsys
+        --library Tsys.dll
         --library ${CMAKE_BINARY_DIR}/Gex/Gex.dll
 
 )

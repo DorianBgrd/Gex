@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.21)
-project(FilesPlugin CXX)
+project(PythonPlugin CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 
@@ -9,15 +9,15 @@ set(CMAKE_CXX_FLAGS "/EHsc")
 
 
 add_library(
-        FilesPlugin
+        PythonPlugin
         SHARED
-        filesLibrary.cpp
-        fileUtils.h
+        nodes.cpp
+        Plugin.cpp
 )
 
 
 target_include_directories(
-        FilesPlugin
+        PythonPlugin
         PUBLIC
         ${CMAKE_SOURCE_DIR}
         ${Boost_INCLUDE_DIRS}
@@ -27,7 +27,7 @@ target_include_directories(
 
 
 target_link_directories(
-        FilesPlugin
+        PythonPlugin
         PUBLIC
         ${CMAKE_BINARY_DIR}
         ${Boost_LIBRARY_DIRS}
@@ -36,25 +36,24 @@ target_link_directories(
 
 
 target_link_libraries(
-        FilesPlugin
+        PythonPlugin
         PUBLIC
         Gex
         ${Boost_LIBRARIES}
-        Python::Python
-        Python::Module
+        ${Python_LINK_LIBRARIES}
 )
 
 
 add_custom_command(
         TARGET
-        FilesPlugin
+        PythonPlugin
         POST_BUILD
         COMMAND
-        python ${CMAKE_SOURCE_DIR}/plugins/build_plugin.py
+        python ${CMAKE_SOURCE_DIR}/Gex_plugins/build_plugin.py
 
         --package
-        --name FilesPlugin
-        --plugin FilesPlugin.dll
-        --plugin-file ${CMAKE_BINARY_DIR}/plugins/FilesPlugin.dll
+        --name PythonPlugin
+        --plugin PythonPlugin.dll
+        --plugin-file ${CMAKE_BINARY_DIR}/plugins/PythonPlugin.dll
         --type C++
 )

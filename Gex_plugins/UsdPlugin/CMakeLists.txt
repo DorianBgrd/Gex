@@ -129,7 +129,7 @@ add_custom_command(
         UsdPlugin
         POST_BUILD
         COMMAND
-        python ${CMAKE_SOURCE_DIR}/plugins/build_plugin.py
+        python ${CMAKE_SOURCE_DIR}/Gex_plugins/build_plugin.py
         --libs-search-path
         ${CMAKE_BINARY_DIR}
         ${CMAKE_CURRENT_BINARY_DIR}

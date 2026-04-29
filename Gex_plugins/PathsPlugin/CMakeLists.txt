@@ -45,7 +45,7 @@ add_custom_command(
         PathsPlugin
         POST_BUILD
         COMMAND
-        python ${CMAKE_SOURCE_DIR}/plugins/build_plugin.py
+        python ${CMAKE_SOURCE_DIR}/Gex_plugins/build_plugin.py
 
         --package
         --name PathsPlugin

@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.21)
-project(MayaPlugin CXX)
+project(StringPlugin CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 
@@ -8,19 +8,15 @@ set(CMAKE_VS_PLATFORM_NAME "x64")
 set(CMAKE_CXX_FLAGS "/EHsc")
 
 
-add_definitions(
-        /DPipelineLibrary2_EXPORT
-)
-
-
-add_library(MayaPlugin
+add_library(
+        StringPlugin
         SHARED
-        mayaLibrary.cpp
+        stringLibrary.cpp
         )
 
 
 target_include_directories(
-        MayaPlugin
+        StringPlugin
         PUBLIC
         ${CMAKE_SOURCE_DIR}
         ${Boost_INCLUDE_DIRS}
@@ -30,7 +26,7 @@ target_include_directories(
 
 
 target_link_directories(
-        MayaPlugin
+        StringPlugin
         PUBLIC
         ${CMAKE_BINARY_DIR}
         ${Boost_LIBRARY_DIRS}
@@ -39,7 +35,7 @@ target_link_directories(
 
 
 target_link_libraries(
-        MayaPlugin
+        StringPlugin
         PUBLIC
         Gex
         ${Boost_LIBRARIES}
@@ -49,14 +45,14 @@ target_link_libraries(
 
 add_custom_command(
         TARGET
-        MayaPlugin
+        StringPlugin
         POST_BUILD
         COMMAND
-        python ${CMAKE_SOURCE_DIR}/plugins/build_plugin.py
+        python ${CMAKE_SOURCE_DIR}/Gex_plugins/build_plugin.py
 
         --package
-        --name MayaPlugin
-        --plugin MayaPlugin.dll
-        --plugin-file ${CMAKE_BINARY_DIR}/plugins/MayaPlugin.dll
+        --name StringPlugin
+        --plugin StringPlugin.dll
+        --plugin-file ${CMAKE_BINARY_DIR}/plugins/StringPlugin.dll
         --type C++
 )

@@ -56,8 +56,8 @@ target_link_libraries(
 
         ${Python_LINK_LIBRARIES}
 
-        Tsys::Tsys
-        UiRes::UiRes
+        Tsys
+        UiRes
         Gex_ui
 )
 
@@ -67,7 +67,7 @@ add_custom_command(
         MathPlugin
         POST_BUILD
         COMMAND
-        python ${CMAKE_SOURCE_DIR}/plugins/build_plugin.py
+        python ${CMAKE_SOURCE_DIR}/Gex_plugins/build_plugin.py
 
         --package
         --name MathPlugin

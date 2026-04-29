@@ -104,7 +104,7 @@ add_custom_command(
         DEPENDS
         InputRel_Python
         COMMAND
-        python ${CMAKE_SOURCE_DIR}/plugins/build_plugin.py
+        python ${CMAKE_SOURCE_DIR}/Gex_plugins/build_plugin.py
 
         --package
         --name InputRelPlugin

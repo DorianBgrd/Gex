@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.21)
-project(PythonPlugin CXX)
+project(ArraysPlugin CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 
@@ -9,34 +9,33 @@ set(CMAKE_CXX_FLAGS "/EHsc")
 
 
 add_library(
-        PythonPlugin
+        ArraysPlugin
         SHARED
-        nodes.cpp
-        Plugin.cpp
-)
+        arraysLibrary.cpp)
 
 
 target_include_directories(
-        PythonPlugin
+        ArraysPlugin
         PUBLIC
         ${CMAKE_SOURCE_DIR}
         ${Boost_INCLUDE_DIRS}
+        ${PipelineLibrary_INCLUDE_DIRS}
         ${Python_INCLUDE_DIRS}
         ${ThirdParties_INCLUDE_DIRS}
 )
 
 
 target_link_directories(
-        PythonPlugin
+        ArraysPlugin
         PUBLIC
-        ${CMAKE_BINARY_DIR}
         ${Boost_LIBRARY_DIRS}
+        ${CMAKE_BINARY_DIR}
         ${Python_LIBRARY_DIRS}
 )
 
 
 target_link_libraries(
-        PythonPlugin
+        ArraysPlugin
         PUBLIC
         Gex
         ${Boost_LIBRARIES}
@@ -46,14 +45,14 @@ target_link_libraries(
 
 add_custom_command(
         TARGET
-        PythonPlugin
+        ArraysPlugin
         POST_BUILD
         COMMAND
-        python ${CMAKE_SOURCE_DIR}/plugins/build_plugin.py
+        python ${CMAKE_SOURCE_DIR}/Gex_plugins/build_plugin.py
 
         --package
-        --name PythonPlugin
-        --plugin PythonPlugin.dll
-        --plugin-file ${CMAKE_BINARY_DIR}/plugins/PythonPlugin.dll
+        --name ArraysPlugin
+        --plugin ArraysPlugin.dll
+        --plugin-file ${CMAKE_BINARY_DIR}/plugins/ArraysPlugin.dll
         --type C++
 )
