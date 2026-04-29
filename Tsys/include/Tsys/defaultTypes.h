@@ -1,0 +1,508 @@
+#pragma once
+#include "tsys.h"
+
+//#ifndef BOOST_PYTHON_STATIC_LIB
+//#define BOOST_PYTHON_STATIC_LIB
+//#endif
+
+#include <any>
+#include <variant>
+#include <string>
+#include <map>
+#include <vector>
+#include "rapidjson/reader.h"
+#include "rapidjson/document.h"
+
+#include "api.h"
+
+
+namespace TSys
+{
+    template <typename T>
+    std::any ExtractPythonToAny(const pybind11::object& pyObj)
+    {
+        return std::make_any<T>(pyObj.cast<T>());
+    }
+
+
+    struct Success
+    {
+        bool status = false;
+    };
+
+
+    // Declare types
+    class TSYS_API Enum
+    {
+    protected:
+        std::map<unsigned int, std::string> values;
+        unsigned int currentIndex;
+
+    public:
+        Enum();
+
+
+        Enum(const Enum& other);
+
+
+        Enum(const std::map<unsigned int, std::string>& v);
+
+
+        Enum(const std::map<unsigned int, std::string>& v, unsigned int i);
+
+
+        Enum(const std::vector<std::string>& v);
+
+
+        Enum(const std::vector<std::string>& v, unsigned int i);
+
+
+        std::string CurrentValue() const;
+
+
+        unsigned int CurrentIndex() const;
+
+
+        bool SetCurrentIndex(unsigned int index);
+
+
+        bool SetCurrentValue(std::string value);
+
+
+        void AddValue(int index, std::string value);
+
+
+        std::vector<int> Indices();
+
+
+        std::string ValueAtIndex(int index);
+
+
+        bool operator ==(const Enum& other) const;
+
+
+        bool operator ==(const Enum* other) const;
+    };
+
+
+    class TSYS_API AnyValue
+    {
+    protected:
+        std::variant<std::any, pybind11::object> value;
+
+    public:
+        AnyValue() = default;
+
+        template<class T>
+        AnyValue(T v): AnyValue(std::make_any<T>(v)){};
+
+        AnyValue(std::any v): value(v) {};
+
+        AnyValue(pybind11::object v): value(v) {};
+
+        template<class T>
+        T Get(Success* success=nullptr)
+        {
+            auto handler = TypeRegistry::GetRegistry()->GetTypeHandle<T>();
+
+            if (std::holds_alternative<pybind11::object>(value))
+            {
+                return handler->FromPython(std::get<pybind11::object>(value));
+            }
+
+            try
+            {
+                return std::any_cast<T>(value);
+            }
+            catch (std::bad_any_cast&)
+            {
+                return T();
+            }
+        }
+
+        std::any GetAny() const
+        {
+            try
+            {
+                return std::get<std::any>(value);
+            }
+            catch (std::bad_variant_access)
+            {
+                return {};
+            }
+        }
+
+
+        pybind11::object GetPython() const
+        {
+            try
+            {
+                return std::get<pybind11::object>(value);
+            }
+            catch (std::bad_variant_access)
+            {
+                return {};
+            }
+        }
+
+        template<class T>
+        void Set(T newValue)
+        {
+            value = std::make_any<T>(newValue);
+        }
+
+        void Set(pybind11::object newValue)
+        {
+            value = newValue;
+        }
+
+        void Set(std::any newValue)
+        {
+            value = newValue;
+        }
+
+        bool operator == (AnyValue& other);
+
+    };
+
+
+    struct AnyConverter
+    {
+        std::any operator()(const std::any& from, const std::any& current) const
+        {
+            auto anyval = std::any_cast<AnyValue>(from);
+
+            auto handle = TypeRegistry::GetRegistry()->GetTypeHandle(
+                    current.type().hash_code()
+            );
+
+            if (!handle)
+            {
+                return current;
+            }
+
+            return handle->ConvertFrom(anyval.GetAny(), current);
+        }
+    };
+
+
+    class TSYS_API VariantValue
+    {
+        std::set<std::type_index> variantTypes;
+        std::any variantValue;
+
+    public:
+        template<class... Type>
+        VariantValue(): variantTypes(typeid(Type)...)
+        {
+
+        }
+
+        template<typename T>
+        bool Set(const T& value)
+        {
+            if (variantTypes.find(typeid(T)) == variantTypes.end())
+            {
+                return false;
+            }
+
+            variantValue = value;
+            return true;
+        }
+
+
+        template<typename T>
+        bool Get(T& value)
+        {
+            auto typeindex = std::type_index(typeid(T));
+            if (variantTypes.find(typeindex) == variantTypes.end())
+            {
+                return false;
+            }
+
+            auto valueTypeIndex = std::type_index(variantValue.type());
+            if (valueTypeIndex == typeindex)
+            {
+                value = std::any_cast<T>(variantValue);
+                return true;
+            }
+
+            auto handler = TypeRegistry::GetRegistry()->GetTypeHandle<T>();
+            if (!handler || !handler.CanConvertFrom(valueTypeIndex))
+            {
+                return false;
+            }
+
+            value = handler.ConvertFrom(variantValue);
+            return true;
+        }
+
+
+        std::any GetAnyValue() const
+        {
+            return variantValue;
+        }
+
+
+        bool SetAnyValue(const std::any& value)
+        {
+            if (variantTypes.find(value.type()) == variantTypes.end())
+            {
+                return false;
+            }
+
+            variantValue = value;
+            return true;
+        }
+    };
+
+
+    // String
+    struct TSYS_API StringHandler: GenericTypeHandler<std::string>
+    {
+        StringHandler();
+
+        std::string ApiName() const override;
+
+        std::any InitValue() const override;
+
+        std::any CopyValue(const std::any& source) const override;
+
+        std::any FromPython(const pybind11::object& obj) const override;
+
+        pybind11::object ToPython(const std::any& value) const override;
+
+        void SerializeValue(const std::any& v, rapidjson::Value& jsonValue,
+                            rapidjson::Document& doc) const override;
+
+        std::any DeserializeValue(const std::any& v, rapidjson::Value& value) const override;
+
+        void SerializeConstruction(const std::any& v, rapidjson::Value& value,
+                                   rapidjson::Document& doc) const override;
+
+        std::any DeserializeConstruction(rapidjson::Value& value) const override;
+
+    };
+
+
+    struct TSYS_API BoolHandler: TSys::GenericTypeHandler<bool>
+    {
+        BoolHandler();
+
+        std::string ApiName() const override;
+
+        std::any InitValue() const override;
+
+        std::any CopyValue(const std::any& source) const override;
+
+        std::any FromPython(const pybind11::object& obj) const override;
+
+        pybind11::object ToPython(const std::any& value) const override;
+
+        void SerializeValue(const std::any& v, rapidjson::Value& jsonValue,
+                            rapidjson::Document& doc) const override;
+
+        std::any DeserializeValue(const std::any&, rapidjson::Value& value) const override;
+
+        void SerializeConstruction(const std::any& v, rapidjson::Value& value,
+                                   rapidjson::Document& doc) const override;
+
+        std::any DeserializeConstruction(rapidjson::Value& value) const override;
+
+    };
+
+
+    // Int
+    struct TSYS_API IntHandler: TSys::GenericTypeHandler<int>
+    {
+        IntHandler();
+
+        std::string ApiName() const override;
+
+        std::any InitValue() const override;
+
+        std::any CopyValue(const std::any& source) const override;
+
+        std::any FromPython(const pybind11::object& obj) const override;
+
+        pybind11::object ToPython(const std::any& value) const override;
+
+        void SerializeValue(const std::any& v, rapidjson::Value& jsonValue,
+                            rapidjson::Document& doc) const override;
+
+        std::any DeserializeValue(const std::any&, rapidjson::Value& value) const override;
+
+        void SerializeConstruction(const std::any&, rapidjson::Value& value,
+                                   rapidjson::Document& doc) const override;
+
+        std::any DeserializeConstruction(rapidjson::Value& value) const override;
+    };
+
+
+    // Float
+    struct TSYS_API FloatHandler: TSys::GenericTypeHandler<float>
+    {
+        FloatHandler();
+
+        std::string ApiName() const override;
+
+        std::any InitValue() const override;
+
+        std::any CopyValue(const std::any& source) const override;
+
+        std::any FromPython(const pybind11::object& obj) const override;
+
+        pybind11::object ToPython(const std::any& value) const override;
+
+        void SerializeValue(const std::any& v, rapidjson::Value& jsonValue,
+                            rapidjson::Document& doc) const override;
+
+        std::any DeserializeValue(const std::any&, rapidjson::Value& value) const override;
+
+        void SerializeConstruction(const std::any& v, rapidjson::Value& value,
+                                   rapidjson::Document& doc) const override;
+
+        std::any DeserializeConstruction(rapidjson::Value& value) const override;
+    };
+
+
+    // Double
+    struct DoubleHandler: TSys::GenericTypeHandler<double>
+    {
+        DoubleHandler();
+
+        std::string ApiName() const override;
+
+        std::any InitValue() const override;
+
+        std::any CopyValue(const std::any& source) const override;
+
+        std::any FromPython(const pybind11::object& obj) const override;
+
+        pybind11::object ToPython(const std::any& value) const override;
+
+        void SerializeValue(const std::any& v, rapidjson::Value& jsonValue,
+                            rapidjson::Document& doc) const override;
+
+        std::any DeserializeValue(const std::any&, rapidjson::Value& value) const override;
+
+        void SerializeConstruction(const std::any& v, rapidjson::Value& value,
+                                   rapidjson::Document& doc) const override;
+
+        std::any DeserializeConstruction(rapidjson::Value& value) const override;
+    };
+
+
+    // Enum
+    struct EnumHandler: TSys::TypeHandler
+    {
+        EnumHandler();
+
+        std::string ApiName() const override;
+
+        size_t Hash() const override
+        {
+            return typeid(Enum).hash_code();
+        }
+
+        std::any InitValue() const override;
+
+        std::any CopyValue(const std::any& source) const override;
+
+        std::any FromPython(const pybind11::object& obj) const override;
+
+        pybind11::object ToPython(const std::any& value) const override;
+
+        void SerializeValue(const std::any& v, rapidjson::Value& jsonValue,
+                            rapidjson::Document& doc) const override;
+
+        std::any DeserializeValue(const std::any&, rapidjson::Value& value)
+                                  const override;
+
+        void SerializeConstruction(const std::any& v, rapidjson::Value& value,
+                                   rapidjson::Document& doc)
+                                   const override;
+
+        std::any DeserializeConstruction(rapidjson::Value& value)
+                                         const override;
+
+        size_t ValueHash(const std::any& value) const override;
+
+        bool CompareValue(const std::any& v1, const std::any& v2) const override;
+    };
+
+
+    struct AnyHandler: TSys::TypeHandler
+    {
+        AnyHandler();
+
+        std::string ApiName() const override;
+
+        size_t Hash() const override;
+
+        std::any InitValue() const override;
+
+        std::any CopyValue(const std::any& source) const override;
+
+        std::any FromPython(const pybind11::object& obj) const override;
+
+        pybind11::object ToPython(const std::any& value) const override;
+
+        void SerializeValue(const std::any& v, rapidjson::Value& jsonValue,
+                            rapidjson::Document& doc) const override;
+
+        std::any DeserializeValue(const std::any&, rapidjson::Value& value)
+                                  const override;
+
+        void SerializeConstruction(const std::any& v, rapidjson::Value& value,
+                                   rapidjson::Document& doc)
+                                   const override;
+
+        std::any DeserializeConstruction(rapidjson::Value& value)
+                                         const override;
+
+        size_t ValueHash(const std::any& val) const override;
+
+        bool CompareValue(const std::any& v1, const std::any& v2) const override;
+    };
+
+
+    class None
+    {
+    public:
+        None() = default;
+
+        bool operator==(const None& other) const;
+    };
+
+
+    struct NoneHandler: TSys::BaseTypeHandler<None>
+    {
+        std::string ApiName() const override;
+
+        std::any InitValue() const override;
+
+        std::any CopyValue(const std::any& source) const override;
+
+        std::any FromPython(const pybind11::object& obj) const override;
+
+        pybind11::object ToPython(const std::any& value) const override;
+
+        void SerializeValue(const std::any& v, rapidjson::Value& jsonValue,
+                            rapidjson::Document& doc) const override;
+
+        std::any DeserializeValue(const std::any&, rapidjson::Value& value)
+                                  const override;
+
+        void SerializeConstruction(const std::any& v, rapidjson::Value& value,
+                                   rapidjson::Document& doc)
+                                   const override;
+
+        std::any DeserializeConstruction(rapidjson::Value& value)
+                                         const override;
+
+        size_t ValueHash(const std::any& val) const override;
+    };
+
+}
+

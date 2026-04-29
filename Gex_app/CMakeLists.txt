@@ -147,9 +147,9 @@ target_link_libraries(
         Qt6::Gui
         Qt6::Svg
         Qt6::SvgWidgets
-        Tsys::Tsys
-        UiTsys::UiTsys
-        UiRes::UiRes
+        Tsys
+        UiTsys
+        UiRes
         Gex
         Gex_ui
         App
@@ -187,15 +187,13 @@ add_custom_target(
         --library-search-dir ${Python_ROOT_DIR}
         --library-search-dir ${CMAKE_CURRENT_SOURCE_DIR}
         --library-search-dir ${CMAKE_BINARY_DIR}/plugins
-        --library-search-dir ${UiRes_LIBRARY_DIRS}
-        --library-search-dir ${Tsys_LIBRARY_DIRS}
         --library-search-dir ${CMAKE_BINARY_DIR}
 
         --library ${CMAKE_CURRENT_BINARY_DIR}/App.dll
         --library ${CMAKE_BINARY_DIR}/Gex_ui/Gex_Ui.dll
-        --library ${Tsys_LIBRARY}
-        --library ${UiRes_LIBRARY}
-        --library ${UiTsys_LIBRARY}
+        --library Tsys.dll
+        --library UiRes.dll
+        --library UiTsys.dll
         --library ${CMAKE_BINARY_DIR}/Gex/Gex.dll
         --library ${QT_AWESOME_LIBRARY_DIR}/QtAwesome.dll
         --library Python${Python_VERSION_NUMBER}.dll

@@ -108,7 +108,7 @@ set(
 
         ${CMAKE_SOURCE_DIR}
         $ENV{RAPIDJSON_DIR}
-        ${Tsys_INCLUDE_DIRS}
+        ${CMAKE_SOURCE_DIR}/Tsys/include
         $ENV{SAFEPTRS_DIR}
         ${pybind11_INCLUDE_DIRS}
         ${Python_INCLUDE_DIRS}
@@ -151,7 +151,7 @@ target_link_libraries(
         PUBLIC
         ${Boost_LIBRARIES}
         ${Python_LINK_LIBRARIES}
-        Tsys::Tsys
+        Tsys
 )
 
 

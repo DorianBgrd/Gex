@@ -77,9 +77,6 @@ add_custom_target(
         --library-search-dir ${CMAKE_CURRENT_SOURCE_DIR}
         --library-search-dir ${CMAKE_BINARY_DIR}/plugins
         --library-search-dir ${CMAKE_BINARY_DIR}
-        --library-search-dir ${Tsys_LIBRARY_DIRS}
-        --library-search-dir ${UiRes_LIBRARY_DIRS}
-        --library-search-dir ${UiTsys_LIBRARY_DIRS}
 
         --library ${CMAKE_BINARY_DIR}/Gex/Gex.dll
         --library ${Tsys_LIBRARY}

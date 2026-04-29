@@ -1,11 +1,5 @@
 message("SEARCH PATHS : ${CMAKE_MODULE_PATH}")
 
-set(BOOST_DIR $ENV{BOOST_DIR})
-
-set(Boost_USE_STATIC_LIBS OFF)
-set(Boost_USE_DEBUG_PYTHON OFF)
-set(Boost_DEBUG ON)
-
 if(DEFINED Python_USE_VERSION)
     set(Python_VERSION_NUMBER ${Python_USE_VERSION})
 else()
@@ -13,8 +7,6 @@ else()
 endif()
 
 message(STATUS "PYTHON VERSION : ${Python_VERSION_NUMBER}")
-
-set(Boost_Python_VERSION ${Python_VERSION_NUMBER})
 
 set(Python_ROOT_DIR $ENV{Python_ROOT_DIR})
 
@@ -43,9 +35,6 @@ else()
     set(Python_LINK_LIBRARIES ${Python_LIBRARIES})
 endif()
 
-message(STATUS "Python boost module : python${Boost_Python_VERSION}")
-
-#find_package(Boost 1.82.0 COMPONENTS python${Boost_Python_VERSION} REQUIRED)
 set(pybind11_INCLUDE_DIRS $ENV{PYBIND11_DIR}/pybind11/include)
 
 string(TOLOWER ${CMAKE_BUILD_TYPE} BUILD_TYPE)
@@ -55,17 +44,17 @@ if (DEFINED Python_USE_VERSION)
 endif()
 
 
-list(APPEND CMAKE_PREFIX_PATH "$ENV{TSYS_DIR}/Tsys/releases/Tsys-Python${Python_VERSION_NUMBER}")
-list(APPEND CMAKE_PREFIX_PATH "$ENV{UI_TSYS_DIR}/UiTsys/releases/UiTsys-Python${Python_VERSION_NUMBER}")
-list(APPEND CMAKE_PREFIX_PATH "$ENV{UI_RES_DIR}/UiRes/releases/UiRes")
+#list(APPEND CMAKE_PREFIX_PATH "$ENV{TSYS_DIR}/Tsys/releases/Tsys-Python${Python_VERSION_NUMBER}")
+#list(APPEND CMAKE_PREFIX_PATH "$ENV{UI_TSYS_DIR}/UiTsys/releases/UiTsys-Python${Python_VERSION_NUMBER}")
+#list(APPEND CMAKE_PREFIX_PATH "$ENV{UI_RES_DIR}/UiRes/releases/UiRes")
 
-find_package(Tsys REQUIRED)
+#find_package(Tsys REQUIRED)
 
 find_package(Qt6 COMPONENTS Widgets Core Gui Svg SvgWidgets REQUIRED)
 
-find_package(UiRes REQUIRED)
+#find_package(UiRes REQUIRED)
 
-find_package(UiTsys REQUIRED)
+#find_package(UiTsys REQUIRED)
 
 
 # message(STATUS "Tsys include dirs (found : ${Tsys_FOUND}) : ${Tsys_LIBRARIES}")

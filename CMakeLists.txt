@@ -9,10 +9,29 @@ set(CMAKE_INSTALL_PREFIX ${CMAKE_BINARY_DIR}/install)
 
 include(Third-parties.cmake)
 
+
+add_subdirectory(Tsys)
+
+add_subdirectory(UiRes)
+
+add_subdirectory(UiTsys)
+
 add_subdirectory(Gex)
 
-
 add_subdirectory(Gex/python)
+
+add_subdirectory(Gex_plugins)
+
+add_subdirectory(cli)
+
+add_subdirectory(test)
+
+
+
+add_dependencies(
+        Gex
+        Tsys
+)
 
 
 add_dependencies(
@@ -20,8 +39,6 @@ add_dependencies(
         Gex
 )
 
-
-add_subdirectory(plugins)
 
 
 add_dependencies(
@@ -36,12 +53,7 @@ add_dependencies(
 #)
 
 
-add_subdirectory(test)
 
-
-add_subdirectory(
-        cli
-)
 
 
 add_dependencies(

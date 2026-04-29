@@ -104,9 +104,9 @@ target_link_libraries(
         Qt6::Gui
         Qt6::Svg
         Qt6::SvgWidgets
-        Tsys::Tsys
-        UiTsys::UiTsys
-        UiRes::UiRes
+        Tsys
+        UiTsys
+        UiRes
         Gex
         QtAwesome
 )
