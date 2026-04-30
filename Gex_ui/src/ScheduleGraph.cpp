@@ -1,4 +1,4 @@
-#include "Gex_ui/include/ScheduleGraph.h"
+#include "Gex_ui/include/Gex_ui/ScheduleGraph.h"
 
 
 QRectF Gex::Ui::SchedulePlugItem::boundingRect() const

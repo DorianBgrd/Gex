@@ -4,7 +4,7 @@
 #include "Gex_plugins/export.h"
 #include <QtOpenGLWidgets/QOpenGLWidget>
 
-#include "Gex_ui/include/NodeViewer.h"
+#include "Gex_ui/include/Gex_ui/NodeViewer.h"
 
 namespace UsdPlugin::Ui
 {

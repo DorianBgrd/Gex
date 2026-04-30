@@ -1,7 +1,7 @@
 #include "Gex/include/Gex/Gex.h"
 #include "UiRes/uires.h"
-#include "Gex_ui/include/ui.h"
-#include "Gex_ui/include/PluginLoader.h"
+#include "Gex_ui/include/Gex_ui/ui.h"
+#include "Gex_ui/include/Gex_ui/PluginLoader.h"
 
 #include "../export.h"
 

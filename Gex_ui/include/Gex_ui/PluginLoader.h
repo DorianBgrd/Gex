@@ -5,7 +5,7 @@
 
 #include "Gex/include/Gex/Status.h"
 
-#include "Gex_ui/include/api.h"
+#include "api.h"
 
 #include "UiTsys/uitsys.h"
 

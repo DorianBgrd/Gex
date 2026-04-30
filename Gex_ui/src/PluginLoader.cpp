@@ -1,4 +1,4 @@
-#include "Gex_ui/include/PluginLoader.h"
+#include "Gex_ui/include/Gex_ui/PluginLoader.h"
 
 #include <windows.h>
 #include <libloaderapi.h>
@@ -7,8 +7,8 @@
 
 #include "Gex/include/Gex/PluginLoader.h"
 
-#include "Gex_ui/include/NodeViewer.h"
-#include "Gex_ui/include/NodeUiRegistry.h"
+#include "Gex_ui/include/Gex_ui/NodeViewer.h"
+#include "Gex_ui/include/Gex_ui/NodeUiRegistry.h"
 
 #define REGISTER_UI_PLUGIN_FUNC "RegisterUiPlugin"
 

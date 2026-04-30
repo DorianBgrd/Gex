@@ -1,7 +1,7 @@
 #ifndef GEX_IMGMANIP_VIEWERS_H
 #define GEX_IMGMANIP_VIEWERS_H
 
-#include "Gex_ui/include/ui.h"
+#include "Gex_ui/include/Gex_ui/ui.h"
 #include "Ui/Types.h"
 
 namespace ImageManip::Viewers

@@ -1,4 +1,4 @@
-#include "Gex_ui/include/ProfileViewer.h"
+#include "Gex_ui/include/Gex_ui/ProfileViewer.h"
 
 #include <QGraphicsLineItem>
 #include <QGraphicsRectItem>

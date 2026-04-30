@@ -1,4 +1,4 @@
-#include "Gex_ui/include/Timeline.h"
+#include "Gex_ui/include/Gex_ui/Timeline.h"
 
 #include <QHBoxLayout>
 #include <QPainter>

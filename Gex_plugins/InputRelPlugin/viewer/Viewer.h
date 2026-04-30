@@ -1,7 +1,7 @@
 #ifndef GEX_INPUT_REL_NODE_VIEWER_H
 #define GEX_INPUT_REL_NODE_VIEWER_H
 
-#include "Gex_ui/include/NodeViewer.h"
+#include "Gex_ui/include/Gex_ui/NodeViewer.h"
 #include "FuncViewer.h"
 
 

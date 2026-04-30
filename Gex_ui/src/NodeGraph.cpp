@@ -1,12 +1,12 @@
 #include "Gex/include/Gex/Config.h"
-#include "Gex_ui/include/NodeGraph.h"
+#include "Gex_ui/include/Gex_ui/NodeGraph.h"
 
 #include "UiTsys/uitsys.h"
 #include "UiRes/uires.h"
 
-#include "Gex_ui/include/AttributeEditor.h"
-#include "Gex_ui/include/Commands.h"
-#include "Gex_ui/include/NodeUiRegistry.h"
+#include "Gex_ui/include/Gex_ui/AttributeEditor.h"
+#include "Gex_ui/include/Gex_ui/Commands.h"
+#include "Gex_ui/include/Gex_ui/NodeUiRegistry.h"
 
 #include <array>
 

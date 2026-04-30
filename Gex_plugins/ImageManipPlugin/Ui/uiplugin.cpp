@@ -5,7 +5,7 @@
 
 
 #include "Gex/include/Gex/Gex.h"
-#include "Gex_ui/include/PluginLoader.h"
+#include "Gex_ui/include/Gex_ui/PluginLoader.h"
 #include "Ui/Viewers/Viewers.h"
 
 

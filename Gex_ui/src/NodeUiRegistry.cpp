@@ -1,4 +1,4 @@
-#include "Gex_ui/include/NodeUiRegistry.h"
+#include "Gex_ui/include/Gex_ui/NodeUiRegistry.h"
 #include "UiRes/uires.h"
 
 

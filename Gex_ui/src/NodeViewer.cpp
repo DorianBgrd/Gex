@@ -1,4 +1,4 @@
-#include "Gex_ui/include/NodeViewer.h"
+#include "Gex_ui/include/Gex_ui/NodeViewer.h"
 
 #include <QLabel>
 #include <QPushButton>
