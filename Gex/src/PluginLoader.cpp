@@ -1,15 +1,15 @@
-#include "Gex/include/PluginLoader.h"
+#include "Gex/include/Gex/PluginLoader.h"
 #include "rapidjson/document.h"
-#include "Gex/include/Config.h"
+#include "Gex/include/Gex/Config.h"
 
 #include <windows.h>
 #include <libloaderapi.h>
 #include <filesystem>
 
-#include "Gex/include/NodeFactory.h"
+#include "Gex/include/Gex/NodeFactory.h"
 
-#include "Gex/include/PluginLoader_Wrap.h"
-#include "Gex/include/Interpreter.h"
+#include "Gex/include/Gex/PluginLoader_Wrap.h"
+#include "Gex/include/Gex/Interpreter.h"
 
 #include <fstream>
 #include <cstdlib>

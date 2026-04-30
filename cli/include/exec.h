@@ -1,7 +1,7 @@
 #ifndef GEX_CLI_EXEC_H
 #define GEX_CLI_EXEC_H
 
-#include "Gex/include/Gex.h"
+#include "Gex/include/Gex/Gex.h"
 #include "ArgParse/ArgParse.h"
 #include "rapidjson/document.h"
 

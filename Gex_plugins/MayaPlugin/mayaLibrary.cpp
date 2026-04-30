@@ -2,7 +2,7 @@
 #define LIBRARY_MAYALIBRARY_H
 
 
-#include "Gex/include/Gex.h"
+#include "Gex/include/Gex/Gex.h"
 
 #include "../export.h"
 

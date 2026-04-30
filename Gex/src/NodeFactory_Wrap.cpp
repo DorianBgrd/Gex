@@ -1,5 +1,5 @@
-#include "Gex/include/NodeFactory_Wrap.h"
-#include "Gex/include/Node_Wrap.h"
+#include "Gex/include/Gex/NodeFactory_Wrap.h"
+#include "Gex/include/Gex/Node_Wrap.h"
 
 
 bool Gex::Python::NodeBuilder_Wrap::pythonRegistered = false;

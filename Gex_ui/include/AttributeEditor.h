@@ -3,7 +3,7 @@
 
 #include "api.h"
 
-#include "Gex/include/Gex.h"
+#include "Gex/include/Gex/Gex.h"
 #include "BaseGraph.h"
 
 #include "UiTsys/uitsys.h"

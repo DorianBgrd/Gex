@@ -1,6 +1,6 @@
-#include "Gex/include/utils.h"
-#include "Gex/include/Config.h"
-#include "Gex/include/Node.h"
+#include "Gex/include/Gex/utils.h"
+#include "Gex/include/Gex/Config.h"
+#include "Gex/include/Gex/Node.h"
 
 #include <stdlib.h>
 

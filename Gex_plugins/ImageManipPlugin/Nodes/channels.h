@@ -1,7 +1,7 @@
 #ifndef GEX_CHANNELS_H
 #define GEX_CHANNELS_H
 
-#include "Gex/include/Gex.h"
+#include "Gex/include/Gex/Gex.h"
 #include "Gex_plugins/export.h"
 
 #include <QImage>

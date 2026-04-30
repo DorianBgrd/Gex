@@ -1,4 +1,4 @@
-#include "Gex/include/UndoStack_Wrap.h"
+#include "Gex/include/Gex/UndoStack_Wrap.h"
 
 bool  Gex::Python::UndoStack_Wrap::registered = false;
 Gex::Python::PyClassRegistry Gex::Python::UndoStack_Wrap::registry;

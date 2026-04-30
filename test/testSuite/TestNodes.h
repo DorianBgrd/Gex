@@ -2,7 +2,7 @@
 #define GEX_TEST_NODES_H
 
 
-#include "Gex/include/Gex.h"
+#include "Gex/include/Gex/Gex.h"
 
 
 namespace Test

@@ -1,5 +1,5 @@
-#include "Gex/include/Status_Wrap.h"
-#include "Gex/include/Status.h"
+#include "Gex/include/Gex/Status_Wrap.h"
+#include "Gex/include/Gex/Status.h"
 
 
 bool Gex::Python::Feedback_Wrap::pythonRegistered = false;

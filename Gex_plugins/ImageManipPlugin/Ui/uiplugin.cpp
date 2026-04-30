@@ -4,7 +4,7 @@
 #include "Types/geometry.h"
 
 
-#include "Gex/include/Gex.h"
+#include "Gex/include/Gex/Gex.h"
 #include "Gex_ui/include/PluginLoader.h"
 #include "Ui/Viewers/Viewers.h"
 

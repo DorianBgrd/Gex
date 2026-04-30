@@ -1,5 +1,5 @@
-#include "Gex/include/Scheduling.h"
-#include "Gex/include/Node.h"
+#include "Gex/include/Gex/Scheduling.h"
+#include "Gex/include/Gex/Node.h"
 
 #include <map>
 #include <set>

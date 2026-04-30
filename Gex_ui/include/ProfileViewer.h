@@ -13,7 +13,7 @@
 
 #include <vector>
 
-#include "Gex/include/Gex.h"
+#include "Gex/include/Gex/Gex.h"
 #include "Gex_ui/include/BaseGraph.h"
 
 namespace Gex::Ui

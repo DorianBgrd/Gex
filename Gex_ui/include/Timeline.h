@@ -1,7 +1,7 @@
 #ifndef GEX_TIMELINE_H
 #define GEX_TIMELINE_H
 
-#include "Gex/include/Node.h"
+#include "Gex/include/Gex/Node.h"
 
 #include <QWidget>
 #include <QTimeLine>

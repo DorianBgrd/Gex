@@ -1,11 +1,11 @@
 #include "nodes.h"
 #include "Tsys/defaultTypes.h"
 
-#include "Gex/include/Gex.h"
-#include "Gex/include/Graph_Wrap.h"
-#include "Gex/include/Wrappers.h"
+#include "Gex/include/Gex/Gex.h"
+#include "Gex/include/Gex/Graph_Wrap.h"
+#include "Gex/include/Gex/Wrappers.h"
 
-#include "Gex/include/interpreter.h"
+#include "Gex/include/Gex/Interpreter.h"
 
 
 void GexPython::Nodes::Expression::InitAttributes()

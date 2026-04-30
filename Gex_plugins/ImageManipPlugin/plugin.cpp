@@ -1,7 +1,7 @@
 #ifndef GEX_PLUGIN_IMAGE_PLUGIN_PLUGIN_CPP
 #define GEX_PLUGIN_IMAGE_PLUGIN_PLUGIN_CPP
 
-#include "Gex/include/Gex.h"
+#include "Gex/include/Gex/Gex.h"
 
 #include "../export.h"
 

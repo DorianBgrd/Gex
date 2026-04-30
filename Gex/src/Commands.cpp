@@ -1,6 +1,6 @@
-#include "Gex/include/Commands.h"
+#include "Gex/include/Gex/Commands.h"
 
-#include "Gex/include/io.h"
+#include "Gex/include/Gex/io.h"
 
 
 bool Gex::RunGraph(const NodePtr& graph,

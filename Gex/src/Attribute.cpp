@@ -1,16 +1,16 @@
-#include "Gex/include/Config.h"
-#include "Gex/include/Attribute.h"
-#include "Gex/include/Node.h"
+#include "Gex/include/Gex/Config.h"
+#include "Gex/include/Gex/Attribute.h"
+#include "Gex/include/Gex/Node.h"
 #include "rapidjson/reader.h"
 #include "rapidjson/prettywriter.h"
-#include "Gex/include/Config.h"
+#include "Gex/include/Gex/Config.h"
 
 #include "Tsys/tsys.h"
 #include "Tsys/defaultTypes.h"
 
-#include "Gex/include/utils.h"
+#include "Gex/include/Gex/utils.h"
 
-#include "Gex/include/UndoCommands.h"
+#include "Gex/include/Gex/UndoCommands.h"
 
 
 #define CHECK_EDITABLE_SKIP() if(!IsEditable()){return;}

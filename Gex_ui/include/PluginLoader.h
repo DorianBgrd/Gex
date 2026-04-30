@@ -3,7 +3,7 @@
 
 #include <string>
 
-#include "Gex/include/Status.h"
+#include "Gex/include/Gex/Status.h"
 
 #include "Gex_ui/include/api.h"
 

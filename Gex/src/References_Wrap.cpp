@@ -1,4 +1,4 @@
-#include "Gex/include/References_Wrap.h"
+#include "Gex/include/Gex/References_Wrap.h"
 
 
 bool Gex::Python::References_Wrap::registered = false;

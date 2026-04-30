@@ -23,7 +23,7 @@
 
 #include "Tsys/tsys.h"
 #include "Tsys/defaultTypes.h"
-#include "Gex/include/Gex.h"
+#include "Gex/include/Gex/Gex.h"
 
 #include <filesystem>
 

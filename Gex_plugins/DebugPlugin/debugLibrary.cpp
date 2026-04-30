@@ -3,7 +3,7 @@
 
 #include <iostream>
 
-#include "Gex/include/Gex.h"
+#include "Gex/include/Gex/Gex.h"
 #include "Tsys/defaultTypes.h"
 
 #include "../export.h"

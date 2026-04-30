@@ -1,7 +1,7 @@
 #ifndef GEX_NODE_BLEND_H
 #define GEX_NODE_BLEND_H
 
-#include "Gex/include/Gex.h"
+#include "Gex/include/Gex/Gex.h"
 #include "../export.h"
 
 namespace ImageManip::Nodes

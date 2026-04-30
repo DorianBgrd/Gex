@@ -1,7 +1,7 @@
 #ifndef GEX_IMAGE_REMAP_H
 #define GEX_IMAGE_REMAP_H
 
-#include "Gex/include/Gex.h"
+#include "Gex/include/Gex/Gex.h"
 
 #include "../export.h"
 

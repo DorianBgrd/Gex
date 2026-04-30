@@ -1,4 +1,4 @@
-#include "Gex/include/Gex.h"
+#include "Gex/include/Gex/Gex.h"
 #include "Gex_ui/include/ui.h"
 #include <QApplication>
 
@@ -9,7 +9,7 @@
 #include "Gex_ui/include/PluginLoader.h"
 #include "Gex_app/include/MainWindow.h"
 
-#include "Gex/include/Interpreter.h"
+#include "Gex/include/Gex/Interpreter.h"
 
 #include "ArgParse/ArgParse.h"
 
@@ -20,7 +20,7 @@
 
 #include <pybind11/embed.h>
 
-#include "Gex/include/Wrappers.h"
+#include "Gex/include/Gex/Wrappers.h"
 
 #include "Gex_app/include/AppContext.h"
 #include "Gex_app/include/PythonOutput.h"

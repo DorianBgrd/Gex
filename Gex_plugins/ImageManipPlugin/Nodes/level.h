@@ -2,7 +2,7 @@
 #define GEX_NODE_LEVEL_H
 
 #include "Gex_plugins/export.h"
-#include "Gex/include/Gex.h"
+#include "Gex/include/Gex/Gex.h"
 
 namespace ImageManip::Nodes
 {

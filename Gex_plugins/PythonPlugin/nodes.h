@@ -2,7 +2,7 @@
 #define GEX_PYTHON_NODES_H
 
 #include "nodes.h"
-#include "Gex/include/Gex.h"
+#include "Gex/include/Gex/Gex.h"
 
 
 namespace GexPython::Nodes

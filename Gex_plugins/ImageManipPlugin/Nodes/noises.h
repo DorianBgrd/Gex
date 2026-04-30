@@ -1,7 +1,7 @@
 #ifndef GEX_NOISES_NODES_H
 #define GEX_NOISES_NODES_H
 
-#include "Gex/include/Gex.h"
+#include "Gex/include/Gex/Gex.h"
 
 #include "../export.h"
 

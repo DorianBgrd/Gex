@@ -1,5 +1,5 @@
-#include "Gex/include/io_Wrap.h"
-#include "Gex/include/io.h"
+#include "Gex/include/Gex/io_Wrap.h"
+#include "Gex/include/Gex/io.h"
 
 
 bool Gex::Python::IO::pythonRegistered = false;

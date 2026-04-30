@@ -1,8 +1,8 @@
-#include "Gex/include/Attribute_Wrap.h"
-#include "Gex/include/Node.h"
+#include "Gex/include/Gex/Attribute_Wrap.h"
+#include "Gex/include/Gex/Node.h"
 #include "Tsys/tsys.h"
 
-#include "Gex/include/ptrs.h"
+#include "Gex/include/Gex/ptrs.h"
 
 #include "pybind11/pybind11.h"
 

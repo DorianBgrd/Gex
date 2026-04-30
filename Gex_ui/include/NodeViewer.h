@@ -1,7 +1,7 @@
 #ifndef GEX_NODEVIEWER_H
 #define GEX_NODEVIEWER_H
 
-#include "Gex/include/Gex.h"
+#include "Gex/include/Gex/Gex.h"
 
 #include "Gex_ui/include/api.h"
 

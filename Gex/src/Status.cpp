@@ -1,4 +1,4 @@
-#include "Gex/include/Status.h"
+#include "Gex/include/Gex/Status.h"
 
 
 void Gex::LogFeedback(const Feedback& feedback)

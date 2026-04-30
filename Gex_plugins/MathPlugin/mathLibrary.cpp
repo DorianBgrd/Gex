@@ -1,6 +1,6 @@
 #include <iostream>
 
-#include "Gex/include/Gex.h"
+#include "Gex/include/Gex/Gex.h"
 #include "UiRes/uires.h"
 #include "Gex_ui/include/ui.h"
 #include "Gex_ui/include/PluginLoader.h"

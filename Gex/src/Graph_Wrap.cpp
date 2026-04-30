@@ -1,5 +1,5 @@
-#include "Gex/include/Graph_Wrap.h"
-#include "Gex/include/Node.h"
+#include "Gex/include/Gex/Graph_Wrap.h"
+#include "Gex/include/Gex/Node.h"
 
 
 bool Gex::Python::GraphContext_Wrap::pythonRegistered = false;

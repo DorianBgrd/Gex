@@ -1,4 +1,4 @@
-#include "Gex/include/NodeAttributeData_Wrap.h"
+#include "Gex/include/Gex/NodeAttributeData_Wrap.h"
 
 #include "Tsys/defaultTypes.h"
 

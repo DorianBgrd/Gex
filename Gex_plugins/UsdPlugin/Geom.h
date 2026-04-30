@@ -1,5 +1,5 @@
 #include "Tsys/tsys.h"
-#include "Gex/include/Gex.h"
+#include "Gex/include/Gex/Gex.h"
 
 #include "pxr/usd/usdGeom/mesh.h"
 

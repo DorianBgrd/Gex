@@ -1,5 +1,5 @@
-#include "Gex/include/io.h"
-#include "Gex/include/NodeFactory.h"
+#include "Gex/include/Gex/io.h"
+#include "Gex/include/Gex/NodeFactory.h"
 
 #include <fstream>
 #include <filesystem>

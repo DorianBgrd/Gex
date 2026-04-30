@@ -1,4 +1,4 @@
-#include "Gex/include/Profiler_Wrap.h"
+#include "Gex/include/Gex/Profiler_Wrap.h"
 
 
 bool Gex::Python::Event_Wrap::registered = false;

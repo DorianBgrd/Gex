@@ -1,4 +1,4 @@
-#include "Gex/include/Config.h"
+#include "Gex/include/Gex/Config.h"
 #include "Gex_ui/include/NodeGraph.h"
 
 #include "UiTsys/uitsys.h"
@@ -27,7 +27,7 @@
 #include <QFiledialog>
 #include <QStyleOptionGraphicsItem>
 
-#include "Gex/include/Evaluation.h"
+#include "Gex/include/Gex/Evaluation.h"
 
 #include "rapidjson/filewritestream.h"
 #include "rapidjson/writer.h"

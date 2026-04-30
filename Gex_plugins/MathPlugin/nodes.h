@@ -2,7 +2,7 @@
 #define GEX_NODES_H
 
 #include "../export.h"
-#include "Gex/include/Gex.h"
+#include "Gex/include/Gex/Gex.h"
 
 
 

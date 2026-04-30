@@ -2,7 +2,7 @@
 #define NODELIBRARY2COMPLETE_ARRAYS_H
 
 #include "../export.h"
-#include "Gex/include/Gex.h"
+#include "Gex/include/Gex/Gex.h"
 #include "Tsys/tsys.h"
 #include "Tsys/defaultTypes.h"
 

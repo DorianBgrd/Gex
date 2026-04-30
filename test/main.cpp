@@ -1,7 +1,7 @@
 #include "testSuite/TestNodes.h"
 #include "testSuite/TestAttributes.h"
 
-#include "Gex/include/PluginLoader.h"
+#include "Gex/include/Gex/PluginLoader.h"
 
 
 int main(int argc, char** argv)

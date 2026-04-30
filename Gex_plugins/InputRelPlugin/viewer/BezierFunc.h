@@ -4,7 +4,7 @@
 
 #include "Gex_plugins/InputRelPlugin/BezierFunc.h"
 #include "Gex_plugins/InputRelPlugin/Nodes.h"
-#include "Gex/include/Gex.h"
+#include "Gex/include/Gex/Gex.h"
 
 #include "Gex_plugins/export.h"
 

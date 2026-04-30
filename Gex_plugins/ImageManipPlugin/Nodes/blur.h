@@ -1,7 +1,7 @@
 #ifndef GEX_IMM_PLUGIN_NODES_BLUR_H
 #define GEX_IMM_PLUGIN_NODES_BLUR_H
 
-#include "Gex/include/Gex.h"
+#include "Gex/include/Gex/Gex.h"
 
 #include "../export.h"
 

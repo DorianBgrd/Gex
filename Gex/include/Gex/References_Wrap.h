@@ -1,7 +1,7 @@
 #ifndef GEX_REFERENCES_WRAP_H
 #define GEX_REFERENCES_WRAP_H
 
-#include "Gex/include/References.h"
+#include "References.h"
 #include "api.h"
 
 #include "pybind11/pybind11.h"

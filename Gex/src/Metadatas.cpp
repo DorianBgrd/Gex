@@ -1,4 +1,4 @@
-#include "Gex/include/Metadatas.h"
+#include "Gex/include/Gex/Metadatas.h"
 
 
 bool Gex::NodeMetadata::SetMetadata(const std::string& name, const std::any& value)

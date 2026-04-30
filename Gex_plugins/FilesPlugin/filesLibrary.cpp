@@ -4,7 +4,7 @@
 #endif //LIBRARY_FILES_H
 
 
-#include "Gex/include/Gex.h"
+#include "Gex/include/Gex/Gex.h"
 
 #include <filesystem>
 #include <fstream>

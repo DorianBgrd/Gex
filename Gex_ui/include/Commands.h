@@ -2,7 +2,7 @@
 #define GEX_COMMANDS_H
 
 #include "api.h"
-#include "Gex/include/Gex.h"
+#include "Gex/include/Gex/Gex.h"
 
 namespace Gex::Ui
 {

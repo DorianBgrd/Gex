@@ -1,7 +1,7 @@
 #ifndef GEX_TEST_ATTRIBUTES_H
 #define GEX_TEST_ATTRIBUTES_H
 
-#include "Gex/include/Gex.h"
+#include "Gex/include/Gex/Gex.h"
 
 namespace Test
 {

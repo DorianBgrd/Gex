@@ -1,10 +1,10 @@
-#include "Gex/include/NodeFactory.h"
-#include "Gex/include/Config.h"
+#include "Gex/include/Gex/NodeFactory.h"
+#include "Gex/include/Gex/Config.h"
 #include "rapidjson/document.h"
-#include "Gex/include/io.h"
-#include "Gex/include/References.h"
-#include "Gex/include/PluginLoader.h"
-#include "Gex/include/Status.h"
+#include "Gex/include/Gex/io.h"
+#include "Gex/include/Gex/References.h"
+#include "Gex/include/Gex/PluginLoader.h"
+#include "Gex/include/Gex/Status.h"
 
 
 std::string Gex::NodeBuilder::Plugin() const

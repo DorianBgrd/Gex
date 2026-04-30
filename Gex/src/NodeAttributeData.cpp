@@ -1,5 +1,5 @@
-#include "Gex/include/Node.h"
-#include "Gex/include/NodeAttributeData.h"
+#include "Gex/include/Gex/Node.h"
+#include "Gex/include/Gex/NodeAttributeData.h"
 
 
 #define SET_STATUS(status_obj, stat) \

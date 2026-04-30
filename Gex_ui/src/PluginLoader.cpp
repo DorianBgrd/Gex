@@ -5,7 +5,7 @@
 
 #include <filesystem>
 
-#include "Gex/include/PluginLoader.h"
+#include "Gex/include/Gex/PluginLoader.h"
 
 #include "Gex_ui/include/NodeViewer.h"
 #include "Gex_ui/include/NodeUiRegistry.h"

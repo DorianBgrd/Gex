@@ -1,4 +1,4 @@
-#include "Gex/include/Config.h"
+#include "Gex/include/Gex/Config.h"
 
 Gex::Config Gex::Config::globalConfig;
 

@@ -79,8 +79,6 @@ void Test::TestAttributes()
             Gex::AttrValueType::Single,
             Gex::AttrType::Input);
 
-    inValue->SetInternal(false);
-
     ASSERT_FALSE("Trying to connect a compound child to non internal input.",
                  inString->ConnectSource(inValue),
                  "This type of connection should fail !");
@@ -90,19 +88,13 @@ void Test::TestAttributes()
             Gex::AttrValueType::Single,
             Gex::AttrType::Output);
 
-    outValue->SetInternal(false);
-
     ASSERT_FALSE("Trying to connect a compound child to non internal output.",
                  outValue->ConnectSource(outString),
                  "This type of connection should fail !");
 
-    inValue->SetInternal(true);
-
     ASSERT_TRUE("Trying to connect a compound child to internal input.",
                 inString->ConnectSource(inValue),
                 "This type of connection should succeed !");
-
-    outValue->SetInternal(true);
 
     ASSERT_TRUE("Trying to connect a compound child to internal output.",
                 outValue->ConnectSource(outString),

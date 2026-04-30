@@ -1,7 +1,7 @@
 #ifndef GEX_NODES_H
 #define GEX_NODES_H
 
-#include "Gex/include/Gex.h"
+#include "Gex/include/Gex/Gex.h"
 
 namespace Gex::InputRel
 {

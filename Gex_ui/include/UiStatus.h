@@ -3,7 +3,7 @@
 
 #include <QColor>
 #include "api.h"
-#include "Gex/include/Status.h"
+#include "Gex/include/Gex/Status.h"
 
 namespace Gex::Ui
 {

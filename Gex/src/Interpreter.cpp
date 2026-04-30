@@ -1,4 +1,4 @@
-#include "Gex/include/Interpreter.h"
+#include "Gex/include/Gex/Interpreter.h"
 
 #include "pybind11/pybind11.h"
 

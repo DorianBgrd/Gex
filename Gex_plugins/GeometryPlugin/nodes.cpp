@@ -2,7 +2,7 @@
 
 #include "types.h"
 
-#include "Gex/include/Scheduling.h"
+#include "Gex/include/Gex/Scheduling.h"
 
 
 std::string Geometry::Nodes::Index::Description() const

@@ -1,5 +1,5 @@
-#include "Gex/include/Profiler.h"
-#include "Gex/include/Node.h"
+#include "Gex/include/Gex/Profiler.h"
+#include "Gex/include/Gex/Node.h"
 
 #include <mutex>
 

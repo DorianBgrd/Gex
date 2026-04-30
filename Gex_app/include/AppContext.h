@@ -1,7 +1,7 @@
 #ifndef GEX_APPCONTEXT_H
 #define GEX_APPCONTEXT_H
 
-#include "Gex/include/Gex.h"
+#include "Gex/include/Gex/Gex.h"
 #include "MainWindow.h"
 #include "Gex_ui/include/api.h"
 #include "softApi.h"

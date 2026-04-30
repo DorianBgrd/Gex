@@ -2,7 +2,7 @@
 #define NODELIBRARY2COMPLETE_ITER_H
 
 
-#include "Gex/include/Gex.h"
+#include "Gex/include/Gex/Gex.h"
 
 #include "../export.h"
 

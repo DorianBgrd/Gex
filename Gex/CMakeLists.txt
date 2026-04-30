@@ -6,40 +6,40 @@
 
 set(
         GEX_INCLUDES
-        include/Attribute.h
-        include/Attribute_Wrap.h
-        include/cntrs.h
-        include/Config.h
-        include/defs.h
-        include/Evaluation.h
-        include/Gex.h
-        include/Graph_Wrap.h
-        include/io.h
-        include/io_Wrap.h
-        include/Metadatas.h
-        include/Node.h
-        include/Node_Wrap.h
-        include/NodeAttributeData.h
-        include/NodeFactory.h
-        include/NodeFactory_Wrap.h
-        include/PluginLoader.h
-        include/PluginLoader_Wrap.h
-        include/Profiler.h
-        include/Profiler_Wrap.h
-        include/ptrs.h
-        include/References.h
-        include/References_Wrap.h
-        include/References_Wrap.h
-        include/Scheduling.h
-        include/Status.h
-        include/Status_Wrap.h
-        include/UndoCommands.h
-        include/UndoStack.h
-        include/utils.h
-        include/wraputils.h
-        include/Wrappers.h
-        include/Commands.h
-        include/Interpreter.h
+        include/Gex/Attribute.h
+        include/Gex/Attribute_Wrap.h
+        include/Gex/cntrs.h
+        include/Gex/Config.h
+        include/Gex/defs.h
+        include/Gex/Evaluation.h
+        include/Gex/Gex.h
+        include/Gex/Graph_Wrap.h
+        include/Gex/io.h
+        include/Gex/io_Wrap.h
+        include/Gex/Metadatas.h
+        include/Gex/Node.h
+        include/Gex/Node_Wrap.h
+        include/Gex/NodeAttributeData.h
+        include/Gex/NodeFactory.h
+        include/Gex/NodeFactory_Wrap.h
+        include/Gex/PluginLoader.h
+        include/Gex/PluginLoader_Wrap.h
+        include/Gex/Profiler.h
+        include/Gex/Profiler_Wrap.h
+        include/Gex/ptrs.h
+        include/Gex/References.h
+        include/Gex/References_Wrap.h
+        include/Gex/References_Wrap.h
+        include/Gex/Scheduling.h
+        include/Gex/Status.h
+        include/Gex/Status_Wrap.h
+        include/Gex/UndoCommands.h
+        include/Gex/UndoStack.h
+        include/Gex/utils.h
+        include/Gex/wraputils.h
+        include/Gex/Wrappers.h
+        include/Gex/Commands.h
+        include/Gex/Interpreter.h
 )
 
 set(
@@ -53,52 +53,52 @@ set(
         src/NodeFactory.cpp
         src/PluginLoader.cpp
         src/Config.cpp
-        include/Status.h
+        include/Gex/Status.h
         src/Status.cpp
-        include/Gex.h
-        include/io.h
+        include/Gex/Gex.h
+        include/Gex/io.h
         src/io.cpp
-        include/Profiler.h
+        include/Gex/Profiler.h
         src/Profiler.cpp
-        include/utils.h
+        include/Gex/utils.h
         src/utils.cpp
-        include/defs.h
-        include/Scheduling.h
+        include/Gex/defs.h
+        include/Gex/Scheduling.h
         src/Scheduling.cpp
-        include/Metadatas.h
+        include/Gex/Metadatas.h
         src/Metadatas.cpp
         src/References.cpp
-        include/UndoStack.h
+        include/Gex/UndoStack.h
         src/UndoStack.cpp
         src/UndoStack_Wrap.cpp
-        include/UndoCommands.h
+        include/Gex/UndoCommands.h
         src/UndoCommands.cpp
 
         # Python wrapping file.
-        include/Attribute_Wrap.h
+        include/Gex/Attribute_Wrap.h
         src/Attribute_Wrap.cpp
-        include/Graph_Wrap.h
+        include/Gex/Graph_Wrap.h
         src/Graph_Wrap.cpp
-        include/io_Wrap.h
+        include/Gex/io_Wrap.h
         src/io_Wrap.cpp
-        include/Node_Wrap.h
+        include/Gex/Node_Wrap.h
         src/Node_Wrap.cpp
-        include/NodeAttributeData_Wrap.h
+        include/Gex/NodeAttributeData_Wrap.h
         src/NodeAttributeData_Wrap.cpp
-        include/NodeFactory_Wrap.h
+        include/Gex/NodeFactory_Wrap.h
         src/NodeFactory_Wrap.cpp
-        include/PluginLoader_Wrap.h
+        include/Gex/PluginLoader_Wrap.h
         src/PluginLoader_Wrap.cpp
-        include/Status_Wrap.h
+        include/Gex/Status_Wrap.h
         src/Status_Wrap.cpp
         src/References_Wrap.cpp
         src/Profiler_Wrap.cpp
-        include/Wrappers.h
+        include/Gex/Wrappers.h
         src/Wrappers.cpp
-        include/Commands.h
+        include/Gex/Commands.h
         src/Commands.cpp
 
-        include/Interpreter.h
+        include/Gex/Interpreter.h
         src/Interpreter.cpp
 )
 

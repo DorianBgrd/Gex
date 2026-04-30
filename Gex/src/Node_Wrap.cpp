@@ -1,10 +1,10 @@
-#include "Gex/include/Node.h"
-#include "Gex/include/Node_Wrap.h"
-#include "Gex/include/Attribute.h"
+#include "Gex/include/Gex/Node.h"
+#include "Gex/include/Gex/Node_Wrap.h"
+#include "Gex/include/Gex/Attribute.h"
 
 #include "Tsys/tsys.h"
 
-#include "Gex/include/wraputils.h"
+#include "Gex/include/Gex/wraputils.h"
 
 
 std::any InitPythonValue(pybind11::object pythonType, Gex::Feedback& feedback)

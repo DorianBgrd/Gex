@@ -6,7 +6,7 @@
 
 #include "UiRes/uires.h"
 
-#include "Gex/include/Gex.h"
+#include "Gex/include/Gex/Gex.h"
 
 
 #include "Gex_app/include/AppContext.h"

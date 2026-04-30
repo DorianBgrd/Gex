@@ -5,7 +5,7 @@
 
 #include "Tsys/tsys.h"
 #include "rapidjson/document.h"
-#include "Gex/include/ptrs.h"
+#include "Gex/include/Gex/ptrs.h"
 
 
 namespace Gex::InputRel
