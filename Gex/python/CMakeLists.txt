@@ -27,6 +27,7 @@ target_link_directories(
         Gex_Python
         PUBLIC
         ${CMAKE_BINARY_DIR}
+        ${INTERNAL_LIBRARY_DIRS}
 )
 
 target_link_libraries(

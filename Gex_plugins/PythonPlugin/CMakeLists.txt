@@ -30,8 +30,8 @@ target_link_directories(
         PythonPlugin
         PUBLIC
         ${CMAKE_BINARY_DIR}
-        ${Boost_LIBRARY_DIRS}
         ${Python_LIBRARY_DIRS}
+        ${INTERNAL_LIBRARY_DIRS}
 )
 
 
@@ -39,7 +39,6 @@ target_link_libraries(
         PythonPlugin
         PUBLIC
         Gex
-        ${Boost_LIBRARIES}
         ${Python_LINK_LIBRARIES}
 )
 
@@ -54,6 +53,6 @@ add_custom_command(
         --package
         --name PythonPlugin
         --plugin PythonPlugin.dll
-        --plugin-file ${CMAKE_BINARY_DIR}/plugins/PythonPlugin.dll
+        --plugin-file ${CMAKE_BINARY_DIR}/Gex_plugins/PythonPlugin.dll
         --type C++
 )

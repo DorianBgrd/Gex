@@ -28,9 +28,9 @@ target_include_directories(
 target_link_directories(
         ArraysPlugin
         PUBLIC
-        ${Boost_LIBRARY_DIRS}
         ${CMAKE_BINARY_DIR}
         ${Python_LIBRARY_DIRS}
+        ${INTERNAL_LIBRARY_DIRS}
 )
 
 
@@ -38,7 +38,6 @@ target_link_libraries(
         ArraysPlugin
         PUBLIC
         Gex
-        ${Boost_LIBRARIES}
         ${Python_LINK_LIBRARIES}
 )
 
@@ -53,6 +52,6 @@ add_custom_command(
         --package
         --name ArraysPlugin
         --plugin ArraysPlugin.dll
-        --plugin-file ${CMAKE_BINARY_DIR}/plugins/ArraysPlugin.dll
+        --plugin-file ${CMAKE_BINARY_DIR}/Gex_plugins/ArraysPlugin.dll
         --type C++
 )

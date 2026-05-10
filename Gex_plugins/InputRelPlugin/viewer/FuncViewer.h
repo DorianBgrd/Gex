@@ -17,9 +17,9 @@
 #include <QGraphicsLineItem>
 #include <QGraphicsSceneMouseEvent>
 
-#include "Gex_ui/include/ui.h"
+#include "Gex_ui/include/Gex_ui/ui.h"
 #include "Func.h"
-#include "Gex_ui/include/BaseGraph.h"
+#include "Gex_ui/include/Gex_ui/BaseGraph.h"
 
 #include <unordered_map>
 

@@ -40,12 +40,8 @@ target_link_directories(
         MathPlugin
         PUBLIC
         ${CMAKE_BINARY_DIR}
-        ${Boost_LIBRARY_DIRS}
         ${Python_LIBRARY_DIRS}
-
-        $ENV{TSYS_DIR}/Tsys/cmake-build-${BUILD_TYPE}
-
-        $ENV{UI_RES_DIR}/UiRes/cmake-build-${BUILD_TYPE}
+        ${INTERNAL_LIBRARY_DIRS}
         )
 
 
@@ -72,7 +68,7 @@ add_custom_command(
         --package
         --name MathPlugin
         --plugin MathPlugin.dll
-        --plugin-file ${CMAKE_BINARY_DIR}/plugins/MathPlugin.dll
+        --plugin-file ${CMAKE_BINARY_DIR}/Gex_plugins/MathPlugin.dll
         --type C++
 #        --required-plugins IterPlugin
 )

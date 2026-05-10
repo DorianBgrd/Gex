@@ -1,7 +1,7 @@
-#include "Gex_ui/include/AttributeEditor.h"
+#include "Gex_ui/include/Gex_ui/AttributeEditor.h"
 #include "UiRes/uires.h"
-#include "Gex_ui/include/NodeGraph.h"
-#include "Gex_ui/include/Commands.h"
+#include "Gex_ui/include/Gex_ui/NodeGraph.h"
+#include "Gex_ui/include/Gex_ui/Commands.h"
 //#include "Gex_ui/include/Undo.h"
 
 #include <QWidget>

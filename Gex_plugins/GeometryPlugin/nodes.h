@@ -98,7 +98,7 @@ namespace Geometry::Nodes
 
         void EditCompoundOutputs(const Gex::NodePtr &outputs) override;
 
-        void Schedule() override;
+//        void Schedule() override;
 
         bool Compute(Gex::GraphContext &context,
                      Gex::NodeProfiler& profiler)
@@ -118,7 +118,7 @@ namespace Geometry::Nodes
                           Gex::GraphContext &graphContext,
                           Gex::NodeProfiler &profiler) override;
 
-        Gex::ScheduleNodePtrList ToScheduledNodes() override;
+//        Gex::ScheduleNodePtrList ToScheduledNodes() override;
     };
 
     GENERATE_DEFAULT_BUILDER(IterMeshPointBuilder, IterMeshPoint)

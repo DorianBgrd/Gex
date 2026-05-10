@@ -279,12 +279,12 @@ void Geometry::Nodes::IterMeshPoint::EditCompoundOutputs(
 }
 
 
-void Geometry::Nodes::IterMeshPoint::Schedule()
-{
-    scheduledNodes = Gex::ScheduleNodes(GetNodes());
-
-    ValidateScheduling();
-}
+//void Geometry::Nodes::IterMeshPoint::Schedule()
+//{
+//    scheduledNodes = Gex::ScheduleNodes(GetNodes());
+//
+//    ValidateScheduling();
+//}
 
 
 bool Geometry::Nodes::IterMeshPoint::Compute(
@@ -336,7 +336,7 @@ bool Geometry::Nodes::IterMeshPoint::Evaluate(
 )
 {
     Gex::NodeEvaluator evaluator(
-            scheduledNodes, graphContext,
+            Gex::CompoundNode::Schedule(), graphContext,
             profiler.GetProfiler(),
             false, 1
     );
@@ -361,9 +361,9 @@ bool Geometry::Nodes::IterMeshPoint::PostEvaluate(
 }
 
 
-Gex::ScheduleNodePtrList Geometry::Nodes::IterMeshPoint::ToScheduledNodes()
-{
-    return {};
-}
+//Gex::ScheduleNodePtrList Geometry::Nodes::IterMeshPoint::ToScheduledNodes()
+//{
+//    return {};
+//}
 
 

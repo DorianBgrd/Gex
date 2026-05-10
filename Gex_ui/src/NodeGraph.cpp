@@ -3720,89 +3720,89 @@ struct Layout
 void Gex::Ui::NodeGraphScene::AutoLayoutNodes(const QPointF& destination,
                                                         qreal hspacing, qreal vspacing)
 {
-    auto nodes = nodeItems.keys();
+//    auto nodes = nodeItems.keys();
 
-    std::vector<Gex::NodePtr> nodeVec;
-    for (const auto& node : nodes)
-        nodeVec.push_back(node);
-
-    auto schelNodes = Gex::ScheduleNodes(nodeVec, false);
-
-    std::map<int, std::vector<Gex::NodePtr>> nodeLevels;
-    for (const auto& schel : schelNodes)
-    {
-        int i = 0;
-        for (const auto& node : schel->previousNodes)
-        {
-            for (auto nl : nodeLevels)
-            {
-                if (std::find(nl.second.begin(), nl.second.end(), node->node.lock()) != nl.second.end())
-                {
-                    if (nl.first > i)
-                        i = nl.first;
-                }
-            }
-        }
-
-        if (nodeLevels.find(i + 1) == nodeLevels.end())
-        {
-            nodeLevels[i + 1] = {schel->node.lock()};
-        }
-        else
-        {
-            nodeLevels[i + 1].push_back(schel->node.lock());
-        }
-    }
-
-    schelNodes.clear();
-
-    size_t len = nodeLevels.size();
-
-    qreal rectHeight = 0;
-    qreal rectWidth = 0;
-
-    std::vector<LayoutColumn> columns;
-    for (const auto& levelNodes : nodeLevels)
-    {
-        size_t columnWidth = 0;
-        size_t columnHeight = 0;
-
-        QList<Gex::Ui::NodeItem*> items;
-        for (const auto& node : levelNodes.second)
-        {
-            if (!nodeItems.contains(node))
-                continue;
-
-            items.push_back(nodeItems.value(node));
-        }
-
-        LayoutColumn column = {items, vspacing};
-        columns.push_back(column);
-    }
-
-    Layout layout = {columns, hspacing};
-
-    QPointF center = destination;
-    QRect destinationRect = layout.Rect(center);
-
-    // For level, node in nodeLevels
-    //     for node in level
-    //          calculer la hauter vide
-    //     se deplacer horizontalement
-    qreal px = destinationRect.x();
-    for (const auto& col : layout.columns)
-    {
-        qreal leftSpace = (destinationRect.height() - col.Height()) / 2.0;
-        qreal py = destinationRect.y() + leftSpace;
-
-        for (auto* node : col.nodes)
-        {
-            node->setPos(px, py);
-            py += vspacing + node->sceneBoundingRect().height();
-        }
-
-        px += hspacing + col.Width();
-    }
+//    std::vector<Gex::NodePtr> nodeVec;
+//    for (const auto& node : nodes)
+//        nodeVec.push_back(node);
+//
+//    auto schelNodes = Gex::ScheduleGraph(nodeVec);
+//
+//    std::map<int, std::vector<Gex::NodePtr>> nodeLevels;
+//    for (const auto& schel : schelNodes)
+//    {
+//        int i = 0;
+//        for (const auto& node : schel->previousNodes)
+//        {
+//            for (auto nl : nodeLevels)
+//            {
+//                if (std::find(nl.second.begin(), nl.second.end(), node->func.lock()) != nl.second.end())
+//                {
+//                    if (nl.first > i)
+//                        i = nl.first;
+//                }
+//            }
+//        }
+//
+//        if (nodeLevels.find(i + 1) == nodeLevels.end())
+//        {
+//            nodeLevels[i + 1] = {schel->func.lock()};
+//        }
+//        else
+//        {
+//            nodeLevels[i + 1].push_back(schel->func.lock());
+//        }
+//    }
+//
+//    schelNodes.clear();
+//
+//    size_t len = nodeLevels.size();
+//
+//    qreal rectHeight = 0;
+//    qreal rectWidth = 0;
+//
+//    std::vector<LayoutColumn> columns;
+//    for (const auto& levelNodes : nodeLevels)
+//    {
+//        size_t columnWidth = 0;
+//        size_t columnHeight = 0;
+//
+//        QList<Gex::Ui::NodeItem*> items;
+//        for (const auto& node : levelNodes.second)
+//        {
+//            if (!nodeItems.contains(node))
+//                continue;
+//
+//            items.push_back(nodeItems.value(node));
+//        }
+//
+//        LayoutColumn column = {items, vspacing};
+//        columns.push_back(column);
+//    }
+//
+//    Layout layout = {columns, hspacing};
+//
+//    QPointF center = destination;
+//    QRect destinationRect = layout.Rect(center);
+//
+//    // For level, node in nodeLevels
+//    //     for node in level
+//    //          calculer la hauter vide
+//    //     se deplacer horizontalement
+//    qreal px = destinationRect.x();
+//    for (const auto& col : layout.columns)
+//    {
+//        qreal leftSpace = (destinationRect.height() - col.Height()) / 2.0;
+//        qreal py = destinationRect.y() + leftSpace;
+//
+//        for (auto* node : col.nodes)
+//        {
+//            node->setPos(px, py);
+//            py += vspacing + node->sceneBoundingRect().height();
+//        }
+//
+//        px += hspacing + col.Width();
+//    }
 }
 
 
@@ -4161,7 +4161,12 @@ Gex::Profiler Gex::Ui::GraphWidget::GetProfiler() const
 
 void LocallyThreadedRunGraph(Gex::Ui::GraphWidget* widget)
 {
+
+    widget->DisableInteraction();
+
     widget->RunGraph();
+
+    widget->EnableInteraction();
 }
 
 
@@ -4180,11 +4185,30 @@ void Gex::Ui::GraphWidget::RunGraph()
 
     scene->ClearNodeEvaluation();
 
+    auto nodeEvalStart = [this](const Gex::ScheduledItemPtr& node)
+    {
+        if (std::shared_ptr<ScheduledNode> scheduledNode = std::dynamic_pointer_cast<ScheduledNode>(node))
+        {
+            if (auto nodeptr = scheduledNode->GetNode())
+            {
+                this->scene->NodeEvaluationStarted(nodeptr.ToShared());
+            }
+        }
+    };
+
+    auto nodeEvalEnd = [this](const Gex::ScheduledItemPtr& node, bool success)
+    {
+        if (std::shared_ptr<ScheduledNode> scheduledNode = std::dynamic_pointer_cast<ScheduledNode>(node))
+        {
+            if (auto nodeptr = scheduledNode->GetNode())
+            {
+                this->scene->NodeEvaluationDone(nodeptr.ToShared(), success);
+            }
+        }
+    };
+
     graph->Run(profiler, threadsSpinBox->value(),
-               [this](const Gex::NodePtr& node)
-               {this->scene->NodeEvaluationStarted(node);},
-               [this](const Gex::NodePtr& node, bool success)
-               {this->scene->NodeEvaluationDone(node, success);},
+               nodeEvalStart, nodeEvalEnd,
                [this, prevState](const Gex::GraphContext& ctx)
                {EmitProfiler(this, ctx);this->interactiveEvalEnabled = prevState;}
                );
@@ -4216,49 +4240,49 @@ void Gex::Ui::GraphWidget::RunFromNode(const Gex::NodePtr& node)
 
     interactiveEvalEnabled = false;
 
-    if (interactiveEval && interactiveEval->Status() == Gex::NodeEvaluator::EvaluationStatus::Running)
-    {
-        interactiveEval->Stop();
-        delete interactiveEval;
-        interactiveEval = nullptr;
-    }
-
-    profiler->Reset();
-
-    scene->ClearNodeEvaluation();
-
-    auto subGraph = SubScheduledNodes(
-            graph->ToScheduledNodes(),
-            node);
-
-    if (subGraph.empty())
-        return;
-
-    auto postEval = [this](const Gex::GraphContext& ctx)
-    {
-        EmitProfiler(this, ctx);
-        this->interactiveEvalEnabled = true;
-    };
-
-    GraphContext context;
-    interactiveEval = new Gex::NodeEvaluator(
-            subGraph, context, profiler,
-            false, threadsSpinBox->value(),
-            [this](const Gex::NodePtr& node)
-            {this->scene->NodeEvaluationStarted(node);},
-            [this](const Gex::NodePtr& node, bool success)
-            {if (success) this->scene->NodeEvaluationDone(node, success);},
-            postEval
-            );
-
-    interactiveEval->Run();
+//    if (interactiveEval && interactiveEval->Status() == Gex::NodeEvaluator::EvaluationStatus::Running)
+//    {
+//        interactiveEval->Stop();
+//        delete interactiveEval;
+//        interactiveEval = nullptr;
+//    }
+//
+//    profiler->Reset();
+//
+//    scene->ClearNodeEvaluation();
+//
+//    auto subGraph = SubScheduledNodes(
+//            graph->ToScheduledNodes(),
+//            node);
+//
+//    if (subGraph.empty())
+//        return;
+//
+//    auto postEval = [this](const Gex::GraphContext& ctx)
+//    {
+//        EmitProfiler(this, ctx);
+//        this->interactiveEvalEnabled = true;
+//    };
+//
+//    GraphContext context;
+//    interactiveEval = new Gex::NodeEvaluator(
+//            subGraph, context, profiler,
+//            false, threadsSpinBox->value(),
+//            [this](const Gex::NodePtr& node)
+//            {this->scene->NodeEvaluationStarted(node);},
+//            [this](const Gex::NodePtr& node, bool success)
+//            {if (success) this->scene->NodeEvaluationDone(node, success);},
+//            postEval
+//            );
+//
+//    interactiveEval->Run();
 }
 
 
 void Gex::Ui::GraphWidget::InteractiveRun()
 {
-//    DisableInteraction();
-
+//   DisableInteraction();
+//
 //    QThread* thread = QThread::create(LocallyThreadedRunGraph, this);
 //    thread->setParent(this);
 //

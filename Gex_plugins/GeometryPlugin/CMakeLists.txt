@@ -42,14 +42,9 @@ target_link_directories(
         GeometryPlugin
         PUBLIC
         ${CMAKE_BINARY_DIR}
-        ${Boost_LIBRARY_DIRS}
         ${Python_LIBRARY_DIRS}
 
-        $ENV{TSYS_DIR}/Tsys/cmake-build-${BUILD_TYPE}
-
-        $ENV{UI_RES_DIR}/UiRes/cmake-build-${BUILD_TYPE}
-
-        ${CMAKE_BINARY_DIR}/plugins
+        ${INTERNAL_LIBRARY_DIRS}
 )
 
 
@@ -78,7 +73,7 @@ add_custom_command(
         --package
         --name GeometryPlugin
         --plugin GeometryPlugin.dll
-        --plugin-file ${CMAKE_BINARY_DIR}/plugins/GeometryPlugin.dll
+        --plugin-file ${CMAKE_BINARY_DIR}/Gex_plugins/GeometryPlugin.dll
         --type C++
         --required-plugins MathPlugin
 )

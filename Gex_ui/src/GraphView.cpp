@@ -1,4 +1,4 @@
-#include "Gex_ui/include/GraphView.h"
+#include "Gex_ui/include/Gex_ui/GraphView.h"
 #include <QTabBar>
 
 

@@ -1,0 +1,8 @@
+{
+    "name": "TestPlugin",
+    "plugin": "testPlugin",
+    "type": 1,
+    "python-path": [
+        "."
+    ]
+}

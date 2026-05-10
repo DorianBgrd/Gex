@@ -32,6 +32,7 @@ target_link_directories(
         ${CMAKE_BINARY_DIR}
         ${Boost_LIBRARY_DIRS}
         ${Python_LIBRARY_DIRS}
+        ${INTERNAL_LIBRARY_DIRS}
 )
 
 
@@ -55,6 +56,6 @@ add_custom_command(
         --package
         --name FilesPlugin
         --plugin FilesPlugin.dll
-        --plugin-file ${CMAKE_BINARY_DIR}/plugins/FilesPlugin.dll
+        --plugin-file ${CMAKE_BINARY_DIR}/Gex_plugins/FilesPlugin.dll
         --type C++
 )

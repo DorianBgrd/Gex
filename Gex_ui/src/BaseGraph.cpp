@@ -1,4 +1,4 @@
-#include "Gex_ui/include/BaseGraph.h"
+#include "Gex_ui/include/Gex_ui/BaseGraph.h"
 
 #include <QWidget>
 #include <QScrollBar>

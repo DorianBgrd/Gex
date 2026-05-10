@@ -59,8 +59,8 @@ int Exec::ExecuteGraph(int argc, char** argv, int start) {
         std::cerr << "No valid file specified." << std::endl;
     }
 
-    std::function<void(const Gex::NodePtr&)> startCallback;
-    std::function<void(const Gex::NodePtr&, bool)> endCallback;
+    std::function<void(const Gex::ScheduledItemPtr&)> startCallback;
+    std::function<void(const Gex::ScheduledItemPtr&, bool)> endCallback;
 
     if (verbose)
     {
@@ -106,7 +106,6 @@ int Exec::ExecuteGraph(int argc, char** argv, int start) {
             }
         }
 
-        auto scheduled = graph->ToScheduledNodes();
         Gex::GraphContext context;
 
         auto profiler = Gex::MakeProfiler();
@@ -120,19 +119,25 @@ int Exec::ExecuteGraph(int argc, char** argv, int start) {
 }
 
 
-void Exec::VerboseNodeEnd(const Gex::NodePtr& node, bool success)
+void Exec::VerboseNodeEnd(const Gex::ScheduledItemPtr& node, bool success)
 {
-    std::string msg = "Successfully evaluated";
-    if (!success)
-        msg = "Failed evaluating";
+    if (std::shared_ptr<Gex::ScheduledNode> item = std::dynamic_pointer_cast<Gex::ScheduledNode>(node))
+    {
+        std::string msg = "Successfully evaluated";
+        if (!success)
+            msg = "Failed evaluating";
 
-    std::cout << msg << "  " << node->Name() << std::endl;
+        std::cout << msg << "  " << item->GetNode()->Name() << std::endl;
+    }
 }
 
 
-void Exec::VerboseNodeStart(const Gex::NodePtr& node)
+void Exec::VerboseNodeStart(const Gex::ScheduledItemPtr& node)
 {
-    std::cout << "Starting evaluating " << node->Name() << std::endl;
+    if (std::shared_ptr<Gex::ScheduledNode> item = std::dynamic_pointer_cast<Gex::ScheduledNode>(node))
+    {
+        std::cout << "Starting evaluating " << item->GetNode()->Name() << std::endl;
+    }
 }
 
 

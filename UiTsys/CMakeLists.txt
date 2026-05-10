@@ -24,7 +24,7 @@ set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 # -----------------------------------------------------------------------------
 
-set(CMAKE_DEBUG_POSTFIX -dbg)
+#set(CMAKE_DEBUG_POSTFIX -dbg)
 
 
 add_library(

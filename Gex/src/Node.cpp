@@ -869,9 +869,9 @@ bool Gex::Node::Compute(GraphContext &context,
 
 bool Gex::Node::Run(const Profiler& profiler,
                     unsigned int threads,
-                    NodeCallback nodeStarted,
-                    NodeResCallback nodeDone,
-                    GraphCtxCallback evalDone)
+                    const ScheduleItemCallback& nodeStarted,
+                    const ScheduleItemSuccessCallback& nodeDone,
+                    const GraphCtxCallback& evalDone)
 {
     GraphContext context;
 
@@ -885,15 +885,10 @@ bool Gex::Node::Run(const Profiler& profiler,
 
     lmbda.Stop();
 
-    if (!IsScheduled())
-    {
-        auto schelScope = ProfilerScope(profiler, "Global", "Scheduling");
-
-        Schedule();
-    }
+    auto item = Schedule();
 
     auto evaluator = std::make_shared<NodeEvaluator>(
-            scheduledNodes, context, profiler,
+            item, context, profiler,
             false, threads, nodeStarted,
             nodeDone, finalize);
 
@@ -922,47 +917,53 @@ bool Gex::Node::Evaluate(NodeAttributeData &context,
 }
 
 
-bool Gex::Node::IsScheduled() const
+//bool Gex::Node::IsScheduled() const
+//{
+//    return isScheduled;
+//}
+//
+//
+//void Gex::Node::InvalidateScheduling()
+//{
+//    isScheduled = false;
+//}
+//
+//
+//void Gex::Node::ValidateScheduling()
+//{
+//    isScheduled = true;
+//}
+//
+//
+//void Gex::Node::Schedule()
+//{
+//    scheduledNodes = ScheduleNodes({shared_from_this()}, true);
+//
+//    ValidateScheduling();
+//}
+//
+//
+//Gex::ScheduleNodePtrList Gex::Node::GetScheduledNodes()
+//{
+//    return scheduledNodes;
+//}
+//
+//
+//Gex::ScheduledNodePtr Gex::Node::ToScheduledNode()
+//{
+//    return std::make_shared<ScheduledNode>(shared_from_this());
+//}
+//
+//
+//Gex::ScheduleNodePtrList Gex::Node::ToScheduledNodes()
+//{
+//    return {};
+//}
+
+
+Gex::ScheduledItemPtr Gex::Node::Schedule()
 {
-    return isScheduled;
-}
-
-
-void Gex::Node::InvalidateScheduling()
-{
-    isScheduled = false;
-}
-
-
-void Gex::Node::ValidateScheduling()
-{
-    isScheduled = true;
-}
-
-
-void Gex::Node::Schedule()
-{
-    scheduledNodes = ScheduleNodes({shared_from_this()}, true);
-
-    ValidateScheduling();
-}
-
-
-Gex::ScheduleNodePtrList Gex::Node::GetScheduledNodes()
-{
-    return scheduledNodes;
-}
-
-
-Gex::ScheduledNodePtr Gex::Node::ToScheduledNode()
-{
-    return std::make_shared<ScheduledNode>(shared_from_this());
-}
-
-
-Gex::ScheduleNodePtrList Gex::Node::ToScheduledNodes()
-{
-    return {};
+    return std::make_shared<ScheduledNode>(weak_from_this());
 }
 
 
@@ -1015,29 +1016,29 @@ void Gex::Node::ClearScheduleCallbacks()
 
 
 
-bool Gex::CompoundPreScheduledNode::Evaluate(Gex::GraphContext &context,
-                                             Gex::NodeProfiler &profiler)
-{
-    if (node.expired())
-        return false;
-
-    auto cmp = Gex::CompoundNode::FromNode(node);
-    cmp->Pull();
-
-    return cmp->PreCompute(context, profiler);
-}
-
-
-bool Gex::CompoundPostScheduledNode::Evaluate(Gex::GraphContext &context,
-                                             Gex::NodeProfiler &profiler)
-{
-    if (node.expired())
-        return false;
-
-    auto cmp = Gex::CompoundNode::FromNode(node);
-
-    return cmp->PostCompute(context, profiler);
-}
+//bool Gex::CompoundPreScheduledNode::Evaluate(Gex::GraphContext &context,
+//                                             Gex::NodeProfiler &profiler)
+//{
+//    if (node.expired())
+//        return false;
+//
+//    auto cmp = Gex::CompoundNode::FromNode(node);
+//    cmp->Pull();
+//
+//    return cmp->PreCompute(context, profiler);
+//}
+//
+//
+//bool Gex::CompoundPostScheduledNode::Evaluate(Gex::GraphContext &context,
+//                                             Gex::NodeProfiler &profiler)
+//{
+//    if (node.expired())
+//        return false;
+//
+//    auto cmp = Gex::CompoundNode::FromNode(node);
+//
+//    return cmp->PostCompute(context, profiler);
+//}
 
 
 Gex::CompoundNode::CompoundNode(const NodePtr& parent): Node(parent)
@@ -1370,6 +1371,16 @@ Gex::NodeWkPtr Gex::CompoundNode::GetNode(const std::string& node) const
 Gex::NodeList Gex::CompoundNode::GetNodes() const
 {
     return nodes;
+}
+
+
+Gex::NodeList Gex::CompoundNode::GetAllNodes() const
+{
+    NodeList l(nodes);
+    l.push_back(inputs);
+    l.push_back(outputs);
+
+    return l;
 }
 
 
@@ -1928,7 +1939,7 @@ void Gex::CompoundNode::AttributeChanged(const AttributePtr& attr, const Attribu
         || change == AttributeChange::ChildAttributeConnected
         || change == AttributeChange::ChildAttributeDisconnected)
     {
-        InvalidateScheduling();
+//        InvalidateScheduling();
     }
 }
 
@@ -1936,14 +1947,14 @@ void Gex::CompoundNode::AttributeChanged(const AttributePtr& attr, const Attribu
 void Gex::CompoundNode::NodeChanged(const NodeChange& change,
                                     const NodeWkPtr& node)
 {
-    InvalidateScheduling();
+//    InvalidateScheduling();
 }
 
 
-Gex::ScheduleNodePtrList Gex::CompoundNode::ToScheduledNodes()
-{
-    return Gex::ScheduleNodes(nodes);
-}
+//Gex::ScheduleNodePtrList Gex::CompoundNode::ToScheduledNodes()
+//{
+//    return Gex::ScheduleNodes(nodes);
+//}
 
 
 bool Gex::CompoundNode::PreEvaluate(NodeAttributeData &ctx,
@@ -1979,6 +1990,12 @@ bool Gex::CompoundNode::PostCompute(GraphContext &context,
     auto data = CreateEvalContext();
     auto outputData = outputs->CreateEvalContext();
     return PostEvaluate(data, outputData, context, profiler);
+}
+
+
+Gex::ScheduledItemPtr Gex::CompoundNode::Schedule()
+{
+    return ScheduleGraph(GetNodes());
 }
 
 
@@ -2166,7 +2183,7 @@ Gex::NodeList Gex::CompoundNode::DuplicateNodes(NodeList sources, bool copyLinks
 
 
 Gex::NodePtr Gex::CompoundNode::ToCompound(NodeList sources, bool duplicate,
-                                         bool keepExternalConnections)
+                                           bool keepExternalConnections)
 {
     auto compound = std::make_shared<CompoundNode>();
 

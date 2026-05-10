@@ -79,13 +79,10 @@ target_link_directories(
         UsdPlugin
         PUBLIC
 
-        ${Boost_LIBRARY_DIRS}
-        ${PipelineLibrary_LIBRARY_DIRS}
         ${Python_LIBRARY_DIRS}
         ${PXR_LIBRARY_DIR}
 
-        ${TSYS_LIBRARY_DIR}
-        $ENV{UI_TSYS_DIR}/UiTSys/cmake-build-${BUILD_TYPE}
+        ${INTERNAL_LIBRARY_DIRS}
 )
 
 
@@ -159,7 +156,7 @@ add_custom_command(
         --package
         --name UsdPlugin
         --plugin UsdPlugin.dll
-        --plugin-file ${CMAKE_BINARY_DIR}/plugins/UsdPlugin.dll
+        --plugin-file ${CMAKE_BINARY_DIR}/Gex_plugins/UsdPlugin.dll
         --type C++
 )
 
@@ -180,5 +177,5 @@ add_custom_command(
         COMMAND
         ${Qt_Deploy_Executable} ${Qt_DeployFlag}
         --libdir ${CMAKE_CURRENT_BINARY_DIR}/UsdPlugin/libs
-        ${CMAKE_BINARY_DIR}/plugins/UsdPlugin.dll
+        ${CMAKE_BINARY_DIR}/Gex_plugins/UsdPlugin.dll
 )

@@ -41,8 +41,8 @@ target_link_directories(
         JsonPlugin
         PUBLIC
         ${CMAKE_BINARY_DIR}
-        ${Boost_LIBRARY_DIRS}
         ${Python_LIBRARY_DIRS}
+        ${INTERNAL_LIBRARY_DIRS}
 )
 
 
@@ -50,7 +50,6 @@ target_link_libraries(
         JsonPlugin
         PUBLIC
         Gex
-        ${Boost_LIBRARIES}
         ${PYTHON_LINK_LIBRARIES}
 )
 
@@ -65,6 +64,6 @@ add_custom_command(
         --package
         --name JsonPlugin
         --plugin JsonPlugin.dll
-        --plugin-file ${CMAKE_BINARY_DIR}/plugins/JsonPlugin.dll
+        --plugin-file ${CMAKE_BINARY_DIR}/Gex_plugins/JsonPlugin.dll
         --type C++
 )

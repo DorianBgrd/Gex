@@ -29,8 +29,8 @@ target_link_directories(
         StringPlugin
         PUBLIC
         ${CMAKE_BINARY_DIR}
-        ${Boost_LIBRARY_DIRS}
         ${Python_LIBRARY_DIRS}
+        ${INTERNAL_LIBRARY_DIRS}
         )
 
 
@@ -38,7 +38,6 @@ target_link_libraries(
         StringPlugin
         PUBLIC
         Gex
-        ${Boost_LIBRARIES}
         ${Python_LINK_LIBRARIES}
 )
 
@@ -53,6 +52,6 @@ add_custom_command(
         --package
         --name StringPlugin
         --plugin StringPlugin.dll
-        --plugin-file ${CMAKE_BINARY_DIR}/plugins/StringPlugin.dll
+        --plugin-file ${CMAKE_BINARY_DIR}/Gex_plugins/StringPlugin.dll
         --type C++
 )

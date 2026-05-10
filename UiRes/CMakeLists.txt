@@ -18,7 +18,7 @@ set(CMAKE_AUTORCC ON)
 
 set(QT_AWESOME_LIBRARY_DIR "$ENV{QT_AWESOME_DIR}/${CMAKE_BUILD_TYPE}")
 
-set(CMAKE_DEBUG_POSTFIX -dbg)
+#set(CMAKE_DEBUG_POSTFIX -dbg)
 
 add_library(
         UiRes

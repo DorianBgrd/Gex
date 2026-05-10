@@ -132,7 +132,7 @@ namespace iter
 
     class Plugin_API ForRangeLoop: public Gex::CompoundNode
     {
-        Gex::ScheduleNodePtrList compoundScheduledNodes;
+        Gex::ScheduledItem compoundScheduledNodes;
 
     protected:
         std::vector<unsigned int> indices;
@@ -174,10 +174,10 @@ namespace iter
         {
             auto prof = profiler.GetProfiler();
 
-            if (!IsScheduled())
-            {
-                Schedule();
-            }
+//            if (!IsScheduled())
+//            {
+//                Schedule();
+//            }
 
             evaluator.Run();
 
@@ -188,8 +188,9 @@ namespace iter
                       Gex::GraphContext &graphContext,
                       Gex::NodeProfiler &profiler) override
         {
+            
             Gex::NodeEvaluator evaluator(
-                    compoundScheduledNodes, graphContext,
+                    Schedule(), graphContext,
                     profiler.GetProfiler(), false, 1);
 
             ctx.GetAttribute("OutArray").ClearMultiIndices();
@@ -228,12 +229,12 @@ namespace iter
             return true;
         }
 
-        Gex::ScheduleNodePtrList ToScheduledNodes() override
-        {
-            compoundScheduledNodes = Gex::ScheduleNodes(GetNodes());
-
-            return {ToScheduledNode()};
-        }
+//        Gex::ScheduleNodePtrList ToScheduledNodes() override
+//        {
+//            compoundScheduledNodes = Gex::ScheduleNodes(GetNodes());
+//
+//            return {ToScheduledNode()};
+//        }
     };
 
     GENERATE_DEFAULT_BUILDER(ForRangeLoopBuilder, ForRangeLoop)
@@ -279,10 +280,10 @@ namespace iter
             return "Performs a for loop using a counter.";
         }
 
-        Gex::ScheduleNodePtrList ToScheduledNodes() override
-        {
-            return {ToScheduledNode()};
-        }
+//        Gex::ScheduleNodePtrList ToScheduledNodes() override
+//        {
+//            return {ToScheduledNode()};
+//        }
 
         void InitAttributes() override
         {
@@ -306,7 +307,7 @@ namespace iter
                 return false;
             }
 
-            auto schelNodes = Gex::CompoundNode::ToScheduledNodes();
+            auto schelNodes = Gex::CompoundNode::Schedule();
             auto eval = Gex::NodeEvaluator(schelNodes, graphContext,
                                            profiler.GetProfiler(),
                                            false, 1);

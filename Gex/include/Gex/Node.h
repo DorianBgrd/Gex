@@ -516,9 +516,9 @@ namespace Gex
          * @return
          */
         bool Run(const Profiler& profile, unsigned int threads=1,
-                 NodeCallback nodeStarted=nullptr,
-                 NodeResCallback nodeDone=nullptr,
-                 GraphCtxCallback evalDone=nullptr);
+                 const ScheduleItemCallback& nodeStarted=nullptr,
+                 const ScheduleItemSuccessCallback& nodeDone=nullptr,
+                 const GraphCtxCallback& evalDone=nullptr);
 
     private:
         void FinalizeEvaluation(const GraphContext& context) const;
@@ -542,30 +542,32 @@ namespace Gex
          * perform complex scheduling, as opposed to compound nodes.
          * @return bool: is scheduled.
          */
-        bool IsScheduled() const;
+//        bool IsScheduled() const;
 
         /**
          * Declares scheduling as invalid, which will cause re-scheduling at
          * next evaluation. Default node implementation triggers invalidation
          * when a new connection is made.
          */
-        void InvalidateScheduling();
+//        void InvalidateScheduling();
 
     protected:
         /**
          * Declares node as re-scheduled.
          */
-        void ValidateScheduling();
+//        void ValidateScheduling();
 
-        virtual void Schedule();
-
-    public:
-        ScheduleNodePtrList GetScheduledNodes();
+//        virtual void Schedule();
 
     public:
-        ScheduledNodePtr ToScheduledNode();
+//        ScheduleNodePtrList GetScheduledNodes();
 
-        virtual ScheduleNodePtrList ToScheduledNodes();
+    public:
+//        ScheduledNodePtr ToScheduledNode();
+//
+//        virtual ScheduleNodePtrList ToScheduledNodes();
+
+        virtual ScheduledItemPtr Schedule();
 
     public:
         CallbackId AddInvalidateCallback(InvalidateCallback callback);
@@ -590,24 +592,24 @@ namespace Gex
 	};
 
 
-    class CompoundPreScheduledNode: public ScheduledNode
-    {
-        using ScheduledNode::ScheduledNode;
-
-        bool Evaluate(Gex::GraphContext &context,
-                      Gex::NodeProfiler &profiler)
-                      override;
-    };
-
-
-    class CompoundPostScheduledNode: public Gex::ScheduledNode
-    {
-        using ScheduledNode::ScheduledNode;
-
-        bool Evaluate(Gex::GraphContext &context,
-                      Gex::NodeProfiler &profiler)
-                      override;
-    };
+//    class CompoundPreScheduledNode: public ScheduledNode
+//    {
+//        using ScheduledNode::ScheduledNode;
+//
+//        bool Evaluate(Gex::GraphContext &context,
+//                      Gex::NodeProfiler &profiler)
+//                      override;
+//    };
+//
+//
+//    class CompoundPostScheduledNode: public Gex::ScheduledNode
+//    {
+//        using ScheduledNode::ScheduledNode;
+//
+//        bool Evaluate(Gex::GraphContext &context,
+//                      Gex::NodeProfiler &profiler)
+//                      override;
+//    };
 
 
     class GEX_API CompoundNode : public Node
@@ -615,8 +617,8 @@ namespace Gex
 	private:
 		friend CompoundNodeBuilder;
         friend NodeAttributeData;
-        friend CompoundPreScheduledNode;
-        friend CompoundPostScheduledNode;
+//        friend CompoundPreScheduledNode;
+//        friend CompoundPostScheduledNode;
         friend NodeEvaluator;
 
         NodeList nodes;
@@ -723,6 +725,8 @@ namespace Gex
 
         NodeList GetNodes() const;
 
+        NodeList GetAllNodes() const;
+
         std::vector<std::string> GetNodeNames() const;
 
         AttributeWkPtr FindAttribute(const std::string& attr) const;
@@ -806,7 +810,9 @@ namespace Gex
 
         void NodeChanged(const NodeChange& change, const NodeWkPtr& node) override;
 
-        ScheduleNodePtrList ToScheduledNodes() override;
+//        ScheduleNodePtrList ToScheduledNodes() override;
+
+        ScheduledItemPtr Schedule() override;
 
         /**
          * Launches compound computing.

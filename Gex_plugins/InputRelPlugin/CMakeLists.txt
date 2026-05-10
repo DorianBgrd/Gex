@@ -61,12 +61,10 @@ target_link_directories(
         InputRelPlugin
         PUBLIC
         ${CMAKE_BINARY_DIR}
-        ${Boost_LIBRARY_DIRS}
         ${Python_LIBRARY_DIRS}
 
         ${GEX_LINK_DIRECTORIES}
-        $ENV{UI_TSYS_DIR}/UiTSys/cmake-build-${BUILD_TYPE}
-        $ENV{UI_RES_DIR}/UiRes/cmake-build-${BUILD_TYPE}
+        ${INTERNAL_LIBRARY_DIRS}
 )
 
 
@@ -109,7 +107,7 @@ add_custom_command(
         --package
         --name InputRelPlugin
         --plugin InputRelPlugin.dll
-        --plugin-file ${CMAKE_BINARY_DIR}/plugins/InputRelPlugin.dll
+        --plugin-file ${CMAKE_BINARY_DIR}/Gex_plugins/InputRelPlugin.dll
         --type C++
         --env PATH:./libs
         --python-path ./scripts
@@ -120,7 +118,7 @@ add_custom_command(
         $ENV{UI_RES_DIR}/UiRes/cmake-build-${BUILD_TYPE}
         $ENV{UI_TSYS_DIR}/UiTSys/cmake-build-${BUILD_TYPE}
 
-        --scripts ${CMAKE_CURRENT_BINARY_DIR}/python/InputRel
+        --scripts ${CMAKE_CURRENT_BINARY_DIR}/Gex_plugins/InputRel
 
         --libs
         Gex_ui.dll

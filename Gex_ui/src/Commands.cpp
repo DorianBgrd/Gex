@@ -1,4 +1,4 @@
-#include "Gex_ui/include/commands.h"
+#include "Gex_ui/include/Gex_ui/Commands.h"
 
 
 unsigned int Gex::Ui::NextMultiAttributeIndex(Gex::AttributeWkPtr attribute)

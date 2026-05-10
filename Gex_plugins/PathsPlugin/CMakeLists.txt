@@ -30,6 +30,7 @@ target_link_directories(
         PathsPlugin
         PUBLIC
         ${CMAKE_BINARY_DIR}
+        ${INTERNAL_LIBRARY_DIRS}
 )
 
 
@@ -50,6 +51,6 @@ add_custom_command(
         --package
         --name PathsPlugin
         --plugin PathsPlugin.dll
-        --plugin-file ${CMAKE_BINARY_DIR}/plugins/PathsPlugin.dll
+        --plugin-file ${CMAKE_BINARY_DIR}/Gex_plugins/PathsPlugin.dll
         --type C++
 )

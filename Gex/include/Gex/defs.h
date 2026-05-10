@@ -41,6 +41,21 @@ namespace Gex
     typedef std::shared_ptr<EvaluatorThread> EvaluatorThreadPtr;
     typedef std::vector<EvaluatorThreadPtr> EvaluatorThreadPtrList;
 
+    class EvaluationProfiler;
+    typedef std::shared_ptr<EvaluationProfiler> Profiler;
+
+    class ScheduledItem;
+
+    typedef std::shared_ptr<ScheduledItem> ScheduledItemPtr;
+
+    typedef BaseWkPtr<ScheduledItem> ScheduledItemWkPtr;
+    typedef std::vector<ScheduledItemWkPtr> ScheduledItemWkList;
+
+    typedef std::function<void(const ScheduledItemPtr &)> ScheduleItemCallback;
+    typedef std::function<void(const ScheduledItemPtr&, bool)> ScheduleItemSuccessCallback;
+
+//    typedef std::function<bool(GraphContext &, const Profiler&, const std::string&)> EvalFunction;
+
 
     typedef EvaluationNodeProfiler NodeProfiler;
 

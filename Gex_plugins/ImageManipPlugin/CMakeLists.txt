@@ -97,12 +97,9 @@ set(
         ImageManip_LinkDirs
 
         ${CMAKE_BINARY_DIR}
-        ${Boost_LIBRARY_DIRS}
         ${Python_LIBRARY_DIRS}
 
-        ${TSYS_LIBRARY_DIR}
-        $ENV{UI_TSYS_DIR}/UiTSys/cmake-build-${BUILD_TYPE}
-        $ENV{UI_RES_DIR}/UiRes/cmake-build-${BUILD_TYPE}
+        ${INTERNAL_LIBRARY_DIRS}
 )
 
 
@@ -138,7 +135,7 @@ add_custom_command(
         --package
         --name ImageManipPlugin
         --plugin ImageManipPlugin.dll
-        --plugin-file ${CMAKE_BINARY_DIR}/plugins/ImageManipPlugin.dll
+        --plugin-file ${CMAKE_BINARY_DIR}/Gex_plugins/ImageManipPlugin.dll
         --type C++
         --env PATH:./libs
 
@@ -169,7 +166,7 @@ add_custom_command(
         COMMAND
         ${Qt_Deploy_Executable} ${Qt_DeployFlag}
         --dir ${CMAKE_CURRENT_BINARY_DIR}/ImageManipPlugin/libs
-        ${CMAKE_BINARY_DIR}/plugins/ImageManipPlugin.dll
+        ${CMAKE_BINARY_DIR}/Gex_plugins/ImageManipPlugin.dll
 
 )
 
@@ -215,7 +212,7 @@ add_custom_command(
         python $ENV{BUILD_UTILS_DIR}/BuildUtils/deploy.py
 
         --name ImageManipTest
-        --executable ${CMAKE_BINARY_DIR}/plugins/ImageManipTest.exe
+        --executable ${CMAKE_BINARY_DIR}/Gex_plugins/ImageManipTest.exe
         --destination ${CMAKE_CURRENT_BINARY_DIR}
 
 #        --library-search-dir ${Boost_LIBRARY_DIRS}

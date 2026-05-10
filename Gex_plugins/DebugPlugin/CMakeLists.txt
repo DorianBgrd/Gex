@@ -33,8 +33,8 @@ target_link_directories(
         DebugPlugin
         PUBLIC
         ${CMAKE_BINARY_DIR}
-        ${Boost_LIBRARY_DIRS}
         ${Python_LIBRARY_DIRS}
+        ${INTERNAL_LIBRARY_DIRS}
         )
 
 
@@ -57,6 +57,6 @@ add_custom_command(
         --package
         --name DebugPlugin
         --plugin DebugPlugin.dll
-        --plugin-file ${CMAKE_BINARY_DIR}/plugins/DebugPlugin.dll
+        --plugin-file ${CMAKE_BINARY_DIR}/Gex_plugins/DebugPlugin.dll
         --type C++
 )

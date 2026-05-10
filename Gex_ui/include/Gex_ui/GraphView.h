@@ -5,9 +5,9 @@
 #include <QTabWidget>
 #include <QDockWidget>
 
-#include "Gex_ui/include/NodeGraph.h"
-#include "Gex_ui/include/ProfileViewer.h"
-#include "Gex_ui/include/ScheduleGraph.h"
+#include "NodeGraph.h"
+#include "ProfileViewer.h"
+#include "ScheduleGraph.h"
 
 namespace Gex::Ui
 {

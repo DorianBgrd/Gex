@@ -24,19 +24,19 @@ set(QT_AWESOME_LIBRARY_DIR "$ENV{QT_AWESOME_DIR}/${CMAKE_BUILD_TYPE}")
 
 set(
         GEX_UI_INCLUDES
-        include/AttributeEditor.h
-        include/BaseGraph.h
-        include/Commands.h
-        include/NodeGraph.h
-        include/UiStatus.h
-        include/ProfileViewer.h
-        include/GraphView.h
-        include/PluginLoader.h
-        include/NodeViewer.h
-        include/Timeline.h
-        include/ViewContexts.h
-        include/NodeUiRegistry.h
-        include/ScheduleGraph.h
+        include/Gex_ui/AttributeEditor.h
+        include/Gex_ui/BaseGraph.h
+        include/Gex_ui/Commands.h
+        include/Gex_ui/NodeGraph.h
+        include/Gex_ui/UiStatus.h
+        include/Gex_ui/ProfileViewer.h
+        include/Gex_ui/GraphView.h
+        include/Gex_ui/PluginLoader.h
+        include/Gex_ui/NodeViewer.h
+        include/Gex_ui/Timeline.h
+        include/Gex_ui/ViewContexts.h
+        include/Gex_ui/NodeUiRegistry.h
+        include/Gex_ui/ScheduleGraph.h
 )
 
 add_library(

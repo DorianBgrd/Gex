@@ -1,0 +1,8 @@
+{
+    "name": "TestWrapPlugin",
+    "plugin": "test_wrap",
+    "type": 1,
+    "python-path": [
+        ".", "./plugin"
+    ]
+}

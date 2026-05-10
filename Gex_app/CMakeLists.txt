@@ -130,12 +130,10 @@ target_include_directories(
 target_link_directories(
         Gex_App
         PUBLIC
-        ${TSYS_LIBRARY_DIR}
-        $ENV{UI_TSYS_DIR}/UiTSys/cmake-build-${BUILD_TYPE}
-        $ENV{UI_RES_DIR}/UiRes/cmake-build-${BUILD_TYPE}
         ${QT_AWESOME_LIBRARY_DIR}
         ${CMAKE_BINARY_DIR}
-        ${CMAKE_BINARY_DIR}/ui
+        ${CMAKE_CURRENT_BINARY_DIR}
+        ${INTERNAL_LIBRARY_DIRS}
 )
 
 
@@ -168,7 +166,7 @@ endif()
 if (${Build_UsdPlugin})
     set(PXR_LIBRARY_DIR ${PXR_ROOT}/lib)
 
-    set(USD_PLUGIN_RELOC --add-extra-directory plugins ${CMAKE_BINARY_DIR}/plugins/UsdPlugin/UsdPlugin
+    set(USD_PLUGIN_RELOC --add-extra-directory plugins ${CMAKE_BINARY_DIR}/Gex_plugins/UsdPlugin/UsdPlugin
             --library-search-dir ${PXR_LIBRARY_DIR})
 endif()
 
@@ -186,14 +184,19 @@ add_custom_target(
         --library-search-dir ${Python_LIBRARY_DIRS}
         --library-search-dir ${Python_ROOT_DIR}
         --library-search-dir ${CMAKE_CURRENT_SOURCE_DIR}
-        --library-search-dir ${CMAKE_BINARY_DIR}/plugins
+        --library-search-dir ${CMAKE_BINARY_DIR}/Tsys
+        --library-search-dir ${CMAKE_BINARY_DIR}/UiTsys
+        --library-search-dir ${CMAKE_BINARY_DIR}/UiRes
+        --library-search-dir ${CMAKE_BINARY_DIR}/Gex
+        --library-search-dir ${CMAKE_BINARY_DIR}/Gex_ui
+        --library-search-dir ${CMAKE_BINARY_DIR}/Gex_app
         --library-search-dir ${CMAKE_BINARY_DIR}
 
         --library ${CMAKE_CURRENT_BINARY_DIR}/App.dll
         --library ${CMAKE_BINARY_DIR}/Gex_ui/Gex_Ui.dll
-        --library Tsys.dll
-        --library UiRes.dll
-        --library UiTsys.dll
+        --library ${CMAKE_BINARY_DIR}/Tsys/Tsys.dll
+        --library ${CMAKE_BINARY_DIR}/UiRes/UiRes.dll
+        --library ${CMAKE_BINARY_DIR}/UiTsys/UiTsys.dll
         --library ${CMAKE_BINARY_DIR}/Gex/Gex.dll
         --library ${QT_AWESOME_LIBRARY_DIR}/QtAwesome.dll
         --library Python${Python_VERSION_NUMBER}.dll
@@ -207,19 +210,19 @@ add_custom_target(
 
         --add-extra-directory ui ${CMAKE_CURRENT_SOURCE_DIR}/resources/stylesheet.css
 
-        --add-extra-directory plugins ${CMAKE_BINARY_DIR}/plugins/ArraysPlugin/ArraysPlugin
-        --add-extra-directory plugins ${CMAKE_BINARY_DIR}/plugins/DebugPlugin/DebugPlugin
-        --add-extra-directory plugins ${CMAKE_BINARY_DIR}/plugins/FilesPlugin/FilesPlugin
-        --add-extra-directory plugins ${CMAKE_BINARY_DIR}/plugins/IterPlugin/IterPlugin
-        --add-extra-directory plugins ${CMAKE_BINARY_DIR}/plugins/MathPlugin/MathPlugin
-        --add-extra-directory plugins ${CMAKE_BINARY_DIR}/plugins/MayaPlugin/MayaPlugin
-        --add-extra-directory plugins ${CMAKE_BINARY_DIR}/plugins/PathsPlugin/PathsPlugin
-        --add-extra-directory plugins ${CMAKE_BINARY_DIR}/plugins/StringPlugin/StringPlugin
-        --add-extra-directory plugins ${CMAKE_BINARY_DIR}/plugins/ImageManipPlugin/ImageManipPlugin
-        --add-extra-directory plugins ${CMAKE_BINARY_DIR}/plugins/InputRelPlugin/InputRelPlugin
-        --add-extra-directory plugins ${CMAKE_BINARY_DIR}/plugins/JsonPlugin/JsonPlugin
-        --add-extra-directory plugins ${CMAKE_BINARY_DIR}/plugins/PythonPlugin/PythonPlugin
-        --add-extra-directory plugins ${CMAKE_BINARY_DIR}/plugins/GeometryPlugin/GeometryPlugin
+        --add-extra-directory plugins ${CMAKE_BINARY_DIR}/Gex_plugins/ArraysPlugin/ArraysPlugin
+        --add-extra-directory plugins ${CMAKE_BINARY_DIR}/Gex_plugins/DebugPlugin/DebugPlugin
+        --add-extra-directory plugins ${CMAKE_BINARY_DIR}/Gex_plugins/FilesPlugin/FilesPlugin
+        --add-extra-directory plugins ${CMAKE_BINARY_DIR}/Gex_plugins/IterPlugin/IterPlugin
+        --add-extra-directory plugins ${CMAKE_BINARY_DIR}/Gex_plugins/MathPlugin/MathPlugin
+        --add-extra-directory plugins ${CMAKE_BINARY_DIR}/Gex_plugins/MayaPlugin/MayaPlugin
+        --add-extra-directory plugins ${CMAKE_BINARY_DIR}/Gex_plugins/PathsPlugin/PathsPlugin
+        --add-extra-directory plugins ${CMAKE_BINARY_DIR}/Gex_plugins/StringPlugin/StringPlugin
+        --add-extra-directory plugins ${CMAKE_BINARY_DIR}/Gex_plugins/ImageManipPlugin/ImageManipPlugin
+        --add-extra-directory plugins ${CMAKE_BINARY_DIR}/Gex_plugins/InputRelPlugin/InputRelPlugin
+        --add-extra-directory plugins ${CMAKE_BINARY_DIR}/Gex_plugins/JsonPlugin/JsonPlugin
+        --add-extra-directory plugins ${CMAKE_BINARY_DIR}/Gex_plugins/PythonPlugin/PythonPlugin
+        --add-extra-directory plugins ${CMAKE_BINARY_DIR}/Gex_plugins/GeometryPlugin/GeometryPlugin
         ${USD_PLUGIN_RELOC}
         #        --add-extra-directory plugins ${CMAKE_BINARY_DIR}/plugins/InputRel.dll
         #        --add-extra-directory plugins ${CMAKE_BINARY_DIR}/plugins/GraphPlugin/GraphPlugin.dll

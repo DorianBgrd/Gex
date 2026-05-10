@@ -2,6 +2,7 @@
 #define NODELIBRARY2COMPLETE_EVALUATION_H
 
 #include "api.h"
+#include "defs.h"
 #include "Scheduling.h"
 #include "Profiler.h"
 #include "Profiler.h"
@@ -17,19 +18,20 @@ namespace Gex
     class Node;
     class NodeEvaluator;
 
+
     class EvaluatorThread
     {
-        ScheduledNodePtr node = nullptr;
+        EvalFunction func;
         NodeEvaluator* _evaluator = nullptr;
         bool stop = false;
-        std::function<void(const NodePtr&)> nodeStart=nullptr;
-        std::function<void(const NodePtr&, bool)> nodeEnd=nullptr;
+        ScheduleItemCallback itemStart;
+        ScheduleItemSuccessCallback itemEnd;
         std::string name;
 
     public:
         EvaluatorThread(NodeEvaluator* evaluator, unsigned int index,
-                        const std::function<void(const NodePtr&)>& onNodeStart=nullptr,
-                        const std::function<void(const NodePtr&, bool)>& onNodeEnd=nullptr);
+                        const ScheduleItemCallback& onItemStart,
+                        const ScheduleItemSuccessCallback& onItemEnd);
 
         void Start();
 
@@ -65,23 +67,23 @@ namespace Gex
         unsigned int numberOfThreads;
         unsigned int runningThreads;
         EvaluatorThreadPtrList threads;
-        ScheduleNodePtrList schelNodes;
+        const ScheduledItemPtr& scheduled;
         GraphContext context;
         Profiler profiler;
         bool detached;
         int n = -1;
 
         EvaluationStatus status = EvaluationStatus::Preparing;
-        std::function<void(const NodePtr&)> evalStart;
-        std::function<void(const NodePtr&, bool)> evalEnd;
+        ScheduleItemCallback evalStart;
+        ScheduleItemSuccessCallback evalEnd;
         std::function<void(const GraphContext&)> postEval;
 
     public:
-        NodeEvaluator(const ScheduleNodePtrList& nodes, GraphContext& context,
+        NodeEvaluator(const ScheduledItemPtr& scheduled, GraphContext& context,
                       const Gex::Profiler& profiler, bool detached=false,
                       unsigned int threads=1,
-                      const std::function<void(const NodePtr&)>& onNodeStart=nullptr,
-                      const std::function<void(const NodePtr&, bool)>& onNodeEnd=nullptr,
+                      const ScheduleItemCallback& onNodeStart=nullptr,
+                      const ScheduleItemSuccessCallback& onNodeEnd=nullptr,
                       const std::function<void(const GraphContext&)>& postEvaluation=nullptr);
 
         ~NodeEvaluator();
@@ -90,7 +92,7 @@ namespace Gex
 
         void Run();
 
-        ScheduledNodePtr NextNode();
+        Gex::EvalFunction Acquire();
 
         GraphContext& Context();
 

@@ -31,7 +31,8 @@ Gex::Ui::ScheduleNodeItem::ScheduleNodeItem(
     setFlag(QGraphicsItem::ItemIsMovable, true);
     setFlag(QGraphicsItem::ItemSendsGeometryChanges, true);
 
-    text = new QGraphicsTextItem(scheduled->node->Name().c_str(), this);
+//    text = new QGraphicsTextItem(scheduled->node->Name().c_str(), this);
+    text = new QGraphicsTextItem("", this);
     text->setDefaultTextColor(Qt::white);
 
     width = text->boundingRect().width() + 20;
@@ -231,22 +232,23 @@ Gex::ScheduleNodeWkPtrList GatherPreviousNodes(
         const Gex::ScheduledNodeWkPtr& scheduled
 )
 {
-    if (!scheduled)
-        return {};
-
-    Gex::ScheduleNodeWkPtrList gatheredNodes;
-    for (const auto& previous : scheduled->previousNodes)
-    {
-        auto previousNodes = GatherPreviousNodes(previous);
-
-        gatheredNodes.push_back(previous);
-
-        gatheredNodes.insert(gatheredNodes.end(),
-                             previousNodes.begin(),
-                             previousNodes.end());
-    }
-
-    return gatheredNodes;
+//    if (!scheduled)
+//        return {};
+//
+//    Gex::ScheduleNodeWkPtrList gatheredNodes;
+//    for (const auto& previous : scheduled->previousNodes)
+//    {
+//        auto previousNodes = GatherPreviousNodes(previous);
+//
+//        gatheredNodes.push_back(previous);
+//
+//        gatheredNodes.insert(gatheredNodes.end(),
+//                             previousNodes.begin(),
+//                             previousNodes.end());
+//    }
+//
+//    return gatheredNodes;
+    return {};
 }
 
 
@@ -319,29 +321,29 @@ void Gex::Ui::ScheduleScene::ScheduleScene::Load(
         lastLevel = level;
     }
 
-    for (const auto& nodeItem : items)
-    {
-        for (const auto& previous : nodeItem->GetScheduledNode()->previousNodes)
-        {
-            Gex::ScheduledNodeWkPtr p = previous;
-
-            for (auto* item : items)
-            {
-                if (item->GetScheduledNode() == p)
-                {
-                    auto link = QSharedPointer<ScheduleLink>::create(item, nodeItem);
-
-                    item->RegisterLink(link);
-                    nodeItem->RegisterLink(link);
-
-                    addItem(link.get());
-
-                    break;
-                }
-            }
-
-        }
-    }
+//    for (const auto& nodeItem : items)
+//    {
+//        for (const auto& previous : nodeItem->GetScheduledNode()->previousNodes)
+//        {
+//            Gex::ScheduledNodeWkPtr p = previous;
+//
+//            for (auto* item : items)
+//            {
+//                if (item->GetScheduledNode() == p)
+//                {
+//                    auto link = QSharedPointer<ScheduleLink>::create(item, nodeItem);
+//
+//                    item->RegisterLink(link);
+//                    nodeItem->RegisterLink(link);
+//
+//                    addItem(link.get());
+//
+//                    break;
+//                }
+//            }
+//
+//        }
+//    }
 
     QList<QRectF> rects;
     for (const auto* item : items)
@@ -399,12 +401,12 @@ void Gex::Ui::ScheduleViewer::LoadCompound(
 
 void Gex::Ui::ScheduleViewer::Sync()
 {
-    Gex::ScheduleNodePtrList scheduledNodes;
-    if (compound && compound->IsCompound())
-    {
-        scheduledNodes = dynamic_cast<CompoundNode*>(compound.ToShared().get())->ToScheduledNodes();
-    }
-
-    scene->Load(scheduledNodes);
+//    Gex::ScheduleNodePtrList scheduledNodes;
+//    if (compound && compound->IsCompound())
+//    {
+//        scheduledNodes = dynamic_cast<CompoundNode*>(compound.ToShared().get())->ToScheduledNodes();
+//    }
+//
+//    scene->Load(scheduledNodes);
 }
 

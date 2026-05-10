@@ -3,7 +3,7 @@
 
 #include <QMainWindow>
 #include <QAction>
-#include "Gex_ui/include/ui.h"
+#include "Gex_ui/include/Gex_ui/ui.h"
 
 #include "PythonInterpreter.h"
 #include "softApi.h"

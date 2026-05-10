@@ -7,14 +7,14 @@
 
 Gex::EvaluatorThread::EvaluatorThread(
         Gex::NodeEvaluator* eval, unsigned int index_,
-        const std::function<void(const NodePtr&)>& onNodeStart,
-        const std::function<void(const NodePtr&, bool)>& onNodeEnd
+        const ScheduleItemCallback& onNodeStart,
+        const ScheduleItemSuccessCallback& onNodeEnd
 )
 {
     name = "Thread " + std::to_string(index_);
     _evaluator = eval;
-    nodeStart = onNodeStart;
-    nodeEnd = onNodeEnd;
+    itemStart = onNodeStart;
+    itemEnd = onNodeEnd;
 }
 
 
@@ -33,46 +33,33 @@ bool Gex::EvaluatorThread::AcquireNode()
 {
     nodeEvaluatorLock.lock();
 
-    node = _evaluator->NextNode();
+    func = _evaluator->Acquire();
 
     nodeEvaluatorLock.unlock();
 
-    return (node != nullptr);
+    return func;
 }
 
 
 bool Gex::EvaluatorThread::ComputeNode()
 {
-    if (node->node.expired())
+    if (!func)
         return false;
 
-    auto lockedNode = node->node.lock();
-
-    auto nodeProfiler = NodeProfiler(_evaluator->GetProfiler(),
-                                     lockedNode, name);
-
-    auto wn = nodeProfiler.StartEvent("Waiting previous nodes");
-    while (!node->ShouldBeEvaluated())
+    if (itemStart)
     {
-//        std::this_thread::yield();
+        itemStart(func.Item());
     }
 
-    nodeProfiler.StopEvent(wn);
+    bool result = func(
+            _evaluator->Context(),
+            _evaluator->GetProfiler(),
+            name
+    );
 
-    if (nodeStart)
+    if (itemEnd)
     {
-        nodeStart(lockedNode);
-    }
-
-    bool result = node->Compute(_evaluator->Context(), nodeProfiler);
-
-    if (nodeEnd)
-    {
-        auto ne = nodeProfiler.StartEvent("NodeEnd");
-
-        nodeEnd(lockedNode, result);
-
-        nodeProfiler.StopEvent(ne);
+        itemEnd(func.Item(), result);
     }
 
     return result;
@@ -125,13 +112,13 @@ void StartThread(const Gex::EvaluatorThreadPtr& th)
 }
 
 
-Gex::NodeEvaluator::NodeEvaluator(const ScheduleNodePtrList& nodes, GraphContext& ctx,
+Gex::NodeEvaluator::NodeEvaluator(const ScheduledItemPtr& scheduled, GraphContext& ctx,
                                   const Profiler& profiler_, bool detached_,
                                   unsigned int threads_,
-                                  const std::function<void(const std::shared_ptr<Node> &)>& onNodeStarted,
-                                  const std::function<void(const std::shared_ptr<Node> &, bool)>& onNodeDone,
+                                  const ScheduleItemCallback& onNodeStarted,
+                                  const ScheduleItemSuccessCallback& onNodeDone,
                                   const std::function<void(const GraphContext&)>& postEvaluation):
-                                  context(ctx)
+                                  context(ctx), scheduled(scheduled)
 {
     profiler = profiler_;
     unsigned int init = profiler->StartEvent("Prepare", "Init evaluator");
@@ -147,7 +134,6 @@ Gex::NodeEvaluator::NodeEvaluator(const ScheduleNodePtrList& nodes, GraphContext
     profiler->StopEvent(init);
 
     unsigned int schedule = profiler->StartEvent("Prepare", "Schedule");
-    schelNodes = nodes;
     profiler->StopEvent(schedule);
 }
 
@@ -155,10 +141,10 @@ Gex::NodeEvaluator::NodeEvaluator(const ScheduleNodePtrList& nodes, GraphContext
 void Gex::NodeEvaluator::Reset()
 {
     n = -1;
-    for (const auto& schelNode: schelNodes)
-    {
-        schelNode->evaluated = false;
-    }
+//    for (const auto& schelNode: schelNodes)
+//    {
+//        schelNode->evaluated = false;
+//    }
 
     runningThreads = 0;
     status = NodeEvaluator::EvaluationStatus::Running;
@@ -176,7 +162,9 @@ void Gex::NodeEvaluator::Run()
         unsigned int threadStart = profiler->StartEvent("Prepare", "Starting threads");
         for (unsigned int i = 0; i < numberOfThreads; i++)
         {
-            auto nodeThread = std::make_shared<EvaluatorThread>(this, i, evalStart, evalEnd);
+            auto nodeThread = std::make_shared<EvaluatorThread>(
+                    this, i, evalStart, evalEnd
+            );
 
             threads.push_back(nodeThread);
 
@@ -211,15 +199,20 @@ Gex::NodeEvaluator::~NodeEvaluator()
 }
 
 
-Gex::ScheduledNodePtr Gex::NodeEvaluator::NextNode()
+Gex::EvalFunction Gex::NodeEvaluator::Acquire()
 {
-    n += 1;
-    if (n >= schelNodes.size())
-    {
-        return nullptr;
-    }
+//    n += 1;
+//    if (n >= schelNodes.size())
+//    {
+//        return nullptr;
+//    }
+//
+//    return schelNodes[n];
+    EvalFunction func;
 
-    return schelNodes[n];
+    scheduled->Acquire(func);
+
+    return func;
 }
 
 

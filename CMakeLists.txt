@@ -9,6 +9,17 @@ set(CMAKE_INSTALL_PREFIX ${CMAKE_BINARY_DIR}/install)
 
 include(Third-parties.cmake)
 
+set(
+        INTERNAL_LIBRARY_DIRS
+        ${CMAKE_BINARY_DIR}/Tsys
+        ${CMAKE_BINARY_DIR}/UiTsys
+        ${CMAKE_BINARY_DIR}/Gex
+        ${CMAKE_BINARY_DIR}/Gex/python
+        ${CMAKE_BINARY_DIR}/Gex_ui
+        ${CMAKE_BINARY_DIR}/Gex_app
+        ${CMAKE_BINARY_DIR}/Gex_plugins
+)
+
 
 add_subdirectory(Tsys)
 

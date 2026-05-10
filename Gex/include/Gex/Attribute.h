@@ -156,8 +156,8 @@ namespace Gex
          */
 		template<typename T>
 		explicit Attribute(const std::string& name, const AttrValueType& valueType = AttrValueType::Single,
-			const AttrType& type = AttrType::Static, bool userDefined = false,
-			const NodePtr& node = nullptr, const AttributeWkPtr& parent=AttributeWkPtr()):
+                           const AttrType& type = AttrType::Static, bool userDefined = false,
+                           const NodePtr& node = nullptr, const AttributeWkPtr& parent=AttributeWkPtr()):
             Attribute(name, typeid(T).hash_code(), valueType,
                       type, userDefined, node, parent){}
 

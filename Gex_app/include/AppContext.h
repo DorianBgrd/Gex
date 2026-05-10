@@ -3,7 +3,7 @@
 
 #include "Gex/include/Gex/Gex.h"
 #include "MainWindow.h"
-#include "Gex_ui/include/api.h"
+#include "Gex_ui/include/Gex_ui/api.h"
 #include "softApi.h"
 
 

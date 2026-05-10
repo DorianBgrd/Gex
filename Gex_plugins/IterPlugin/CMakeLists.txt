@@ -29,8 +29,8 @@ target_link_directories(
         IterPlugin
         PUBLIC
         ${CMAKE_BINARY_DIR}
-        ${Boost_LIBRARY_DIRS}
         ${Python_LIBRARY_DIRS}
+        ${INTERNAL_LIBRARY_DIRS}
 )
 
 
@@ -53,6 +53,6 @@ add_custom_command(
         --package
         --name IterPlugin
         --plugin IterPlugin.dll
-        --plugin-file ${CMAKE_BINARY_DIR}/plugins/IterPlugin.dll
+        --plugin-file ${CMAKE_BINARY_DIR}/Gex_plugins/IterPlugin.dll
         --type C++
 )

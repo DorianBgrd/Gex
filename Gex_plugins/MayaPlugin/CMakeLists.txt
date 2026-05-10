@@ -33,8 +33,8 @@ target_link_directories(
         MayaPlugin
         PUBLIC
         ${CMAKE_BINARY_DIR}
-        ${Boost_LIBRARY_DIRS}
         ${Python_LIBRARY_DIRS}
+        ${INTERNAL_LIBRARY_DIRS}
         )
 
 
@@ -57,6 +57,6 @@ add_custom_command(
         --package
         --name MayaPlugin
         --plugin MayaPlugin.dll
-        --plugin-file ${CMAKE_BINARY_DIR}/plugins/MayaPlugin.dll
+        --plugin-file ${CMAKE_BINARY_DIR}/Gex_plugins/MayaPlugin.dll
         --type C++
 )

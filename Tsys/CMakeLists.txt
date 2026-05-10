@@ -6,7 +6,7 @@ set(CMAKE_CXX_STANDARD 17)
 
 add_definitions(/DTSYS_API_EXPORT)
 
-set(CMAKE_DEBUG_POSTFIX -dbg)
+#set(CMAKE_DEBUG_POSTFIX -dbg)
 
 set(
         TSYS_SOURCES

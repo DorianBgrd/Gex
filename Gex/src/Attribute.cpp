@@ -1339,9 +1339,9 @@ void Gex::Attribute::SerializeAttribute(rapidjson::Value& value, rapidjson::Docu
 
 
 Gex::AttributePtr Gex::Attribute::DeserializeAttribute(
-	const std::string& name, rapidjson::Value& attributes,
-    const Gex::NodePtr& node, const AttributePtr& parent,
-    bool userDefined)
+        const std::string& name, rapidjson::Value& attributes,
+        const Gex::NodePtr& node, const AttributePtr& parent,
+        bool userDefined)
 {
     auto conf = Config::GetConfig();
 

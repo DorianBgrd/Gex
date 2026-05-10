@@ -24,7 +24,7 @@ target_include_directories(
         ${Python_INCLUDE_DIRS}
         ${ThirdParties_INCLUDE_DIRS}
 
-        ${CMAKE_SOURCE_DIR}/plugins/InputRel
+        ${CMAKE_SOURCE_DIR}/Gex_plugins/InputRel
 )
 
 
@@ -40,7 +40,7 @@ target_link_directories(
 target_link_directories(
         InputRel_Python
         PUBLIC
-        ${CMAKE_BINARY_DIR}/plugins/InputRelPlugin/InputRelPlugin
+        ${CMAKE_BINARY_DIR}/Gex_plugins/InputRelPlugin/InputRelPlugin
 )
 
 
@@ -65,7 +65,7 @@ add_custom_command(
         python $ENV{BUILD_UTILS_DIR}/BuildUtils/build_package.py --directory ${BUILD_PACKAGE_DIR}
         --name InputRel --search_directories ${CMAKE_BINARY_DIR}/plugins ${BUILD_PACKAGE_DEPENDENCIES_DIRS} ${Boost_LIBRARY_DIRS}
         ${CMAKE_BINARY_DIR} ${CMAKE_CURRENT_BINARY_DIR} ${TSYS_LIBRARY_DIR} ${CMAKE_BINARY_DIR}/Gex
-        --library ${CMAKE_BINARY_DIR}/plugins/InputRel_Python.dll
-        --dependencies Gex.dll InputRelPlugin.dll
+        --library ${CMAKE_BINARY_DIR}/Gex_plugins/InputRel_Python.dll
+        --dependencies Gex.dll ${CMAKE_BINARY_DIR}/Gex_plugins/InputRelPlugin.dll
 )
 
