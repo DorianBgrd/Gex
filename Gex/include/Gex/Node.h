@@ -697,7 +697,7 @@ namespace Gex
     private:
         bool _RemoveNode(const NodePtr& node);
 
-        void RemoveNodeWithUndo(const NodePtr& node);
+        bool RemoveNodeWithUndo(const NodePtr& node);
 
     public:
         bool CanRemoveNode() const;

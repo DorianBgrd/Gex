@@ -1274,7 +1274,7 @@ bool Gex::CompoundNode::_RemoveNode(const NodePtr& node)
 }
 
 
-void Gex::CompoundNode::RemoveNodeWithUndo(const NodePtr& node)
+bool Gex::CompoundNode::RemoveNodeWithUndo(const NodePtr& node)
 {
     // To be efficiently able to use Undo commands, the next
     // step of this command consists in making an undo command
@@ -1297,11 +1297,16 @@ void Gex::CompoundNode::RemoveNodeWithUndo(const NodePtr& node)
             node, rmCallback, addCallback
     );
 
-    rmCallback(node);
+    if (!rmCallback(node))
+    {
+        return false;
+    }
 
     Undo::UndoStack::AddUndo(command);
 
     SignalChange(NodeChange::ChildNodeRemoved, node);
+
+    return true;
 }
 
 
@@ -1318,8 +1323,7 @@ bool Gex::CompoundNode::RemoveNode(const NodePtr& node)
         return false;
     }
 
-    RemoveNodeWithUndo(node);
-    return true;
+    return RemoveNodeWithUndo(node);
 }
 
 

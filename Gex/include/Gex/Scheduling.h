@@ -20,20 +20,20 @@ namespace Gex {
     {
         friend ScheduledItem;
 
-        ScheduledItemPtr associatedItem;
+        ScheduledItemWkPtr associatedItem;
         Evaluation func;
-
-        void Configure(const ScheduledItemPtr& item,
-                       const Evaluation& call)
-        {
-            associatedItem = item;
-            func = call;
-        }
 
     public:
         EvalFunction() = default;
 
-        ScheduledItemPtr Item() const
+        EvalFunction(const ScheduledItemWkPtr& item,
+                     const Evaluation& call)
+        {
+            associatedItem = item;
+            func = call;
+        };
+
+        ScheduledItemWkPtr Item() const
         {
             return associatedItem;
         }
@@ -48,6 +48,8 @@ namespace Gex {
             return associatedItem && func;
         }
     };
+
+
 
     class GEX_API ScheduledItem : public std::enable_shared_from_this<ScheduledItem> {
         ScheduledItemWkList previous;
@@ -78,9 +80,19 @@ namespace Gex {
 
         void UnlinkPrevious(const ScheduledItemWkPtr &prev);
 
-        bool Acquire(EvalFunction& function);
+        EvalFunction MakeFunction(
+            Evaluation evaluation
+        );
 
-        virtual bool Advance(Evaluation &function);
+        struct IteratorResult
+        {
+            EvalFunction func;
+            bool stop;
+        };
+
+        IteratorResult Acquire();
+
+        virtual IteratorResult Advance();
 
         virtual std::vector<ScheduledItemPtr> Items() const;
 
@@ -104,7 +116,7 @@ namespace Gex {
 
         NodeWkPtr GetNode() const;
 
-        bool Advance(Evaluation& function) override;
+        IteratorResult Advance() override;
 
         bool operator==(const ScheduledNode &other) const;
 
@@ -126,7 +138,7 @@ namespace Gex {
 
         explicit ScheduledGroup(const std::vector<ScheduledItemPtr> &nodes);
 
-        bool Advance(Evaluation& function) override;
+        IteratorResult Advance() override;
 
         std::vector<ScheduledItemPtr> Items() const override;
     };

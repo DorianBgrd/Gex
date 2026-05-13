@@ -98,6 +98,17 @@ void Gex::ScheduledItem::UnlinkPrevious(const ScheduledItemWkPtr &prev)
 }
 
 
+Gex::EvalFunction Gex::ScheduledItem::MakeFunction(
+        Evaluation evaluation
+)
+{
+    return {
+        BaseWkPtr(weak_from_this()),
+        evaluation
+    };
+}
+
+
 void Gex::ScheduledItem::UnlinkFuture(const ScheduledItemWkPtr &dest)
 {
     auto iter = std::find(next.begin(), next.end(), dest);
@@ -110,28 +121,20 @@ void Gex::ScheduledItem::UnlinkFuture(const ScheduledItemWkPtr &dest)
 }
 
 
-bool Gex::ScheduledItem::Acquire(EvalFunction& funcCaller)
+Gex::ScheduledItem::IteratorResult Gex::ScheduledItem::Acquire()
 {
     while (!ShouldBeEvaluated())
     {
 
     }
 
-    Evaluation function;
-    evaluated = Advance(function);
-
-    funcCaller.Configure(
-            shared_from_this(),
-            function
-    );
-
-    return evaluated;
+    return Advance();
 }
 
 
-bool Gex::ScheduledItem::Advance(Evaluation& function)
+Gex::ScheduledItem::IteratorResult Gex::ScheduledItem::Advance()
 {
-    return true;
+    return {MakeFunction(Evaluation{}), true};
 }
 
 
@@ -199,9 +202,9 @@ Gex::NodeWkPtr Gex::ScheduledNode::GetNode() const
 }
 
 
-bool Gex::ScheduledNode::Advance(Evaluation& function)
+Gex::ScheduledItem::IteratorResult Gex::ScheduledNode::Advance()
 {
-    function = [this](GraphContext& ctx, const Profiler& npf, const std::string& thread)
+    auto function = [this](GraphContext& ctx, const Profiler& npf, const std::string& thread)
     {
         auto prof = EvaluationNodeProfiler(
                 npf, node.ToShared(),
@@ -211,7 +214,7 @@ bool Gex::ScheduledNode::Advance(Evaluation& function)
         return node->Compute(ctx, prof);
     };
 
-    return true;
+    return {MakeFunction(function), true};
 }
 
 
@@ -224,23 +227,25 @@ Gex::ScheduledGroup::ScheduledGroup(
 }
 
 
-bool Gex::ScheduledGroup::Advance(
-        EvalFunction& function
-)
+Gex::ScheduledItem::IteratorResult Gex::ScheduledGroup::Advance()
 {
     if (current == end)
     {
-        return true;
+        return {MakeFunction(Evaluation{}), true};
     }
 
     auto scheduled = (*current);
 
-    if (scheduled->Advance(function))
+    auto result = scheduled->Acquire();
+    if (result.stop)
     {
         current++;
     }
 
-    return (current == end);
+    return {
+        result.func,
+        (current == end)
+    };
 }
 
 
@@ -539,17 +544,33 @@ struct GraphNode
 
 
 typedef std::multiset<GraphNode, std::greater<>> GraphNodesList;
+
+
+struct NodeIndicesCmp
+{
+    bool operator()(
+        const std::pair<Gex::NodeWkPtr, size_t>& first,
+        const std::pair<Gex::NodeWkPtr, size_t>& second
+    ) const
+    {
+        return first.second < second.second;
+    }
+};
+
+
+typedef std::map<Gex::NodeWkPtr, size_t> NodeIndices;
 typedef std::map<Gex::NodeWkPtr, Gex::ScheduledItemPtr> ScheduledNodesMap;
 
 
 void TraverseGraph(const Gex::NodeWkPtr& node,
-                   int index, GraphNodesList& nodes)
+                   int index, NodeIndices& nodesIndices)
 {
-    nodes.insert({node, index});
+    if (index > nodesIndices[node])
+        nodesIndices[node] = index;
 
     for (const auto& upstreamNode : node->UpstreamNodes())
     {
-        TraverseGraph(upstreamNode, index + 1, nodes);
+        TraverseGraph(upstreamNode, index + 1, nodesIndices);
     }
 }
 
@@ -564,41 +585,36 @@ Gex::ScheduledGroupPtr Gex::ScheduleGraph(const NodeList& nodes)
     // Find node without future.
     std::vector<Gex::NodePtr> lastNodes;
 
+    NodeIndices nodeIndices;
     for (const auto& node : nodes)
     {
         if (node->DownstreamNodes().empty())
         {
             lastNodes.push_back(node);
         }
+
+        nodeIndices[node] = 0;
     }
+
+    NodeList sortedList(nodes.begin(), nodes.end());
+
+    auto comp = [&nodeIndices](const Gex::NodePtr& n1, const Gex::NodePtr& n2)
+    {
+        const NodeWkPtr& wn1 = n1;
+        const NodeWkPtr& wn2 = n2;
+        return nodeIndices[wn1] < nodeIndices[wn2];
+    };
+
+    std::sort(sortedList.begin(), sortedList.end(), comp);
 
     std::vector<ScheduledItemPtr> resultNodes;
 
-    GraphNodesList indexNodes;
-
-    for (const auto& node : lastNodes)
+    for (const auto& scheduledNode : sortedList)
     {
-        TraverseGraph(node, 0, indexNodes);
+        resultNodes.emplace_back(scheduledNode->Schedule());
     }
 
-    ScheduledNodesMap schelMap;
-    std::vector<ScheduledItemPtr> ptrs;
-    for (const auto& graphNode : indexNodes)
-    {
-        auto ptr = graphNode.node->Schedule();
-        schelMap.emplace(graphNode.node, ptr);
-        ptrs.emplace_back(ptr);
-    }
-
-    for (const auto& nodeMap : schelMap)
-    {
-        for (const auto& upstream : nodeMap.first->UpstreamNodes())
-        {
-            nodeMap.second->LinkPrevious(schelMap.find(upstream)->second);
-        }
-    }
-
-    return std::make_shared<ScheduledGroup>(ptrs);
+    return std::make_shared<ScheduledGroup>(resultNodes);
 }
 
 

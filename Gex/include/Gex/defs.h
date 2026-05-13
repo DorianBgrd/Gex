@@ -51,8 +51,8 @@ namespace Gex
     typedef BaseWkPtr<ScheduledItem> ScheduledItemWkPtr;
     typedef std::vector<ScheduledItemWkPtr> ScheduledItemWkList;
 
-    typedef std::function<void(const ScheduledItemPtr &)> ScheduleItemCallback;
-    typedef std::function<void(const ScheduledItemPtr&, bool)> ScheduleItemSuccessCallback;
+    typedef std::function<void(const ScheduledItemWkPtr&)> ScheduleItemCallback;
+    typedef std::function<void(const ScheduledItemWkPtr&, bool)> ScheduleItemSuccessCallback;
 
 //    typedef std::function<bool(GraphContext &, const Profiler&, const std::string&)> EvalFunction;
 

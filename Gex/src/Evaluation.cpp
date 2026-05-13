@@ -201,18 +201,7 @@ Gex::NodeEvaluator::~NodeEvaluator()
 
 Gex::EvalFunction Gex::NodeEvaluator::Acquire()
 {
-//    n += 1;
-//    if (n >= schelNodes.size())
-//    {
-//        return nullptr;
-//    }
-//
-//    return schelNodes[n];
-    EvalFunction func;
-
-    scheduled->Acquire(func);
-
-    return func;
+    return scheduled->Acquire().func;
 }
 
 
