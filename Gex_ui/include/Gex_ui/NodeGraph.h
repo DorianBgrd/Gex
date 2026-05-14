@@ -413,7 +413,7 @@ namespace Gex
 
             void SavePosition(QPointF pos);
 
-            void RestorePosition();
+            bool RestorePosition();
 
             void mousePressEvent(QGraphicsSceneMouseEvent *event) override;
 
@@ -616,13 +616,22 @@ namespace Gex
         };
 
 
-        class NodeGraphContext
+        class NodeGraphScene;
+
+
+        class NodeGraphContext: public QObject
         {
+            Q_OBJECT
+
             QString name;
             Gex::CompoundNodePtr node;
 
+            NodeGraphScene* scene = nullptr;
+
         public:
-            NodeGraphContext(const QString& name, Gex::CompoundNodePtr node);
+            NodeGraphContext(const QString& name,
+                             const Gex::CompoundNodePtr& node,
+                             QObject* parent=nullptr);
 
             QString Name() const;
 
@@ -637,6 +646,10 @@ namespace Gex
             bool DeleteNode(Gex::NodePtr);
 
             Gex::NodeList DuplicateNodes(Gex::NodeList nodes, bool copyLinks);
+
+            Q_SIGNAL void NodeAdded(const Gex::NodeWkPtr&);
+
+            Q_SIGNAL void NodeRemoved(const Gex::NodeWkPtr&);
         };
 
 
@@ -644,27 +657,17 @@ namespace Gex
         {
             Q_OBJECT
 
-            bool pressed = false;
-
-            PreviewLinkItem* previewLink;
-            bool mouseZooming = false;
-            bool mouseZoomingClicked = false;
-            QPointF mouseZoomingPos;
-
             bool creatingFrame = false;
-            QPointF frameTopLeft;
+            PreviewLinkItem* previewLink;
 
             NodeGraphContext* graphContext = nullptr;
             QMap<Gex::NodePtr, NodeItem*> nodeItems;
             QList<FrameItem*> frames;
             NodeItem* input = nullptr;
             NodeItem* output = nullptr;
-            LinkItem* pressedLink = nullptr;
 
             QPen previewFramePen;
             QBrush previewFrameBrush;
-            QPointF previewFrameStart;
-            QGraphicsRectItem* previewFrame = nullptr;
 
         public:
             NodeGraphScene(QObject *parent=nullptr);
@@ -719,9 +722,17 @@ namespace Gex
 
             void Clear();
 
+            void DisconnectContext(NodeGraphContext* context);
+
+            void ConnectContext(NodeGraphContext* context);
+
             void SwitchGraphContext(NodeGraphContext* context);
 
             void DeleteNode(NodeItem* item);
+
+            void RemoveNodeItem(const Gex::NodeWkPtr& node);
+
+//            void RemoveNodeItem(const Gex::NodePtr& node);
 
             void DuplicateNodes(std::vector<Gex::NodePtr> nodes, bool copyLinks);
 
@@ -753,6 +764,10 @@ namespace Gex
             void DeleteFrame(FrameItem* item);
 
             void DeleteSelection();
+
+            void CreateNodeItem(const Gex::NodeWkPtr& node);
+
+//            void CreateNodeItem(const Gex::NodePtr& node);
 
             void CreateNode(QString type, QString name);
 

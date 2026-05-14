@@ -1491,7 +1491,7 @@ void Gex::Ui::NodeItem::SavePosition(QPointF pos)
 }
 
 
-void Gex::Ui::NodeItem::RestorePosition()
+bool Gex::Ui::NodeItem::RestorePosition()
 {
     double x = 0;
     double y = 0;
@@ -1501,9 +1501,10 @@ void Gex::Ui::NodeItem::RestorePosition()
     y = node->GetMetadata<double>("y", &res);
 
     if (!res)
-        return;
+        return false;
 
     setPos(x, y);
+    return true;
 }
 
 
@@ -2328,11 +2329,30 @@ Gex::Ui::FrameEditDialog::FrameEditDialog(
 }
 
 
-Gex::Ui::NodeGraphContext::NodeGraphContext(const QString& name_,
-                                            Gex::CompoundNodePtr node_)
+Gex::Ui::NodeGraphContext::NodeGraphContext(
+        const QString& name_,
+        const Gex::CompoundNodePtr& node_,
+        QObject* parent
+): QObject(parent)
 {
     name = name_;
     node = node_;
+
+    auto nodeChanged = [this](
+            const NodeChange& change, const NodeWkPtr& node_
+    )
+    {
+        if (change == Gex::NodeChange::ChildNodeAdded)
+        {
+            Q_EMIT NodeAdded(node_);
+        }
+        else if (change == Gex::NodeChange::ChildNodeRemoved)
+        {
+            Q_EMIT NodeRemoved(node_);
+        }
+    };
+
+    node->RegisterNodeChangedCallback(nodeChanged);
 }
 
 
@@ -3295,8 +3315,38 @@ void Gex::Ui::NodeGraphScene::Clear()
 }
 
 
+void Gex::Ui::NodeGraphScene::DisconnectContext(NodeGraphContext* context)
+{
+    if (!context)
+        return;
+
+    QObject::disconnect(context, &NodeGraphContext::NodeAdded,
+                        this, &NodeGraphScene::CreateNodeItem);
+
+    QObject::disconnect(context, &NodeGraphContext::NodeRemoved,
+                        this, &NodeGraphScene::RemoveNodeItem);
+}
+
+
+void Gex::Ui::NodeGraphScene::ConnectContext(NodeGraphContext* context)
+{
+    if (!context)
+    {
+        return;
+    }
+
+    QObject::connect(context, &NodeGraphContext::NodeAdded,
+                     this, &NodeGraphScene::CreateNodeItem);
+
+    QObject::connect(context, &NodeGraphContext::NodeRemoved,
+                     this, &NodeGraphScene::RemoveNodeItem);
+}
+
+
 void Gex::Ui::NodeGraphScene::SwitchGraphContext(NodeGraphContext* context)
 {
+    DisconnectContext(graphContext);
+
     Clear();  // Clear all content.
 
     graphContext = context;
@@ -3325,6 +3375,8 @@ void Gex::Ui::NodeGraphScene::SwitchGraphContext(NodeGraphContext* context)
     }
 
     RestoreFrames();
+
+    ConnectContext(graphContext);
 }
 
 
@@ -3336,12 +3388,44 @@ void Gex::Ui::NodeGraphScene::DeleteNode(NodeItem* item)
     {
         return;
     }
+}
 
-    nodeItems.remove(item->Node());
+
+void Gex::Ui::NodeGraphScene::RemoveNodeItem(const Gex::NodeWkPtr& node)
+{
+    if (!node)
+    {
+        return;
+    }
+
+    auto sharedNode = node.ToShared();
+
+    auto* item = nodeItems.value(sharedNode, nullptr);
+    if (!item)
+    {
+        return;
+    }
+
+    nodeItems.remove(sharedNode);
 
     removeItem(item);
     delete item;
 }
+
+
+//void Gex::Ui::NodeGraphScene::RemoveNodeItem(const Gex::NodePtr& node)
+//{
+//    auto* item = nodeItems.value(node, nullptr);
+//    if (!item)
+//    {
+//        return;
+//    }
+//
+//    nodeItems.remove(node);
+//
+//    removeItem(item);
+//    delete item;
+//}
 
 
 QList<Gex::Ui::NodeItem*> Gex::Ui::NodeGraphScene::NodeItems() const
@@ -3582,19 +3666,55 @@ void Gex::Ui::NodeGraphScene::DeleteSelection()
 }
 
 
+void Gex::Ui::NodeGraphScene::CreateNodeItem(const Gex::NodeWkPtr& node)
+{
+    if (!node)
+    {
+        return;
+    }
+
+    auto sharedNode = node.ToShared();
+
+    auto* item = new NodeItem(sharedNode, this);
+    addItem(item);
+    nodeItems[sharedNode] = item;
+
+    item->InitializeLinks();
+
+    if (!item->RestorePosition())
+    {
+        auto* view = views().at(0);
+        item->setPos(view->mapToScene(view->rect().center()));
+    }
+}
+
+
+//void Gex::Ui::NodeGraphScene::CreateNodeItem(const Gex::NodePtr& node)
+//{
+//    if (nodeItems.contains(node))
+//    {
+//        return;
+//    }
+//
+//    auto* item = new NodeItem(node, this);
+//    addItem(item);
+//    nodeItems[node] = item;
+//
+//    auto* view = views().at(0);
+//    item->setPos(view->mapToScene(view->rect().center()));
+//
+//    item->InitializeLinks();
+//}
+
+
 void Gex::Ui::NodeGraphScene::CreateNode(QString type, QString name)
 {
     Gex::NodePtr node = graphContext->CreateNode(
-            type.toStdString(), name.toStdString());
+            type.toStdString(),
+            name.toStdString()
+    );
 
-    auto* item = new NodeItem(node, this);
-    addItem(item);
-    nodeItems[node] = item;
-
-    auto* view = views().at(0);
-    item->setPos(view->mapToScene(view->rect().center()));
-
-    item->InitializeLinks();
+//    CreateNodeItem(node);
 }
 
 
@@ -4049,7 +4169,10 @@ void Gex::Ui::GraphWidget::OnNodeSelected()
 
 void Gex::Ui::GraphWidget::RegisterContext(const Gex::CompoundNodePtr& compound)
 {
-    auto *context = new NodeGraphContext(compound->Name().c_str(), compound);
+    auto *context = new NodeGraphContext(
+            compound->Name().c_str(),
+            compound, this
+    );
 
     contextsWidget->AddContext(compound->Name());
 
@@ -4185,9 +4308,9 @@ void Gex::Ui::GraphWidget::RunGraph()
 
     scene->ClearNodeEvaluation();
 
-    auto nodeEvalStart = [this](const Gex::ScheduledItemPtr& node)
+    auto nodeEvalStart = [this](const Gex::ScheduledItemWkPtr& node)
     {
-        if (std::shared_ptr<ScheduledNode> scheduledNode = std::dynamic_pointer_cast<ScheduledNode>(node))
+        if (std::shared_ptr<ScheduledNode> scheduledNode = std::dynamic_pointer_cast<ScheduledNode>(node.ToShared()))
         {
             if (auto nodeptr = scheduledNode->GetNode())
             {
@@ -4196,9 +4319,9 @@ void Gex::Ui::GraphWidget::RunGraph()
         }
     };
 
-    auto nodeEvalEnd = [this](const Gex::ScheduledItemPtr& node, bool success)
+    auto nodeEvalEnd = [this](const Gex::ScheduledItemWkPtr& node, bool success)
     {
-        if (std::shared_ptr<ScheduledNode> scheduledNode = std::dynamic_pointer_cast<ScheduledNode>(node))
+        if (std::shared_ptr<ScheduledNode> scheduledNode = std::dynamic_pointer_cast<ScheduledNode>(node.ToShared()))
         {
             if (auto nodeptr = scheduledNode->GetNode())
             {
