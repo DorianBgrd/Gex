@@ -1,5 +1,7 @@
 #include "cli/include/exec.h"
 
+#include "Gex/include/Gex/defs.h"
+
 
 int Exec::ExecuteGraph(int argc, char** argv, int start) {
     Parser parser;
@@ -59,8 +61,8 @@ int Exec::ExecuteGraph(int argc, char** argv, int start) {
         std::cerr << "No valid file specified." << std::endl;
     }
 
-    std::function<void(const Gex::ScheduledItemPtr&)> startCallback;
-    std::function<void(const Gex::ScheduledItemPtr&, bool)> endCallback;
+    Gex::ScheduleItemCallback startCallback = nullptr;
+    Gex::ScheduleItemSuccessCallback endCallback = nullptr;
 
     if (verbose)
     {
@@ -119,9 +121,9 @@ int Exec::ExecuteGraph(int argc, char** argv, int start) {
 }
 
 
-void Exec::VerboseNodeEnd(const Gex::ScheduledItemPtr& node, bool success)
+void Exec::VerboseNodeEnd(const Gex::ScheduledItemWkPtr& node, bool success)
 {
-    if (std::shared_ptr<Gex::ScheduledNode> item = std::dynamic_pointer_cast<Gex::ScheduledNode>(node))
+    if (std::shared_ptr<Gex::ScheduledNode> item = std::dynamic_pointer_cast<Gex::ScheduledNode>(node.ToShared()))
     {
         std::string msg = "Successfully evaluated";
         if (!success)
@@ -132,9 +134,9 @@ void Exec::VerboseNodeEnd(const Gex::ScheduledItemPtr& node, bool success)
 }
 
 
-void Exec::VerboseNodeStart(const Gex::ScheduledItemPtr& node)
+void Exec::VerboseNodeStart(const Gex::ScheduledItemWkPtr& node)
 {
-    if (std::shared_ptr<Gex::ScheduledNode> item = std::dynamic_pointer_cast<Gex::ScheduledNode>(node))
+    if (std::shared_ptr<Gex::ScheduledNode> item = std::dynamic_pointer_cast<Gex::ScheduledNode>(node.ToShared()))
     {
         std::cout << "Starting evaluating " << item->GetNode()->Name() << std::endl;
     }

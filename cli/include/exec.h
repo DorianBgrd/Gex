@@ -10,10 +10,10 @@ namespace Exec
     bool ResolveJsonValue(const Gex::AttributePtr& attr, rapidjson::Value& value);
 
 
-    void VerboseNodeStart(const Gex::ScheduledItemPtr& node);
+    void VerboseNodeStart(const Gex::ScheduledItemWkPtr& node);
 
 
-    void VerboseNodeEnd(const Gex::ScheduledItemPtr& node, bool success);
+    void VerboseNodeEnd(const Gex::ScheduledItemWkPtr& node, bool success);
 
 
     int ExecuteGraph(int argc, char** argv, int start);
