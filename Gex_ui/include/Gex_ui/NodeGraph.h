@@ -795,6 +795,15 @@ namespace Gex
             NodeItem* input = nullptr;
             NodeItem* output = nullptr;
 
+            PlugItem* source = nullptr;
+            PlugItem* dest = nullptr;
+
+            QGraphicsPathItem* previewItem = nullptr;
+
+            bool preview = false;
+            bool autoSnap = true;
+            qreal autoSnapRadius = 50;
+
             QPointF ScenePos(QPoint viewPos);
 
             QGraphicsItem* SceneItem(QPoint viewPos);
@@ -808,6 +817,12 @@ namespace Gex
             void OnMoveEvent(QMouseEvent* event) override;
 
             void OnReleaseEvent(QMouseEvent* event) override;
+
+            void SetPreviewState(PreviewLinkItem::State state);
+
+            void CheckItem(QGraphicsItem* item);
+
+            QList<PlugItem*> GetPlugItems(const QPointF& point, qreal radius) const;
         };
 
 

@@ -1,4 +1,5 @@
 #include "Gex_ui/include/Gex_ui/ViewContexts.h"
+#include "Gex_ui/include/Gex_ui/BaseGraph.h"
 
 
 Gex::Ui::BaseGraphView* Gex::Ui::ViewContext::CurrentView() const
@@ -18,6 +19,12 @@ void Gex::Ui::ViewContext::Activate(BaseGraphView* view)
 void Gex::Ui::ViewContext::Finalize(BaseGraphView* scene)
 {
 
+}
+
+
+QPointF Gex::Ui::ViewContext::GetScenePosition(QMouseEvent* event) const
+{
+    return CurrentView()->mapToScene(event->pos());
 }
 
 

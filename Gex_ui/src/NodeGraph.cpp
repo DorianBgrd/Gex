@@ -2676,10 +2676,24 @@ QGraphicsItem* Gex::Ui::ConnectionContext::SceneItem(QPoint viewPos)
 
 void Gex::Ui::ConnectionContext::OnPressEvent(QMouseEvent* event)
 {
+    if (preview)
+    {
+        previewItem = new QGraphicsPathItem();
+        previewItem->setPos(0, 0);
+//        previewItem->setRect(0, 0,
+//                             autoSnapRadius, autoSnapRadius);
+        previewItem->setBrush(QBrush(QColor(255, 255, 0, 100)));
+
+        CurrentView()->scene()->addItem(previewItem);
+    }
+
     if (QGraphicsItem* item = SceneItem(event->pos()))
     {
         auto* plugItem = qgraphicsitem_cast<PlugItem *>(item);
-        if (!previewLink && plugItem) {
+        if (!previewLink && plugItem)
+        {
+            source = plugItem;
+
             previewLink = new PreviewLinkItem(plugItem);
             previewLink->SetState(PreviewLinkItem::State::Default);
             CurrentView()->scene()->addItem(previewLink);
@@ -2688,137 +2702,240 @@ void Gex::Ui::ConnectionContext::OnPressEvent(QMouseEvent* event)
     }
 }
 
+
+void Gex::Ui::ConnectionContext::SetPreviewState(
+        PreviewLinkItem::State state
+)
+{
+    if (!previewLink)
+        return;
+
+    previewLink->SetState(state);
+}
+
+
+void Gex::Ui::ConnectionContext::CheckItem(QGraphicsItem* item)
+{
+    auto* plugItem = qgraphicsitem_cast<PlugItem*>(item);
+    if (plugItem && (plugItem != source))
+    {
+        AttributeItem* destItem = plugItem->Attribute();
+        AttributeItem* sourceItem = source->Attribute();
+        if (destItem->Attribute()->IsMulti() == sourceItem->Attribute()->IsMulti())
+        {
+            // If source plug is an input, then check if the dest attribute can
+            // be connected to destination.
+            if (source->IsInputAnchor() &&
+                sourceItem->Attribute()->CanConnectSource(destItem->Attribute()))
+            {
+                SetPreviewState(PreviewLinkItem::State::Valid);
+            }
+
+                // If source plug is an output, check if the destination attribute can
+                // be connected as a source to the source plug.
+            else if (previewLink->SourcePlug()->IsOutputAnchor() &&
+                     destItem->Attribute()->CanConnectSource(sourceItem->Attribute()))
+            {
+                SetPreviewState(PreviewLinkItem::State::Valid);
+            }
+            else
+            {
+                SetPreviewState(PreviewLinkItem::State::Invalid);
+            }
+        }
+        else if (!sourceItem->IsMulti() && destItem->IsMulti())
+        {
+            if (!destItem->Attribute()->ValidIndices().empty())
+            {
+                destItem->Expand();
+                destItem->ParentNode()->PlaceAttributes();
+                SetPreviewState(PreviewLinkItem::State::Valid);
+            }
+        }
+        else
+        {
+            SetPreviewState(PreviewLinkItem::State::Invalid);
+        }
+    }
+    else
+    {
+        SetPreviewState(PreviewLinkItem::State::Default);
+    }
+}
+
+
+struct DistComp
+{
+    QPointF point;
+
+    qreal Distance(const QPointF& itemPos) const
+    {
+        return std::sqrt(
+            std::pow(point.x() - itemPos.x(), 2) +
+            std::pow(point.y() - itemPos.y(), 2)
+        );
+    }
+
+    bool operator()(
+            const Gex::Ui::PlugItem* item1,
+            const Gex::Ui::PlugItem* item2
+    ) const
+    {
+        return (
+            Distance(item1->sceneBoundingRect().center()) <
+            Distance(item2->sceneBoundingRect().center())
+        );
+    }
+};
+
+
+QList<Gex::Ui::PlugItem*> Gex::Ui::ConnectionContext::GetPlugItems(
+        const QPointF& point, qreal radius
+) const
+{
+    QPainterPath path;
+
+    QGraphicsScene* scene = CurrentView()->scene();
+
+    path.addEllipse(point, radius / 2.0, radius / 2.0);
+
+    if (previewItem)
+    {
+        previewItem->setPath(path);
+    }
+
+    auto items = scene->items(path);
+
+    QList<Gex::Ui::PlugItem*> plugItems;
+    for (const auto& item : items)
+    {
+        if (auto*  plugItem = qgraphicsitem_cast<PlugItem*>(item))
+        {
+            plugItems.append(plugItem);
+        }
+    }
+
+    DistComp comp{point};
+
+    std::sort(plugItems.begin(), plugItems.end(), comp);
+
+    return plugItems;
+}
+
+
 void Gex::Ui::ConnectionContext::OnMoveEvent(QMouseEvent* event)
 {
     if (previewLink)
     {
-        QGraphicsItem* item = SceneItem(event->pos());
-        if (item)
-        {
-            auto* plugItem = qgraphicsitem_cast<PlugItem*>(item);
-            if (plugItem && (plugItem != previewLink->SourcePlug()))
-            {
-                AttributeItem* destItem = plugItem->Attribute();
-                AttributeItem* sourceItem = previewLink->SourcePlug()->Attribute();
-                if (destItem->Attribute()->IsMulti() == sourceItem->Attribute()->IsMulti())
-                {
-                    // If source plug is an input, then check if the dest attribute can
-                    // be connected to destination.
-                    if (previewLink->SourcePlug()->IsInputAnchor() &&
-                        sourceItem->Attribute()->CanConnectSource(destItem->Attribute()))
-                    {
-                        previewLink->SetState(PreviewLinkItem::State::Valid);
-                    }
+        dest = nullptr;
 
-                    // If source plug is an output, check if the destination attribute can
-                    // be connected as a source to the source plug.
-                    else if (previewLink->SourcePlug()->IsOutputAnchor() &&
-                             destItem->Attribute()->CanConnectSource(sourceItem->Attribute()))
-                    {
-                        previewLink->SetState(PreviewLinkItem::State::Valid);
-                    }
-                    else
-                    {
-                        previewLink->SetState(PreviewLinkItem::State::Invalid);
-                    }
-                }
-                else if (!sourceItem->IsMulti() && destItem->IsMulti())
-                {
-                    if (!destItem->Attribute()->ValidIndices().empty())
-                    {
-                        destItem->Expand();
-                        destItem->ParentNode()->PlaceAttributes();
-                        previewLink->SetState(PreviewLinkItem::State::Valid);
-                    }
-                }
-                else
-                {
-                    previewLink->SetState(PreviewLinkItem::State::Invalid);
-                }
-            }
-            else
+        if (autoSnap)
+        {
+            auto items = GetPlugItems(
+                    GetScenePosition(event),
+                    autoSnapRadius
+            );
+
+            if (!items.empty())
             {
-                previewLink->SetState(PreviewLinkItem::State::Default);
+                dest = items[0];
+            }
+        }
+        else
+        {
+            QGraphicsItem* item = SceneItem(event->pos());
+            if (auto* plugItem = qgraphicsitem_cast<PlugItem*>(item))
+            {
+                dest = plugItem;
             }
         }
 
-        previewLink->Draw(ScenePos(event->pos()));
+        if (dest)
+        {
+            previewLink->Draw(dest->sceneBoundingRect().center());
+
+            CheckItem(dest);
+        }
+        else
+        {
+            previewLink->Draw(CurrentView()->mapToScene(event->pos()));
+        }
     }
 }
 
+
 void Gex::Ui::ConnectionContext::OnReleaseEvent(QMouseEvent* event)
 {
-    QGraphicsItem *item = SceneItem(event->pos());
-    if (previewLink)
+    if (previewLink && dest &&
+        (dest != previewLink->SourcePlug()))
     {
-        if (item)
+        AttributeItem *destItem = dest->Attribute();
+        AttributeItem *sourceItem = previewLink->SourcePlug()->Attribute();
+        if (destItem->IsMulti() == sourceItem->IsMulti())
         {
-            auto* plugItem = qgraphicsitem_cast<PlugItem *>(item);
 
-            if (plugItem && (plugItem != previewLink->SourcePlug()))
+            // If source plug is an input, then check if the dest attribute can
+            // be connected to destination.
+            if (previewLink->SourcePlug()->IsInputAnchor() &&
+                sourceItem->Attribute()->CanConnectSource(destItem->Attribute()))
             {
-                AttributeItem *destItem = plugItem->Attribute();
-                AttributeItem *sourceItem = previewLink->SourcePlug()->Attribute();
-                if (destItem->IsMulti() == sourceItem->IsMulti())
-                {
+                Connect(destItem, sourceItem);
+            }
 
-                    // If source plug is an input, then check if the dest attribute can
-                    // be connected to destination.
-                    if (previewLink->SourcePlug()->IsInputAnchor() &&
-                        sourceItem->Attribute()->CanConnectSource(destItem->Attribute()))
-                    {
-                        Connect(destItem, sourceItem);
-                    }
-
-                    // If source plug is an output, check if the destination attribute can
-                    // be connected as a source to the source plug.
-                    else if (previewLink->SourcePlug()->IsOutputAnchor() &&
-                             destItem->Attribute()->CanConnectSource(sourceItem->Attribute()))
-                    {
-                        Connect(sourceItem, destItem);
-                    }
-                }
-
-                else if (!sourceItem->IsMulti() && destItem->IsMulti())
-                {
-                    // Connect to next available index.
-                    bool connected = false;
-                    unsigned int maxIndex = 0;
-                    for (unsigned int index: destItem->Attribute()->ValidIndices())
-                    {
-                        Gex::AttributeWkPtr indexAttr = destItem->Attribute()->GetIndexAttribute(index);
-                        if (!indexAttr)
-                        {
-                            continue;
-                        }
-
-                        if (!indexAttr->HasSource())
-                        {
-                            indexAttr->ConnectSource(sourceItem->Attribute());
-                            connected = true;
-                            break;
-                        }
-                    }
-                    if (!connected)
-                    {
-                        unsigned int newIndex = Gex::Ui::NextMultiAttributeIndex(destItem->Attribute());
-                        if (destItem->Attribute()->CreateIndex(newIndex))
-                        {
-                            auto indexAttr = destItem->Attribute()->GetIndexAttribute(newIndex);
-                            indexAttr->ConnectSource(sourceItem->Attribute());
-
-                            // TODO : Rebuilding attributes should be available from attribute !
-                            auto *nodeItem = destItem->ParentNode();
-                            destItem->RebuildAttributes();
-                        }
-                    }
-                }
+                // If source plug is an output, check if the destination attribute can
+                // be connected as a source to the source plug.
+            else if (previewLink->SourcePlug()->IsOutputAnchor() &&
+                     destItem->Attribute()->CanConnectSource(sourceItem->Attribute()))
+            {
+                Connect(sourceItem, destItem);
             }
         }
 
-        CurrentView()->scene()->removeItem(previewLink);
-        delete previewLink;
-        previewLink = nullptr;
+        else if (!sourceItem->IsMulti() && destItem->IsMulti())
+        {
+            // Connect to next available index.
+            bool connected = false;
+            unsigned int maxIndex = 0;
+            for (unsigned int index: destItem->Attribute()->ValidIndices())
+            {
+                Gex::AttributeWkPtr indexAttr = destItem->Attribute()->GetIndexAttribute(index);
+                if (!indexAttr)
+                {
+                    continue;
+                }
+
+                if (!indexAttr->HasSource())
+                {
+                    indexAttr->ConnectSource(sourceItem->Attribute());
+                    connected = true;
+                    break;
+                }
+            }
+            if (!connected)
+            {
+                unsigned int newIndex = Gex::Ui::NextMultiAttributeIndex(destItem->Attribute());
+                if (destItem->Attribute()->CreateIndex(newIndex))
+                {
+                    auto indexAttr = destItem->Attribute()->GetIndexAttribute(newIndex);
+                    indexAttr->ConnectSource(sourceItem->Attribute());
+
+                    // TODO : Rebuilding attributes should be available from attribute !
+                    auto *nodeItem = destItem->ParentNode();
+                    destItem->RebuildAttributes();
+                }
+            }
+        }
+    }
+
+    CurrentView()->scene()->removeItem(previewLink);
+    delete previewLink;
+    previewLink = nullptr;
+
+    if (previewItem)
+    {
+        CurrentView()->scene()->removeItem(previewItem);
+        delete previewItem;
+        previewItem = nullptr;
     }
 }
 

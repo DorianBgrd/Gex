@@ -33,6 +33,8 @@ namespace Gex::Ui
         virtual void OnMoveEvent(QMouseEvent* event) = 0;
 
         virtual void OnReleaseEvent(QMouseEvent* event) = 0;
+
+        QPointF GetScenePosition(QMouseEvent* event) const;
     };
 
 
