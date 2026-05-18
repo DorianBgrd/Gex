@@ -8,6 +8,7 @@
 #include "api.h"
 #include "Status.h"
 #include "NodeFactory.h"
+#include "Scheduling.h"
 #include "Tsys/tsys.h"
 
 
@@ -32,6 +33,7 @@ namespace Gex
         std::string pluginName;
         std::map<std::string, NodeBuilder*> registeredBuilders;
         NodeFactory* factory;
+        SchedulerRegistry* schedulerRegistry;
         TSys::TypeRegistry* registry;
 
         static std::vector<std::string> loadedPlugins;
@@ -50,7 +52,8 @@ namespace Gex
         static bool DeregisterPluginCallback(CallbackId id);
 
     public:
-        PluginLoader(NodeFactory* factory, TSys::TypeRegistry* registry);
+        PluginLoader(NodeFactory* factory, TSys::TypeRegistry* registry,
+                     SchedulerRegistry* schedulerRegistry);
 
         [[nodiscard]]
         bool IsValid() const;
@@ -77,6 +80,12 @@ namespace Gex
         void RegisterTypeHandler()
         {
             registry->RegisterType<Type, Handler>();
+        }
+
+        template<class T>
+        void RegisterCustomScheduler()
+        {
+            schedulerRegistry->RegisterCustomScheduler<T>();
         }
 
     public:

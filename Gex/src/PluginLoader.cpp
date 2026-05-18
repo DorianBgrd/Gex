@@ -27,11 +27,14 @@ std::vector<std::string> Gex::PluginLoader::loadedPlugins;
 Gex::CallbackId Gex::PluginLoader::nextIndex = 0;
 
 
-Gex::PluginLoader::PluginLoader(NodeFactory* f,
-                                TSys::TypeRegistry* r)
+Gex::PluginLoader::PluginLoader(
+        NodeFactory* f, TSys::TypeRegistry* r,
+        SchedulerRegistry* sr
+)
 {
     factory = f;
     registry = r;
+    schedulerRegistry = sr;
 }
 
 
