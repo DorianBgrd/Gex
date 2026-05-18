@@ -300,11 +300,16 @@ Gex::PluginLoader* Gex::PluginLoader::LoadPluginFile(
         const std::string& name, const PluginType& type,
         Feedback* result)
 {
-    auto* loader = new PluginLoader(NodeFactory::GetFactory(),
-                                    TSys::TypeRegistry::GetRegistry(),
-                                    SchedulerRegistry::GetRegistry());
+    auto* loader = new PluginLoader(
+            NodeFactory::GetFactory(),
+            TSys::TypeRegistry::GetRegistry(),
+            SchedulerRegistry::GetRegistry()
+    );
 
-    loader->RegisterPluginName(std::filesystem::path(name).filename().stem().string());
+    loader->RegisterPluginName(
+            std::filesystem::path(name)
+            .filename().stem().string()
+    );
 
     switch (type)
     {
