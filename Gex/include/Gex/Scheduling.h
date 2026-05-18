@@ -165,8 +165,19 @@ namespace Gex {
         std::type_index index;
         CustomSchedulerDelegate func;
 
-        bool operator==(const CustomSchedulerBuilder &other) const {
+        bool operator==(const CustomSchedulerBuilder &other) const
+        {
             return other.index == index;
+        }
+
+        bool operator==(const std::type_index& typeIndex) const
+        {
+            return index == typeIndex;
+        }
+
+        CustomSchedulerPtr operator()() const
+        {
+            return func();
         }
     };
 
@@ -187,35 +198,37 @@ namespace Gex {
 
     class GEX_API SchedulerRegistry
     {
-        static std::vector<CustomSchedulerBuilder> registry;
-        static std::mutex lock;
+        static SchedulerRegistry* registry;
 
+        std::vector<CustomSchedulerBuilder> schedulers;
+        std::mutex lock;
+
+        SchedulerRegistry() = default;
+
+        void _RegisterScheduler(const std::type_index& index,
+                               const CustomSchedulerBuilder& builder);
+
+        void _DeregisterScheduler(const std::type_index& index);
+
+        Scheduler _CreateScheduler() const;
     public:
+        static SchedulerRegistry* GetRegistry();
+
         template<typename T>
         static void RegisterCustomScheduler()
         {
-            std::lock_guard<std::mutex> l(lock);
-
-            registry.emplace_back(
-                std::type_index(typeid(T)),
-                [](){return std::make_shared<T>();}
+            GetRegistry()->_RegisterScheduler(
+                    std::type_index(typeid(T)),
+                    [](){return std::make_shared<T>();}
             );
         };
 
         template<typename T>
         static void DeregisterCustomScheduler()
         {
-            std::lock_guard<std::mutex> l(lock);
-
-            auto iter = std::find(
-                    registry.begin(), registry.end(),
-                  std::type_index(typeid(T))
+            GetRegistry()->_DeregisterScheduler(
+                std::type_index(typeid(T))
             );
-
-            if (iter == registry.end())
-                return;
-
-            registry.erase(iter);
         }
 
         static Scheduler CreateScheduler();

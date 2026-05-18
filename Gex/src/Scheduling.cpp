@@ -575,11 +575,6 @@ void TraverseGraph(const Gex::NodeWkPtr& node,
 }
 
 
-std::vector<Gex::CustomSchedulerBuilder> Gex::SchedulerRegistry::registry;
-std::mutex Gex::SchedulerRegistry::lock;
-
-
-
 Gex::ScheduledGroupPtr Gex::ScheduleGraph(const NodeList& nodes)
 {
     // Find node without future.
@@ -644,13 +639,56 @@ Gex::ScheduledGroupPtr Gex::Scheduler::Schedule(
 }
 
 
-Gex::Scheduler Gex::SchedulerRegistry::CreateScheduler()
+void Gex::SchedulerRegistry::_RegisterScheduler(
+        const std::type_index& index,
+        const CustomSchedulerBuilder& builder
+)
 {
-    std::vector<CustomSchedulerPtr> schedulers;
-    for (const auto& gen : registry)
+    std::lock_guard<std::mutex> l(lock);
+
+    schedulers.emplace_back(index, builder);
+}
+
+
+void Gex::SchedulerRegistry::_DeregisterScheduler(
+        const std::type_index& index
+)
+{
+    std::lock_guard<std::mutex> l(lock);
+
+    auto iter = std::find(
+            schedulers.begin(), schedulers.end(), index
+    );
+
+    if (iter == schedulers.end())
+        return;
+
+    schedulers.erase(iter);
+}
+
+
+Gex::Scheduler Gex::SchedulerRegistry::_CreateScheduler() const
+{
+    std::vector<CustomSchedulerPtr> customSchedulers;
+    for (const auto& gen : schedulers)
     {
-        schedulers.push_back(gen.func());
+        customSchedulers.push_back(gen());
     }
 
-    return {schedulers};
+    return {customSchedulers};
+}
+
+
+Gex::SchedulerRegistry* Gex::SchedulerRegistry::GetRegistry()
+{
+    if (!registry)
+        registry = new SchedulerRegistry();
+
+    return registry;
+}
+
+
+Gex::Scheduler Gex::SchedulerRegistry::CreateScheduler()
+{
+    return GetRegistry()->_CreateScheduler();
 }
