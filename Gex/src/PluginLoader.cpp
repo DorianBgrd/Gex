@@ -301,7 +301,8 @@ Gex::PluginLoader* Gex::PluginLoader::LoadPluginFile(
         Feedback* result)
 {
     auto* loader = new PluginLoader(NodeFactory::GetFactory(),
-                                    TSys::TypeRegistry::GetRegistry());
+                                    TSys::TypeRegistry::GetRegistry(),
+                                    SchedulerRegistry::GetRegistry());
 
     loader->RegisterPluginName(std::filesystem::path(name).filename().stem().string());
 
