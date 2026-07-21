@@ -96,6 +96,10 @@ namespace Gex {
 
         virtual std::vector<ScheduledItemPtr> Items() const;
 
+        ScheduledItemWkList GetPrevious() const;
+
+        ScheduledItemWkList GetNext() const;
+
     protected:
         void LinkFuture(const ScheduledItemWkPtr &future);
 
@@ -151,8 +155,8 @@ namespace Gex {
     public:
         CustomScheduler() = default;
 
-        virtual ScheduledItem Schedule(
-                const ScheduledGroupPtr &scheduled
+        virtual ScheduledItemPtr Schedule(
+                ScheduledGroupPtr& scheduled
         ) const = 0;
     };
 
@@ -164,6 +168,7 @@ namespace Gex {
     struct GEX_API CustomSchedulerBuilder {
         std::type_index index;
         CustomSchedulerDelegate func;
+
 
         bool operator==(const CustomSchedulerBuilder &other) const
         {
@@ -235,6 +240,13 @@ namespace Gex {
     };
 
 
+    typedef std::function<bool(const ScheduledItemWkPtr&)> ScheduledItemFilter;
+
+
+    ScheduledItemWkList GetScheduledBranch(
+            const ScheduledItemWkPtr& start,
+            const ScheduledItemFilter& filter=nullptr
+    );
 
 //    GEX_API
 //    ScheduleNodePtrList ScheduleNodes(const NodeList& nodes, bool expand = true);

@@ -5,6 +5,8 @@
 #include <set>
 
 
+Gex::SchedulerRegistry* Gex::SchedulerRegistry::registry = nullptr;
+
 
 
 bool Gex::ScheduledItem::ShouldBeEvaluated() const
@@ -141,6 +143,18 @@ Gex::ScheduledItem::IteratorResult Gex::ScheduledItem::Advance()
 std::vector<Gex::ScheduledItemPtr> Gex::ScheduledItem::Items() const
 {
     return {};
+}
+
+
+Gex::ScheduledItemWkList Gex::ScheduledItem::GetPrevious() const
+{
+    return previous;
+}
+
+
+Gex::ScheduledItemWkList Gex::ScheduledItem::GetNext() const
+{
+    return next;
 }
 
 
@@ -646,7 +660,7 @@ void Gex::SchedulerRegistry::_RegisterScheduler(
 {
     std::lock_guard<std::mutex> l(lock);
 
-    schedulers.emplace_back(index, builder);
+    schedulers.push_back({index, builder});
 }
 
 
@@ -691,4 +705,35 @@ Gex::SchedulerRegistry* Gex::SchedulerRegistry::GetRegistry()
 Gex::Scheduler Gex::SchedulerRegistry::CreateScheduler()
 {
     return GetRegistry()->_CreateScheduler();
+}
+
+
+void IterScheduleBranch(const Gex::ScheduledItemWkPtr& start,
+                        const Gex::ScheduledItemFilter& filter,
+                        Gex::ScheduledItemWkList& list)
+{
+    for (const auto& upstream : start->GetPrevious())
+    {
+        if (!filter(upstream))
+        {
+            continue;
+        }
+
+        list.push_back(upstream);
+
+        IterScheduleBranch(upstream, filter, list);
+    }
+}
+
+
+Gex::ScheduledItemWkList Gex::GetScheduledBranch(
+        const ScheduledItemWkPtr& start,
+        const ScheduledItemFilter& filter
+)
+{
+    ScheduledItemWkList result;
+
+    IterScheduleBranch(start, filter, result);
+
+    return result;
 }
