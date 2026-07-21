@@ -1,13 +1,22 @@
+
 cmake_minimum_required(VERSION 3.24)
-project(Gex)
+
+
+project(Gex LANGUAGES CXX)
+
+
 
 set(CMAKE_CXX_STANDARD 17)
 
+
 add_definitions(/DGEX_API_EXPORT)
+
 
 set(CMAKE_INSTALL_PREFIX ${CMAKE_BINARY_DIR}/install)
 
+
 include(Third-parties.cmake)
+
 
 set(
         INTERNAL_LIBRARY_DIRS
@@ -23,20 +32,29 @@ set(
 
 add_subdirectory(Tsys)
 
+
 add_subdirectory(UiRes)
+
 
 add_subdirectory(UiTsys)
 
+
 add_subdirectory(Gex)
+
+
+#add_subdirectory(CGex)
+
 
 add_subdirectory(Gex/python)
 
+
 add_subdirectory(Gex_plugins)
+
 
 add_subdirectory(cli)
 
-add_subdirectory(test)
 
+add_subdirectory(test)
 
 
 add_dependencies(
@@ -49,7 +67,6 @@ add_dependencies(
         Gex_Python
         Gex
 )
-
 
 
 add_dependencies(
@@ -74,6 +91,8 @@ add_dependencies(
 
 
 add_subdirectory(Gex_ui)
+
+
 add_subdirectory(
         Gex_app
 )
@@ -92,7 +111,6 @@ add_dependencies(
 )
 
 
-
 add_dependencies(
         Gex_App
         Gex
@@ -107,6 +125,7 @@ add_dependencies(
         StringPlugin
 )
 
+
 #if (NOT ${CMAKE_BUILD_TYPE} STREQUAL "Debug")
 if (${Build_UsdPlugin})
     add_dependencies(
@@ -116,12 +135,12 @@ if (${Build_UsdPlugin})
 endif()
 
 
-
 add_dependencies(
         Test
         Gex
         Gex_App
 )
+
 
 add_dependencies(
         Test-deploy
