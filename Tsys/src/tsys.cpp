@@ -24,14 +24,17 @@ TSys::Converter TSys::TypeHandler::GetConverter(const std::type_index& from) con
 
 std::any TSys::TypeHandler::ConvertFrom(const std::any& sourceValue, std::any currentValue) const
 {
-    if (!CanConvertFrom(sourceValue))
+    if (sourceValue.type().hash_code() == Hash())
     {
-        return {};
+        return sourceValue;
     }
 
-    Converter converter = GetConverter(sourceValue);
+    if (Converter converter = GetConverter(sourceValue))
+    {
+        return converter(sourceValue, currentValue);
+    }
 
-    return converter(sourceValue, currentValue);
+    return {};
 }
 
 
