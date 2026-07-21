@@ -34,7 +34,7 @@ namespace Gex
     typedef std::vector<NodeWkPtr> NodeWkList;
     typedef std::shared_ptr<ScheduledNode> ScheduledNodePtr;
     typedef BaseWkPtr<ScheduledNode> ScheduledNodeWkPtr;
-    typedef std::vector<std::shared_ptr<ScheduledNode>> ScheduleNodePtrList;
+    typedef std::vector<ScheduledNodePtr> ScheduleNodePtrList;
     typedef std::vector<ScheduledNodeWkPtr> ScheduleNodeWkPtrList;
 
     class EvaluatorThread;
@@ -49,6 +49,7 @@ namespace Gex
     typedef std::shared_ptr<ScheduledItem> ScheduledItemPtr;
 
     typedef BaseWkPtr<ScheduledItem> ScheduledItemWkPtr;
+    typedef std::vector<ScheduledItemPtr> ScheduledItemList;
     typedef std::vector<ScheduledItemWkPtr> ScheduledItemWkList;
 
     typedef std::function<void(const ScheduledItemWkPtr&)> ScheduleItemCallback;
