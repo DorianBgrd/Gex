@@ -553,6 +553,33 @@ Gex::NodeWkList Gex::Node::UpstreamNodes()
 }
 
 
+Gex::NodeWkList Gex::Node::UpstreamNodes(
+        const std::string& attribute
+)
+{
+    auto attr = GetAttribute(attribute);
+
+    if (!attr)
+    {
+        return {};
+    }
+
+    Gex::AttributeWkList srcs = attr->Sources();
+    if (srcs.empty())
+    {
+        return {};
+    }
+
+    NodeWkList sources;
+    for (const auto& at: srcs)
+    {
+        sources.push_back(at->Node());
+    }
+
+    return sources;
+}
+
+
 // Note :
 // As recursion is considered a bad practice in C++, this function uses
 // a while loop. Still, filling a vector with nodes still feels like

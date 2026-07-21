@@ -430,6 +430,12 @@ namespace Gex
         NodeWkList UpstreamNodes();
 
         /**
+         * Returns input node pointers, if materialized.
+         * @return std::vector<Node**> nodes.
+         */
+        NodeWkList UpstreamNodes(const std::string& attribute);
+
+        /**
          * Returns Output node pointers, if materialized.
          * @return std::vector<Node**> nodes.
          */
