@@ -86,3 +86,30 @@ add_custom_target(
         DEPENDS
         Test
 )
+
+
+add_executable(
+        TestMath
+
+        mainMath.cpp
+
+        ${CMAKE_SOURCE_DIR}/Gex_plugins/MathPlugin/matrix.cpp
+        ${CMAKE_SOURCE_DIR}/Gex_plugins/MathPlugin/matrix.h
+        ${CMAKE_SOURCE_DIR}/Gex_plugins/MathPlugin/rotation.cpp
+        ${CMAKE_SOURCE_DIR}/Gex_plugins/MathPlugin/rotation.h
+        ${CMAKE_SOURCE_DIR}/Gex_plugins/MathPlugin/point.cpp
+        ${CMAKE_SOURCE_DIR}/Gex_plugins/MathPlugin/point.h
+        ${CMAKE_SOURCE_DIR}/Gex_plugins/MathPlugin/vector.cpp
+        ${CMAKE_SOURCE_DIR}/Gex_plugins/MathPlugin/vector.h
+        ${CMAKE_SOURCE_DIR}/Gex_plugins/GeometryPlugin/transformMatrix.cpp
+        ${CMAKE_SOURCE_DIR}/Gex_plugins/GeometryPlugin/transformMatrix.h
+)
+
+
+target_include_directories(
+        TestMath
+        PUBLIC
+        ${CMAKE_SOURCE_DIR}
+
+)
+

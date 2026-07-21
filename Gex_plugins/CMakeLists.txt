@@ -48,6 +48,7 @@ add_subdirectory(InputRelPlugin)
 add_subdirectory(JsonPlugin)
 add_subdirectory(PythonPlugin)
 add_subdirectory(GeometryPlugin)
+add_subdirectory(ConditionPlugin)
 
 # Usd plugin does not work in debug mode yet.
 #if (NOT ${CMAKE_BUILD_TYPE} STREQUAL "Debug")

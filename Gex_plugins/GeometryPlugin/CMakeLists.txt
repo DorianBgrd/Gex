@@ -17,6 +17,7 @@ add_library(
 
         types.cpp
         nodes.cpp
+        transformMatrix.cpp
 
         plugin.cpp
 )
@@ -45,6 +46,8 @@ target_link_directories(
         ${Python_LIBRARY_DIRS}
 
         ${INTERNAL_LIBRARY_DIRS}
+
+        ${CMAKE_SOURCE_DIR}/Gex_plugins/MathPlugin
 )
 
 
@@ -60,6 +63,7 @@ target_link_libraries(
 
         UiRes
         Gex_ui
+        MathPlugin
 )
 
 

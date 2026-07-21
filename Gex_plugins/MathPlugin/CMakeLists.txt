@@ -14,12 +14,18 @@ add_library(
 
         nodes.h
         types.h
+        matrix.h
 
         nodes.cpp
         types.cpp
+        matrix.cpp
+        rotation.cpp
+        vector.cpp
+        point.cpp
 
         mathLibrary.cpp
-        LocalApi.h)
+        LocalApi.h
+)
 
 
 target_include_directories(
