@@ -2,47 +2,30 @@
 #define GEX_GEOMPLUGIN_TYPES_H
 
 
-#include "Gex_plugins/MathPlugin/types.h"
+#include "Gex_plugins/MathPlugin/vector.h"
+#include "Gex_plugins/MathPlugin/point.h"
 
 #include "Tsys/tsys.h"
 
 
 namespace Geometry::Types
 {
-    typedef Math::Types::Point3 Point3;
-    typedef Math::Types::Vector3 Vector3;
+    typedef Math::Point3 Point3;
+    typedef Math::Vector3 Vector3;
 
     typedef size_t Index;
 
 
-    class IndexHandler: public TSys::TypeHandler
-    {
-        std::string ApiName() const override;
+    void SerializeIndex(const TSys::TypedValuePtr& v,
+                        rapidjson::Value& value,
+                        rapidjson::Document& document);
 
-        void SerializeValue(const std::any& v, rapidjson::Value& value,
-                            rapidjson::Document& document) const override;
+    void DeserializeIndex(const TSys::TypedValuePtr& v,
+                          rapidjson::Value& value,
+                          rapidjson::Document& document);
 
-        std::any DeserializeValue(const std::any& v, rapidjson::Value& value) const override;
-
-        void SerializeConstruction(const std::any& v, rapidjson::Value& value,
-                                   rapidjson::Document& document) const override;
-
-        std::any DeserializeConstruction(rapidjson::Value& value) const override;
-
-        std::any InitValue() const override;
-
-        bool CompareValue(const std::any&, const std::any&) const override;
-
-        std::any FromPython(const pybind11::object&) const override;
-
-        pybind11::object ToPython(const std::any&) const override;
-
-        std::any CopyValue(const std::any& source) const override;
-
-        size_t Hash() const override;
-
-        size_t ValueHash(const std::any& val) const override;
-    };
+    bool CompareValue(const TSys::TypedValuePtr&,
+                      const TSys::TypedValuePtr&);
 
 
     class Face: public std::vector<Index>
@@ -54,34 +37,14 @@ namespace Geometry::Types
     };
 
 
-    class FaceHandler: public TSys::TypeHandler
-    {
-        std::string ApiName() const override;
+    void SerializeFace(const TSys::TypedValuePtr & v,
+                       rapidjson::Value& value,
+                       rapidjson::Document& document);
 
-        void SerializeValue(const std::any& v, rapidjson::Value& value,
-                            rapidjson::Document& document) const override;
 
-        std::any DeserializeValue(const std::any& v, rapidjson::Value& value) const override;
-
-        void SerializeConstruction(const std::any& v, rapidjson::Value& value,
-                                   rapidjson::Document& document) const override;
-
-        std::any DeserializeConstruction(rapidjson::Value& value) const override;
-
-        std::any InitValue() const override;
-
-        bool CompareValue(const std::any&, const std::any&) const override;
-
-        std::any FromPython(const pybind11::object&) const override;
-
-        pybind11::object ToPython(const std::any&) const override;
-
-        std::any CopyValue(const std::any& source) const override;
-
-        size_t Hash() const override;
-
-        size_t ValueHash(const std::any& val) const override;
-    };
+    void DeserializeFace(const TSys::TypedValuePtr & v,
+                         rapidjson::Value& value,
+                         rapidjson::Document& document);
 
 
     typedef std::vector<Point3> PointArray;
@@ -145,34 +108,14 @@ namespace Geometry::Types
     };
 
 
-    class MeshHandler: public TSys::TypeHandler
-    {
-        std::string ApiName() const override;
+    void SerializeMesh(const TSys::TypedValuePtr& v,
+                       rapidjson::Value& value,
+                       rapidjson::Document& document);
 
-        void SerializeValue(const std::any& v, rapidjson::Value& value,
-                            rapidjson::Document& document) const override;
+    void DeserializeMesh(const TSys::TypedValuePtr& v,
+                         rapidjson::Value& value,
+                         rapidjson::Document& document);
 
-        std::any DeserializeValue(const std::any& v, rapidjson::Value& value) const override;
-
-        void SerializeConstruction(const std::any& v, rapidjson::Value& value,
-                                   rapidjson::Document& document) const override;
-
-        std::any DeserializeConstruction(rapidjson::Value& value) const override;
-
-        std::any InitValue() const override;
-
-        bool CompareValue(const std::any&, const std::any&) const override;
-
-        std::any FromPython(const pybind11::object&) const override;
-
-        pybind11::object ToPython(const std::any&) const override;
-
-        std::any CopyValue(const std::any& source) const override;
-
-        size_t Hash() const override;
-
-        size_t ValueHash(const std::any& val) const override;
-    };
 }
 
 #endif //GEX_GEOMPLUGIN_TYPES_H

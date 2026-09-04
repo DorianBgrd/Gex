@@ -2,92 +2,22 @@
 
 
 
-std::string Geometry::Types::IndexHandler::ApiName() const
-{
-    return "Geometry::Index";
-}
-
-void Geometry::Types::IndexHandler::SerializeValue(
-        const std::any& v, rapidjson::Value& value,
+void Geometry::Types::SerializeIndex(
+        const TSys::TypedValuePtr& v,
+        rapidjson::Value& value,
         rapidjson::Document& document
-) const
+)
 {
-    auto& val = rapidjson::Value().SetArray();
-
-    val.PushBack(
-            std::any_cast<Index>(v),
-            document.GetAllocator()
-    );
+    auto& val = rapidjson::Value().SetUint64(v->Get<Index>());
 }
 
-std::any Geometry::Types::IndexHandler::DeserializeValue(
-        const std::any& v, rapidjson::Value& value
-) const
+void Geometry::Types::DeserializeIndex(
+        const TSys::TypedValuePtr& v,
+        rapidjson::Value& value,
+        rapidjson::Document& doc
+)
 {
-    return {};
-}
-
-void Geometry::Types::IndexHandler::SerializeConstruction(
-        const std::any& v, rapidjson::Value& value,
-        rapidjson::Document& document
-) const
-{
-
-}
-
-std::any Geometry::Types::IndexHandler::DeserializeConstruction(
-        rapidjson::Value& value
-) const
-{
-    return InitValue();
-}
-
-std::any Geometry::Types::IndexHandler::InitValue() const
-{
-    return Index(0);
-}
-
-bool Geometry::Types::IndexHandler::CompareValue(
-        const std::any& v1, const std::any& v2
-) const
-{
-    return std::any_cast<Index>(v1) == std::any_cast<Index>(v2);
-}
-
-std::any Geometry::Types::IndexHandler::FromPython(
-        const pybind11::object& v
-) const
-{
-    Index index = v.cast<Index>();
-    return std::make_any<Index>(index);
-}
-
-pybind11::object Geometry::Types::IndexHandler::ToPython(
-        const std::any& value
-) const
-{
-    pybind11::object i = pybind11::cast(std::any_cast<Index>(value));
-
-    return i;
-}
-
-std::any Geometry::Types::IndexHandler::CopyValue(
-        const std::any& source
-) const
-{
-    return std::any_cast<Index>(source);
-}
-
-size_t Geometry::Types::IndexHandler::Hash() const
-{
-    return typeid(Index).hash_code();
-}
-
-size_t Geometry::Types::IndexHandler::ValueHash(
-        const std::any& val
-) const
-{
-    return std::any_cast<Index>(val);
+    v->Set((size_t)value.GetUint64());
 }
 
 
@@ -121,17 +51,14 @@ std::vector<Geometry::Types::Face> Geometry::Types::Face::ToTriangles() const
 
 
 
-std::string Geometry::Types::FaceHandler::ApiName() const
-{
-    return "Mesh::Face";
-}
 
-void Geometry::Types::FaceHandler::SerializeValue(
-        const std::any& v, rapidjson::Value& value,
+void Geometry::Types::SerializeFace(
+        const TSys::TypedValuePtr& v,
+        rapidjson::Value& value,
         rapidjson::Document& document
-) const
+)
 {
-    auto face = std::any_cast<Face>(v);
+    auto face = v->Get<Face>();
 
     auto& val = rapidjson::Value().SetArray();
 
@@ -147,16 +74,12 @@ void Geometry::Types::FaceHandler::SerializeValue(
     value.PushBack(val, document.GetAllocator());
 }
 
-std::any Geometry::Types::FaceHandler::DeserializeValue(
-        const std::any& v,
-        rapidjson::Value& value
-) const
+void Geometry::Types::DeserializeFace(
+        const TSys::TypedValuePtr & v,
+        rapidjson::Value& value,
+        rapidjson::Document& doc
+)
 {
-//    Triangle triangle = {
-//            (Index)value[0].GetInt(),
-//            (Index)value[1].GetInt(),
-//            (Index)value[2].GetInt(),
-//    };
     Face face;
 
     for (unsigned int i = 0; i < value.Size(); i ++)
@@ -164,71 +87,9 @@ std::any Geometry::Types::FaceHandler::DeserializeValue(
         face.push_back(value[i].GetInt());
     }
 
-    return std::make_any<Face>(face);
+    v->Set(face);
 }
 
-void Geometry::Types::FaceHandler::SerializeConstruction(
-        const std::any& v, rapidjson::Value& value,
-        rapidjson::Document& document
-) const
-{
-
-}
-
-std::any Geometry::Types::FaceHandler::DeserializeConstruction(
-        rapidjson::Value& value
-) const
-{
-    return {};
-}
-
-std::any Geometry::Types::FaceHandler::InitValue() const
-{
-    Face t;
-    return std::make_any<Face>(t);
-}
-
-bool Geometry::Types::FaceHandler::CompareValue(
-        const std::any& v1, const std::any& v2
-) const
-{
-    return std::any_cast<Face>(v1) == std::any_cast<Face>(v2);
-}
-
-std::any Geometry::Types::FaceHandler::FromPython(
-        const pybind11::object&
-) const
-{
-    return {};
-}
-
-pybind11::object Geometry::Types::FaceHandler::ToPython(
-        const std::any&
-) const
-{
-    return {};
-}
-
-std::any Geometry::Types::FaceHandler::CopyValue(
-        const std::any& source
-) const
-{
-    Face t(std::any_cast<Face>(source));
-
-    return std::make_any<Face>(t);
-}
-
-size_t Geometry::Types::FaceHandler::Hash() const
-{
-    return typeid(Face).hash_code();
-}
-
-size_t Geometry::Types::FaceHandler::ValueHash(
-        const std::any& val
-) const
-{
-    return 0;
-}
 
 
 double GetTriangleArea(const Geometry::Types::Vector3& v1,
@@ -393,7 +254,7 @@ void Geometry::Types::Mesh::SetFaces(const FaceArray& f)
 }
 
 
-Math::Types::Point3& Geometry::Types::Mesh::GetPoint(Index index)
+Math::Point3& Geometry::Types::Mesh::GetPoint(Index index)
 {
     return points.at(index);
 }
@@ -528,24 +389,18 @@ bool Geometry::Types::Mesh::operator==(const Mesh& other) const
 
 
 
-
-std::string Geometry::Types::MeshHandler::ApiName() const
-{
-    return "Geometry::Mesh";
-}
-
-void Geometry::Types::MeshHandler::SerializeValue(
-        const std::any& v, rapidjson::Value& value,
+void Geometry::Types::SerializeMesh(
+        const TSys::TypedValuePtr& v,
+        rapidjson::Value& value,
         rapidjson::Document& document
-) const
+)
 {
-    auto mesh = std::any_cast<Mesh>(v);
-
+    auto mesh = v->Get<Mesh>();
     auto& val = value.SetArray();
 
     rapidjson::Value pnts(rapidjson::kArrayType);
 
-    for (auto point : mesh.GetPoints())
+    for (auto& point : mesh.GetPoints())
     {
         rapidjson::Value pnt(rapidjson::kArrayType);
         pnt.PushBack(point.x, document.GetAllocator());
@@ -580,10 +435,11 @@ void Geometry::Types::MeshHandler::SerializeValue(
     val.PushBack(trngls, document.GetAllocator());
 }
 
-std::any Geometry::Types::MeshHandler::DeserializeValue(
-        const std::any& v,
-        rapidjson::Value& value
-) const
+void Geometry::Types::DeserializeMesh(
+        const TSys::TypedValuePtr& v,
+        rapidjson::Value& value,
+        rapidjson::Document&
+)
 {
     rapidjson::Value& pnts = value[0];
     rapidjson::Value& tris = value[1];
@@ -619,66 +475,5 @@ std::any Geometry::Types::MeshHandler::DeserializeValue(
 
     Mesh mesh(points, faces);
 
-    return std::make_any<Mesh>(mesh);
-}
-
-void Geometry::Types::MeshHandler::SerializeConstruction(
-        const std::any& v, rapidjson::Value& value,
-        rapidjson::Document& document
-) const
-{
-
-}
-
-std::any Geometry::Types::MeshHandler::DeserializeConstruction(
-        rapidjson::Value& value
-) const
-{
-    return InitValue();
-}
-
-std::any Geometry::Types::MeshHandler::InitValue() const
-{
-    Mesh mesh;
-    return std::make_any<Mesh>(mesh);
-}
-
-bool Geometry::Types::MeshHandler::CompareValue(
-        const std::any& v1, const std::any& v2
-) const
-{
-    return std::any_cast<Mesh>(v1) == std::any_cast<Mesh>(v2);
-}
-
-std::any Geometry::Types::MeshHandler::FromPython(
-        const pybind11::object& value
-) const
-{
-    return InitValue();
-}
-
-pybind11::object Geometry::Types::MeshHandler::ToPython(
-        const std::any& value
-) const
-{
-    return {};
-}
-
-std::any Geometry::Types::MeshHandler::CopyValue(
-        const std::any& source
-) const
-{
-    return std::make_any<Mesh>(Mesh(std::any_cast<Mesh>(source)));
-}
-
-size_t Geometry::Types::MeshHandler::Hash() const
-{
-    return typeid(Mesh).hash_code();
-}
-
-size_t Geometry::Types::MeshHandler::ValueHash(
-        const std::any& val
-) const
-{
-    return 0;
+    v->Set(mesh);
 }

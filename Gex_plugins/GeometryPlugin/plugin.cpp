@@ -12,11 +12,23 @@
 
 extern EXPORT RegisterPlugin(Gex::PluginLoader* loader)
 {
-    loader->RegisterTypeHandler<Geometry::Types::Index, Geometry::Types::IndexHandler>();
+    loader->GetRegistry()->RegisterType<Geometry::Types::Index>(
+        "Geometry::Index", TSys::DefaultCreator,
+        Geometry::Types::SerializeIndex,
+        Geometry::Types::DeserializeIndex
+    );
 
-    loader->RegisterTypeHandler<Geometry::Types::Face, Geometry::Types::FaceHandler>();
+    loader->GetRegistry()->RegisterType<Geometry::Types::Face>(
+            "Geometry::Face", TSys::DefaultCreator,
+            Geometry::Types::SerializeFace,
+            Geometry::Types::DeserializeFace
+    );
 
-    loader->RegisterTypeHandler<Geometry::Types::Mesh, Geometry::Types::MeshHandler>();
+    loader->GetRegistry()->RegisterType<Geometry::Types::Mesh>(
+            "Geometry::Mesh", TSys::DefaultCreator,
+            Geometry::Types::SerializeMesh,
+            Geometry::Types::DeserializeMesh
+    );
 
 
     loader->RegisterNode<Geometry::Nodes::IndexBuilder>("Geometry/Mesh/Index");
