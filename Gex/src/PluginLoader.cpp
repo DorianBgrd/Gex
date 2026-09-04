@@ -28,7 +28,7 @@ Gex::CallbackId Gex::PluginLoader::nextIndex = 0;
 
 
 Gex::PluginLoader::PluginLoader(
-        NodeFactory* f, TSys::TypeRegistry* r,
+        NodeFactory* f, TSys::TypeValueRegistry* r,
         SchedulerRegistry* sr
 )
 {
@@ -93,6 +93,12 @@ void Gex::PluginLoader::RegisterNode(const std::string& type, NodeBuilder* build
     registeredBuilders[type] = builder;
 
     factory->RegisterNodeBuilder(type, builder);
+}
+
+
+TSys::TypeValueRegistry* Gex::PluginLoader::GetRegistry() const
+{
+    return registry;
 }
 
 
@@ -302,7 +308,7 @@ Gex::PluginLoader* Gex::PluginLoader::LoadPluginFile(
 {
     auto* loader = new PluginLoader(
             NodeFactory::GetFactory(),
-            TSys::TypeRegistry::GetRegistry(),
+            TSys::GetRegistry(),
             SchedulerRegistry::GetRegistry()
     );
 

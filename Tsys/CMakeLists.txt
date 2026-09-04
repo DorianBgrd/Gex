@@ -11,13 +11,15 @@ add_definitions(/DTSYS_API_EXPORT)
 set(
         TSYS_SOURCES
 
-        src/tsys.cpp
+        src/typeSystem.cpp
         src/defaultTypes.cpp
+        src/tsys.cpp
 )
 
 set(
         TSYS_INCLUDES
 
+        include/typeSystem.h
         include/defaultTypes.h
         include/tsys.h
 )

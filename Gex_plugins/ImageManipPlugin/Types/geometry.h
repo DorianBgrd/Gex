@@ -47,6 +47,15 @@ namespace ImageManip::Types
     };
 
 
+    void SerializePoint(const TSys::TypedValuePtr& v,
+                        rapidjson::Value& value,
+                        rapidjson::Document& doc);
+
+    void DeserializePoint(const TSys::TypedValuePtr& v,
+                          rapidjson::Value& value,
+                          rapidjson::Document&);
+
+
     struct Segment
     {
         Point p1;
@@ -143,38 +152,14 @@ namespace ImageManip::Types
     };
 
 
+    void SerializePoint(const TSys::TypedValuePtr& v,
+                        rapidjson::Value& value,
+                        rapidjson::Document& document);
 
-    struct Plugin_API PointHandler: public TSys::TypeHandler
-    {
-        void SerializeValue(const std::any& v, rapidjson::Value& value,
-                            rapidjson::Document& document)
-                            const override;
+    void DeserializePoint(const TSys::TypedValuePtr& v,
+                          rapidjson::Value& value,
+                        rapidjson::Document& document);
 
-        std::any DeserializeValue(const std::any& v, rapidjson::Value& value)
-                                  const override;
-
-        void SerializeConstruction(const std::any& v, rapidjson::Value& value,
-                                   rapidjson::Document& document)
-                                   const override;
-
-        std::any DeserializeConstruction(rapidjson::Value& value) const override;
-
-        std::any InitValue() const override;
-
-        bool CompareValue(const std::any&, const std::any&) const override;
-
-        std::any FromPython(const pybind11::object&) const override;
-
-        pybind11::object ToPython(const std::any&) const override;
-
-        std::any CopyValue(const std::any& source) const override;
-
-        size_t Hash() const override;
-
-        std::string ApiName() const override;
-
-        size_t ValueHash(const std::any& val) const override;
-    };
 }
 
 

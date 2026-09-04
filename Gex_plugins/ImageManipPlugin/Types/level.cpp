@@ -157,11 +157,14 @@ bool ImageManip::Types::LevelMapHandler::CompareValue(const std::any& v1, const 
 }
 
 
-void ImageManip::Types::LevelMapHandler::SerializeValue(
-        const std::any& v, rapidjson::Value& value,
-        rapidjson::Document& document) const
+void ImageManip::Types::SerializeLevelMap(
+        const TSys::TypedValuePtr& v,
+        rapidjson::Value& value,
+        rapidjson::Document& document)
 {
-    auto level = std::any_cast<LevelMap>(v);
+    auto level = v->Get<LevelMap>();
+
+    auto& array = value.SetArray();
 
     rapidjson::Value& low = rapidjson::Value().SetDouble(level.Low());
     rapidjson::Value& mid = rapidjson::Value().SetDouble(level.Mid());
@@ -169,15 +172,16 @@ void ImageManip::Types::LevelMapHandler::SerializeValue(
     rapidjson::Value& clampLow = rapidjson::Value().SetDouble(level.ClampLow());
     rapidjson::Value& clampHigh = rapidjson::Value().SetDouble(level.ClampHigh());
 
-    value.PushBack(low.Move(), document.GetAllocator());
-    value.PushBack(mid.Move(), document.GetAllocator());
-    value.PushBack(high.Move(), document.GetAllocator());
-    value.PushBack(clampLow.Move(), document.GetAllocator());
-    value.PushBack(clampHigh.Move(), document.GetAllocator());
+    array.PushBack(low.Move(), document.GetAllocator());
+    array.PushBack(mid.Move(), document.GetAllocator());
+    array.PushBack(high.Move(), document.GetAllocator());
+    array.PushBack(clampLow.Move(), document.GetAllocator());
+    array.PushBack(clampHigh.Move(), document.GetAllocator());
 }
-
-std::any ImageManip::Types::LevelMapHandler::DeserializeValue(
-        const std::any& v, rapidjson::Value& value) const
+void ImageManip::Types::DeserializeLevelMap(
+        const TSys::TypedValuePtr& v,
+        rapidjson::Value& value,
+        rapidjson::Document&)
 {
     LevelMap level(
             value[0].GetDouble(),
@@ -187,7 +191,7 @@ std::any ImageManip::Types::LevelMapHandler::DeserializeValue(
             value[4].GetDouble()
             );
 
-    return std::make_any<LevelMap>(level);
+    v->Set(level);
 }
 
 void ImageManip::Types::LevelMapHandler::SerializeConstruction(

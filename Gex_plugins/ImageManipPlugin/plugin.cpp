@@ -28,17 +28,45 @@
 
 extern EXPORT RegisterPlugin(Gex::PluginLoader* loader)
 {
-    loader->RegisterTypeHandler<QImage, ImageManip::Types::ImageHandler>();
+    loader->GetRegistry()->RegisterType<QImage>(
+            "ImageManip::Image", TSys::DefaultCreator,
+            ImageManip::Types::SerializeImage,
+            ImageManip::Types::DeserializeImage
+    );
 
-    loader->RegisterTypeHandler<QColor, ImageManip::Types::ColorHandler>();
+    loader->GetRegistry()->RegisterType<QColor>(
+            "ImageManip::Color", TSys::DefaultCreator,
+            ImageManip::Types::SerializeColor,
+            ImageManip::Types::DeserializeColor
+    );
 
-    loader->RegisterTypeHandler<ImageManip::Types::Resolution, ImageManip::Types::ResolutionHandler>();
 
-    loader->RegisterTypeHandler<ImageManip::Types::LinearGradient, ImageManip::Types::LinearGradientHandler>();
+    loader->GetRegistry()->RegisterType<ImageManip::Types::Resolution>(
+            "ImageManip::Resolution", TSys::DefaultCreator,
+            ImageManip::Types::SerializeResolution,
+            ImageManip::Types::DeserializeResolution
+    );
 
-    loader->RegisterTypeHandler<ImageManip::Types::LevelMap, ImageManip::Types::LevelMapHandler>();
 
-    loader->RegisterTypeHandler<ImageManip::Types::Point, ImageManip::Types::PointHandler>();
+    loader->GetRegistry()->RegisterType<ImageManip::Types::LinearGradient>(
+            "ImageManip::LinearGradient", TSys::DefaultCreator,
+            ImageManip::Types::SerializeGradient,
+            ImageManip::Types::DeserializeGradient
+    );
+
+    loader->GetRegistry()->RegisterType<ImageManip::Types::LevelMap>(
+            "ImageManip::LevelMap", TSys::DefaultCreator,
+            ImageManip::Types::SerializeLevelMap,
+            ImageManip::Types::DeserializeLevelMap
+    );
+
+
+    loader->GetRegistry()->RegisterType<ImageManip::Types::LevelMap>(
+            "ImageManip::Point", TSys::DefaultCreator,
+            ImageManip::Types::SerializePoint,
+            ImageManip::Types::DeserializePoint
+    );
+
 
     loader->RegisterNode<ImageManip::Nodes::CreateImageBuilder>("Image/IO/Create");
 

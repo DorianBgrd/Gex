@@ -48,39 +48,13 @@ namespace ImageManip::Types
     };
 
 
-    struct LevelMapHandler: public TSys::TypeHandler
-    {
-        std::any InitValue() const override;
+    void SerializeLevelMap(const TSys::TypedValuePtr& v,
+                           rapidjson::Value& value,
+                           rapidjson::Document& document);
 
-        std::any FromPython(const pybind11::object&) const override;
-
-        pybind11::object ToPython(const std::any&) const override;
-
-        std::any CopyValue(const std::any& source) const override;
-
-        size_t Hash() const override;
-
-//        std::string PythonName() const override;
-
-        std::string ApiName() const override;
-
-        size_t ValueHash(const std::any& val) const override;
-
-        bool CompareValue(const std::any& v1, const std::any& v2) const override;
-
-        virtual void SerializeValue(const std::any& v, rapidjson::Value& value,
-                                    rapidjson::Document& document) const
-                                    override;
-
-        virtual std::any DeserializeValue(const std::any& v, rapidjson::Value& value) const override;
-
-        virtual void SerializeConstruction(const std::any& v, rapidjson::Value& value,
-                                           rapidjson::Document& document)
-                                           const override;
-
-        virtual std::any DeserializeConstruction(rapidjson::Value& value) const override;
-
-    };
+    void DeserializeLevelMap(const TSys::TypedValuePtr& v,
+                             rapidjson::Value& value,
+                             rapidjson::Document&);
 
 }
 

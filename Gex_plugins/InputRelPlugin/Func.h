@@ -160,79 +160,26 @@ namespace Gex::InputRel
 
 
     template<typename T>
-    struct FuncWrapper: public TSys::TypeHandler
+    void SerializeFunc(const TSys::TypedValuePtr& v,
+                       rapidjson::Value& value,
+                       rapidjson::Document& doc)
     {
-        void SerializeValue(const std::any& v, rapidjson::Value& value,
-                            rapidjson::Document& document)
-                            const override
-        {
-            std::shared_ptr<T> func = std::any_cast<std::shared_ptr<T>>(v);
-            func->Serialize(value, document);
-        }
+        v->Get<std::shared_ptr<T>>()->Serialize(value, doc);
+    }
 
-        std::any DeserializeValue(const std::any& v, rapidjson::Value& value) const override
-        {
-            std::shared_ptr<T> func = std::make_shared<T>();
-            func->Deserialize(value);
 
-            return std::make_any<std::shared_ptr<T>>(func);
-        }
+    template<typename T>
+    void DeserializeFunc(const TSys::TypedValuePtr& v,
+                         rapidjson::Value& value,
+                         rapidjson::Document& doc)
+    {
+       auto func =  std::make_shared<T>();
 
-        void SerializeConstruction(const std::any& v, rapidjson::Value& value,
-                                   rapidjson::Document& document)
-                                   const override
-        {
+       func->Deserialize(value);
 
-        }
+       v->Set(func);
+    }
 
-        std::any DeserializeConstruction(rapidjson::Value& value) const override
-        {
-            return {};
-        }
-
-        std::any InitValue() const override
-        {
-            return std::make_any<std::shared_ptr<T>>(std::make_shared<T>());
-        }
-
-        bool CompareValue(const std::any&, const std::any&) const override
-        {
-            return false;
-        }
-
-        std::any FromPython(const pybind11::object& v) const override
-        {
-//            std::shared_ptr<T> value = boost::python::extract<std::shared_ptr<T>>(v);
-//            return std::make_any<std::shared_ptr<T>>(value);
-            std::shared_ptr<T> p = v.cast<std::shared_ptr<T>>();
-
-            return std::make_any<std::shared_ptr<T>>(p);
-        }
-
-        pybind11::object ToPython(const std::any& v) const override
-        {
-            T::RegisterPythonWrapper();
-
-            std::shared_ptr<T> p = std::any_cast<std::shared_ptr<T>>(v);
-
-            return pybind11::cast(p);
-        }
-
-        virtual std::any CopyValue(const std::any& source) const override
-        {
-            return std::make_any<std::shared_ptr<T>>(std::any_cast<std::shared_ptr<T>>(source));
-        }
-
-        virtual size_t Hash() const override
-        {
-            return typeid(std::shared_ptr<T>).hash_code();
-        }
-
-        virtual size_t ValueHash(const std::any& val) const override
-        {
-            return 0;
-        }
-    };
 
 
     class Plugin_API LinearFunc: public Func

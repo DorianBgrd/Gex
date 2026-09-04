@@ -15,6 +15,8 @@ namespace Math
         double x;
         double y;
 
+        Vector2() = default;
+
         bool operator ==(const Vector2& other) const;
 
         double Magnitude() const;

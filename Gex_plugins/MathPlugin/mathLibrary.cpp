@@ -11,16 +11,35 @@
 #include "nodes.h"
 #include "types.h"
 
+#include "point.h"
+#include "vector.h"
+
 
 extern EXPORT RegisterPlugin(Gex::PluginLoader* loader)
 {
-    loader->RegisterTypeHandler<Math::Types::Point2, Math::Types::Point2Handle>();
+    loader->GetRegistry()->RegisterType<Math::Point2>(
+            "Math::Point2", TSys::DefaultCreator,
+            Math::Types::SerializePoint2,
+            Math::Types::DeserializePoint2
+    );
 
-    loader->RegisterTypeHandler<Math::Types::Vector2, Math::Types::Vector2Handle>();
+    loader->GetRegistry()->RegisterType<Math::Point3>(
+            "Math::Point3", TSys::DefaultCreator,
+            Math::Types::SerializePoint3,
+            Math::Types::DeserializePoint3
+    );
 
-    loader->RegisterTypeHandler<Math::Types::Point3, Math::Types::Point3Handle>();
+    loader->GetRegistry()->RegisterType<Math::Vector2>(
+            "Math::Vector2", TSys::DefaultCreator,
+            Math::Types::SerializeVector2,
+            Math::Types::DeserializeVector2
+    );
 
-    loader->RegisterTypeHandler<Math::Types::Vector3, Math::Types::Vector3Handle>();
+    loader->GetRegistry()->RegisterType<Math::Vector3>(
+            "Math::Vector3", TSys::DefaultCreator,
+            Math::Types::SerializeVector3,
+            Math::Types::DeserializeVector3
+    );
 
 
     loader->RegisterNode<Math::Nodes::ConstantIntBuilder>("Math/Constants/Int");

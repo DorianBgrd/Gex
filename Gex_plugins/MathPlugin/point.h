@@ -15,6 +15,8 @@ namespace Math
         double x;
         double y;
 
+        Point2() = default;
+
         bool operator ==(const Point2& other) const;
 
         double Distance(const Point2& other) const;

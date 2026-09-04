@@ -181,3 +181,66 @@ std::map<double, QColor> ImageManip::Types::LinearGradient::StepColors() const
 {
     return steps;
 }
+
+
+
+void ImageManip::Types::SerializeGradient(
+        const TSys::TypedValuePtr& v,
+        rapidjson::Value& value,
+        rapidjson::Document& document)
+{
+    auto gradient = v->Get<LinearGradient>();
+
+    auto& arrayValue = value.SetArray();
+
+    for (auto step : gradient.StepColors())
+    {
+        rapidjson::Value& stepValue = rapidjson::Value().SetArray();
+
+        rapidjson::Value stepX = rapidjson::Value(rapidjson::kNumberType);
+        stepX.SetDouble(step.first);
+        stepValue.PushBack(stepX.Move(), document.GetAllocator());
+
+        rapidjson::Value& color = rapidjson::Value().SetArray();
+
+        rapidjson::Value cR = rapidjson::Value(rapidjson::kNumberType);
+        cR.SetInt64(step.second.red());
+        color.PushBack(cR.Move(), document.GetAllocator());
+
+        rapidjson::Value cG = rapidjson::Value(rapidjson::kNumberType);
+        cG.SetInt64(step.second.green());
+        color.PushBack(cG.Move(), document.GetAllocator());
+
+        rapidjson::Value cB = rapidjson::Value(rapidjson::kNumberType);
+        cB.SetInt64(step.second.blue());
+        color.PushBack(cB.Move(), document.GetAllocator());
+
+        stepValue.PushBack(color.Move(), document.GetAllocator());
+
+        arrayValue.PushBack(stepValue.Move(), document.GetAllocator());
+    }
+}
+
+
+void ImageManip::Types::DeserializeGradient(
+        const TSys::TypedValuePtr& v,
+        rapidjson::Value& value,
+        rapidjson::Document&)
+{
+    LinearGradient gradient;
+
+    rapidjson::Value& steps = value.GetArray();
+    for (unsigned int i = 0; i < steps.Size(); i++)
+    {
+        rapidjson::Value& step = steps[i];
+
+        double x = step[0].GetDouble();
+        QColor color(step[1][0].GetInt64(),
+                     step[1][1].GetInt64(),
+                     step[1][2].GetInt64());
+
+        gradient.AddStep(x, color);
+    }
+
+    v->Set(gradient);
+}

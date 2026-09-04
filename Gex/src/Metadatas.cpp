@@ -1,19 +1,22 @@
 #include "Gex/include/Gex/Metadatas.h"
 
 
-bool Gex::NodeMetadata::SetMetadata(const std::string& name, const std::any& value)
+bool Gex::NodeMetadata::SetMetadata(
+        const std::string& name,
+        const TSys::TypedValuePtr& value
+)
 {
     if (!IsMetadataType(value))
     {
         return false;
     }
 
-    metadata[name] = value;
+    metadata.emplace(name, value);
     return true;
 }
 
 
-std::any Gex::NodeMetadata::GetMetadata(const std::string& name) const
+TSys::TypedValuePtr Gex::NodeMetadata::GetMetadata(const std::string& name) const
 {
     auto iter = metadata.find(name);
     if (iter == metadata.end())
@@ -29,12 +32,9 @@ Gex::JsonValue Gex::NodeMetadata::Serialize(JsonDoc& doc) const
 {
     JsonValue serializedMetadata(rapidjson::kArrayType);
 
-    for (auto mv : metadata)
+    for (const auto& mv : metadata)
     {
-        std::any anyval = mv.second;
-        auto handler = TSys::TypeRegistry::GetRegistry()->GetTypeHandle(
-                anyval.type());
-        if (!handler)
+        if (!mv.second)
             continue;
 
         JsonValue valueArray(rapidjson::kArrayType);
@@ -42,10 +42,10 @@ Gex::JsonValue Gex::NodeMetadata::Serialize(JsonDoc& doc) const
         JsonValue& name = rapidjson::Value(rapidjson::kStringType).SetString(
                 mv.first.c_str(), doc.GetAllocator());
         JsonValue& type = rapidjson::Value(rapidjson::kStringType).SetString(
-                handler->ApiName().c_str(), doc.GetAllocator());
+                mv.second->GetType()->GetName().c_str(), doc.GetAllocator());
         JsonValue value;
 
-        handler->SerializeValue(anyval, value, doc);
+        TSys::GetRegistry()->Serialize(mv.second, value, doc);
 
         valueArray.PushBack(name.Move(), doc.GetAllocator());
         valueArray.PushBack(type.Move(), doc.GetAllocator());
@@ -57,30 +57,37 @@ Gex::JsonValue Gex::NodeMetadata::Serialize(JsonDoc& doc) const
     return serializedMetadata;
 }
 
-void Gex::NodeMetadata::Deserialize(JsonValue& val)
+void Gex::NodeMetadata::Deserialize(JsonValue& val, JsonDoc& doc)
 {
     metadata.clear();
+
+    auto* registry = TSys::GetRegistry();
 
     for (unsigned int i = 0;i < val.Size(); i++)
     {
         std::string name = val[i][0].GetString();
         std::string type = val[i][1].GetString();
-        rapidjson::Value& m = val[i][2];
+        rapidjson::Value& metadataValue = val[i][2];
 
-        auto handler = TSys::TypeRegistry::GetRegistry()->GetTypeHandle(type);
-        if (!handler)
+        auto valueType = registry->GetType(name);
+        if (!valueType)
             continue;
 
-        std::any n;
-        metadata[name] = handler->DeserializeValue(n, m);
+        TSys::TypedValuePtr deserializedValue = registry->CreateValue(valueType);
+
+        TSys::GetRegistry()->DeserializeValue(
+                deserializedValue, metadataValue, doc
+        );
+
+        metadata[name] = deserializedValue;
     }
 }
 
 
-Gex::NodeMetadata Gex::NodeMetadata::DeserializeMetadata(JsonValue val)
+Gex::NodeMetadata Gex::NodeMetadata::DeserializeMetadata(JsonValue val, JsonDoc& doc)
 {
     Gex::NodeMetadata m;
-    m.Deserialize(val);
+    m.Deserialize(val, doc);
     return m;
 }
 

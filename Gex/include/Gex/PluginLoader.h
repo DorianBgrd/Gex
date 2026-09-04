@@ -34,7 +34,7 @@ namespace Gex
         std::map<std::string, NodeBuilder*> registeredBuilders;
         NodeFactory* factory;
         SchedulerRegistry* schedulerRegistry;
-        TSys::TypeRegistry* registry;
+        TSys::TypeValueRegistry* registry;
 
         static std::vector<std::string> loadedPlugins;
 
@@ -52,7 +52,7 @@ namespace Gex
         static bool DeregisterPluginCallback(CallbackId id);
 
     public:
-        PluginLoader(NodeFactory* factory, TSys::TypeRegistry* registry,
+        PluginLoader(NodeFactory* factory, TSys::TypeValueRegistry* registry,
                      SchedulerRegistry* schedulerRegistry);
 
         [[nodiscard]]
@@ -76,11 +76,12 @@ namespace Gex
 
         void RegisterNode(const std::string& type, NodeBuilder* builder);
 
-        template<class Type, class Handler>
-        void RegisterTypeHandler()
-        {
-            registry->RegisterType<Type, Handler>();
-        }
+//        template<class Type, class Handler>
+//        void RegisterTypeHandler()
+//        {
+//            registry->RegisterType<Type, Handler>();
+//        }
+        TSys::TypeValueRegistry* GetRegistry() const;
 
         template<class T>
         void RegisterCustomScheduler()

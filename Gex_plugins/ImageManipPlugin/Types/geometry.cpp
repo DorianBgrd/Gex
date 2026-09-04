@@ -51,6 +51,35 @@ QPointF ImageManip::Types::Point::ToQPointF() const
 }
 
 
+void ImageManip::Types::SerializePoint(
+        const TSys::TypedValuePtr& v,
+        rapidjson::Value& value,
+        rapidjson::Document& doc)
+{
+    auto point = v->Get<Point>();
+
+    auto& array = value.SetArray();
+
+    array.PushBack(point.x, doc.GetAllocator());
+    array.PushBack(point.x, doc.GetAllocator());
+}
+
+
+void ImageManip::Types::DeserializePoint(
+        const TSys::TypedValuePtr& v,
+        rapidjson::Value& value,
+        rapidjson::Document&)
+{
+    Point point = {
+            value[0].GetDouble(),
+            value[1].GetDouble(),
+    };
+
+    v->Set(point);
+}
+
+
+
 ImageManip::Types::Segment::Segment(Point p1_, Point p2_)
 {
     p1 = p1_;

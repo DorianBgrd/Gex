@@ -32,26 +32,27 @@ namespace Gex
     template<class T>
     inline bool IsMetadataType()
     {
-        return bool(TSys::TypeRegistry::GetRegistry()->IsRegistered(typeid(T)));
+        return bool(TSys::GetRegistry()->GetType<T>());
     }
 
     inline bool IsMetadataType(const std::any& value)
     {
-        return bool(TSys::TypeRegistry::GetRegistry()->GetTypeHandle(value));
+        return bool(TSys::GetRegistry()->GetType(value));
     }
 
 
     class GEX_API NodeMetadata
     {
-        std::unordered_map<std::string, std::any> metadata;
+        std::unordered_map<std::string, TSys::TypedValuePtr> metadata;
 
     public:
         NodeMetadata() = default;
 
         bool SetMetadata(const std::string& name,
-                         const std::any& value);
+                         const TSys::TypedValuePtr& value);
 
-        std::any GetMetadata(const std::string& name) const;
+
+        TSys::TypedValuePtr GetMetadata(const std::string& name) const;
 
         template<class T>
         bool Set(const std::string& name, T value)
@@ -63,30 +64,24 @@ namespace Gex
         T Get(const std::string& name, Feedback* res=nullptr) const
         {
             auto val = GetMetadata(name);
-            if (!val.has_value())
+            if (!val)
             {
                 RETURN_WITH_STATUS(Status::Failed, "No value named " + name, {})
             }
 
-            if (std::type_index(typeid(T)) == val.type())
+            if (!val->GetType()->IsConvertibleTo<T>())
             {
-                RETURN_WITH_STATUS(Status::Success, "", std::any_cast<T>(val))
+                RETURN_WITH_STATUS(Status::Failed, "Invalid metadata type.", {})
             }
 
-            auto handle = TSys::TypeRegistry::GetRegistry()->GetTypeHandle(val);
-            if (handle->CanConvertFrom(val.type().hash_code()))
-            {
-                RETURN_WITH_STATUS(Status::Success, "", std::any_cast<T>(handle->ConvertFrom(val, val)))
-            }
-
-            RETURN_WITH_STATUS(Status::Failed, "Invalid metadata type.", {})
+            return val->Get<T>();
         }
 
         JsonValue Serialize(JsonDoc& doc) const;
 
-        void Deserialize(JsonValue& val);
+        void Deserialize(JsonValue& val, JsonDoc& doc);
 
-        static NodeMetadata DeserializeMetadata(JsonValue val);
+        static NodeMetadata DeserializeMetadata(JsonValue val, JsonDoc& doc);
     };
 }
 

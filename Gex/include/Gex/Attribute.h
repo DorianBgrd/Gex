@@ -71,10 +71,9 @@ namespace Gex
 		AttrValueType attributeValueType;
 		AttrType attributeType;
 
-        TSys::TypeHandlerPtr typeHandle;
-        std::type_index typeIndex;
-        std::any defaultValue;
-		std::any attributeAnyValue;
+        TSys::TypedValuePtr attributeValue;
+        TSys::TypedValuePtr defaultValue;
+        const TSys::TypePtr valueType;
 
 		NodeWkPtr attributeNode;
 
@@ -122,11 +121,6 @@ namespace Gex
          */
         AttributePtr CopyAsChild(const AttributePtr& ref);
 
-        /**
-         * Initializes default value.
-         */
-        void InitDefaultValue();
-
     public:
         /**
          * Creates a new Attribute using std::any value.
@@ -138,7 +132,7 @@ namespace Gex
          * @param Node* node: parent node ptr.
          * @param Attribute* parent: parent attribute ptr.
          */
-        explicit Attribute(const std::string& name, const std::any& v,
+        explicit Attribute(const std::string& name, const TSys::TypedValuePtr& v,
                            const AttrValueType& valueType = AttrValueType::Single,
 			               const AttrType& type = AttrType::Static, bool userDefined = false,
 			               const NodePtr& node = nullptr,
@@ -158,10 +152,10 @@ namespace Gex
 		explicit Attribute(const std::string& name, const AttrValueType& valueType = AttrValueType::Single,
                            const AttrType& type = AttrType::Static, bool userDefined = false,
                            const NodePtr& node = nullptr, const AttributeWkPtr& parent=AttributeWkPtr()):
-            Attribute(name, typeid(T).hash_code(), valueType,
+            Attribute(name, TSys::GetRegistry()->GetType<T>(), valueType,
                       type, userDefined, node, parent){}
 
-        explicit Attribute(const std::string& name, const std::type_index& t,
+        explicit Attribute(const std::string& name, const TSys::TypePtr& t,
                            const AttrValueType& valueType = AttrValueType::Single,
                            const AttrType& type = AttrType::Static, bool userDefined = false,
                            const NodePtr& node = nullptr, const AttributeWkPtr& parent=AttributeWkPtr());
@@ -213,6 +207,8 @@ namespace Gex
          */
 		void SetParentNode(const NodePtr& node);
 
+        TSys::TypedValuePtr GetResolvedValue() const;
+
 	public:
         /**
          * Returns attribute parent Node.
@@ -254,9 +250,7 @@ namespace Gex
          * Returns attribute type hash.
          * @return size_t type hash.
          */
-		std::type_index Type() const;
-
-        TSys::TypeHandlerPtr TypeHandle() const;
+        TSys::TypePtr Type() const;
 
         /**
          * Returns attribute default value.
@@ -392,8 +386,9 @@ namespace Gex
                 bool userDefined = false
         )
 		{
-            AttributePtr child = new Attribute<T>(
-                    name, vType, type, userDefined,
+            AttributePtr child = std::make_shared<Attribute>(
+                    name, TSys::GetRegistry()->GetType<T>(),
+                    vType, type, userDefined,
                     attributeNode, parentAttribute
             );
 
@@ -406,7 +401,7 @@ namespace Gex
 		}
 
 		AttributeWkPtr CreateChildAttribute(
-                const std::string& name, const std::any& value,
+                const std::string& name, const TSys::TypedValuePtr& value,
                 const AttrValueType& vType = AttrValueType::Single,
                 const AttrType& type = AttrType::Static,
                 bool userdefined = false
@@ -625,40 +620,32 @@ namespace Gex
 
         std::vector<AttributeWkPtr> Dests();
 
-    private:
-		bool ValueSet(const std::any& value);
-
 	public:
 		template<class T>
 		bool Set(T value)
 		{
-			return ValueSet(std::make_any<T>(value));
+			return SetAnyValue(
+                    std::make_any<T>(value)
+            );
 		}
 
         template<class T>
         bool IsOfType() const
         {
-            return typeHandle->ManagesType<T>();
+            return Type()->IsOfType<T>();
         }
 
         template<class T>
         bool AcceptType() const
         {
-            return typeHandle->CanConvertFrom<T>();
+            return bool(Type()->IsConvertibleFrom<T>());
         }
-
-    private:
-        std::any ValueGet(const std::type_info& dest, Feedback* status=nullptr) const;
 
 	public:
 		template<class T>
 		T Get(Feedback* status=nullptr)
 		{
-			std::any dest = ValueGet(typeid(T), status);
-            if(!dest.has_value())
-                return T();
-
-			return std::any_cast<T>(dest);
+			return attributeValue->Get<T>();
 		}
 
 		std::vector<AttributeWkPtr> GetArray() const;
@@ -671,7 +658,7 @@ namespace Gex
 		std::vector<T> GetArrayValues()
 		{
 			std::vector<T> arr;
-            if (Type() != typeid(T))
+            if (Type() != TSys::GetRegistry()->GetType<T>())
                 return arr;
 
             Feedback stat;
@@ -712,7 +699,7 @@ namespace Gex
 		// Serialize / Deserializes Values.
 		void Serialize(rapidjson::Value& dict, rapidjson::Document& json);
 
-        void Deserialize(rapidjson::Value& dict);
+        void Deserialize(rapidjson::Value& dict, rapidjson::Document& doc);
 
 		// Serialize / Deserializes Construction.
 		void SerializeAttribute(rapidjson::Value& value, rapidjson::Document& doc);
