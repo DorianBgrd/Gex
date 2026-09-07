@@ -14,15 +14,7 @@ pybind11::object NAD_GetValue(
 {
     Gex::NodeAttributeData* context = args[0].cast<Gex::NodeAttributeData*>();
 
-    auto handle = TSys::TypeRegistry::GetRegistry()
-            ->GetTypeHandle(
-                    context->GetAnyValue()
-            );
-
-    if (!handle)
-        return {};
-
-    return handle->ToPython(context->GetAnyValue());
+    return context->Get<pybind11::object>();
 }
 
 
@@ -35,15 +27,7 @@ pybind11::object NAD_GetIndexValue(
 
     int index = args[1].cast<int>();
 
-    auto handle = TSys::TypeRegistry::GetRegistry()
-            ->GetTypeHandle(
-                    context->GetIndex(index).GetAnyValue()
-            );
-
-    if (!handle)
-        return {};
-
-    return handle->ToPython(context->GetAnyValue());
+    return context->GetIndex(index).Get<pybind11::object>();
 }
 
 
@@ -70,11 +54,11 @@ pybind11::object NAD_SetIndexValue(
     Gex::NodeAttributeData* context = args[0].cast<Gex::NodeAttributeData*>();
 
     int index = args[1].cast<int>();
+    pybind11::object value = args[2];
 
-    TSys::AnyValue value;
     context->GetIndex(index).SetValue(args[2]);
 
-    return pybind11::cast(context->SetValue(value));
+    return pybind11::cast(context->Set(value));
 }
 
 

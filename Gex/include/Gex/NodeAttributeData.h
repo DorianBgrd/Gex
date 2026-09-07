@@ -35,13 +35,12 @@ namespace Gex
     public:
         NodePtr GetNode() const;
 
-        std::any GetAnyValue(Feedback* success=nullptr);
+        TSys::TypedValuePtr GetAttributeValue() const;
 
-        TSys::TypeHandlerPtr GetTypeHandle() const;
-
-        template<class T> T GetValue(Feedback* success=nullptr) const
+        template<class T> T Get(Feedback* success=nullptr) const
         {
-            if (!attribute)
+            auto value = GetAttributeValue();
+            if (!value)
             {
                 if (success)
                     success->status = Status::Failed;
@@ -51,21 +50,23 @@ namespace Gex
             if (success)
                 success->status = Status::Success;
 
-            return attribute->Get<T>(success);
+            return value->Get<T>();
         }
 
 
-        bool SetAnyValue(const std::any& value);
 
-
-        template<class T> bool SetValue(T value)
+        template<class T> bool Set(T value)
         {
-            if (!attribute)
+            if (!attribute->IsOutput())
+                return false;
+
+            auto attributeValue = GetAttributeValue();
+            if (!value)
             {
                 return false;
             }
 
-            return SetAnyValue(std::make_any<T>(value));
+            return attributeValue->Set<T>(value);
         }
 
         bool SetValue(const pybind11::object& value);
@@ -164,6 +165,55 @@ namespace Gex
 
     };
 
+    /*
+    class AttributeValueHandle;
+
+    typedef std::shared_ptr<AttributeValueHandle> AttributeValueHandlePtr;
+    typedef std::weak_ptr<AttributeValueHandle> AttributeValueHandleWkPtr;
+
+    class GEX_API AttributeValueHandle
+    {
+        const std::string name;
+        const TSys::TypedValuePtr attributeValue;
+        const AttributeValueHandleWkPtr source;
+
+        std::map<std::string, AttributeValueHandlePtr> childValueHandle;
+
+    public:
+        AttributeValueHandle(const AttributePtr& attribute);
+
+        TSys::TypedValuePtr GetTypedValue() const;
+
+        template<class T>
+        T Get() const
+        {
+            return GetTypedValue()->Get<T>();
+        }
+
+        template<class T>
+        bool Set(T value)
+        {
+            return GetTypedValue()->Set<T>();
+        }
+
+        AttributeValueHandlePtr GetChildAttribute(
+                const std::string& name
+        ) const;
+    };
+
+
+    class GEX_API NodeAttributeData
+    {
+        std::map<std::string, AttributeValueHandlePtr> attributes;
+
+    public:
+        NodeAttributeData(const Gex::NodePtr& node);
+
+        AttributeValueHandleWkPtr GetAttribute(
+                const std::string& name
+        ) const;
+    };
+*/
 };
 
 

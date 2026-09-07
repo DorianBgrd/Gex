@@ -43,51 +43,17 @@ Gex::NodePtr Gex::NodeAttributeData::GetNode() const
 }
 
 
-std::any Gex::NodeAttributeData::GetAnyValue(Feedback* status)
+TSys::TypedValuePtr Gex::NodeAttributeData::GetAttributeValue() const
 {
-    if (!attribute)
-    {
-        SET_STATUS(status, Status::Failed)
-
-        return std::make_any<bool>();
-    }
-
-    SET_STATUS(status, Status::Failed)
-
-    return attribute->GetAnyValue();
-}
-
-
-TSys::TypeHandlerPtr Gex::NodeAttributeData::GetTypeHandle() const
-{
-    if (!attribute)
-        return {};
-
-    return attribute->TypeHandle();
-}
-
-
-bool Gex::NodeAttributeData::SetAnyValue(const std::any& value)
-{
-    if(!attribute)
-    {
-        return false;
-    }
-
-    return attribute->SetAnyValue(value);
+    return attribute->GetResolvedValue();
 }
 
 
 bool Gex::NodeAttributeData::SetValue(const pybind11::object& pyValue)
 {
-    auto typeHandle = GetTypeHandle();
-
-    if (!typeHandle)
-        return false;
-
     try
     {
-        return SetAnyValue(typeHandle->FromPython(pyValue));
+        return GetAttributeValue()->Set(pyValue);
     }
     catch (pybind11::error_already_set&)
     {
