@@ -1,20 +1,14 @@
-#pragma once
-#include "typeSystem.h"
-
-
-#include <any>
-#include <variant>
-#include <string>
-#include <map>
-#include <vector>
-#include "rapidjson/reader.h"
-#include "rapidjson/document.h"
+#ifndef TSYS_DEFAULT_TYPES
+#define TSYS_DEFAULT_TYPES
 
 #include "api.h"
 
 
 namespace TSys
 {
-    void RegisterDefaultTypes(TSys::TypeValueRegistry* registry);
+    class TypeValueRegistry;
+
+    void RegisterDefaultTypes(TypeValueRegistry* registry);
 }
 
+#endif //TSYS_DEFAULT_TYPES

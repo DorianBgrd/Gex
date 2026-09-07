@@ -155,30 +155,16 @@ bool Gex::Node::IsCompound() const
 }
 
 
-std::any Gex::Node::InitValue(const std::type_info& t)
-{
-    auto* registry = TSys::TypeRegistry::GetRegistry();
-
-    auto handler = registry->GetTypeHandle(t);
-    if (!handler)
-    {
-        return {};
-    }
-
-    return handler->InitValue();
-}
-
-
 Gex::AttributeWkPtr Gex::Node::CreateAttributeFromValue(
         const std::string& name,
-        const std::any& v,
+        const TSys::TypedValuePtr& typedValue,
         const AttrValueType& valueType,
         const AttrType& type,
         const AttributeWkPtr& parent
 )
 {
     auto attribute = std::make_shared<Attribute>(
-            name, v, valueType, type, !IsInitializing(),
+            name, typedValue, valueType, type, !IsInitializing(),
             shared_from_this(), parent);
 
     bool success = false;
@@ -200,16 +186,17 @@ Gex::AttributeWkPtr Gex::Node::CreateAttributeFromTypeName(
         const AttrValueType& valueType, const AttrType& type,
         const AttributeWkPtr& parent)
 {
-    auto* registry = TSys::TypeRegistry::GetRegistry();
-    auto handler = registry->GetTypeHandle(apiName);
-    if (!handler)
+    auto value = TSys::GetRegistry()->CreateValue(apiName);
+    if (!value)
     {
         std::cerr << "Could not find handler for type " << apiName << std::endl;
         return {};
     }
 
-    return CreateAttributeFromValue(name, handler->InitValue(),
-                                    valueType, type, parent);
+    return CreateAttributeFromValue(
+            name, value, valueType,
+            type, parent
+    );
 }
 
 
@@ -697,7 +684,7 @@ void Gex::Node::Serialize(rapidjson::Value& dict, rapidjson::Document& json) con
 }
 
 
-bool Gex::Node::Deserialize(rapidjson::Value& dict)
+bool Gex::Node::Deserialize(rapidjson::Value& dict, rapidjson::Document& json)
 {
     Config conf = Config::GetConfig();
     if (dict.HasMember(conf.nodeCustomAttributesKey.c_str()))
@@ -724,7 +711,7 @@ bool Gex::Node::Deserialize(rapidjson::Value& dict)
                 continue;
             }
 
-            attr->Deserialize(itr->value);
+            attr->Deserialize(itr->value, json);
         }
     }
 
@@ -737,7 +724,7 @@ bool Gex::Node::Deserialize(rapidjson::Value& dict)
     if (dict.HasMember(conf.nodeMetadataKey.c_str()))
     {
         rapidjson::Value& m = dict[conf.nodeMetadataKey.c_str()];
-        metadata.Deserialize(m);
+        metadata.Deserialize(m, json);
     }
 
     return true;
@@ -1785,9 +1772,10 @@ void Gex::CompoundNode::Serialize(rapidjson::Value& dict,
 }
 
 
-bool Gex::CompoundNode::Deserialize(rapidjson::Value& dict)
+bool Gex::CompoundNode::Deserialize(rapidjson::Value& dict,
+                                    rapidjson::Document& json)
 {
-    bool success = Gex::Node::Deserialize(dict);
+    bool success = Gex::Node::Deserialize(dict, json);
 
     if (!success)
         return success;
@@ -1800,7 +1788,7 @@ bool Gex::CompoundNode::Deserialize(rapidjson::Value& dict)
         rapidjson::Value& nodes_ = dict[conf.compoundNodesKey.c_str()];
         for (auto iter = nodes_.MemberBegin(); iter != nodes_.MemberEnd(); iter++)
         {
-            NodePtr node = NodeFactory::GetFactory()->LoadNode(iter->value);
+            NodePtr node = NodeFactory::GetFactory()->LoadNode(iter->value, json);
             if (!node)
             {
                 success = false;
@@ -1815,13 +1803,13 @@ bool Gex::CompoundNode::Deserialize(rapidjson::Value& dict)
 
     if (dict.HasMember(conf.compoundInputsKey.c_str()) && inputs)
     {
-        inputs->Deserialize(dict[conf.compoundInputsKey.c_str()]);
+        inputs->Deserialize(dict[conf.compoundInputsKey.c_str()], json);
         createdNodes[inputs->Name()] = inputs;
     }
 
     if (dict.HasMember(conf.compoundOutputsKey.c_str()) && outputs)
     {
-        outputs->Deserialize(dict[conf.compoundOutputsKey.c_str()]);
+        outputs->Deserialize(dict[conf.compoundOutputsKey.c_str()], json);
         createdNodes[outputs->Name()] = outputs;
     }
 
@@ -2100,10 +2088,15 @@ Gex::NodePtr Duplicate(std::map<Gex::NodePtr, Gex::NodePtr>& res,
             }
             else
             {
-                destAttribute = new_->CreateAttributeFromValue(attribute->Name(), attribute->GetAnyValue(),
-                                                               attribute->GetAttrValueType(),
-                                                               attribute->GetAttrType(),
-                                                               newParent_);
+                destAttribute = new_->CreateAttributeFromValue(
+                        attribute->Name(),
+                        TSys::GetRegistry()->WrapValue(
+                                attribute->GetAnyValue()
+                        ),
+                        attribute->GetAttrValueType(),
+                        attribute->GetAttrType(),
+                        newParent_
+                );
             }
 
         }
@@ -2278,7 +2271,7 @@ Gex::NodePtr Gex::CompoundNode::ToCompound(NodeList sources, bool duplicate,
                     else
                     {
                         sharedProxy = compound->CreateAttributeFromValue(
-                                pname, lockedSource->GetAnyValue(),
+                                pname, TSys::GetRegistry()->WrapValue(lockedSource->GetAnyValue()),
                                 lockedSource->GetAttrValueType(),
                                 type);
                     }
@@ -2329,9 +2322,10 @@ Gex::NodePtr Gex::CompoundNode::ToCompound(NodeList sources, bool duplicate,
                     }
                     else
                     {
-                        sharedProxy = compound->CreateAttributeFromValue(pname, lockedDest->GetAnyValue(),
-                                                                   lockedDest->GetAttrValueType(),
-                                                                   lockedDest->GetAttrType());
+                        sharedProxy = compound->CreateAttributeFromValue(
+                                pname, TSys::GetRegistry()->WrapValue(lockedDest->GetAnyValue()),
+                                lockedDest->GetAttrValueType(),
+                                lockedDest->GetAttrType());
                     }
                 }
 

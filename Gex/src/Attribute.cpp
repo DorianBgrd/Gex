@@ -1134,6 +1134,18 @@ std::vector<Gex::AttributeWkPtr> Gex::Attribute::Dests()
 }
 
 
+bool Gex::Attribute::Set(const pybind11::object& value)
+{
+    return attributeValue->Set(value);
+}
+
+
+pybind11::object Gex::Attribute::Get() const
+{
+    return attributeValue->Get();
+}
+
+
 std::vector<Gex::AttributeWkPtr> Gex::Attribute::GetArray() const
 {
     std::vector<AttributeWkPtr> arr;

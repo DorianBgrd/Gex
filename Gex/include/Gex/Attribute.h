@@ -629,6 +629,8 @@ namespace Gex
             );
 		}
 
+        bool Set(const pybind11::object& value);
+
         template<class T>
         bool IsOfType() const
         {
@@ -643,10 +645,12 @@ namespace Gex
 
 	public:
 		template<class T>
-		T Get(Feedback* status=nullptr)
+		T Get(Feedback* status=nullptr) const
 		{
 			return attributeValue->Get<T>();
 		}
+
+        pybind11::object Get() const;
 
 		std::vector<AttributeWkPtr> GetArray() const;
 

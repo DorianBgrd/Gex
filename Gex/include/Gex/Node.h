@@ -345,9 +345,6 @@ namespace Gex
           */
          virtual bool IsCompound() const;
 
-    private:
-        std::any InitValue(const std::type_info& t);
-
     public:
 
         /**
@@ -365,12 +362,14 @@ namespace Gex
                                        const AttrType& type = AttrType::Static,
                                        const AttributeWkPtr& parent = AttributeWkPtr())
 		{
-            return CreateAttributeFromValue(name, InitValue(typeid(T)),
-                                            valueType, type, parent);
+            return CreateAttributeFromValue(
+                    name, TSys::GetRegistry()->CreateValue<T>(),
+                    valueType, type, parent
+            );
 		}
 
 
-		AttributeWkPtr CreateAttributeFromValue(const std::string& name, const std::any& v,
+		AttributeWkPtr CreateAttributeFromValue(const std::string& name, const TSys::TypedValuePtr& v,
                                                 const AttrValueType& valueType = AttrValueType::Single,
                                                 const AttrType& type = AttrType::Static,
                                                 const AttributeWkPtr& parent=AttributeWkPtr());
@@ -450,7 +449,8 @@ namespace Gex
         /**
 		 * Deserializes node from json values.
 		 */
-        virtual bool Deserialize(rapidjson::Value& dict);
+        virtual bool Deserialize(rapidjson::Value& dict,
+                                 rapidjson::Document& json);
 
     protected:
         /**
@@ -840,7 +840,7 @@ namespace Gex
          * Deserializes node values.
          * @param dict
          */
-        bool Deserialize(rapidjson::Value& dict) override;
+        bool Deserialize(rapidjson::Value& dict, rapidjson::Document& json) override;
 
         static Feedback CheckLoadStatus(rapidjson::Value& dict);
 

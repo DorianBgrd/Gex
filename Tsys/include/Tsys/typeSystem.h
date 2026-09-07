@@ -1,11 +1,6 @@
 #ifndef GEX_TYPESYSTEM_H
 #define GEX_TYPESYSTEM_H
 
-#pragma once
-
-//#ifndef BOOST_PYTHON_STATIC_LIB
-//#define BOOST_PYTHON_STATIC_LIB
-//#endif
 #include <map>
 #include <vector>
 #include <set>
@@ -45,15 +40,13 @@ namespace TSys
     typedef std::function<std::any(const std::any&, const std::any&)> Converter;
 
     template<class Source, class Dest>
-    std::any CtorConvert(const std::any& value, const std::any& current)
+    static std::any CtorConvert(const std::any& value, const std::any& current)
     {
         return std::make_any<Source>(Source(std::any_cast<Dest>(value)));
     }
 
-    TypedValuePtr DefaultCreator(const TypePtr& type)
-    {
-        return std::make_shared<TypedValue>(type);
-    }
+    TSYS_API
+    TypedValuePtr DefaultCreator(const TypePtr& type);
 
     template<class T>
     std::any UseDefaultCtor()
@@ -67,15 +60,11 @@ namespace TSys
         return std::any_cast<T>(v1) == std::any_cast<T>(v2);
     }
 
-    std::any UnuseFromPython(const pybind11::object&)
-    {
-        return {};
-    }
+    TSYS_API
+    std::any UnuseFromPython(const pybind11::object&);
 
-    pybind11::object UnuseToPython(const std::any&)
-    {
-        return {};
-    }
+    TSYS_API
+    pybind11::object UnuseToPython(const std::any&);
 
     template<class T>
     std::any DefaultPyBindToAnyCast(const pybind11::object& obj)
@@ -92,7 +81,7 @@ namespace TSys
 
 
     template<class Source, class Dest>
-    Converter MakeConverter() {
+    Converter  MakeConverter() {
         return CtorConvert<Source, Dest>;
     }
 
@@ -100,7 +89,7 @@ namespace TSys
     class TypeValueRegistry;
 
 
-    class Type
+    class TSYS_API Type
     {
         TypeValueRegistry* _registry;
 
@@ -241,7 +230,7 @@ namespace TSys
     };
 
 
-    class TypedValue: public std::enable_shared_from_this<TypedValue>
+    class TSYS_API TypedValue: public std::enable_shared_from_this<TypedValue>
     {
         const TypePtr _type;
         std::any _value;
@@ -435,7 +424,7 @@ namespace TSys
     typedef void(*InitCallback)(TypeValueRegistry*);
 
 
-    class TypeValueRegistry
+    class TSYS_API TypeValueRegistry
     {
         static TypeValueRegistry* instance;
 

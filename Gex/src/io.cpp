@@ -145,7 +145,7 @@ Gex::NodePtr Gex::LoadGraph(const std::string& filepath, Feedback* success)
         return nullptr;
     }
 
-    auto graph = NodeFactory::GetFactory()->LoadNode(doc.GetObject());
+    auto graph = NodeFactory::GetFactory()->LoadNode(doc.GetObject(), doc);
     if (!graph)
     {
         if (success)
@@ -167,7 +167,7 @@ Gex::NodePtr Gex::LoadGraphString(const std::string& content, Feedback* success)
         return nullptr;
     }
 
-    auto graph = NodeFactory::GetFactory()->LoadNode(doc.GetObject());
+    auto graph = NodeFactory::GetFactory()->LoadNode(doc.GetObject(), doc);
     if (!graph)
     {
         if (success)

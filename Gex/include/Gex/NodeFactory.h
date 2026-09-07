@@ -62,7 +62,9 @@ namespace Gex
          * @param dict node data.
          * @param node Node ptr.
          */
-        virtual void DeserializeNode(rapidjson::Value& dict, const NodePtr& node) const;
+        virtual void DeserializeNode(rapidjson::Value& dict,
+                                     rapidjson::Document& json,
+                                     const NodePtr& node) const;
 
         /**
          * Load node from serialized values.
@@ -70,7 +72,8 @@ namespace Gex
          * @param dict: data.
          * @return Node ptr.
          */
-        virtual NodePtr LoadNode(rapidjson::Value& dict) const;
+        virtual NodePtr LoadNode(rapidjson::Value& dict,
+                                 rapidjson::Document& json) const;
 
         /**
          * Serializes node.
@@ -130,7 +133,7 @@ namespace Gex
 
         NodePtr ReferenceNode(const std::string& path, const std::string& name) const;
 
-        NodePtr LoadNode(rapidjson::Value& dict) const;
+        NodePtr LoadNode(rapidjson::Value& dict, rapidjson::Document& json) const;
 
         bool SaveNode(const NodePtr& node, rapidjson::Value& dict, rapidjson::Document& json) const;
 

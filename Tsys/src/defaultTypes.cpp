@@ -1,4 +1,5 @@
 #include <Tsys/defaultTypes.h>
+#include <Tsys/typeSystem.h>
 
 #include <pybind11/pybind11.h>
 
@@ -175,7 +176,7 @@ void TSys::RegisterDefaultTypes(TSys::TypeValueRegistry* registry)
                 }
                 catch (std::invalid_argument&)
                 {
-                    return std::make_any<float>(0);
+                    return std::make_any<float>(0.0f);
                 }
             }
     );
@@ -192,7 +193,7 @@ void TSys::RegisterDefaultTypes(TSys::TypeValueRegistry* registry)
                 }
                 catch (std::invalid_argument&)
                 {
-                    return std::make_any<double>(0);
+                    return std::make_any<double>(0.0);
                 }
             }
     );

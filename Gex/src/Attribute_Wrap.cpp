@@ -19,7 +19,7 @@ pybind11::object Attribute_Python_Get(pybind11::args args,
         return {};
     }
 
-    return attribute->TypeHandle()->ToPython(attribute->GetAnyValue());
+    return attribute->Get();
 }
 
 
@@ -37,12 +37,8 @@ bool Attribute_Python_Set(pybind11::args args,
         return false;
     }
 
-    pybind11::object value = args[1];
-
-    std::any _v = attribute->TypeHandle()->FromPython(value);
-
     // Set Value.
-    return attribute->SetAnyValue(_v);
+    return attribute->Set(args[1]);
 }
 
 

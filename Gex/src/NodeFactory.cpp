@@ -38,17 +38,21 @@ void Gex::NodeBuilder::SerializeNode(const NodePtr& node, rapidjson::Value &dict
 
 
 void Gex::NodeBuilder::DeserializeNode(rapidjson::Value& dict,
+                                       rapidjson::Document& json,
                                        const NodePtr& node) const
 {
-    node->Deserialize(dict);
+    node->Deserialize(dict, json);
 }
 
 
-Gex::NodePtr Gex::NodeBuilder::LoadNode(rapidjson::Value& dict) const
+Gex::NodePtr Gex::NodeBuilder::LoadNode(
+        rapidjson::Value& dict,
+        rapidjson::Document& json
+) const
 {
     NodePtr node = InitNode();
 
-    DeserializeNode(dict, node);
+    DeserializeNode(dict, json, node);
 
     return node;
 }
@@ -161,7 +165,7 @@ Gex::NodeBuilder* Gex::NodeFactory::GetBuilder(const std::string& type) const
 }
 
 
-Gex::NodePtr Gex::NodeFactory::LoadNode(rapidjson::Value& dict) const
+Gex::NodePtr Gex::NodeFactory::LoadNode(rapidjson::Value& dict, rapidjson::Document& json) const
 {
     if (dict.HasMember(Config::GetConfig().compoundPluginsKey.c_str()))
     {
@@ -203,7 +207,7 @@ Gex::NodePtr Gex::NodeFactory::LoadNode(rapidjson::Value& dict) const
 		return nullptr;
 	}
 
-    NodePtr node = builder->LoadNode(dict);
+    NodePtr node = builder->LoadNode(dict, json);
 
     node->SetType(nodeType);
 

@@ -1,7 +1,24 @@
 #include <any>
-#include <Tsys/tsys.h>
+#include <Tsys/typeSystem.h>
 #include "rapidjson/document.h"
-#include <Tsys/defaultTypes.h>
+
+
+TSys::TypedValuePtr TSys::DefaultCreator(const TypePtr& type)
+{
+    return std::make_shared<TypedValue>(type);
+}
+
+
+std::any TSys::UnuseFromPython(const pybind11::object&)
+{
+    return {};
+}
+
+
+pybind11::object TSys::UnuseToPython(const std::any&)
+{
+    return {};
+}
 
 
 TSys::Type::Type(
@@ -199,6 +216,7 @@ pybind11::object TSys::TypedValue::Get() const
 bool TSys::TypedValue::Set(const pybind11::object& pythonObject)
 {
     _value = GetType()->FromPython(pythonObject);
+    return true;
 }
 
 
