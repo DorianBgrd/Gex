@@ -31,7 +31,7 @@ namespace JsonPlugin::Readers
                       override
         {
             auto content = context.GetAttribute("String")
-                    .GetValue<std::string>();
+                    .Get<std::string>();
 
             rapidjson::Document doc;
             doc.Parse(content.c_str());
@@ -39,7 +39,7 @@ namespace JsonPlugin::Readers
             if (doc.IsNull())
                 return false;
 
-            return context.GetAttribute("Json").SetValue(
+            return context.GetAttribute("Json").Set(
                     std::make_shared<DocumentReader>(doc)
             );
         }
@@ -73,12 +73,12 @@ namespace JsonPlugin::Readers
                       override
         {
             auto inp = context.GetAttribute("Input")
-                    .GetValue<JsonPlugin::ReaderPtr>();
+                    .Get<JsonPlugin::ReaderPtr>();
 
             auto key = context.GetAttribute("Key")
-                    .GetValue<std::string>();
+                    .Get<std::string>();
 
-            return context.GetAttribute("Output").SetValue(
+            return context.GetAttribute("Output").Set(
                     std::make_shared<JsonPlugin::DictValue>(key)
             );
         }
@@ -112,12 +112,12 @@ namespace JsonPlugin::Readers
         override
         {
             auto inp = context.GetAttribute("Input")
-                    .GetValue<JsonPlugin::ReaderPtr>();
+                    .Get<JsonPlugin::ReaderPtr>();
 
             auto index = context.GetAttribute("Index")
-                    .GetValue<int>();
+                    .Get<int>();
 
-            return context.GetAttribute("Output").SetValue(
+            return context.GetAttribute("Output").Set(
                     std::make_shared<JsonPlugin::ListValue>(index)
             );
         }

@@ -5,7 +5,7 @@
 
 namespace Gex
 {
-    typedef std::unordered_map<std::string, std::any> AttributeValues;
+    typedef std::unordered_map<std::string, TSys::TypedValuePtr> AttributeValues;
 
     bool RunGraph(const NodePtr& graph, const AttributeValues& values,
                   int threadNumber=1, const Profiler& profiler=nullptr,

@@ -21,13 +21,23 @@ extern EXPORT RegisterPlugin(Gex::PluginLoader* loader)
     loader->GetRegistry()->RegisterType<Geometry::Types::Face>(
             "Geometry::Face", TSys::DefaultCreator,
             Geometry::Types::SerializeFace,
-            Geometry::Types::DeserializeFace
+            Geometry::Types::DeserializeFace,
+            TSys::UnuseFromPython,
+            TSys::UnuseToPython,
+            TSys::UseDefaultCtor<Geometry::Types::Face>,
+            TSys::DefaultEqualOp<Geometry::Types::Face>,
+            nullptr, nullptr, nullptr, nullptr
     );
 
     loader->GetRegistry()->RegisterType<Geometry::Types::Mesh>(
             "Geometry::Mesh", TSys::DefaultCreator,
             Geometry::Types::SerializeMesh,
-            Geometry::Types::DeserializeMesh
+            Geometry::Types::DeserializeMesh,
+            TSys::UnuseFromPython,
+            TSys::UnuseToPython,
+            TSys::UseDefaultCtor<Geometry::Types::Mesh>,
+            TSys::DefaultEqualOp<Geometry::Types::Mesh>,
+            nullptr, nullptr, nullptr, nullptr
     );
 
 

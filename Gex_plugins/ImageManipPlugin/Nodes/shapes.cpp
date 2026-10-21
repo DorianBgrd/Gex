@@ -34,14 +34,14 @@ bool ImageManip::Nodes::RectangleNode::Evaluate(
         Gex::GraphContext &graphContext,
         Gex::NodeProfiler &profiler)
 {
-    auto res = context.GetAttribute("Resolution").GetValue<ImageManip::Types::Resolution>();
-    int x = context.GetAttribute("x").GetValue<int>();
-    int y = context.GetAttribute("y").GetValue<int>();
-    int width = context.GetAttribute("width").GetValue<int>();
-    int height = context.GetAttribute("height").GetValue<int>();
-    QColor color = context.GetAttribute("Color").GetValue<QColor>();
+    auto res = context.GetAttribute("Resolution").Get<ImageManip::Types::Resolution>();
+    int x = context.GetAttribute("x").Get<int>();
+    int y = context.GetAttribute("y").Get<int>();
+    int width = context.GetAttribute("width").Get<int>();
+    int height = context.GetAttribute("height").Get<int>();
+    QColor color = context.GetAttribute("Color").Get<QColor>();
 
-    return context.GetAttribute("Image").SetValue<QImage>(
+    return context.GetAttribute("Image").Set<QImage>(
                 ImageManip::Manip::GenerateRectangle(
                         res.at(0), res.at(1),
                         x, y, width, height, color)
@@ -78,14 +78,14 @@ bool ImageManip::Nodes::EllipseNode::Evaluate(
         Gex::GraphContext &graphContext,
         Gex::NodeProfiler &profiler)
 {
-    auto res = context.GetAttribute("Resolution").GetValue<ImageManip::Types::Resolution>();
-    int x = context.GetAttribute("x").GetValue<int>();
-    int y = context.GetAttribute("y").GetValue<int>();
-    int width = context.GetAttribute("width").GetValue<int>();
-    int height = context.GetAttribute("height").GetValue<int>();
-    QColor color = context.GetAttribute("Color").GetValue<QColor>();
+    auto res = context.GetAttribute("Resolution").Get<ImageManip::Types::Resolution>();
+    int x = context.GetAttribute("x").Get<int>();
+    int y = context.GetAttribute("y").Get<int>();
+    int width = context.GetAttribute("width").Get<int>();
+    int height = context.GetAttribute("height").Get<int>();
+    QColor color = context.GetAttribute("Color").Get<QColor>();
 
-    return context.GetAttribute("Image").SetValue<QImage>(
+    return context.GetAttribute("Image").Set<QImage>(
             ImageManip::Manip::GenerateEllipse(
                     res.at(0), res.at(1),
                     x, y, width, height, color)
@@ -111,7 +111,7 @@ void ImageManip::Nodes::PolygonNode::InitAttributes()
     CreateAttribute<QColor>("Color", Gex::AttrValueType::Single,
                             Gex::AttrType::Input);
 
-    CreateAttribute<Types::Point>("Points", Gex::AttrValueType::Multi,
+    CreateAttribute<Types::Point>("Points", Gex::AttrValueType::Array,
                                   Gex::AttrType::Input);
 
     CreateAttribute<QImage>("Image", Gex::AttrValueType::Single,
@@ -124,15 +124,15 @@ bool ImageManip::Nodes::PolygonNode::Evaluate(
         Gex::GraphContext &graphContext,
         Gex::NodeProfiler &profiler)
 {
-    auto res = context.GetAttribute("Resolution").GetValue<ImageManip::Types::Resolution>();
-    int width = context.GetAttribute("width").GetValue<int>();
-    int height = context.GetAttribute("height").GetValue<int>();
-    QColor color = context.GetAttribute("Color").GetValue<QColor>();
-    QImage src = context.GetAttribute("Source").GetValue<QImage>();
+    auto res = context.GetAttribute("Resolution").Get<ImageManip::Types::Resolution>();
+    int width = context.GetAttribute("width").Get<int>();
+    int height = context.GetAttribute("height").Get<int>();
+    QColor color = context.GetAttribute("Color").Get<QColor>();
+    QImage src = context.GetAttribute("Source").Get<QImage>();
 
     auto points = context.GetAttribute("Points").GetArrayValues<Types::Point>();
 
-    return context.GetAttribute("Image").SetValue<QImage>(
+    return context.GetAttribute("Image").Set<QImage>(
             ImageManip::Manip::GeneratePolygon(
                     res.at(0), res.at(1),
                     points, color, src)

@@ -5,14 +5,12 @@
 
 void Gex::Condition::ConditionNode::InitAttributes()
 {
-    CreateAttribute<TSys::AnyValue>(
-            "Input1", Gex::AttrValueType::Single,
-            Gex::AttrType::Input
+    CreateGenericAttribute(
+            "Input1", Gex::AttrType::Input
     );
 
-    CreateAttribute<TSys::AnyValue>(
-            "Input2", Gex::AttrValueType::Single,
-            Gex::AttrType::Input
+    CreateGenericAttribute(
+            "Input2", Gex::AttrType::Input
     );
 
     CreateAttribute<bool>(
@@ -20,9 +18,8 @@ void Gex::Condition::ConditionNode::InitAttributes()
             Gex::AttrType::Input
     );
 
-    CreateAttribute<TSys::AnyValue>(
-            "Output", Gex::AttrValueType::Single,
-            Gex::AttrType::Output
+    CreateGenericAttribute(
+            "Output", Gex::AttrType::Output
     );
 }
 
@@ -32,15 +29,15 @@ bool Gex::Condition::ConditionNode::Evaluate(
         GraphContext &graphContext,
         NodeProfiler &profiler)
 {
-    auto condition = context.GetAttribute("Condition").GetValue<bool>();
+    auto condition = context.GetAttribute("Condition").Get<bool>();
 
     std::array<std::string, 2> alt = {"Input1", "Input2"};
 
-    auto value = context.GetAttribute(
-            alt.at((int)condition)
-    ).GetValue<TSys::AnyValue>();
-
-    return context.GetAttribute("Output").SetValue(value);
+    context.GetAttribute("Output").SetAttributeValue(
+            context.GetAttribute(alt.at((int) condition))
+            .GetAttributeValue()
+    );
+    return true;
 }
 
 Gex::ScheduledItemPtr Gex::Condition::ConditionalScheduler::Schedule(
@@ -55,7 +52,7 @@ Gex::ScheduledItemPtr Gex::Condition::ConditionalScheduler::Schedule(
             if (node->Type() == "Condition")
             {
                 auto conditionBranch = GetScheduledBranch(
-                    node, [](const ScheduledItemWkPtr& item)
+                        nodeItem, [](const ScheduledItemWkPtr& item)
                     {
                         auto sched = std::dynamic_pointer_cast<ScheduledNode>(item.ToShared());
                         if (!sched)
@@ -86,11 +83,11 @@ Gex::ScheduledItemPtr Gex::Condition::ConditionalScheduler::Schedule(
 
                 // Re-schedule input conditional branches...
                 auto input1Branch = GetScheduledBranch(
-                        node, checkConditionBranch
+                        nodeItem, checkConditionBranch
                 );
 
                 auto input2Branch = GetScheduledBranch(
-                        node, checkConditionBranch
+                        nodeItem, checkConditionBranch
                 );
             }
         }

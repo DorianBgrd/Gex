@@ -507,13 +507,13 @@ void UiTSys::EnumWidget::SetValue(std::any value)
     widget->clear();
     TSys::Enum enum_ = std::any_cast<TSys::Enum>(value);
 
-    for (int idx : enum_.Indices())
+    for (unsigned int idx : enum_.GetIndices())
     {
-        std::string value_ = enum_.ValueAtIndex(idx);
+        std::string value_ = enum_.GetString(idx);
         widget->addItem(value_.c_str());
     }
 
-    widget->setCurrentIndex(enum_.CurrentIndex());
+    widget->setCurrentIndex(enum_.GetCurrentIndex());
 
     widget->blockSignals(false);
 }
@@ -525,10 +525,10 @@ std::any UiTSys::EnumWidget::GetValue() const
     for (int i = 0; i < widget->count(); i++)
     {
         std::string val = widget->itemText(i).toStdString();
-        enum_.AddValue(i, val);
+        enum_.AddValue({val, i});
     }
 
-    enum_.SetCurrentIndex(widget->currentIndex());
+    enum_.Set(widget->currentIndex());
 
     return std::make_any<TSys::Enum>(enum_);
 }
@@ -560,10 +560,10 @@ std::any UiTSys::EnumInitWidget::CreateValue()
     TSys::Enum enum_;
     for (unsigned int i = 0; i < combobox->count(); i++)
     {
-        enum_.AddValue(i, combobox->itemText(i).toStdString());
+        enum_.AddValue({combobox->itemText(i).toStdString(), i});
     }
 
-    enum_.SetCurrentIndex(combobox->currentIndex());
+    enum_.Set(combobox->currentIndex());
 
     return std::make_any<TSys::Enum>(enum_);
 }

@@ -4,16 +4,22 @@
 #include "vector.h"
 #include "matrix.h"
 
+#include "LocalApi.h"
+
 #define PI 3.14159265358979323846
 
 namespace Math
 {
 
+    MathPlugin_API
     double DegToRad(double deg);
 
+
+    MathPlugin_API
     double RadToDeg(double rad);
 
-    struct Quaternion
+
+    struct MathPlugin_API Quaternion
     {
         double x;
         double y;
@@ -23,7 +29,8 @@ namespace Math
         Quaternion operator*(const Quaternion& other) const;
     };
 
-    enum class RotateOrder
+
+    enum class MathPlugin_API RotateOrder
     {
         XYZ,
         YZX,
@@ -33,7 +40,8 @@ namespace Math
         ZYX
     };
 
-    struct EulerRotation
+
+    struct MathPlugin_API EulerRotation
     {
         double x;
         double y;
@@ -62,19 +70,26 @@ namespace Math
                         double zAngle);
     };
 
+    MathPlugin_API
     Quaternion Multiplied(const Quaternion& q1, const Quaternion& q2);
 
+    MathPlugin_API
     Quaternion ToQuaternionRotation(const EulerRotation& euler);
 
+    MathPlugin_API
     Quaternion ToQuaternionRotation(const Matrix3& euler);
 
+    MathPlugin_API
     Vector3 ToDegreeRotation(const Vector3& radian);
 
+    MathPlugin_API
     Matrix3 ToRotationMatrix(const Quaternion& rotation);
 
+    MathPlugin_API
     EulerRotation ToEulerRotation(const Matrix3& matrix,
                                   const RotateOrder& order);
 
+    MathPlugin_API
     EulerRotation ToEulerRotation(const Quaternion& quat,
                                   const RotateOrder& order);
 }

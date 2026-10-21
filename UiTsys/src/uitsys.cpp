@@ -124,40 +124,34 @@ UiTSys::UiTypeEngine::UiTypeEngine()
 
 
     RegisterType(
-        typeid(bool), "Bool",
+        "bool",
         MakeUiPtr(BoolInitWidgetCreator),
         MakeUiPtr(BoolWidgetCreator)
     );
 
 
     RegisterType(
-        typeid(int), "Int",
+        "int",
         MakeUiPtr(IntInitWidgetCreator),
         MakeUiPtr(IntWidgetCreator)
     );
 
     RegisterType(
-        typeid(float), "Float",
+        "float",
         MakeUiPtr(FloatInitWidgetCreator),
         MakeUiPtr(FloatWidgetCreator)
     );
 
     RegisterType(
-        typeid(double), "Double",
+        "double",
         MakeUiPtr(DoubleInitWidgetCreator),
         MakeUiPtr(DoubleWidgetCreator)
     );
 
     RegisterType(
-        typeid(std::string), "String",
+        "string",
         MakeUiPtr(StringInitWidgetCreator),
         MakeUiPtr(StringWidgetCreator)
-    );
-
-    RegisterType(
-        typeid(TSys::Enum), "Enum",
-        MakeUiPtr(EnumInitWidgetCreator),
-        MakeUiPtr(EnumWidgetCreator)
     );
 }
 
@@ -173,33 +167,33 @@ UiTSys::UiTypeEngine*  UiTSys::UiTypeEngine::GetEngine()
 
 
 bool UiTSys::UiTypeEngine::RegisterType(
-        const std::type_index& t, std::string uiName,
+        const std::string& typeName,
         const TypedInitCreatorPtr& initCreator,
         const TypedCreatorPtr& widgetCreator,
         bool force
 )
 {
     auto type = MakeUiPtr(UiType);
-    type->uiName = uiName;
+    type->uiName = typeName;
     type->initCreator = initCreator;
     type->widgetCreator = widgetCreator;
 
-    return RegisterType(t, type, force);
+    return RegisterType(typeName, type, force);
 }
 
 
 bool UiTSys::UiTypeEngine::RegisterType(
-        const std::type_index& t,
+        const std::string& typeName,
         const UiTypePtr& uiType,
         bool force
 )
 {
-    if (!force && uiTypes.find(t) != uiTypes.end())
+    if (!force && uiTypes.find(typeName) != uiTypes.end())
     {
         return false;
     }
 
-    uiTypes[t] = uiType;
+    uiTypes[typeName] = uiType;
     return true;
 }
 
@@ -219,8 +213,8 @@ void UiTSys::UiTypeEngine::RegisterDefaultType(
 
 
 UiTSys::TypedWidget* UiTSys::UiTypeEngine::CreateWidget(
-        const std::type_index& t,
-        const std::string& name
+        const std::string& t,
+        const std::string& title
 )
 {
     auto iter = uiTypes.find(t);
@@ -231,19 +225,19 @@ UiTSys::TypedWidget* UiTSys::UiTypeEngine::CreateWidget(
             if (!defaultType->widgetCreator)
                 return nullptr;
 
-            return defaultType->widgetCreator->NewTypedWidget(name);
+            return defaultType->widgetCreator->NewTypedWidget(title);
         }
 
         return nullptr;
     }
 
     auto type = uiTypes.at(t);
-    return type->widgetCreator->NewTypedWidget(name);
+    return type->widgetCreator->NewTypedWidget(title);
 }
 
 
 UiTSys::TypedInitWidget* UiTSys::UiTypeEngine::CreateInitWidget(
-        const std::type_index& t
+        const std::string& t
 )
 {
     auto iter = uiTypes.find(t);
@@ -265,55 +259,12 @@ UiTSys::TypedInitWidget* UiTSys::UiTypeEngine::CreateInitWidget(
 }
 
 
-std::string UiTSys::UiTypeEngine::UiName(
-        const std::type_index& t
-) const
-{
-    if (uiTypes.find(t) == uiTypes.end())
-    {
-        return {};
-    }
-
-    auto type = uiTypes.at(t);
-    return type->uiName;
-}
-
-
-std::type_index UiTSys::UiTypeEngine::UiTypeIndex(
-        const std::string& name
-) const
-{
-    auto cmp = [name](const std::pair<std::type_index, UiTypePtr> p) -> bool
-    {
-        return p.second->uiName == name;
-    };
-
-    auto iter = std::find_if(uiTypes.begin(), uiTypes.end(), cmp);
-    if (iter == uiTypes.end())
-        return typeid(TSys::None);
-
-    return iter->first;
-}
-
-
-std::vector<std::type_index> UiTSys::UiTypeEngine::UiTypes() const
-{
-    std::vector<std::type_index> types;
-    for (const auto& pair : uiTypes)
-    {
-        types.push_back(pair.first);
-    }
-
-    return types;
-}
-
-
 std::vector<std::string> UiTSys::UiTypeEngine::UiTypeNames() const
 {
     std::vector<std::string> names;
-    for (auto pair : uiTypes)
+    for (const auto& pair : uiTypes)
     {
-        names.push_back(pair.second->uiName);
+        names.push_back(pair.first);
     }
 
     return names;

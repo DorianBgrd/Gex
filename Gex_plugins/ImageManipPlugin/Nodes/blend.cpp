@@ -28,15 +28,15 @@ bool ImageManip::Nodes::BlendImages::Evaluate(
         Gex::NodeProfiler &profiler)
 {
     auto src = context.GetAttribute("Input1")
-            .GetValue<QImage>();
+            .Get<QImage>();
     auto dst = context.GetAttribute("Input2")
-            .GetValue<QImage>();
+            .Get<QImage>();
     auto mask = context.GetAttribute("Mask")
-            .GetValue<QImage>();
+            .Get<QImage>();
     auto blend = context.GetAttribute("Blender")
-            .GetValue<float>();
+            .Get<float>();
 
-    return context.GetAttribute("Output").SetValue(
+    return context.GetAttribute("Output").Set(
             ImageManip::Manip::Blend(src, dst, blend, mask));
 }
 
@@ -50,13 +50,12 @@ void ImageManip::Nodes::LayerBlend::InitAttributes()
     CreateAttribute<QImage>("Output", Gex::AttrValueType::Single,
                             Gex::AttrType::Output);
 
-    TSys::Enum compositionMode;
-    unsigned int i = 0;
-    for (auto name : ImageManip::Manip::CompositionModeNames)
-    {
-        compositionMode.AddValue(i, name);
-        i++;
-    }
+    std::vector<std::string> compModes(
+            ImageManip::Manip::CompositionModeNames.begin(),
+            ImageManip::Manip::CompositionModeNames.end()
+    );
+
+    TSys::Enum compositionMode(compModes);
 
     CreateAttribute<TSys::Enum>(
             "CompositionMode", Gex::AttrValueType::Single,
@@ -71,14 +70,17 @@ bool ImageManip::Nodes::LayerBlend::Evaluate(
         Gex::NodeProfiler &profiler)
 {
     auto src = context.GetAttribute("Input1")
-            .GetValue<QImage>();
+            .Get<QImage>();
     auto bld = context.GetAttribute("Input2")
-            .GetValue<QImage>();
+            .Get<QImage>();
     auto mode = context.GetAttribute("CompositionMode")
-            .GetValue<TSys::Enum>();
+            .Get<TSys::Enum>();
 
-    return context.GetAttribute("Output").SetValue(
-            ImageManip::Manip::LayerBlend(src, bld, mode.CurrentValue()));
+    return context.GetAttribute("Output").Set(
+        ImageManip::Manip::LayerBlend(
+                src, bld, mode.GetCurrentString()
+            )
+    );
 }
 
 
@@ -99,11 +101,11 @@ bool ImageManip::Nodes::RGBMask::Evaluate(
         Gex::NodeProfiler &profiler)
 {
     auto src = context.GetAttribute("Input")
-            .GetValue<QImage>();
+            .Get<QImage>();
     auto msk = context.GetAttribute("Mask")
-            .GetValue<QImage>();
+            .Get<QImage>();
 
-    return context.GetAttribute("Output").SetValue(
+    return context.GetAttribute("Output").Set(
             ImageManip::Manip::ApplyRGBMask(src, msk));
 }
 
@@ -125,11 +127,11 @@ bool ImageManip::Nodes::AlphaMask::Evaluate(
         Gex::NodeProfiler &profiler)
 {
     auto src = context.GetAttribute("Input")
-            .GetValue<QImage>();
+            .Get<QImage>();
     auto msk = context.GetAttribute("Mask")
-            .GetValue<QImage>();
+            .Get<QImage>();
 
-    return context.GetAttribute("Output").SetValue(
+    return context.GetAttribute("Output").Set(
             ImageManip::Manip::ApplyRGBMask(src, msk));
 }
 

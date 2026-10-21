@@ -24,9 +24,11 @@ namespace Gex
     enum class GEX_API AttrValueType
     {
         Single,
-        Multi,
+        Array,
         Holder,
-        MultiHolder
+        ArrayHolder,
+        ArrayIndex,
+        ArrayIndexHolder
     };
 
     enum class GEX_API AttrType
@@ -54,6 +56,7 @@ namespace Gex
     };
 
 	class Node;
+	class GenericNode;
 	class CompoundNode;
     class NodeAttributeData;
 
@@ -62,6 +65,7 @@ namespace Gex
 	class GEX_API Attribute: public std::enable_shared_from_this<Attribute>
 	{
 		friend Node;
+		friend GenericNode;
 		friend CompoundNode;
 		friend NodeAttributeData;
 
@@ -73,7 +77,8 @@ namespace Gex
 
         TSys::TypedValuePtr attributeValue;
         TSys::TypedValuePtr defaultValue;
-        const TSys::TypePtr valueType;
+        TSys::TypePtr valueType;
+        bool isGeneric = false;
 
 		NodeWkPtr attributeNode;
 
@@ -155,6 +160,14 @@ namespace Gex
             Attribute(name, TSys::GetRegistry()->GetType<T>(), valueType,
                       type, userDefined, node, parent){}
 
+        // Creates a template attribute.
+        explicit Attribute(const std::string& name,
+                           const AttrValueType& valueType=AttrValueType::Single,
+                           const AttrType& type=AttrType::Static,
+                           bool userDefined=false,
+                           const NodePtr& node=nullptr,
+                           const AttributeWkPtr& parent=AttributeWkPtr());
+
         explicit Attribute(const std::string& name, const TSys::TypePtr& t,
                            const AttrValueType& valueType = AttrValueType::Single,
                            const AttrType& type = AttrType::Static, bool userDefined = false,
@@ -176,7 +189,8 @@ namespace Gex
          * @param Attribute* parent: attribute parent Attribute ptr.
          */
         explicit Attribute(const std::string& name,
-                           const AttrType& type = AttrType::Static, bool multi=false,
+                           const AttrType& type = AttrType::Static,
+                           const AttrValueType& valueType = AttrValueType::Single,
                            bool userDefined = false, const NodePtr& node = nullptr,
                            const AttributeWkPtr& parent = AttributeWkPtr());
 
@@ -208,6 +222,10 @@ namespace Gex
 		void SetParentNode(const NodePtr& node);
 
         TSys::TypedValuePtr GetResolvedValue() const;
+
+        std::vector<TSys::TypedValuePtr> GetResolvedArrayValues() const;
+
+        void SetIndexValue(unsigned int index, const TSys::TypedValuePtr& value);
 
 	public:
         /**
@@ -252,12 +270,12 @@ namespace Gex
          */
         TSys::TypePtr Type() const;
 
-        /**
-         * Returns attribute default value.
-         * @return std::any default value.
-         */
-        std::any DefaultValue() const;
+        bool HasType() const;
 
+    protected:
+        void SwitchType(const TSys::TypePtr& type);
+
+    public:
         /**
          * Resets attribute to its default value.
          */
@@ -311,13 +329,15 @@ namespace Gex
          * Returns whether attribute is multi.
          * @return bool is multi.
          */
-        bool IsMulti() const;
+        bool IsArray() const;
 
         /**
          * Returns whether attribute is holder.
          * @return bool is holder.
          */
 		bool IsHolder() const;
+
+        bool IsGeneric() const;
 
         /**
          * Returns whether attribute is currently editable.
@@ -454,6 +474,8 @@ namespace Gex
 		* @return bool: success.
 		*/
 		bool CreateIndex(unsigned int index);
+
+        Gex::AttributeWkPtr GetOrCreateIndex(unsigned int index);
 
     private:
         bool _CreateIndex(unsigned int index);
@@ -624,8 +646,8 @@ namespace Gex
 		template<class T>
 		bool Set(T value)
 		{
-			return SetAnyValue(
-                    std::make_any<T>(value)
+			return SetValue(
+                   TSys::GetRegistry()->WrapValue(value)
             );
 		}
 
@@ -693,11 +715,16 @@ namespace Gex
 
 		std::any GetAnyValue() const;
 
+        TSys::TypedValuePtr GetValue() const;
+
     private:
-        bool _SetAnyValue(const std::any& value);
+        bool _SetValue(const TSys::TypedValuePtr& value);
 
     public:
-		bool SetAnyValue(const std::any& value);
+
+        bool IsValueEditable() const;
+
+        bool SetValue(const TSys::TypedValuePtr& value);
 
     public:
 		// Serialize / Deserializes Values.

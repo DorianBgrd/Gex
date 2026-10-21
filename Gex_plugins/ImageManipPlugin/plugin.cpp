@@ -31,40 +31,70 @@ extern EXPORT RegisterPlugin(Gex::PluginLoader* loader)
     loader->GetRegistry()->RegisterType<QImage>(
             "ImageManip::Image", TSys::DefaultCreator,
             ImageManip::Types::SerializeImage,
-            ImageManip::Types::DeserializeImage
+            ImageManip::Types::DeserializeImage,
+            TSys::UnuseFromPython,
+            TSys::UnuseToPython,
+            TSys::UseDefaultCtor<QImage>,
+            TSys::DefaultEqualOp<QImage>,
+            nullptr, nullptr, nullptr, nullptr
     );
 
     loader->GetRegistry()->RegisterType<QColor>(
             "ImageManip::Color", TSys::DefaultCreator,
             ImageManip::Types::SerializeColor,
-            ImageManip::Types::DeserializeColor
+            ImageManip::Types::DeserializeColor,
+            TSys::UnuseFromPython,
+            TSys::UnuseToPython,
+            TSys::UseDefaultCtor<QColor>,
+            TSys::DefaultEqualOp<QColor>,
+            nullptr, nullptr, nullptr, nullptr
     );
 
 
     loader->GetRegistry()->RegisterType<ImageManip::Types::Resolution>(
             "ImageManip::Resolution", TSys::DefaultCreator,
             ImageManip::Types::SerializeResolution,
-            ImageManip::Types::DeserializeResolution
+            ImageManip::Types::DeserializeResolution,
+            TSys::UnuseFromPython,
+            TSys::UnuseToPython,
+            TSys::UseDefaultCtor<ImageManip::Types::Resolution>,
+            nullptr, nullptr, nullptr,
+            nullptr, nullptr
     );
 
 
     loader->GetRegistry()->RegisterType<ImageManip::Types::LinearGradient>(
             "ImageManip::LinearGradient", TSys::DefaultCreator,
             ImageManip::Types::SerializeGradient,
-            ImageManip::Types::DeserializeGradient
+            ImageManip::Types::DeserializeGradient,
+            TSys::UnuseFromPython,
+            TSys::UnuseToPython,
+            TSys::UseDefaultCtor<ImageManip::Types::LinearGradient>,
+            TSys::DefaultEqualOp<ImageManip::Types::LinearGradient>,
+            nullptr, nullptr, nullptr, nullptr
     );
 
     loader->GetRegistry()->RegisterType<ImageManip::Types::LevelMap>(
             "ImageManip::LevelMap", TSys::DefaultCreator,
             ImageManip::Types::SerializeLevelMap,
-            ImageManip::Types::DeserializeLevelMap
+            ImageManip::Types::DeserializeLevelMap,
+            TSys::UnuseFromPython,
+            TSys::UnuseToPython,
+            TSys::UseDefaultCtor<ImageManip::Types::LevelMap>,
+            TSys::DefaultEqualOp<ImageManip::Types::LevelMap>,
+            nullptr, nullptr, nullptr, nullptr
     );
 
 
     loader->GetRegistry()->RegisterType<ImageManip::Types::LevelMap>(
             "ImageManip::Point", TSys::DefaultCreator,
             ImageManip::Types::SerializePoint,
-            ImageManip::Types::DeserializePoint
+            ImageManip::Types::DeserializePoint,
+            TSys::UnuseFromPython,
+            TSys::UnuseToPython,
+            TSys::UseDefaultCtor<ImageManip::Types::LevelMap>,
+            TSys::DefaultEqualOp<ImageManip::Types::LevelMap>,
+            nullptr, nullptr, nullptr, nullptr
     );
 
 

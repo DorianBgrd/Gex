@@ -94,12 +94,12 @@ int Exec::ExecuteGraph(int argc, char** argv, int start) {
                         continue;
                     }
 
-                    auto val = attr->TypeHandle()->DeserializeValue(
-                            attr->GetAnyValue(),
-                            member->value
-                    );
-
-                    attr->SetAnyValue(val);
+//                    auto val = attr->TypeHandle()->DeserializeValue(
+//                            attr->GetAnyValue(),
+//                            member->value
+//                    );
+//
+//                    attr->SetAnyValue(val);
                 }
             }
             else

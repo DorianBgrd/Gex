@@ -202,10 +202,11 @@ Gex::AttributeWkPtr Gex::Node::CreateAttributeFromTypeName(
 
 Gex::AttributeWkPtr Gex::Node::CreateAttribute(
         const std::string& name, const AttrType& type,
-        bool multi, const AttributeWkPtr& parent)
+        const AttrValueType& valueType,
+        const AttributeWkPtr& parent)
 {
     AttributePtr attribute = std::make_shared<Attribute>(
-            name, type, multi, !IsInitializing(),
+            name, type, valueType, !IsInitializing(),
             shared_from_this(), parent);
     bool success = false;
     if (!parent)
@@ -1030,6 +1031,124 @@ void Gex::Node::ClearScheduleCallbacks()
 
 
 
+TSys::TypePtr Gex::ToArrayType(const TSys::TypePtr& sourceType)
+{
+    return TSys::GetRegistry()->GetArrayType(sourceType);
+}
+
+
+TSys::TypePtr Gex::ToSingleType(const TSys::TypePtr& sourceType)
+{
+    return TSys::GetRegistry()->GetSingleType(sourceType);
+}
+
+
+TSys::TypePtr Gex::ToSameType(const TSys::TypePtr& sourceType)
+{
+    return sourceType;
+}
+
+
+void Gex::GenericNode::LinkAttributes(
+        const AttributeWkPtr& sourceAttribute,
+        const AttributeWkPtr& destinationAttribute,
+        const TypeCallback& callback
+)
+{
+    if (!IsAttributeLinked(sourceAttribute))
+    {
+        attributeTypeChangedCallbacks[sourceAttribute] = TypeCallbackCallers();
+    }
+
+    attributeTypeChangedCallbacks[sourceAttribute].emplace_back(
+            destinationAttribute, callback
+    );
+}
+
+
+bool Gex::GenericNode::IsAttributeLinked(const AttributeWkPtr& attribute) const
+{
+    return attributeTypeChangedCallbacks.find(attribute) != attributeTypeChangedCallbacks.end();
+}
+
+
+Gex::AttributeWkPtr Gex::GenericNode::CreateGenericAttribute(
+        const std::string& name,
+        const AttrType& type,
+        const AttrValueType& valueType,
+        const AttributeWkPtr& parent
+)
+{
+    auto attribute = CreateAttribute(
+            name, type, valueType, parent
+    );
+
+    return attribute;
+}
+
+void Gex::GenericNode::BeginSwitchingLinkedType()
+{
+    isSwitchingLikedTypes = true;
+}
+
+
+void Gex::GenericNode::EndSwitchingLinkedType()
+{
+    isSwitchingLikedTypes = false;
+}
+
+
+bool Gex::GenericNode::IsSwitchingLinkedType() const
+{
+    return isSwitchingLikedTypes;
+}
+
+
+Gex::GenericNode::SwitchTypeContext::SwitchTypeContext(
+        Gex::GenericNode* node
+)
+{
+    n = node;
+    n->BeginSwitchingLinkedType();
+}
+
+
+Gex::GenericNode::SwitchTypeContext::~SwitchTypeContext()
+{
+    n->EndSwitchingLinkedType();
+}
+
+Gex::GenericNode::SwitchTypeContext Gex::GenericNode::SwitchLinkContext()
+{
+    return SwitchTypeContext(this);
+}
+
+
+void Gex::GenericNode::AttributeChanged(
+        const Gex::AttributePtr& attribute,
+        const Gex::AttributeChange& change
+)
+{
+    if (!IsSwitchingLinkedType())
+    {
+        if (change == AttributeChange::Connected)
+        {
+            auto context = SwitchLinkContext();
+
+            auto callbackIter = attributeTypeChangedCallbacks.find(attribute);
+
+            if (callbackIter != attributeTypeChangedCallbacks.end())
+            {
+                for (const auto& callback : callbackIter->second)
+                {
+                    callback(attribute->Type());
+                }
+            }
+        }
+    }
+}
+
+
 //bool Gex::CompoundPreScheduledNode::Evaluate(Gex::GraphContext &context,
 //                                             Gex::NodeProfiler &profiler)
 //{
@@ -1055,7 +1174,7 @@ void Gex::Node::ClearScheduleCallbacks()
 //}
 
 
-Gex::CompoundNode::CompoundNode(const NodePtr& parent): Node(parent)
+Gex::CompoundNode::CompoundNode(const NodePtr& parent): GenericNode(parent)
 {
 
 }
@@ -2081,10 +2200,10 @@ Gex::NodePtr Duplicate(std::map<Gex::NodePtr, Gex::NodePtr>& res,
 
             if (destAttribute->IsHolder())
             {
-                bool multi = destAttribute->IsMulti();
+                auto vt = destAttribute->GetAttrValueType();
 
                 destAttribute = new_->CreateAttribute(attribute->Name(), attribute->GetAttrType(),
-                                                      multi, newParent_);
+                                                      vt, newParent_);
             }
             else
             {
@@ -2105,7 +2224,7 @@ Gex::NodePtr Duplicate(std::map<Gex::NodePtr, Gex::NodePtr>& res,
             destAttribute = new_->GetAttribute(atpath).ToShared();
         }
 
-        if (attribute->IsMulti())
+        if (attribute->IsArray())
         {
             for (unsigned int index : attribute->ValidIndices())
             {
@@ -2113,7 +2232,7 @@ Gex::NodePtr Duplicate(std::map<Gex::NodePtr, Gex::NodePtr>& res,
             }
         }
 
-        destAttribute->SetAnyValue(attribute->GetAnyValue());
+        destAttribute->SetValue(attribute->GetValue());
     }
 
     if (source->IsCompound())
@@ -2266,7 +2385,8 @@ Gex::NodePtr Gex::CompoundNode::ToCompound(NodeList sources, bool duplicate,
                     {
                         sharedProxy = compound->CreateAttribute(
                                 pname, type,
-                                sharedProxy->IsMulti());
+                                sharedProxy->GetAttrValueType()
+                        );
                     }
                     else
                     {
@@ -2316,9 +2436,12 @@ Gex::NodePtr Gex::CompoundNode::ToCompound(NodeList sources, bool duplicate,
 
                     if (lockedDest->IsHolder())
                     {
-                        bool multi = sharedProxy->IsMulti();
+                        bool multi = sharedProxy->IsArray();
 
-                        sharedProxy = compound->CreateAttribute(pname, lockedDest->GetAttrType(), multi);
+                        sharedProxy = compound->CreateAttribute(
+                                pname, lockedDest->GetAttrType(),
+                                lockedDest->GetAttrValueType()
+                        );
                     }
                     else
                     {
@@ -2356,7 +2479,7 @@ bool Gex::CompoundInputs::Evaluate(
     {
         if (auto parentAttr = parent->GetAttribute(attr->Longname()))
         {
-            attr->SetAnyValue(parentAttr->GetAnyValue());
+            attr->SetValue(parentAttr->GetValue());
         }
     }
 
@@ -2378,7 +2501,7 @@ bool Gex::CompoundOutputs::Evaluate(
     {
         if (auto parentAttr = parent->GetAttribute(attr->Longname()))
         {
-            parentAttr->SetAnyValue(attr->GetAnyValue());
+            parentAttr->SetValue(attr->GetValue());
         }
     }
 

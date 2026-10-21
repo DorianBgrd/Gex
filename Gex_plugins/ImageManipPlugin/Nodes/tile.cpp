@@ -23,9 +23,9 @@ bool ImageManip::Nodes::TileNode::Evaluate(
         Gex::GraphContext &graphContext,
         Gex::NodeProfiler &profiler)
 {
-    auto src = context.GetAttribute("Source").GetValue<QImage>();
-    auto tile = context.GetAttribute("TileNumber").GetValue<int>();
+    auto src = context.GetAttribute("Source").Get<QImage>();
+    auto tile = context.GetAttribute("TileNumber").Get<int>();
 
-    return context.GetAttribute("Image").SetValue(
+    return context.GetAttribute("Image").Set(
             ImageManip::Manip::TileImage(src, tile));
 }

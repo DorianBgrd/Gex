@@ -22,7 +22,7 @@ bool ImageManip::Nodes::DecomposeChannelsNode::Evaluate(
         Gex::GraphContext &graphContext,
         Gex::NodeProfiler &profiler)
 {
-    auto source = context.GetAttribute("Source").GetValue<QImage>();
+    auto source = context.GetAttribute("Source").Get<QImage>();
 
     int width = source.width();
     int height = source.height();
@@ -39,10 +39,10 @@ bool ImageManip::Nodes::DecomposeChannelsNode::Evaluate(
 
     ImageManip::Manip::DecomposeImage(source, red, green, blue, alpha);
 
-    return (context.GetAttribute("Red").SetValue(red) &&
-            context.GetAttribute("Green").SetValue(green) &&
-            context.GetAttribute("Blue").SetValue(blue) &&
-            context.GetAttribute("Alpha").SetValue(alpha));
+    return (context.GetAttribute("Red").Set(red) &&
+            context.GetAttribute("Green").Set(green) &&
+            context.GetAttribute("Blue").Set(blue) &&
+            context.GetAttribute("Alpha").Set(alpha));
 }
 
 
@@ -65,10 +65,10 @@ bool ImageManip::Nodes::ComposeChannelsNode::Evaluate(
         Gex::GraphContext &graphContext,
         Gex::NodeProfiler &profiler)
 {
-    auto red = context.GetAttribute("Red").GetValue<QImage>();
-    auto green = context.GetAttribute("Green").GetValue<QImage>();
-    auto blue = context.GetAttribute("Blue").GetValue<QImage>();
-    auto alpha = context.GetAttribute("Alpha").GetValue<QImage>();
+    auto red = context.GetAttribute("Red").Get<QImage>();
+    auto green = context.GetAttribute("Green").Get<QImage>();
+    auto blue = context.GetAttribute("Blue").Get<QImage>();
+    auto alpha = context.GetAttribute("Alpha").Get<QImage>();
 
     int width = INT_MAX;
     int height = INT_MAX;
@@ -93,7 +93,7 @@ bool ImageManip::Nodes::ComposeChannelsNode::Evaluate(
 
     if (!sizeFound)
     {
-        return context.GetAttribute("Image").SetValue(QImage());
+        return context.GetAttribute("Image").Set(QImage());
     }
 
     if (red.isNull())
@@ -107,6 +107,6 @@ bool ImageManip::Nodes::ComposeChannelsNode::Evaluate(
 
     auto img = ImageManip::Manip::ComposeImage(red, green, blue, alpha);
 
-    return context.GetAttribute("Image").SetValue(img);
+    return context.GetAttribute("Image").Set(img);
 }
 

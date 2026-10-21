@@ -11,13 +11,27 @@
 
 extern EXPORT RegisterPlugin(Gex::PluginLoader* loader)
 {
-    loader->RegisterTypeHandler<
-            JsonPlugin::JsonValuePtr,
-            JsonPlugin::JsonValueHandler>();
+    loader->GetRegistry()->RegisterType<JsonPlugin::JsonValuePtr>(
+        "Json::Value", TSys::DefaultCreator,
+        JsonPlugin::SerializeJsonValue,
+        JsonPlugin::DeserializeJsonValue,
+        TSys::UnuseFromPython,
+        TSys::UnuseToPython,
+        nullptr, nullptr,
+        nullptr, nullptr,
+        nullptr, nullptr
+    );
 
-    loader->RegisterTypeHandler<
-            JsonPlugin::EditorPtr,
-            JsonPlugin::JsonEditorHandler>();
+    loader->GetRegistry()->RegisterType<JsonPlugin::EditorPtr>(
+            "Json::Editor", TSys::DefaultCreator,
+            JsonPlugin::SerializeJsonValueEditor,
+            JsonPlugin::DeserializeJsonValueEditor,
+            TSys::UnuseFromPython,
+            TSys::UnuseToPython,
+            nullptr, nullptr,
+            nullptr, nullptr,
+            nullptr, nullptr
+    );
 
     loader->RegisterNode<JsonPlugin::Writers::JsonListBuilder>("Json/Write/JsonList");
 

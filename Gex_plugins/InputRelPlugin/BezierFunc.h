@@ -104,13 +104,6 @@ namespace Gex::InputRel
     typedef std::shared_ptr<BezierFunc> BezierFuncPtr;
 
 
-    struct BezierFuncHandler: public FuncWrapper<BezierFunc>
-    {
-        virtual std::string ApiName() const override
-        {
-            return "BezierFunc";
-        }
-    };
 }
 
 #endif //GEX_BEZIERFUNC_H

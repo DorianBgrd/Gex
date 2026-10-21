@@ -57,7 +57,7 @@ namespace Gex
         template<class T>
         bool Set(const std::string& name, T value)
         {
-            return SetMetadata(name, value);
+            return SetMetadata(name, TSys::GetRegistry()->WrapValue(value));
         }
 
         template<class T>

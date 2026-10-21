@@ -84,7 +84,7 @@ bool Gex::Ui::UiPluginLoader::RegisterTypeWidget(
         bool force
 )
 {
-    return engine->RegisterType(t, name, initCreator, creator, force);
+    return engine->RegisterType(name, initCreator, creator, force);
 }
 
 

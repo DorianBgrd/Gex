@@ -43,24 +43,65 @@ Gex::NodePtr Gex::NodeAttributeData::GetNode() const
 }
 
 
+TSys::TypePtr Gex::NodeAttributeData::GetAttributeType() const
+{
+    return attribute->Type();
+}
+
+
 TSys::TypedValuePtr Gex::NodeAttributeData::GetAttributeValue() const
 {
     return attribute->GetResolvedValue();
 }
 
 
-bool Gex::NodeAttributeData::SetValue(const pybind11::object& pyValue)
+std::vector<TSys::TypedValuePtr> Gex::NodeAttributeData::GetAttributeArrayValues() const
 {
-    try
-    {
-        return GetAttributeValue()->Set(pyValue);
-    }
-    catch (pybind11::error_already_set&)
-    {
-        PyErr_Print();
-        return false;
-    }
+    return attribute->GetResolvedArrayValues();
+}
 
+
+void Gex::NodeAttributeData::SetAttributeValue(const TSys::TypedValuePtr& value) const
+{
+    attribute->SetValue(value);
+}
+
+
+void Gex::NodeAttributeData::SetAttributeIndexValue(
+        unsigned int index, const TSys::TypedValuePtr& value
+) const
+{
+    attribute->SetIndexValue(index, value);
+}
+
+
+bool Gex::NodeAttributeData::CreateIndexValue(
+        unsigned int index, const TSys::TypedValuePtr& value
+) const
+{
+    auto indexAttribute = attribute->GetOrCreateIndex(index);
+
+    indexAttribute->SetValue(value);
+
+    return true;
+}
+
+
+bool Gex::NodeAttributeData::IsInput() const
+{
+    return attribute->IsInput();
+}
+
+
+bool Gex::NodeAttributeData::IsOutput() const
+{
+    return attribute->IsOutput();
+}
+
+
+bool Gex::NodeAttributeData::IsExclusiveOutput() const
+{
+    return attribute->GetAttrType() == AttrType::Output;
 }
 
 
@@ -73,7 +114,7 @@ std::vector<unsigned int> Gex::NodeAttributeData::GetIndices(Feedback* status)
         return {};
     }
 
-    if (!attribute->IsMulti())
+    if (!attribute->IsArray())
     {
         SET_STATUS_MSG(status, Status::Failed, ("Attribute " + attribute->Name() + " is not a multi attribute."))
 

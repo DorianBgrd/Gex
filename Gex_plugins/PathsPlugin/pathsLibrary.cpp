@@ -29,10 +29,10 @@ namespace Paths
                       Gex::GraphContext &,
                       Gex::NodeProfiler& profiler) override
         {
-            std::filesystem::path path1(ctx.GetAttribute("Path1").GetValue<std::string>());
-            auto resPath = path1.append(ctx.GetAttribute("Path2").GetValue<std::string>());
+            std::filesystem::path path1(ctx.GetAttribute("Path1").Get<std::string>());
+            auto resPath = path1.append(ctx.GetAttribute("Path2").Get<std::string>());
 
-            ctx.GetAttribute("ResultPath").SetValue(resPath.string());
+            ctx.GetAttribute("ResultPath").Set(resPath.string());
             return true;
         }
     };
@@ -60,9 +60,9 @@ namespace Paths
                       Gex::GraphContext &,
                       Gex::NodeProfiler& profiler) override
         {
-            std::filesystem::path path(ctx.GetAttribute("Path").GetValue<std::string>());
+            std::filesystem::path path(ctx.GetAttribute("Path").Get<std::string>());
 
-            ctx.GetAttribute("Directory").SetValue(path.parent_path().string());
+            ctx.GetAttribute("Directory").Set(path.parent_path().string());
             return true;
         }
     };
@@ -92,18 +92,18 @@ namespace Paths
                       Gex::GraphContext &,
                       Gex::NodeProfiler& profiler) override
         {
-            std::filesystem::path path(ctx.GetAttribute("Path").GetValue<std::string>());
+            std::filesystem::path path(ctx.GetAttribute("Path").Get<std::string>());
 
             if (!std::filesystem::is_regular_file(path))
             {
-                ctx.GetAttribute("OutPath").SetValue(path.parent_path().string());
-                ctx.GetAttribute("Extension").SetValue("");
+                ctx.GetAttribute("OutPath").Set(path.parent_path().string());
+                ctx.GetAttribute("Extension").Set("");
             }
 
             std::string ext = path.extension().string();
             std::string out = path.replace_extension("").string();
-            ctx.GetAttribute("OutPath").SetValue(ext);
-            ctx.GetAttribute("Extension").SetValue(out);
+            ctx.GetAttribute("OutPath").Set(ext);
+            ctx.GetAttribute("Extension").Set(out);
             return true;
         }
     };
@@ -129,7 +129,7 @@ namespace Paths
                       Gex::GraphContext &,
                       Gex::NodeProfiler& profiler) override
         {
-            std::filesystem::path path(ctx.GetAttribute("Path").GetValue<std::string>());
+            std::filesystem::path path(ctx.GetAttribute("Path").Get<std::string>());
 
             if (!std::filesystem::exists(path))
             {

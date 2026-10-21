@@ -1,5 +1,5 @@
-#ifndef PIPELINESOFTWARE_TYPEENGINE
-#define PIPELINESOFTWARE_TYPEENGINE
+#ifndef GEX_UI_TYPEENGINE
+#define GEX_UI_TYPEENGINE
 
 #include <QOBject>
 #include <QWidget>
@@ -130,7 +130,7 @@ namespace UiTSys
 
     class UI_TSYS_API UiTypeEngine
     {
-        std::unordered_map<std::type_index, UiTypePtr> uiTypes;
+        std::unordered_map<std::string, UiTypePtr> uiTypes;
         UiTypePtr defaultType;
 
         static UiTypeEngine* instance;
@@ -148,47 +148,41 @@ namespace UiTSys
         void RegisterDefaultType(const TypedInitCreatorPtr& initCreator,
                                  const TypedCreatorPtr& widgetCreator);
 
-        bool RegisterType(const std::type_index& t, std::string uiName,
+        bool RegisterType(const std::string& typeName,
                           const TypedInitCreatorPtr& initCreator,
                           const TypedCreatorPtr& widgetCreator,
                           bool force=false);
 
-        bool RegisterType(const std::type_index& t,
+        bool RegisterType(const std::string& t,
                           const UiTypePtr& uiType,
                           bool force=false);
 
-        template<class Type, class InitCreatorType, class CreatorType>
-        bool RegisterType(bool force=false)
+        template<class InitCreatorType, class CreatorType>
+        bool RegisterType(const std::string& typeName, bool force=false)
         {
             return RegisterType(
-                typeid(Type),
+                    typeName,
                 MakeUiPtr(InitCreatorType),
                 MakeUiPtr(CreatorType),
                 force
             );
         }
 
-        template<class Type, class CreatorType>
-        bool RegisterType(bool force=false)
+        template<class CreatorType>
+        bool RegisterType(const std::string& typeName, bool force=false)
         {
             return RegisterType(
-                    typeid(Type),
+                    typeName,
                     nullptr,
                     MakeUiPtr(CreatorType),
                     force
             );
         }
 
-        TypedWidget* CreateWidget(const std::type_index& t,
-                                  const std::string& name);
+        TypedWidget* CreateWidget(const std::string& typeName,
+                                  const std::string& title);
 
-        TypedInitWidget* CreateInitWidget(const std::type_index& t);
-
-        std::string UiName(const std::type_index& t) const;
-
-        std::type_index UiTypeIndex(const std::string& name) const;
-
-        std::vector<std::type_index> UiTypes() const;
+        TypedInitWidget* CreateInitWidget(const std::string& t);
 
         std::vector<std::string> UiTypeNames() const;
     };
@@ -215,4 +209,4 @@ namespace UiTSys
     };
 
 
-#endif // PIPELINESOFTWARE_TYPEENGINE
+#endif // GEX_UI_TYPEENGINE

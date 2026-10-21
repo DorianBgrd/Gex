@@ -243,6 +243,7 @@ namespace Gex {
     typedef std::function<bool(const ScheduledItemWkPtr&)> ScheduledItemFilter;
 
 
+    GEX_API
     ScheduledItemWkList GetScheduledBranch(
             const ScheduledItemWkPtr& start,
             const ScheduledItemFilter& filter=nullptr

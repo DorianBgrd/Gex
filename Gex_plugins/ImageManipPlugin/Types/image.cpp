@@ -10,9 +10,11 @@ void ImageManip::Types::SerializeImage(
 }
 
 
-void DeserializeImage(const TSys::TypedValuePtr& v,
-                      rapidjson::Value& value,
-                      rapidjson::Document&)
+void ImageManip::Types::DeserializeImage(
+        const TSys::TypedValuePtr& v,
+        rapidjson::Value& value,
+        rapidjson::Document&
+)
 {
     v->Set(QImage());
 }

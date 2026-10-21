@@ -99,64 +99,6 @@ bool ImageManip::Types::LevelMap::operator==(const LevelMap& other) const
 }
 
 
-
-std::any ImageManip::Types::LevelMapHandler::InitValue() const
-{
-    return std::make_any<ImageManip::Types::LevelMap>(LevelMap());
-}
-
-
-std::any ImageManip::Types::LevelMapHandler::FromPython(const pybind11::object& o) const
-{
-    ImageManip::Types::LevelMap map_ = o.cast<ImageManip::Types::LevelMap>();
-
-    return std::make_any<ImageManip::Types::LevelMap>(map_);
-}
-
-
-pybind11::object ImageManip::Types::LevelMapHandler::ToPython(const std::any& v) const
-{
-    return pybind11::cast(std::any_cast<ImageManip::Types::LevelMap>(v));
-}
-
-
-std::any ImageManip::Types::LevelMapHandler::CopyValue(const std::any& source) const
-{
-    return std::make_any<ImageManip::Types::LevelMap>(LevelMap(
-            std::any_cast<ImageManip::Types::LevelMap>(source)));
-}
-
-
-size_t ImageManip::Types::LevelMapHandler::Hash() const
-{
-    return typeid(LevelMap).hash_code();
-}
-
-
-//std::string ImageManip::Types::LevelMapHandler::PythonName() const
-//{
-//    return "LevelMap";
-//}
-
-
-std::string ImageManip::Types::LevelMapHandler::ApiName() const
-{
-    return "LevelMap";
-}
-
-
-size_t ImageManip::Types::LevelMapHandler::ValueHash(const std::any& val) const
-{
-    return 0;
-}
-
-
-bool ImageManip::Types::LevelMapHandler::CompareValue(const std::any& v1, const std::any& v2) const
-{
-    return (std::any_cast<LevelMap>(v1) == std::any_cast<LevelMap>(v2));
-}
-
-
 void ImageManip::Types::SerializeLevelMap(
         const TSys::TypedValuePtr& v,
         rapidjson::Value& value,
@@ -192,17 +134,4 @@ void ImageManip::Types::DeserializeLevelMap(
             );
 
     v->Set(level);
-}
-
-void ImageManip::Types::LevelMapHandler::SerializeConstruction(
-        const std::any& v, rapidjson::Value& value,
-        rapidjson::Document& document) const
-{
-
-}
-
-std::any ImageManip::Types::LevelMapHandler::DeserializeConstruction(
-        rapidjson::Value& value) const
-{
-    return InitValue();
 }

@@ -85,7 +85,7 @@ namespace Gex
             QLineEdit* attributeName;
             QVBoxLayout* initWidgetLayout;
             UiTSys::TypedInitWidget* initWidget = nullptr;
-            std::type_index typeIndex;
+            TSys::TypePtr valueType;
             GraphWidget* graphWidget;
             QComboBox* comboType;
             QComboBox* comboValue;

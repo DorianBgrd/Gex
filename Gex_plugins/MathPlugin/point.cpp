@@ -64,10 +64,20 @@ Math::Point3 Math::Point3::operator *(double value) const
     return {x * value, y * value, z * value};
 }
 
+Math::Point3 Math::Point3::operator /(double value) const
+{
+    return {x / value, y / value, z / value};
+}
+
 
 Math::Point3 Math::Point3::operator +(const Point3& other) const
 {
     return {x + other.x, y + other.y, z + other.z};
+}
+
+Math::Point3 Math::Point3::operator -(const Point3& other) const
+{
+    return {x - other.x, y - other.y, z - other.z};
 }
 
 

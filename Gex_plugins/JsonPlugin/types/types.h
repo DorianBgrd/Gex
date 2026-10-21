@@ -40,102 +40,42 @@ namespace JsonPlugin
     };
 
 
-    class JsonValueHandler: public TSys::TypeHandler
-    {
-    public:
-        JsonValueHandler();
+    void SerializeJsonValue(
+            const TSys::TypedValuePtr& v,
+            rapidjson::Value& value,
+            rapidjson::Document& document
+    );
 
-        void SerializeValue(const std::any& v, rapidjson::Value& value,
-                            rapidjson::Document& document) const override;
+    void DeserializeJsonValue(
+            const TSys::TypedValuePtr& v,
+            rapidjson::Value& value,
+            rapidjson::Document&
+    );
 
-        std::any DeserializeValue(const std::any& v, rapidjson::Value& value) const override;
+    void SerializeJsonValueReader(
+            const TSys::TypedValuePtr& v,
+            rapidjson::Value& value,
+            rapidjson::Document& document
+    );
 
-        void SerializeConstruction(const std::any& v, rapidjson::Value& value,
-                                   rapidjson::Document& document) const override;
+    void DeserializeJsonValueReader(
+            const TSys::TypedValuePtr& v,
+            rapidjson::Value& value,
+            rapidjson::Document&
+    );
 
-        std::any DeserializeConstruction(rapidjson::Value& value) const override;
+    void SerializeJsonValueEditor(
+            const TSys::TypedValuePtr& v,
+            rapidjson::Value& value,
+            rapidjson::Document& document
+    );
 
-        std::any InitValue() const override;
+    void DeserializeJsonValueEditor(
+            const TSys::TypedValuePtr& v,
+            rapidjson::Value& value,
+            rapidjson::Document&
+    );
 
-        bool CompareValue(const std::any& v1, const std::any& v2) const override;
-
-        std::any FromPython(const pybind11::object&) const override;
-
-        pybind11::object ToPython(const std::any&) const override;
-
-        std::any CopyValue(const std::any& source) const override;
-
-        size_t Hash() const override;
-
-        std::string ApiName() const override;
-
-        size_t ValueHash(const std::any& val) const override;
-    };
-
-
-    class JsonEditorHandler: public TSys::TypeHandler
-    {
-    public:
-        JsonEditorHandler();
-
-        void SerializeValue(const std::any& v, rapidjson::Value& value,
-                            rapidjson::Document& document) const override;
-
-        std::any DeserializeValue(const std::any& v, rapidjson::Value& value) const override;
-
-        void SerializeConstruction(const std::any& v, rapidjson::Value& value,
-                                   rapidjson::Document& document) const override;
-
-        std::any DeserializeConstruction(rapidjson::Value& value) const override;
-
-        std::any InitValue() const override;
-
-        bool CompareValue(const std::any& v1, const std::any& v2) const override;
-
-        std::any FromPython(const pybind11::object&) const override;
-
-        pybind11::object ToPython(const std::any&) const override;
-
-        std::any CopyValue(const std::any& source) const override;
-
-        size_t Hash() const override;
-
-        std::string ApiName() const override;
-
-        size_t ValueHash(const std::any& val) const override;
-    };
-
-
-    class JsonReaderHandler: public TSys::TypeHandler
-    {
-        JsonReaderHandler();
-
-        void SerializeValue(const std::any& v, rapidjson::Value& value,
-                            rapidjson::Document& document) const override;
-
-        std::any DeserializeValue(const std::any& v, rapidjson::Value& value) const override;
-
-        void SerializeConstruction(const std::any& v, rapidjson::Value& value,
-                                   rapidjson::Document& document) const override;
-
-        std::any DeserializeConstruction(rapidjson::Value& value) const override;
-
-        std::any InitValue() const override;
-
-        bool CompareValue(const std::any& v1, const std::any& v2) const override;
-
-        std::any FromPython(const pybind11::object&) const override;
-
-        pybind11::object ToPython(const std::any&) const override;
-
-        std::any CopyValue(const std::any& source) const override;
-
-        size_t Hash() const override;
-
-        std::string ApiName() const override;
-
-        size_t ValueHash(const std::any& val) const override;
-    };
 }
 
 

@@ -27,10 +27,10 @@ bool Gex::InputRel::LinearRel::Evaluate(NodeAttributeData &context,
                                         GraphContext &graphContext,
                                         NodeProfiler &profiler)
 {
-    auto func = context.GetAttribute("Func").GetValue<LinearFuncPtr>();
+    auto func = context.GetAttribute("Func").Get<LinearFuncPtr>();
 
-    auto x = context.GetAttribute("Input").GetValue<double>();
-    context.GetAttribute("Output").SetValue(func->GetValue(x));
+    auto x = context.GetAttribute("Input").Get<double>();
+    context.GetAttribute("Output").Set(func->GetValue(x));
     return true;
 }
 
@@ -50,13 +50,13 @@ void Gex::InputRel::BezierRel::InitAttributes()
 //    CreateAttributeFromValue("func", new LinearFunc());
     CreateAttribute<BezierFuncPtr>("Func");
 
-    TSys::Enum methods({
-           {0, "CubicRoots"},
-           {1, "Iterative"}
-        }
-    );
+    std::vector<std::string> stringMethods = {
+            "CubicRoots", "Iterative"
+    };
 
-    methods.SetCurrentIndex(1);
+    TSys::Enum methods(stringMethods);
+
+    methods.Set(1);
 
     CreateAttribute<TSys::Enum>("Method", AttrValueType::Single,
                                 AttrType::Input)->SetDefaultValue(methods);
@@ -69,12 +69,12 @@ bool Gex::InputRel::BezierRel::Evaluate(NodeAttributeData &context,
                                         GraphContext &graphContext,
                                         NodeProfiler &profiler)
 {
-    auto func = context.GetAttribute("Func").GetValue<BezierFuncPtr>();
+    auto func = context.GetAttribute("Func").Get<BezierFuncPtr>();
 
-    auto method = context.GetAttribute("Method").GetValue<TSys::Enum>();
-    func->SetMethod(BezierFunc::InterpMethod(method.CurrentIndex()));
+    auto method = context.GetAttribute("Method").Get<TSys::Enum>();
+    func->SetMethod(BezierFunc::InterpMethod(method.GetCurrentIndex()));
 
-    auto x = context.GetAttribute("Input").GetValue<double>();
-    context.GetAttribute("Output").SetValue(func->GetValue(x));
+    auto x = context.GetAttribute("Input").Get<double>();
+    context.GetAttribute("Output").Set(func->GetValue(x));
     return true;
 }

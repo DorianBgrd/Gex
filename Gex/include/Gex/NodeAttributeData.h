@@ -35,47 +35,58 @@ namespace Gex
     public:
         NodePtr GetNode() const;
 
+        TSys::TypePtr GetAttributeType() const;
+
         TSys::TypedValuePtr GetAttributeValue() const;
+
+        std::vector<TSys::TypedValuePtr> GetAttributeArrayValues() const;
+
+        void SetAttributeValue(const TSys::TypedValuePtr& value) const;
+
+        void SetAttributeIndexValue(unsigned int index, const TSys::TypedValuePtr& value) const;
+
+        bool CreateIndexValue(unsigned int index, const TSys::TypedValuePtr& value) const;
+
+        bool IsInput() const;
+
+        bool IsOutput() const;
+
+        bool IsExclusiveOutput() const;
 
         template<class T> T Get(Feedback* success=nullptr) const
         {
-            auto value = GetAttributeValue();
-            if (!value)
+            if (auto value = GetAttributeValue())
             {
                 if (success)
-                    success->status = Status::Failed;
-                return T();
+                    success->status = Status::Success;
+
+                return value->Get<T>();
             }
 
             if (success)
-                success->status = Status::Success;
-
-            return value->Get<T>();
+                success->status = Status::Failed;
+            return T();
         }
-
 
 
         template<class T> bool Set(T value)
         {
-            if (!attribute->IsOutput())
-                return false;
-
-            auto attributeValue = GetAttributeValue();
-            if (!value)
+            if (IsExclusiveOutput())
             {
-                return false;
+                if (auto attributeValue = GetAttributeValue())
+                {
+                    return attributeValue->Set<T>(value);
+                }
             }
 
-            return attributeValue->Set<T>(value);
+            return false;
         }
-
-        bool SetValue(const pybind11::object& value);
 
         std::vector<unsigned int> GetIndices(Feedback* status=nullptr);
 
         bool CreateIndex(unsigned int index)
         {
-            if (!attribute->IsMulti())
+            if (!attribute->IsArray())
                 return false;
 
             return attribute->_CreateIndex(index);
@@ -85,7 +96,7 @@ namespace Gex
         template<class T>
         bool CreateIndex(unsigned int index, T value)
         {
-            if (!attribute->IsMulti())
+            if (!attribute->IsArray())
                 return false;
 
             if (!attribute->HasIndex(index))
@@ -100,7 +111,7 @@ namespace Gex
 
         template<class T> bool SetIndexValue(unsigned int index, T value)
         {
-            if (!attribute->IsMulti())
+            if (!attribute->IsArray())
                 return false;
 
             if (!attribute->HasIndex(index))
@@ -110,7 +121,7 @@ namespace Gex
             if (!indexAttr)
                 return false;
 
-            return indexAttr->SetAnyValue(std::make_any<T>(value));
+            return indexAttr->Set(value);
         }
 
 
@@ -118,7 +129,7 @@ namespace Gex
         std::vector<T> GetArrayValues()
         {
             std::vector<T> array;
-            if (!attribute->IsMulti())
+            if (!attribute->IsArray())
             {
                 return array;
             }

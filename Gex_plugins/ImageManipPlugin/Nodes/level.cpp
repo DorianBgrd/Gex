@@ -23,11 +23,11 @@ bool ImageManip::Nodes::LevelNode::Evaluate(
         Gex::GraphContext &graphContext,
         Gex::NodeProfiler &profiler)
 {
-    auto img = context.GetAttribute("Source").GetValue<QImage>();
-    auto lvl = context.GetAttribute("Level").GetValue<
+    auto img = context.GetAttribute("Source").Get<QImage>();
+    auto lvl = context.GetAttribute("Level").Get<
             ImageManip::Types::LevelMap>();
 
-    return context.GetAttribute("Image").SetValue(
+    return context.GetAttribute("Image").Set(
             ImageManip::Manip::AdjustLevel(img, lvl)
             );
 }

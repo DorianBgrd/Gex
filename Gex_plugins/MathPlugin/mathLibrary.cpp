@@ -20,25 +20,48 @@ extern EXPORT RegisterPlugin(Gex::PluginLoader* loader)
     loader->GetRegistry()->RegisterType<Math::Point2>(
             "Math::Point2", TSys::DefaultCreator,
             Math::Types::SerializePoint2,
-            Math::Types::DeserializePoint2
+            Math::Types::DeserializePoint2,
+            TSys::UnuseFromPython,
+            TSys::UnuseToPython,
+            TSys::UseDefaultCtor<Math::Point2>,
+            TSys::DefaultEqualOp<Math::Point2>,
+            nullptr, // TSys::DefaultAddOp<Math::Point2>,
+            nullptr, // TSys::DefaultSubstractOp<Math::Point2>,
+            nullptr, //TSys::DefaultMultiplyOp<Math::Point2>,
+            nullptr
     );
 
     loader->GetRegistry()->RegisterType<Math::Point3>(
             "Math::Point3", TSys::DefaultCreator,
             Math::Types::SerializePoint3,
-            Math::Types::DeserializePoint3
+            Math::Types::DeserializePoint3,
+            TSys::UnuseFromPython,
+            TSys::UnuseToPython,
+            TSys::UseDefaultCtor<Math::Vector3>,
+            TSys::DefaultEqualOp<Math::Vector3>,
+            nullptr, nullptr, nullptr, nullptr
     );
 
     loader->GetRegistry()->RegisterType<Math::Vector2>(
             "Math::Vector2", TSys::DefaultCreator,
             Math::Types::SerializeVector2,
-            Math::Types::DeserializeVector2
+            Math::Types::DeserializeVector2,
+            TSys::UnuseFromPython,
+            TSys::UnuseToPython,
+            TSys::UseDefaultCtor<Math::Vector2>,
+            TSys::DefaultEqualOp<Math::Vector2>,
+            nullptr, nullptr, nullptr, nullptr
     );
 
     loader->GetRegistry()->RegisterType<Math::Vector3>(
             "Math::Vector3", TSys::DefaultCreator,
             Math::Types::SerializeVector3,
-            Math::Types::DeserializeVector3
+            Math::Types::DeserializeVector3,
+            TSys::UnuseFromPython,
+            TSys::UnuseToPython,
+            TSys::UseDefaultCtor<Math::Vector3>,
+            TSys::DefaultEqualOp<Math::Vector3>,
+            nullptr, nullptr, nullptr, nullptr
     );
 
 

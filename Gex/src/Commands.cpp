@@ -14,7 +14,7 @@ bool Gex::RunGraph(const NodePtr& graph,
     {
         if (auto attr = graph->GetAttribute(value.first))
         {
-            if (!attr->SetAnyValue(value.second))
+            if (!attr->SetValue(value.second))
             {
                 warningMessages.push_back(
                     "Could not set attribute "

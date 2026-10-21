@@ -40,7 +40,7 @@ pybind11::object NAD_SetValue(
 
     pybind11::object value = args[1];
 
-    context->SetValue(value);
+    context->Set(value);
 
     return {};
 }
@@ -56,7 +56,7 @@ pybind11::object NAD_SetIndexValue(
     int index = args[1].cast<int>();
     pybind11::object value = args[2];
 
-    context->GetIndex(index).SetValue(args[2]);
+    context->GetIndex(index).Set(args[2]);
 
     return pybind11::cast(context->Set(value));
 }

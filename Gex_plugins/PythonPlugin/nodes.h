@@ -34,7 +34,7 @@ namespace GexPython::Nodes
     GENERATE_DEFAULT_BUILDER(ExpressionBuilder, Expression)
 
 
-    class InlineExpression: public Gex::Node
+    class InlineExpression: public Gex::GenericNode
     {
     public:
         void InitAttributes() override;

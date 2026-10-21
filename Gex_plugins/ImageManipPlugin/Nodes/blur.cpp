@@ -21,9 +21,9 @@ bool ImageManip::Nodes::BoxBlurNode::Evaluate(
         Gex::GraphContext &graphContext,
         Gex::NodeProfiler &profiler)
 {
-    auto src = context.GetAttribute("Input").GetValue<QImage>();
-    auto steps = context.GetAttribute("Steps").GetValue<int>();
+    auto src = context.GetAttribute("Input").Get<QImage>();
+    auto steps = context.GetAttribute("Steps").Get<int>();
 
-    return context.GetAttribute("Image").SetValue(
+    return context.GetAttribute("Image").Set(
             ImageManip::Manip::BoxBlurPixmap(src, steps));
 }

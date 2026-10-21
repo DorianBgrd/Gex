@@ -18,13 +18,20 @@ extern EXPORT RegisterPlugin(Gex::PluginLoader* loader)
     loader->GetRegistry()->RegisterType<Gex::InputRel::LinearFuncPtr>(
             "LinearFunc", TSys::DefaultCreator,
             Gex::InputRel::SerializeFunc<Gex::InputRel::LinearFunc>,
-            Gex::InputRel::DeserializeFunc<Gex::InputRel::LinearFunc>
+            Gex::InputRel::DeserializeFunc<Gex::InputRel::LinearFunc>,
+            TSys::UnuseFromPython, TSys::UnuseToPython,
+            TSys::UseDefaultCtor<Gex::InputRel::LinearFunc>,
+            nullptr, nullptr, nullptr, nullptr, nullptr
+
     );
 
     loader->GetRegistry()->RegisterType<Gex::InputRel::BezierFuncPtr>(
             "BezierFunc", TSys::DefaultCreator,
             Gex::InputRel::SerializeFunc<Gex::InputRel::BezierFunc>,
-            Gex::InputRel::DeserializeFunc<Gex::InputRel::BezierFunc>
+            Gex::InputRel::DeserializeFunc<Gex::InputRel::BezierFunc>,
+            TSys::UnuseFromPython, TSys::UnuseToPython,
+            TSys::UseDefaultCtor<Gex::InputRel::BezierFunc>,
+            nullptr, nullptr, nullptr, nullptr, nullptr
     );
 
     loader->RegisterNode<Gex::InputRel::LinearRelBuilder>("InputRel/Linear");

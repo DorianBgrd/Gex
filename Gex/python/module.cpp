@@ -11,7 +11,7 @@ pybind11::object GetAvailableTypes(
 )
 {
     pybind11::list types;
-    for (const std::string& t : TSys::TypeRegistry::GetRegistry()->RegisteredTypes())
+    for (const std::string& t : TSys::GetRegistry()->GetTypeNames())
     {
         types.append(pybind11::cast(t));
     }

@@ -25,24 +25,31 @@ namespace iter
         {
             Gex::CompoundNode::InitAttributes();
 
-            CreateAttribute<TSys::AnyValue>(
-                    "input", Gex::AttrValueType::Multi);
+            auto inputArray = CreateGenericAttribute(
+                    "input", Gex::AttrType::Input
+            );
 
             auto idxat = CreateAttribute<int>(
                     "index", Gex::AttrValueType::Single,
                     Gex::AttrType::Input);
 
-            auto in = CreateAttribute<TSys::AnyValue>(
-                    "in", Gex::AttrValueType::Single,
-                    Gex::AttrType::Input);
+            auto in = CreateGenericAttribute(
+                    "in", Gex::AttrType::Input
+            );
 
-            auto out = CreateAttribute<TSys::AnyValue>(
-                    "out", Gex::AttrValueType::Single,
-                     Gex::AttrType::Output);
+            auto out = CreateGenericAttribute(
+                    "out", Gex::AttrType::Output
+             );
 
-            CreateAttribute<TSys::AnyValue>(
-                    "output", Gex::AttrValueType::Multi,
-                    Gex::AttrType::Output);
+            auto outputArray = CreateGenericAttribute(
+                    "output", Gex::AttrType::Output
+            );
+
+            LinkAttributes(inputArray, outputArray);
+
+            LinkAttributes(inputArray, in, Gex::ToSingleType);
+
+            LinkAttributes(inputArray, out, Gex::ToSingleType);
         }
 
 
@@ -68,12 +75,13 @@ namespace iter
             currentIndex++;
             auto idx = indices[currentIndex];
 
-            ctx.GetAttribute("index").SetValue<int>((int)idx);
+            ctx.GetAttribute("index").Set<int>((int)idx);
 
-            auto indexvalue = ctx.GetAttribute("input")
-                    .GetIndexValue<TSys::AnyValue>(idx);
-
-            return ctx.GetAttribute("in").SetValue<TSys::AnyValue>(indexvalue);
+            ctx.GetAttribute("in").SetAttributeValue(
+                    ctx.GetAttribute("input")
+                    .GetAttributeValue()->At(idx)
+            );
+            return true;
         }
 
 
@@ -95,7 +103,10 @@ namespace iter
 
             auto idx = indices.at(currentIndex);
             outputs.CreateIndex(idx);
-            outputs.SetIndexValue(idx, ctx.GetAttribute("out").GetValue<TSys::AnyValue>());
+            outputs.GetAttributeValue()->Append(
+                    ctx.GetAttribute("out")
+                    .GetAttributeValue()
+            );
 
             if (currentIndex == (length - 1))
             {
@@ -141,20 +152,27 @@ namespace iter
         {
             Gex::CompoundNode::InitAttributes();
 
-            CreateAttribute<TSys::AnyValue>(
-                    "Array", Gex::AttrValueType::Multi);
+            auto inputArray = CreateGenericAttribute(
+                    "InputArray", Gex::AttrType::Input
+            );
 
-            auto v = CreateAttribute<TSys::AnyValue>(
-                    "Value", Gex::AttrValueType::Single,
-                    Gex::AttrType::Input);
+            auto value = CreateGenericAttribute(
+                    "InputValue", Gex::AttrType::Input
+            );
 
-            auto ov = CreateAttribute<TSys::AnyValue>(
-                    "OutValue", Gex::AttrValueType::Single,
-                    Gex::AttrType::Output);
+            auto outValue = CreateGenericAttribute(
+                    "OutputValue", Gex::AttrType::Output
+            );
 
-            CreateAttribute<TSys::AnyValue>(
-                    "OutArray", Gex::AttrValueType::Multi,
-                    Gex::AttrType::Output);
+            auto outArray = CreateGenericAttribute(
+                    "OutputArray", Gex::AttrType::Output
+            );
+
+            LinkAttributes(inputArray, value, Gex::ToSingleType);
+
+            LinkAttributes(inputArray, outValue, Gex::ToSingleType);
+
+            LinkAttributes(inputArray, outArray);
         }
 
         bool PreEvaluate(Gex::NodeAttributeData &ctx,
@@ -195,27 +213,22 @@ namespace iter
 
             ctx.GetAttribute("OutArray").ClearMultiIndices();
 
-            for (auto index : indices)
-            {
-                auto iv = ctx.GetAttribute("Array").GetIndex(index).GetAnyValue();
+            auto inputArray = ctx.GetAttribute("InputArray").GetAttributeValue();
 
-                ctx.GetAttribute("Value").SetAnyValue(iv);
+            for (unsigned int i = 0; i < inputArray->Count(); i++)
+            {
+                auto inputValue = inputArray->At(i);
+
+                ctx.GetAttribute("InputValue").SetAttributeValue(inputValue);
 
                 if (!IterEvaluate(evaluator, ctx, graphContext, profiler))
                 {
                     return false;
                 }
 
-//                if (!Gex::CompoundNode::Evaluate(ctx, graphContext, profiler))
-//                {
-//                    return false;
-//                }
+                auto outValue = ctx.GetAttribute("OutputValue").GetAttributeValue();
 
-                auto ov = ctx.GetAttribute("OutValue").GetAnyValue();
-
-                ctx.GetAttribute("OutArray").CreateIndex(index);
-
-                ctx.GetAttribute("OutArray").GetIndex(index).SetAnyValue(ov);
+                ctx.GetAttribute("OutputArray").GetAttributeValue()->Append(outValue);
             }
 
             return true;
@@ -247,14 +260,14 @@ namespace iter
             CreateAttribute<int>("ItGeom", Gex::AttrValueType::Single,
                                           Gex::AttrType::Input);
 
-            TSys::Enum space;
-            space.AddValue(0, "Object");
-            space.AddValue(1, "World");
+            std::vector<std::string> spaces = {"Object", "World"};
+
+            TSys::Enum space(spaces);
 
             auto p = CreateAttribute<int>("Position", Gex::AttrValueType::Single,
                                               Gex::AttrType::Input);
 
-            auto s = CreateAttributeFromValue("Space", std::make_any<TSys::Enum>(space),
+            auto s = CreateAttributeFromValue("Space", TSys::GetRegistry()->WrapValue(space),
                                                Gex::AttrValueType::Single, Gex::AttrType::Input);
 
             auto n = CreateAttribute<int>("Normale", Gex::AttrValueType::Single,
@@ -299,8 +312,8 @@ namespace iter
                       Gex::GraphContext &graphContext,
                       Gex::NodeProfiler &profiler) override
         {
-            int start = ctx.GetAttribute("Start").GetValue<int>();
-            int end = ctx.GetAttribute("End").GetValue<int>();
+            int start = ctx.GetAttribute("Start").Get<int>();
+            int end = ctx.GetAttribute("End").Get<int>();
 
             if (start < 0 || end < start)
             {
@@ -314,7 +327,7 @@ namespace iter
 
             for (unsigned int i = start; i < end; i++)
             {
-                ctx.GetAttribute("Current").SetValue(i);
+                ctx.GetAttribute("Current").Set(i);
 
                 eval.Reset();
                 eval.Run();

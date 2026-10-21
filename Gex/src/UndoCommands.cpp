@@ -188,8 +188,8 @@ void Gex::Undo::DisconnectAttr::Redo()
 
 Gex::Undo::SetAttr::SetAttr(
         const AttributePtr& at,
-        const std::any& v,
-        const std::any& p)
+        const TSys::TypedValuePtr& v,
+        const TSys::TypedValuePtr& p)
 {
     node = at->Node().ToShared();
     attr = at;
@@ -207,11 +207,11 @@ std::string Gex::Undo::SetAttr::Name() const
 
 void Gex::Undo::SetAttr::Undo()
 {
-    attr->SetAnyValue(previous);
+    attr->SetValue(previous);
 }
 
 void Gex::Undo::SetAttr::Redo()
 {
-    attr->SetAnyValue(value);
+    attr->SetValue(value);
 }
 

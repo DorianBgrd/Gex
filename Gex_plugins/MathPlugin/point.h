@@ -44,7 +44,11 @@ namespace Math
 
         Point3 operator *(double value) const;
 
+        Point3 operator /(double value) const;
+
         Point3 operator +(const Point3& other) const;
+
+        Point3 operator -(const Point3& other) const;
 
         double Distance(const Point3& other) const;
 

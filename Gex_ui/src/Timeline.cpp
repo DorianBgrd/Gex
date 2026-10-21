@@ -109,12 +109,12 @@ void Gex::Ui::Timeline::RefreshAvailableAttributes()
     attributes.clear();
     for (const Gex::AttributeWkPtr& attr : currentNode->GetAttributes())
     {
-        if (attr->IsMulti() || attr->IsHolder())
+        if (attr->IsArray() || attr->IsHolder())
         {
             continue;
         }
 
-        if (attr->Type() == typeid(double))
+        if (attr->Type()->IsOfType<double>())
         {
             attributes.push_back(attr->Name());
         }

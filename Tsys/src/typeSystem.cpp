@@ -29,13 +29,33 @@ TSys::Type::Type(
         const Serializer& serializer,
         const Deserializer& deserializer,
         const Compare& compare,
+
+        const Add& add,
+        const Substract& substract,
+        const Multiply& multiply,
+        const Divide& divide,
+
+        const Insert& insert,
+        const Append& append,
+        const Erase& pop,
+        const Remove& remove,
+        const Get& get,
+        const Count& count,
+        const Clear& clear,
+
         const InitDefault& initDefault,
         const TSys::FromPython& fromPython,
         const TSys::ToPython& toPython
 ): _name(name), _index(index), _creator(creator),
    _serializer(serializer), _deserializer(deserializer),
-   _compare(compare), _initDefault(initDefault),
-   _fromPython(fromPython), _toPython(toPython)
+   _compare(compare), _add(add), _substract(substract),
+   _multiply(multiply), _divide(divide),
+   _insert(insert), _append(append),
+   _erase(pop), _remove(remove),
+   _get(get), _count(count), _clear(clear),
+   _initDefault(initDefault),
+   _fromPython(fromPython),
+   _toPython(toPython)
 {
     _registry = registry;
 }
@@ -59,16 +79,22 @@ bool TSys::Type::operator==(const std::type_index& other) const
 }
 
 
+bool TSys::Type::IsOfType(const std::type_info& type) const
+{
+    return std::type_index(type) == _index;
+}
+
+
 bool TSys::Type::IsOfType(const std::any& value) const
 {
     return std::type_index(value.type()) == _index;
 }
 
 
-TSys::Converter TSys::Type::GetConverter(std::type_index type) const
+TSys::Converter TSys::Type::GetConverter(const std::type_index& type) const
 {
     auto iter = converters.find(type);
-    if (iter == converters.end())
+    if (iter != converters.end())
     {
         return iter->second;
     }
@@ -92,9 +118,21 @@ bool TSys::Type::IsConvertibleTo(const TypePtr& other) const
 }
 
 
+bool TSys::Type::IsConvertibleTo(const std::type_info& other) const
+{
+    return IsConvertibleTo(_registry->GetType(other));
+}
+
+
 bool TSys::Type::IsConvertibleFrom(const TypePtr& other) const
 {
     return other && (other.get() == this || bool(GetConverter(other->GetIndex())));
+}
+
+
+bool TSys::Type::IsConvertibleFrom(const std::type_info& other) const
+{
+    return IsConvertibleFrom(_registry->GetType(other));
 }
 
 
@@ -158,6 +196,64 @@ bool TSys::Type::CompareValues(
 }
 
 
+TSys::Add TSys::Type::GetAddOperator() const
+{
+    return _add;
+}
+
+
+TSys::Substract TSys::Type::GetSubstractOperator() const
+{
+    return _substract;
+}
+
+
+TSys::Multiply TSys::Type::GetMultiplyOperator() const
+{
+    return _multiply;
+}
+
+
+TSys::Divide TSys::Type::GetDivideOperator() const
+{
+    return _divide;
+}
+
+TSys::Insert TSys::Type::GetInsertOperator() const
+{
+    return _insert;
+}
+
+TSys::Append TSys::Type::GetAppendOperator() const
+{
+    return _append;
+}
+
+TSys::Remove TSys::Type::GetRemoveOperator() const
+{
+    return _remove;
+}
+
+TSys::Erase TSys::Type::GetEraseOperator() const
+{
+    return _erase;
+}
+
+TSys::Get TSys::Type::GetGetOperator() const
+{
+    return _get;
+}
+
+TSys::Count TSys::Type::GetCountOperator() const
+{
+    return _count;
+}
+
+TSys::Clear TSys::Type::GetClearOperator() const
+{
+    return _clear;
+}
+
 std::any TSys::Type::InitDefaultValue() const
 {
     return _initDefault();
@@ -213,6 +309,18 @@ pybind11::object TSys::TypedValue::Get() const
 }
 
 
+bool TSys::TypedValue::Set(const TSys::TypedValuePtr& value)
+{
+    auto casted = GetType()->CastFrom(value->GetAny(), _value);
+
+    if (!casted.has_value())
+        return false;
+
+    _value = casted;
+    return true;
+}
+
+
 bool TSys::TypedValue::Set(const pybind11::object& pythonObject)
 {
     _value = GetType()->FromPython(pythonObject);
@@ -228,7 +336,7 @@ std::any TSys::TypedValue::GetAny() const
 
 bool TSys::TypedValue::SetAny(const std::any& value)
 {
-    if (_type->IsOfType(value))
+    if (!_type->IsOfType(value))
     {
         return false;
     }
@@ -279,6 +387,169 @@ bool TSys::TypedValue::operator==(const TypedValuePtr& other) const
     );
 }
 
+
+TSys::TypedValuePtr TSys::TypedValue::CallOperator(
+        const Operator& op, const TypedValuePtr& other
+) const
+{
+    if (!op)
+    {
+        return {};
+    }
+
+    auto otherRawAny = other->GetAny();
+
+    std::any otherAny = _type->CastFrom(
+            otherRawAny,otherRawAny
+    );
+
+    return std::make_shared<TypedValue>(
+            _type, op(GetAny(), otherAny)
+    );
+}
+
+
+TSys::TypedValuePtr TSys::TypedValue::operator + (const TypedValuePtr& other) const
+{
+   return CallOperator(_type->GetAddOperator(), other);
+}
+
+TSys::TypedValuePtr TSys::TypedValue::operator - (const TypedValuePtr& other) const
+{
+    return CallOperator(_type->GetSubstractOperator(), other);
+}
+
+TSys::TypedValuePtr TSys::TypedValue::operator * (const TypedValuePtr& other) const
+{
+    return CallOperator(_type->GetMultiplyOperator(), other);
+}
+
+TSys::TypedValuePtr TSys::TypedValue::operator / (const TypedValuePtr& other) const
+{
+    return CallOperator(_type->GetDivideOperator(), other);
+}
+
+
+bool TSys::TypedValue::CallArrayOperator(
+        const ArrayEditOperator& op,
+        const TypedValuePtr& other
+)
+{
+    if (!op)
+    {
+        return false;
+    }
+
+    auto thisSingleType = _type->GetRegistry()->GetSingleType(_type);
+    if (!thisSingleType)
+        return false;
+
+    std::any otherAny = other->GetAny();
+    thisSingleType->CastFrom(otherAny, otherAny);
+
+    op(_value, otherAny);
+    return true;
+}
+
+bool TSys::TypedValue::CallArrayIndexValueOperator(
+        size_t index, const ArrayIndexValueEditOperator& op,
+        const TypedValuePtr& other
+)
+{
+    if (!op)
+    {
+        return false;
+    }
+
+    auto thisSingleType = _type->GetRegistry()->GetSingleType(_type);
+    if (!thisSingleType)
+        return false;
+
+    std::any otherAny = other->GetAny();
+    thisSingleType->CastFrom(otherAny, otherAny);
+
+    op(index, _value, otherAny);
+    return true;
+}
+
+
+bool TSys::TypedValue::CallArrayIndexOperator(
+        size_t index, const ArrayIndexEditOperator& op
+)
+{
+    if (!op)
+    {
+        return false;
+    }
+
+    op(index, _value);
+    return true;
+}
+
+
+bool TSys::TypedValue::Append(const TypedValuePtr& other)
+{
+    return CallArrayOperator(_type->GetAppendOperator(), other);
+}
+
+bool TSys::TypedValue::Insert(size_t index, const TypedValuePtr& other)
+{
+    return CallArrayIndexValueOperator(index, _type->GetInsertOperator(), other);
+}
+
+bool TSys::TypedValue::Remove(size_t index)
+{
+    return CallArrayIndexOperator(index, _type->GetRemoveOperator());
+}
+
+bool TSys::TypedValue::Erase(const TypedValuePtr& other)
+{
+    return CallArrayOperator(_type->GetEraseOperator(), other);
+}
+
+TSys::TypedValuePtr TSys::TypedValue::At(size_t index) const
+{
+    auto op = _type->GetGetOperator();
+    if (!op)
+    {
+        return {};
+    }
+
+    return std::make_shared<TypedValue>(
+        _type->GetRegistry()->GetSingleType(_type),
+        op(_value, index)
+    );
+}
+
+TSys::TypedValuePtr TSys::TypedValue::operator[](size_t index) const
+{
+    return At(index);
+}
+
+size_t TSys::TypedValue::Count() const
+{
+    auto op = _type->GetCountOperator();
+    if (!op)
+    {
+        return {};
+    }
+
+    return op(_value);
+}
+
+
+void TSys::TypedValue::Clear()
+{
+    auto op = _type->GetClearOperator();
+    if (!op)
+    {
+        return;
+    }
+
+    return op(_value);
+}
+
+
 bool TSys::TypedValue::IsValid() const
 {
     return (_type && _value.has_value());
@@ -292,32 +563,139 @@ TSys::TypedValue::operator bool() const
 
 
 
+TSys::TypedValuePtr TSys::operator + (
+        const TSys::TypedValuePtr &value1,
+        const TSys::TypedValuePtr &value2
+)
+{
+    bool value1Valid = value1->IsValid();
+    bool value2Valid = value1->IsValid();
+
+    if (value1Valid && value2Valid)
+    {
+        return *value1.get() + value2;
+    }
+    else if (!value1Valid)
+    {
+        return value2;
+    }
+    else
+    {
+        return value1;
+    }
+}
+
+TSys::TypedValuePtr TSys::operator - (
+        const TSys::TypedValuePtr &value1,
+        const TSys::TypedValuePtr &value2
+)
+{
+    bool value1Valid = value1->IsValid();
+    bool value2Valid = value1->IsValid();
+
+    if (value1Valid && value2Valid)
+    {
+        return *value1.get() - value2;
+    }
+    else if (!value1Valid)
+    {
+        return value2;
+    }
+    else
+    {
+        return value1;
+    }
+}
+
+TSys::TypedValuePtr TSys::operator * (
+        const TSys::TypedValuePtr &value1,
+        const TSys::TypedValuePtr &value2
+)
+
+{
+    bool value1Valid = value1->IsValid();
+    bool value2Valid = value1->IsValid();
+
+    if (value1Valid && value2Valid)
+    {
+        return *value1.get() * value2;
+    }
+    else if (!value1Valid)
+    {
+        return value2;
+    }
+    else
+    {
+        return value1;
+    }
+}
+
+TSys::TypedValuePtr TSys::operator / (
+        const TSys::TypedValuePtr &value1,
+        const TSys::TypedValuePtr &value2
+)
+{
+    bool value1Valid = value1->IsValid();
+    bool value2Valid = value1->IsValid();
+
+    if (value1Valid && value2Valid)
+    {
+        return *value1.get() / value2;
+    }
+    else if (!value1Valid)
+    {
+        return value2;
+    }
+    else
+    {
+        return value1;
+    }
+}
+
+
+
 TSys::TypeValueRegistry* TSys::TypeValueRegistry::instance;
 
 
 
 void TSys::TypeValueRegistry::RegisterType(
-        const std::type_info& typeInfo,
+        const std::type_index& typeIndex,
         const std::string& name,
         const ValueCreator& creator,
         const Serializer& serializer,
         const Deserializer& deserializer,
-        const Compare& compare,
-        const InitDefault& initDefault,
         const FromPython& fromPython,
-        const ToPython& toPython
+        const ToPython& toPython,
+        const InitDefault& initDefault,
+        const Compare& compare,
+        const Add& add,
+        const Substract& substract,
+        const Multiply& multiply,
+        const Divide& divide,
+        const Insert& insert,
+        const Append& append,
+        const Erase& erase,
+        const Remove& remove,
+        const Get& get,
+        const Count& count,
+        const Clear& clear
 ) noexcept
 {
-    std::type_index index(typeInfo);
-
-    typeNames.emplace(name, typeInfo);
-
-    types[index] = std::make_shared<Type>(
-            this, name, index, creator,
+    types[typeIndex] = std::make_shared<Type>(
+            this, name, typeIndex, creator,
             serializer, deserializer,
-            compare, initDefault,
-            fromPython, toPython
+            compare,
+            add, substract,
+            multiply, divide,
+            insert, append,
+            erase, remove,
+            get, count, clear,
+            initDefault,
+            fromPython,
+            toPython
     );
+
+    typeNames.emplace(name, typeIndex);
 }
 
 
@@ -327,8 +705,8 @@ void TSys::TypeValueRegistry::RegisterCtorConverter(
         const Converter& converter
 ) const
 {
-    auto destType = GetType(source);
-    auto sourceType = GetType(dest);
+    auto sourceType = GetType(source);
+    auto destType = GetType(dest);
     if (!destType || !sourceType)
     {
         return;
@@ -336,6 +714,37 @@ void TSys::TypeValueRegistry::RegisterCtorConverter(
 
     destType->RegisterConverter(sourceType->GetIndex(), converter);
 
+}
+
+
+TSys::TypePtr TSys::TypeValueRegistry::GetArrayType(
+        const TypePtr& singleType
+) const
+{
+    auto iter = typeToArray.find(
+            singleType->GetIndex()
+    );
+
+    if (iter == typeToArray.end())
+        return {};
+
+    return GetType(iter->second);
+}
+
+
+TSys::TypePtr TSys::TypeValueRegistry::GetSingleType(
+        const TypePtr& arrayType
+) const
+{
+    for (const auto& typePair : typeToArray)
+    {
+        if (typePair.second == arrayType->GetIndex())
+        {
+            return GetType(typePair.first);
+        }
+    }
+
+    return {};
 }
 
 
@@ -469,7 +878,29 @@ TSys::TypedValuePtr TSys::TypeValueRegistry::Deserialize(
 }
 
 
-TSys::TypeValueRegistry* TSys::TypeValueRegistry::Get(TSys::InitCallback callback)
+std::vector<std::string> TSys::TypeValueRegistry::GetTypeNames() const
+{
+    std::vector<std::string> computedTypeNames;
+
+    for (const auto& type : typeNames)
+    {
+        computedTypeNames.push_back(type.first);
+    }
+
+    return computedTypeNames;
+}
+
+void TSys::TypeValueRegistry::RegisterSingleToArrayTypes(
+        const std::type_info &singleType,
+        const std::type_info &arrayType
+)
+{
+    typeToArray.emplace(singleType, arrayType);
+
+}
+
+
+TSys::TypeValueRegistry* TSys::TypeValueRegistry::GetInstance(TSys::InitCallback callback)
 {
     if (!instance)
     {

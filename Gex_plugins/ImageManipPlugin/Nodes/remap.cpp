@@ -25,13 +25,13 @@ bool ImageManip::Nodes::ColorRemapNode::Evaluate(
         Gex::GraphContext &graphContext,
         Gex::NodeProfiler &profiler)
 {
-    auto gradient = context.GetAttribute("Gradient").GetValue<
+    auto gradient = context.GetAttribute("Gradient").Get<
             ImageManip::Types::LinearGradient>();
 
-    auto source = context.GetAttribute("Source").GetValue<QImage>();
+    auto source = context.GetAttribute("Source").Get<QImage>();
 
     auto dest = ImageManip::Manip::GradientRemapImage(source, gradient);
 
-    return context.GetAttribute("Image").SetValue(dest);
+    return context.GetAttribute("Image").Set(dest);
 
 }

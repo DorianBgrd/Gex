@@ -7,7 +7,9 @@
 namespace Gex::Ui
 {
     GEX_UI_API
-    unsigned int NextMultiAttributeIndex(Gex::AttributeWkPtr attribute);
+    unsigned int NextMultiAttributeIndex(
+            const Gex::AttributeWkPtr& attribute
+    );
 }
 
 

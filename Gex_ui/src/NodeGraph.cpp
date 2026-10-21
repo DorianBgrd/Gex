@@ -366,7 +366,7 @@ void Gex::Ui::AttributeItem::Initialize(Gex::AttributeWkPtr attr,
     output->setPos(rect().width(), plugY);
 
     qreal indent = 14;
-    if (attribute->IsMulti() || attribute->IsHolder())
+    if (attribute->IsArray() || attribute->IsHolder())
     {
         multiButton = new MultiAttributeItem(this);
         if (attribute->IsInput() || attribute->IsStatic())
@@ -469,14 +469,14 @@ void Gex::Ui::AttributeItem::CreateAttributes()
 
     childAttributes.clear();
 
-    if (!(attribute->IsHolder() && attribute->IsMulti()))
+    if (!(attribute->IsHolder() && attribute->IsArray()))
     {
         for (const auto& attr : attribute->GetChildAttributes())
         {
             auto* childAttr = new AttributeItem(attr, this, parentNode);
 
             qreal indent = 14;
-            if (!attribute->IsMulti())
+            if (!attribute->IsArray())
             {
                 indent += 14;
             }
@@ -650,7 +650,7 @@ Gex::Ui::NodeItem* Gex::Ui::AttributeItem::ParentNode() const
 
 bool Gex::Ui::AttributeItem::IsMulti() const
 {
-    return attribute->IsMulti();
+    return attribute->IsArray();
 }
 
 
@@ -2721,7 +2721,7 @@ void Gex::Ui::ConnectionContext::CheckItem(QGraphicsItem* item)
     {
         AttributeItem* destItem = plugItem->Attribute();
         AttributeItem* sourceItem = source->Attribute();
-        if (destItem->Attribute()->IsMulti() == sourceItem->Attribute()->IsMulti())
+        if (destItem->Attribute()->IsArray() == sourceItem->Attribute()->IsArray())
         {
             // If source plug is an input, then check if the dest attribute can
             // be connected to destination.
@@ -3642,29 +3642,21 @@ void Gex::Ui::NodeGraphScene::DuplicateNodes(std::vector<NodePtr> nodes, bool co
 {
     std::vector<Gex::NodePtr> duplicateds = graphContext->DuplicateNodes(nodes, copyLinks);
 
-    QList<NodeItem*> newItems;
     for (auto dupnode : duplicateds)
     {
-        auto* nodeItem = new NodeItem(dupnode, this);
-        addItem(nodeItem);
-        nodeItems[dupnode] = nodeItem;
+        // Place new nodes.
+        for (unsigned int i = 0; i < nodes.size(); i++)
+        {
+            auto* src = nodeItems.value(nodes.at(i));
+            auto* dst = nodeItems.value(duplicateds.at(i));
 
-        newItems.append(nodeItem);
+            if (!src || !dst)
+                continue;
+
+            dst->setPos(src->pos() + QPointF(10, 10));
+        }
     }
 
-    for (auto* item : newItems)
-    {
-        item->InitializeLinks();
-    }
-
-    // Place new nodes.
-    for (unsigned int i = 0; i < nodes.size(); i++)
-    {
-        auto* src = nodeItems[nodes.at(i)];
-        auto* dst = nodeItems[duplicateds.at(i)];
-
-        dst->setPos(src->pos() + QPointF(10, 10));
-    }
 }
 
 

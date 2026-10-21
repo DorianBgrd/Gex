@@ -383,7 +383,7 @@ namespace Gex
 
         AttributeWkPtr CreateAttribute(const std::string& name,
                                        const AttrType& type = AttrType::Static,
-                                       bool multi=false,
+                                       const AttrValueType& valueType=AttrValueType::Single,
                                        const AttributeWkPtr& parent = AttributeWkPtr());
 
 		/**
@@ -598,6 +598,95 @@ namespace Gex
 	};
 
 
+    GEX_API
+    TSys::TypePtr ToArrayType(const TSys::TypePtr& sourceType);
+
+    GEX_API
+    TSys::TypePtr ToSingleType(const TSys::TypePtr& sourceType);
+
+    GEX_API
+    TSys::TypePtr ToSameType(const TSys::TypePtr& sourceType);
+
+
+    class GenericNode;
+
+    typedef BaseWkPtr<GenericNode> GenericNodePtr;
+
+
+    class GEX_API GenericNode: public Node
+    {
+        bool isSwitchingLikedTypes = false;
+
+        using Gex::Node::Node;
+
+    public:
+        typedef std::function<TSys::TypePtr(
+                const TSys::TypePtr& type
+        )> TypeCallback;
+    private:
+
+        class TypeCallbackCaller
+        {
+            Gex::AttributeWkPtr attribute;
+            TypeCallback callback;
+
+        public:
+            TypeCallbackCaller(
+                    const Gex::AttributeWkPtr& at,
+                    const TypeCallback& cb
+            ) {attribute = at; callback = cb;}
+
+            void operator()(const TSys::TypePtr& type) const
+            {
+                attribute->SwitchType(callback(type));
+            }
+        };
+
+        typedef std::vector<TypeCallbackCaller> TypeCallbackCallers;
+
+        std::map<Gex::AttributeWkPtr, TypeCallbackCallers> attributeTypeChangedCallbacks;
+
+    public:
+        void LinkAttributes(const AttributeWkPtr& sourceAttribute,
+                            const AttributeWkPtr& destinationAttribute,
+                            const TypeCallback& callback=ToSameType);
+
+        bool IsAttributeLinked(const AttributeWkPtr& attribute) const;
+
+    public:
+        AttributeWkPtr CreateGenericAttribute(
+                const std::string& name,
+                const AttrType& type = AttrType::Static,
+                const AttrValueType& valueType = AttrValueType::Single,
+                const AttributeWkPtr& parent=AttributeWkPtr()
+        );
+
+    protected:
+        void BeginSwitchingLinkedType();
+
+        void EndSwitchingLinkedType();
+
+        bool IsSwitchingLinkedType() const;
+
+        class SwitchTypeContext
+        {
+            Gex::GenericNode* n;
+        public:
+            SwitchTypeContext(Gex::GenericNode* node);
+
+            ~SwitchTypeContext();
+        };
+
+        friend SwitchTypeContext;
+
+    public:
+        void AttributeChanged(
+            const Gex::AttributePtr& attribute,
+            const Gex::AttributeChange& change
+        ) override;
+
+        SwitchTypeContext SwitchLinkContext();
+    };
 //    class CompoundPreScheduledNode: public ScheduledNode
 //    {
 //        using ScheduledNode::ScheduledNode;
@@ -618,7 +707,7 @@ namespace Gex
 //    };
 
 
-    class GEX_API CompoundNode : public Node
+    class GEX_API CompoundNode : public GenericNode
 	{
 	private:
 		friend CompoundNodeBuilder;
@@ -909,8 +998,10 @@ namespace Gex
 
     typedef std::function<bool(Gex::NodePtr node)> TraversalCallback;
 
+    GEX_API
     void TraverseNodes(const Gex::NodePtr& root, TraversalCallback callback);
 
+    GEX_API
     Gex::NodePtr TraverseParents(const Gex::NodePtr& root, TraversalCallback callback);
 }
 

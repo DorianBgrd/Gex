@@ -103,7 +103,7 @@ bool Gex::Python::Attribute_Wrap::RegisterPythonWrapper(pybind11::module_& mod,
             .def("CanConnectSource", ProxyAttr_CanConnectSource)
             .def("CanConnectSource", ProxyAttr_CanConnectWkSource)
             .def("CreateIndex", &Gex::Attribute::CreateIndex)
-            .def("IsMulti", &Gex::Attribute::IsMulti)
+            .def("IsArray", &Gex::Attribute::IsArray)
             .def("ValueHash", &Gex::Attribute::ValueHash)
             .def("ValidIndices", &Gex::Attribute::ValidIndices)
             .def("GetIndexAttribute", &Gex::Attribute::GetIndexAttribute)
@@ -124,9 +124,9 @@ bool Gex::Python::Attribute_Wrap::RegisterPythonWrapper(pybind11::module_& mod,
 
     pybind11::enum_<Gex::AttrValueType>(mod, "AttrValueType", pybind11::module_local(false))
             .value("Single", Gex::AttrValueType::Single)
-            .value("Multi", Gex::AttrValueType::Multi)
+            .value("Multi", Gex::AttrValueType::Array)
             .value("Holder", Gex::AttrValueType::Holder)
-            .value("MultiHolder", Gex::AttrValueType::MultiHolder)
+            .value("MultiHolder", Gex::AttrValueType::ArrayHolder)
             ;
 
     pybind11::enum_<Gex::AttrType>(mod, "AttrType", pybind11::module_local(false))

@@ -1,6 +1,8 @@
 #include "nodes.h"
 
 #include "types.h"
+#include "point.h"
+#include "vector.h"
 
 
 std::string Math::Nodes::ConstantInt::Description() const
@@ -48,7 +50,7 @@ std::string Math::Nodes::Add::Description() const
 
 void Math::Nodes::Add::InitAttributes()
 {
-    CreateAttribute<double>("Inputs", Gex::AttrValueType::Multi,
+    CreateAttribute<double>("Inputs", Gex::AttrValueType::Array,
                             Gex::AttrType::Input);
     CreateAttribute<double>("Output", Gex::AttrValueType::Single,
                         Gex::AttrType::Output);
@@ -63,10 +65,10 @@ bool Math::Nodes::Add::Evaluate(Gex::NodeAttributeData &ctx,
     double value = 0.0;
     for (unsigned int index : inputsAttr.Indices())
     {
-        value += inputsAttr.GetIndex(index).GetValue<double>();
+        value += inputsAttr.GetIndex(index).Get<double>();
     }
 
-    return ctx.GetAttribute("Output").SetValue(value);
+    return ctx.GetAttribute("Output").Set(value);
 }
 
 
@@ -77,7 +79,7 @@ std::string Math::Nodes::Subtract::Description() const
 
 void Math::Nodes::Subtract::InitAttributes()
 {
-    CreateAttribute<double>("Inputs", Gex::AttrValueType::Multi,
+    CreateAttribute<double>("Inputs", Gex::AttrValueType::Array,
                             Gex::AttrType::Input);
     CreateAttribute<double>("Output", Gex::AttrValueType::Single,
                             Gex::AttrType::Output);
@@ -93,10 +95,10 @@ bool Math::Nodes::Subtract::Evaluate(Gex::NodeAttributeData &ctx,
 
     for (unsigned int index : inputsAttr.Indices())
     {
-        value -= inputsAttr.GetIndex(index).GetValue<double>();
+        value -= inputsAttr.GetIndex(index).Get<double>();
     }
 
-    return ctx.GetAttribute("Output").SetValue(value);
+    return ctx.GetAttribute("Output").Set(value);
 }
 
 
@@ -107,7 +109,7 @@ std::string Math::Nodes::Multiply::Description() const
 
 void Math::Nodes::Multiply::InitAttributes()
 {
-    CreateAttribute<double>("Inputs", Gex::AttrValueType::Multi,
+    CreateAttribute<double>("Inputs", Gex::AttrValueType::Array,
                             Gex::AttrType::Input);
     CreateAttribute<double>("Output", Gex::AttrValueType::Single,
                             Gex::AttrType::Output);
@@ -126,15 +128,15 @@ bool Math::Nodes::Multiply::Evaluate(Gex::NodeAttributeData &ctx,
     {
         if (!set)
         {
-            value = inputsAttr.GetIndex(index).GetValue<double>();
+            value = inputsAttr.GetIndex(index).Get<double>();
             set = true;
             continue;
         }
 
-        value *= inputsAttr.GetIndex(index).GetValue<double>();
+        value *= inputsAttr.GetIndex(index).Get<double>();
     }
 
-    return ctx.GetAttribute("Output").SetValue(value);
+    return ctx.GetAttribute("Output").Set(value);
 }
 
 
@@ -145,7 +147,7 @@ std::string Math::Nodes::Divide::Description() const
 
 void Math::Nodes::Divide::InitAttributes()
 {
-    CreateAttribute<double>("Inputs", Gex::AttrValueType::Multi,
+    CreateAttribute<double>("Inputs", Gex::AttrValueType::Array,
                             Gex::AttrType::Input);
     CreateAttribute<double>("Output", Gex::AttrValueType::Single,
                             Gex::AttrType::Output);
@@ -164,15 +166,15 @@ bool Math::Nodes::Divide::Evaluate(Gex::NodeAttributeData &ctx,
     {
         if (!set)
         {
-            value = inputsAttr.GetIndex(index).GetValue<double>();
+            value = inputsAttr.GetIndex(index).Get<double>();
             set = true;
             continue;
         }
 
-        value /= inputsAttr.GetIndex(index).GetValue<double>();
+        value /= inputsAttr.GetIndex(index).Get<double>();
     }
 
-    return ctx.GetAttribute("Output").SetValue(value);
+    return ctx.GetAttribute("Output").Set(value);
 }
 
 
@@ -193,9 +195,9 @@ bool Math::Nodes::Cos::Evaluate(Gex::NodeAttributeData &ctx,
                                    Gex::GraphContext &graph,
                                    Gex::NodeProfiler& profiler)
 {
-    auto value = ctx.GetAttribute("Value").GetValue<double>();
+    auto value = ctx.GetAttribute("Value").Get<double>();
 
-    return ctx.GetAttribute("Cos").SetValue(std::cos(value));
+    return ctx.GetAttribute("Cos").Set(std::cos(value));
 }
 
 
@@ -216,9 +218,9 @@ bool Math::Nodes::Acos::Evaluate(Gex::NodeAttributeData &ctx,
                                 Gex::GraphContext &graph,
                                 Gex::NodeProfiler& profiler)
 {
-    auto value = ctx.GetAttribute("Value").GetValue<double>();
+    auto value = ctx.GetAttribute("Value").Get<double>();
 
-    return ctx.GetAttribute("Acos").SetValue(std::acos(value));
+    return ctx.GetAttribute("Acos").Set(std::acos(value));
 }
 
 
@@ -239,9 +241,9 @@ bool Math::Nodes::RadianToDegree::Evaluate(Gex::NodeAttributeData &ctx,
                                  Gex::GraphContext &graph,
                                  Gex::NodeProfiler& profiler)
 {
-    auto value = ctx.GetAttribute("Radian").GetValue<double>();
+    auto value = ctx.GetAttribute("Radian").Get<double>();
 
-    return ctx.GetAttribute("Degree").SetValue(value * 57.2958);
+    return ctx.GetAttribute("Degree").Set(value * 57.2958);
 }
 
 
@@ -262,9 +264,9 @@ bool Math::Nodes::DegreeToRadian::Evaluate(Gex::NodeAttributeData &ctx,
                                            Gex::GraphContext &graph,
                                            Gex::NodeProfiler& profiler)
 {
-    auto value = ctx.GetAttribute("Degree").GetValue<double>();
+    auto value = ctx.GetAttribute("Degree").Get<double>();
 
-    return ctx.GetAttribute("Radian").SetValue(value / 57.2958);
+    return ctx.GetAttribute("Radian").Set(value / 57.2958);
 }
 
 
@@ -286,7 +288,7 @@ void Math::Nodes::ComposePoint2::InitAttributes()
             Gex::AttrType::Input
     );
 
-    CreateAttribute<Math::Types::Point2>(
+    CreateAttribute<Math::Point2>(
             "Point", Gex::AttrValueType::Single,
             Gex::AttrType::Output
     );
@@ -298,12 +300,12 @@ bool Math::Nodes::ComposePoint2::Evaluate(
         Gex::NodeProfiler& profiler
 )
 {
-    Math::Types::Point2 p = {
-            ctx.GetAttribute("X").GetValue<double>(),
-            ctx.GetAttribute("Y").GetValue<double>()
+    Math::Point2 p = {
+            ctx.GetAttribute("X").Get<double>(),
+            ctx.GetAttribute("Y").Get<double>()
     };
 
-    return ctx.GetAttribute("Point").SetValue(p);
+    return ctx.GetAttribute("Point").Set(p);
 }
 
 
@@ -316,7 +318,7 @@ std::string Math::Nodes::DecomposePoint2::Description() const
 
 void Math::Nodes::DecomposePoint2::InitAttributes()
 {
-    CreateAttribute<Math::Types::Point2>(
+    CreateAttribute<Math::Point2>(
             "Point", Gex::AttrValueType::Single,
             Gex::AttrType::Input
     );
@@ -338,10 +340,10 @@ bool Math::Nodes::DecomposePoint2::Evaluate(
         Gex::NodeProfiler& profiler
 )
 {
-    auto p = ctx.GetAttribute("Point").GetValue<Math::Types::Point2>();
+    auto p = ctx.GetAttribute("Point").Get<Math::Point2>();
 
-    ctx.GetAttribute("X").SetValue(p.x);
-    ctx.GetAttribute("Y").SetValue(p.y);
+    ctx.GetAttribute("X").Set(p.x);
+    ctx.GetAttribute("Y").Set(p.y);
 
     return true;
 }
@@ -356,12 +358,12 @@ std::string Math::Nodes::Point2Distance::Description() const
 
 void Math::Nodes::Point2Distance::InitAttributes()
 {
-    CreateAttribute<Math::Types::Point2>(
+    CreateAttribute<Math::Point2>(
             "Point1", Gex::AttrValueType::Single,
             Gex::AttrType::Input
     );
 
-    CreateAttribute<Math::Types::Point2>(
+    CreateAttribute<Math::Point2>(
             "Point2", Gex::AttrValueType::Single,
             Gex::AttrType::Input
     );
@@ -378,10 +380,10 @@ bool Math::Nodes::Point2Distance::Evaluate(
         Gex::NodeProfiler& profiler
 )
 {
-    auto p1 = ctx.GetAttribute("Point1").GetValue<Math::Types::Point2>();
-    auto p2 = ctx.GetAttribute("Point2").GetValue<Math::Types::Point2>();
+    auto p1 = ctx.GetAttribute("Point1").Get<Math::Point2>();
+    auto p2 = ctx.GetAttribute("Point2").Get<Math::Point2>();
 
-    return ctx.GetAttribute("Distance").SetValue(p1.Distance(p2));
+    return ctx.GetAttribute("Distance").Set(p1.Distance(p2));
 }
 
 
@@ -409,7 +411,7 @@ void Math::Nodes::ComposePoint3::InitAttributes()
             Gex::AttrType::Input
     );
 
-    CreateAttribute<Math::Types::Point3>(
+    CreateAttribute<Math::Point3>(
             "Point", Gex::AttrValueType::Single,
             Gex::AttrType::Output
     );
@@ -421,13 +423,13 @@ bool Math::Nodes::ComposePoint3::Evaluate(
         Gex::NodeProfiler& profiler
 )
 {
-    Math::Types::Point3 p = {
-            ctx.GetAttribute("X").GetValue<double>(),
-            ctx.GetAttribute("Y").GetValue<double>(),
-            ctx.GetAttribute("Z").GetValue<double>()
+    Math::Point3 p = {
+            ctx.GetAttribute("X").Get<double>(),
+            ctx.GetAttribute("Y").Get<double>(),
+            ctx.GetAttribute("Z").Get<double>()
     };
 
-    return ctx.GetAttribute("Point").SetValue(p);
+    return ctx.GetAttribute("Point").Set(p);
 }
 
 
@@ -440,7 +442,7 @@ std::string Math::Nodes::DecomposePoint3::Description() const
 
 void Math::Nodes::DecomposePoint3::InitAttributes()
 {
-    CreateAttribute<Math::Types::Point3>(
+    CreateAttribute<Math::Point3>(
             "Point", Gex::AttrValueType::Single,
             Gex::AttrType::Input
     );
@@ -467,11 +469,11 @@ bool Math::Nodes::DecomposePoint3::Evaluate(
         Gex::NodeProfiler& profiler
 )
 {
-    auto p = ctx.GetAttribute("Point").GetValue<Math::Types::Point3>();
+    auto p = ctx.GetAttribute("Point").Get<Math::Point3>();
 
-    ctx.GetAttribute("X").SetValue(p.x);
-    ctx.GetAttribute("Y").SetValue(p.y);
-    ctx.GetAttribute("Z").SetValue(p.z);
+    ctx.GetAttribute("X").Set(p.x);
+    ctx.GetAttribute("Y").Set(p.y);
+    ctx.GetAttribute("Z").Set(p.z);
 
     return true;
 }
@@ -486,12 +488,12 @@ std::string Math::Nodes::Point3Distance::Description() const
 
 void Math::Nodes::Point3Distance::InitAttributes()
 {
-    CreateAttribute<Math::Types::Point3>(
+    CreateAttribute<Math::Point3>(
             "Point1", Gex::AttrValueType::Single,
             Gex::AttrType::Input
     );
 
-    CreateAttribute<Math::Types::Point3>(
+    CreateAttribute<Math::Point3>(
             "Point2", Gex::AttrValueType::Single,
             Gex::AttrType::Input
     );
@@ -508,10 +510,10 @@ bool Math::Nodes::Point3Distance::Evaluate(
         Gex::NodeProfiler& profiler
 )
 {
-    auto p1 = ctx.GetAttribute("Point1").GetValue<Math::Types::Point3>();
-    auto p2 = ctx.GetAttribute("Point2").GetValue<Math::Types::Point3>();
+    auto p1 = ctx.GetAttribute("Point1").Get<Math::Point3>();
+    auto p2 = ctx.GetAttribute("Point2").Get<Math::Point3>();
 
-    return ctx.GetAttribute("Distance").SetValue(p1.Distance(p2));
+    return ctx.GetAttribute("Distance").Set(p1.Distance(p2));
 }
 
 
@@ -525,7 +527,7 @@ std::string Math::Nodes::ConstantVector2::Description() const
 
 void Math::Nodes::ConstantVector2::InitAttributes()
 {
-    CreateAttribute<Math::Types::Vector2>(
+    CreateAttribute<Math::Vector2>(
             "Vector2", Gex::AttrValueType::Single,
             Gex::AttrType::Static
     );
@@ -541,7 +543,7 @@ void Math::Nodes::ComposeVector2::InitAttributes()
 {
     CreateAttribute<double>("X");
     CreateAttribute<double>("Y");
-    CreateAttribute<Math::Types::Vector2>(
+    CreateAttribute<Math::Vector2>(
             "OutVector", Gex::AttrValueType::Single,
             Gex::AttrType::Output
     );
@@ -553,12 +555,12 @@ bool Math::Nodes::ComposeVector2::Evaluate(
         Gex::NodeProfiler& profiler
 )
 {
-    auto x = ctx.GetAttribute("X").GetValue<double>();
-    auto y = ctx.GetAttribute("Y").GetValue<double>();
+    auto x = ctx.GetAttribute("X").Get<double>();
+    auto y = ctx.GetAttribute("Y").Get<double>();
 
-    Math::Types::Vector2 vec2 = {x, y};
+    Math::Vector2 vec2 = {x, y};
 
-    return ctx.GetAttribute("OutVector").SetValue(vec2);
+    return ctx.GetAttribute("OutVector").Set(vec2);
 }
 
 
@@ -569,7 +571,7 @@ std::string Math::Nodes::Vector2Magnitude::Description() const
 
 void Math::Nodes::Vector2Magnitude::InitAttributes()
 {
-    CreateAttribute<Math::Types::Vector2>(
+    CreateAttribute<Math::Vector2>(
             "Vector", Gex::AttrValueType::Single,
             Gex::AttrType::Input
     );
@@ -586,9 +588,9 @@ bool Math::Nodes::Vector2Magnitude::Evaluate(
         Gex::NodeProfiler& profiler
 )
 {
-    return ctx.GetAttribute("Magnitude").SetValue(
+    return ctx.GetAttribute("Magnitude").Set(
             ctx.GetAttribute("Vector")
-            .GetValue<Math::Types::Vector2>().Magnitude()
+            .Get<Math::Vector2>().Magnitude()
     );
 }
 
@@ -600,12 +602,12 @@ std::string Math::Nodes::NormalizeVector2::Description() const
 
 void Math::Nodes::NormalizeVector2::InitAttributes()
 {
-    CreateAttribute<Math::Types::Vector2>(
+    CreateAttribute<Math::Vector2>(
             "Vector", Gex::AttrValueType::Single,
             Gex::AttrType::Input
     );
 
-    CreateAttribute<Math::Types::Vector2>(
+    CreateAttribute<Math::Vector2>(
             "Normalized", Gex::AttrValueType::Single,
             Gex::AttrType::Output
     );
@@ -617,11 +619,11 @@ bool Math::Nodes::NormalizeVector2::Evaluate(
         Gex::NodeProfiler& profiler
 )
 {
-    auto vec = ctx.GetAttribute("Vector").GetValue<Math::Types::Vector2>();
+    auto vec = ctx.GetAttribute("Vector").Get<Math::Vector2>();
 
     vec.Normalize();
 
-    return ctx.GetAttribute("Normalized").SetValue(vec);
+    return ctx.GetAttribute("Normalized").Set(vec);
 }
 
 
@@ -632,12 +634,12 @@ std::string Math::Nodes::AngleVector2::Description() const
 
 void Math::Nodes::AngleVector2::InitAttributes()
 {
-    CreateAttribute<Math::Types::Vector2>(
+    CreateAttribute<Math::Vector2>(
             "Vector1", Gex::AttrValueType::Single,
             Gex::AttrType::Input
     );
 
-    CreateAttribute<Math::Types::Vector2>(
+    CreateAttribute<Math::Vector2>(
             "Vector2", Gex::AttrValueType::Single,
             Gex::AttrType::Input
     );
@@ -654,10 +656,10 @@ bool Math::Nodes::AngleVector2::Evaluate(
         Gex::NodeProfiler& profiler
 )
 {
-    return ctx.GetAttribute("Angle").SetValue(
-        Math::Types::Vector2::Angle(
-            ctx.GetAttribute("Vector1").GetValue<Math::Types::Vector2>(),
-            ctx.GetAttribute("Vector2").GetValue<Math::Types::Vector2>()
+    return ctx.GetAttribute("Angle").Set(
+        Math::Vector2::Angle(
+            ctx.GetAttribute("Vector1").Get<Math::Vector2>(),
+            ctx.GetAttribute("Vector2").Get<Math::Vector2>()
         )
     );
 }
@@ -670,7 +672,7 @@ std::string Math::Nodes::DecomposeVector2::Description() const
 
 void Math::Nodes::DecomposeVector2::InitAttributes()
 {
-    CreateAttribute<Math::Types::Vector2>(
+    CreateAttribute<Math::Vector2>(
             "Vector"
     );
     CreateAttribute<double>("X", Gex::AttrValueType::Single,
@@ -685,10 +687,10 @@ bool Math::Nodes::DecomposeVector2::Evaluate(
         Gex::NodeProfiler& profiler
 )
 {
-    auto vec = ctx.GetAttribute("Vector").GetValue<Math::Types::Vector2>();
+    auto vec = ctx.GetAttribute("Vector").Get<Math::Vector2>();
 
-    ctx.GetAttribute("X").SetValue(vec.x);
-    ctx.GetAttribute("Y").SetValue(vec.y);
+    ctx.GetAttribute("X").Set(vec.x);
+    ctx.GetAttribute("Y").Set(vec.y);
     return true;
 }
 
@@ -700,9 +702,9 @@ std::string Math::Nodes::Vector2DotProduct::Description() const
 
 void Math::Nodes::Vector2DotProduct::InitAttributes()
 {
-    CreateAttribute<Math::Types::Vector2>("Vector1");
+    CreateAttribute<Math::Vector2>("Vector1");
 
-    CreateAttribute<Math::Types::Vector2>("Vector2");
+    CreateAttribute<Math::Vector2>("Vector2");
 
     CreateAttribute<double>("DotProduct", Gex::AttrValueType::Single,
                             Gex::AttrType::Output);
@@ -714,10 +716,10 @@ bool Math::Nodes::Vector2DotProduct::Evaluate(
         Gex::NodeProfiler& profiler
 )
 {
-    return ctx.GetAttribute("DotProduct").SetValue(
-        Math::Types::Vector2::DotProduct(
-            ctx.GetAttribute("Vector1").GetValue<Math::Types::Vector2>(),
-            ctx.GetAttribute("Vector2").GetValue<Math::Types::Vector2>()
+    return ctx.GetAttribute("DotProduct").Set(
+        Math::Vector2::DotProduct(
+            ctx.GetAttribute("Vector1").Get<Math::Vector2>(),
+            ctx.GetAttribute("Vector2").Get<Math::Vector2>()
         )
     );
 }
@@ -730,11 +732,11 @@ std::string Math::Nodes::Vector2Add::Description() const
 
 void Math::Nodes::Vector2Add::InitAttributes()
 {
-    CreateAttribute<Math::Types::Vector2>("Vector1");
+    CreateAttribute<Math::Vector2>("Vector1");
 
-    CreateAttribute<Math::Types::Vector2>("Vector2");
+    CreateAttribute<Math::Vector2>("Vector2");
 
-    CreateAttribute<Math::Types::Vector2>(
+    CreateAttribute<Math::Vector2>(
             "OutVector", Gex::AttrValueType::Single,
         Gex::AttrType::Output
     );
@@ -746,12 +748,12 @@ bool Math::Nodes::Vector2Add::Evaluate(
         Gex::NodeProfiler& profiler
 )
 {
-    auto vec1 = ctx.GetAttribute("Vector1").GetValue<Math::Types::Vector2>();
-    auto vec2 = ctx.GetAttribute("Vector2").GetValue<Math::Types::Vector2>();
+    auto vec1 = ctx.GetAttribute("Vector1").Get<Math::Vector2>();
+    auto vec2 = ctx.GetAttribute("Vector2").Get<Math::Vector2>();
 
     vec1.Add(vec2);
 
-    return ctx.GetAttribute("OutVector").SetValue(vec1);
+    return ctx.GetAttribute("OutVector").Set(vec1);
 }
 
 
@@ -762,11 +764,11 @@ std::string Math::Nodes::Vector2Subtract::Description() const
 
 void Math::Nodes::Vector2Subtract::InitAttributes()
 {
-    CreateAttribute<Math::Types::Vector2>("Vector1");
+    CreateAttribute<Math::Vector2>("Vector1");
 
-    CreateAttribute<Math::Types::Vector2>("Vector2");
+    CreateAttribute<Math::Vector2>("Vector2");
 
-    CreateAttribute<Math::Types::Vector2>(
+    CreateAttribute<Math::Vector2>(
             "OutVector", Gex::AttrValueType::Single,
             Gex::AttrType::Output
     );
@@ -778,12 +780,12 @@ bool Math::Nodes::Vector2Subtract::Evaluate(
         Gex::NodeProfiler& profiler
 )
 {
-    auto vec1 = ctx.GetAttribute("Vector1").GetValue<Math::Types::Vector2>();
-    auto vec2 = ctx.GetAttribute("Vector2").GetValue<Math::Types::Vector2>();
+    auto vec1 = ctx.GetAttribute("Vector1").Get<Math::Vector2>();
+    auto vec2 = ctx.GetAttribute("Vector2").Get<Math::Vector2>();
 
     vec1.Subtract(vec2);
 
-    return ctx.GetAttribute("OutVector").SetValue(vec1);
+    return ctx.GetAttribute("OutVector").Set(vec1);
 }
 
 
@@ -794,7 +796,7 @@ std::string Math::Nodes::Vector2Divide::Description() const
 
 void Math::Nodes::Vector2Divide::InitAttributes()
 {
-    CreateAttribute<Math::Types::Vector2>(
+    CreateAttribute<Math::Vector2>(
             "Vector", Gex::AttrValueType::Single,
             Gex::AttrType::Output
     );
@@ -804,7 +806,7 @@ void Math::Nodes::Vector2Divide::InitAttributes()
             Gex::AttrType::Output
     );
 
-    CreateAttribute<Math::Types::Vector2>(
+    CreateAttribute<Math::Vector2>(
             "OutVector", Gex::AttrValueType::Single,
             Gex::AttrType::Output
     );
@@ -816,11 +818,11 @@ bool Math::Nodes::Vector2Divide::Evaluate(
         Gex::NodeProfiler& profiler
 )
 {
-    auto vec = ctx.GetAttribute("Vector").GetValue<Math::Types::Vector2>();
+    auto vec = ctx.GetAttribute("Vector").Get<Math::Vector2>();
 
-    vec.Divide(ctx.GetAttribute("Div").GetValue<double>());
+    vec.Divide(ctx.GetAttribute("Div").Get<double>());
 
-    return ctx.GetAttribute("OutVector").SetValue(vec);
+    return ctx.GetAttribute("OutVector").Set(vec);
 }
 
 
@@ -831,7 +833,7 @@ std::string Math::Nodes::Vector2Multiply::Description() const
 
 void Math::Nodes::Vector2Multiply::InitAttributes()
 {
-    CreateAttribute<Math::Types::Vector2>(
+    CreateAttribute<Math::Vector2>(
             "Vector", Gex::AttrValueType::Single,
             Gex::AttrType::Input
     );
@@ -841,7 +843,7 @@ void Math::Nodes::Vector2Multiply::InitAttributes()
             Gex::AttrType::Input
     );
 
-    CreateAttribute<Math::Types::Vector2>(
+    CreateAttribute<Math::Vector2>(
             "OutVector", Gex::AttrValueType::Single,
             Gex::AttrType::Output
     );
@@ -853,11 +855,11 @@ bool Math::Nodes::Vector2Multiply::Evaluate(
         Gex::NodeProfiler& profiler
 )
 {
-    auto vec = ctx.GetAttribute("Vector").GetValue<Math::Types::Vector2>();
+    auto vec = ctx.GetAttribute("Vector").Get<Math::Vector2>();
 
-    vec.Multiply(ctx.GetAttribute("Mult").GetValue<double>());
+    vec.Multiply(ctx.GetAttribute("Mult").Get<double>());
 
-    return ctx.GetAttribute("OutVector").SetValue(vec);
+    return ctx.GetAttribute("OutVector").Set(vec);
 }
 
 
@@ -869,7 +871,7 @@ std::string Math::Nodes::ConstantVector3::Description() const
 
 void Math::Nodes::ConstantVector3::InitAttributes()
 {
-    CreateAttribute<Math::Types::Vector3>(
+    CreateAttribute<Math::Vector3>(
             "Vector3", Gex::AttrValueType::Single,
             Gex::AttrType::Static
     );
@@ -889,7 +891,7 @@ void Math::Nodes::ComposeVector3::InitAttributes()
                             Gex::AttrType::Input);
     CreateAttribute<double>("Z", Gex::AttrValueType::Single,
                             Gex::AttrType::Input);
-    CreateAttribute<Math::Types::Vector3>(
+    CreateAttribute<Math::Vector3>(
             "OutVector", Gex::AttrValueType::Single,
             Gex::AttrType::Output
     );
@@ -901,13 +903,13 @@ bool Math::Nodes::ComposeVector3::Evaluate(
         Gex::NodeProfiler& profiler
 )
 {
-    auto x = ctx.GetAttribute("X").GetValue<double>();
-    auto y = ctx.GetAttribute("Y").GetValue<double>();
-    auto z = ctx.GetAttribute("Z").GetValue<double>();
+    auto x = ctx.GetAttribute("X").Get<double>();
+    auto y = ctx.GetAttribute("Y").Get<double>();
+    auto z = ctx.GetAttribute("Z").Get<double>();
 
-    Math::Types::Vector3 vec3 = {x, y, z};
+    Math::Vector3 vec3 = {x, y, z};
 
-    return ctx.GetAttribute("OutVector").SetValue(vec3);
+    return ctx.GetAttribute("OutVector").Set(vec3);
 }
 
 
@@ -918,7 +920,7 @@ std::string Math::Nodes::DecomposeVector3::Description() const
 
 void Math::Nodes::DecomposeVector3::InitAttributes()
 {
-    CreateAttribute<Math::Types::Vector3>(
+    CreateAttribute<Math::Vector3>(
             "Vector", Gex::AttrValueType::Single,
             Gex::AttrType::Input
     );
@@ -936,11 +938,11 @@ bool Math::Nodes::DecomposeVector3::Evaluate(
         Gex::NodeProfiler& profiler
 )
 {
-    auto vec = ctx.GetAttribute("Vector").GetValue<Math::Types::Vector3>();
+    auto vec = ctx.GetAttribute("Vector").Get<Math::Vector3>();
 
-    ctx.GetAttribute("X").SetValue(vec.x);
-    ctx.GetAttribute("Y").SetValue(vec.y);
-    ctx.GetAttribute("Z").SetValue(vec.z);
+    ctx.GetAttribute("X").Set(vec.x);
+    ctx.GetAttribute("Y").Set(vec.y);
+    ctx.GetAttribute("Z").Set(vec.z);
     return true;
 }
 
@@ -952,9 +954,9 @@ std::string Math::Nodes::Vector3DotProduct::Description() const
 
 void Math::Nodes::Vector3DotProduct::InitAttributes()
 {
-    CreateAttribute<Math::Types::Vector3>("Vector1");
+    CreateAttribute<Math::Vector3>("Vector1");
 
-    CreateAttribute<Math::Types::Vector3>("Vector2");
+    CreateAttribute<Math::Vector3>("Vector2");
 
     CreateAttribute<double>("DotProduct", Gex::AttrValueType::Single,
                             Gex::AttrType::Output);
@@ -966,10 +968,10 @@ bool Math::Nodes::Vector3DotProduct::Evaluate(
         Gex::NodeProfiler& profiler
 )
 {
-    auto vec1 = ctx.GetAttribute("Vector1").GetValue<Math::Types::Vector3>();
-    auto vec2 = ctx.GetAttribute("Vector2").GetValue<Math::Types::Vector3>();
+    auto vec1 = ctx.GetAttribute("Vector1").Get<Math::Vector3>();
+    auto vec2 = ctx.GetAttribute("Vector2").Get<Math::Vector3>();
 
-    return ctx.GetAttribute("DotProduct").SetValue(vec1.DotProduct(vec2));
+    return ctx.GetAttribute("DotProduct").Set(vec1.DotProduct(vec2));
 }
 
 
@@ -980,17 +982,17 @@ std::string Math::Nodes::Vector3Add::Description() const
 
 void Math::Nodes::Vector3Add::InitAttributes()
 {
-    CreateAttribute<Math::Types::Vector3>(
+    CreateAttribute<Math::Vector3>(
             "Vector1", Gex::AttrValueType::Single,
             Gex::AttrType::Input
     );
 
-    CreateAttribute<Math::Types::Vector3>(
+    CreateAttribute<Math::Vector3>(
             "Vector2", Gex::AttrValueType::Single,
             Gex::AttrType::Input
     );
 
-    CreateAttribute<Math::Types::Vector2>(
+    CreateAttribute<Math::Vector2>(
             "OutVector", Gex::AttrValueType::Single,
             Gex::AttrType::Output
     );
@@ -1002,12 +1004,12 @@ bool Math::Nodes::Vector3Add::Evaluate(
         Gex::NodeProfiler& profiler
 )
 {
-    auto vec1 = ctx.GetAttribute("Vector1").GetValue<Math::Types::Vector3>();
-    auto vec2 = ctx.GetAttribute("Vector2").GetValue<Math::Types::Vector3>();
+    auto vec1 = ctx.GetAttribute("Vector1").Get<Math::Vector3>();
+    auto vec2 = ctx.GetAttribute("Vector2").Get<Math::Vector3>();
 
     vec1.Add(vec2);
 
-    return ctx.GetAttribute("OutVector").SetValue(vec1);
+    return ctx.GetAttribute("OutVector").Set(vec1);
 }
 
 
@@ -1018,17 +1020,17 @@ std::string Math::Nodes::Vector3Subtract::Description() const
 
 void Math::Nodes::Vector3Subtract::InitAttributes()
 {
-    CreateAttribute<Math::Types::Vector3>(
+    CreateAttribute<Math::Vector3>(
             "Vector1", Gex::AttrValueType::Single,
             Gex::AttrType::Input
     );
 
-    CreateAttribute<Math::Types::Vector3>(
+    CreateAttribute<Math::Vector3>(
             "Vector2", Gex::AttrValueType::Single,
             Gex::AttrType::Input
     );
 
-    CreateAttribute<Math::Types::Vector3>(
+    CreateAttribute<Math::Vector3>(
             "OutVector", Gex::AttrValueType::Single,
             Gex::AttrType::Output
     );
@@ -1040,12 +1042,12 @@ bool Math::Nodes::Vector3Subtract::Evaluate(
         Gex::NodeProfiler& profiler
 )
 {
-    auto vec1 = ctx.GetAttribute("Vector1").GetValue<Math::Types::Vector3>();
-    auto vec2 = ctx.GetAttribute("Vector2").GetValue<Math::Types::Vector3>();
+    auto vec1 = ctx.GetAttribute("Vector1").Get<Math::Vector3>();
+    auto vec2 = ctx.GetAttribute("Vector2").Get<Math::Vector3>();
 
     vec1.Subtract(vec2);
 
-    return ctx.GetAttribute("OutVector").SetValue(vec1);
+    return ctx.GetAttribute("OutVector").Set(vec1);
 }
 
 
@@ -1056,7 +1058,7 @@ std::string Math::Nodes::Vector3Divide::Description() const
 
 void Math::Nodes::Vector3Divide::InitAttributes()
 {
-    CreateAttribute<Math::Types::Vector3>(
+    CreateAttribute<Math::Vector3>(
             "Vector1", Gex::AttrValueType::Single,
             Gex::AttrType::Input
     );
@@ -1066,7 +1068,7 @@ void Math::Nodes::Vector3Divide::InitAttributes()
             Gex::AttrType::Input
     );
 
-    CreateAttribute<Math::Types::Vector3>(
+    CreateAttribute<Math::Vector3>(
             "OutVector", Gex::AttrValueType::Single,
             Gex::AttrType::Output
     );
@@ -1078,12 +1080,12 @@ bool Math::Nodes::Vector3Divide::Evaluate(
         Gex::NodeProfiler& profiler
 )
 {
-    auto vec = ctx.GetAttribute("Vector").GetValue<Math::Types::Vector3>();
-    auto div = ctx.GetAttribute("Div").GetValue<double>();
+    auto vec = ctx.GetAttribute("Vector").Get<Math::Vector3>();
+    auto div = ctx.GetAttribute("Div").Get<double>();
 
     vec.Divide(div);
 
-    return ctx.GetAttribute("OutVector").SetValue(vec);
+    return ctx.GetAttribute("OutVector").Set(vec);
 }
 
 
@@ -1094,7 +1096,7 @@ std::string Math::Nodes::Vector3Multiply::Description() const
 
 void Math::Nodes::Vector3Multiply::InitAttributes()
 {
-    CreateAttribute<Math::Types::Vector3>(
+    CreateAttribute<Math::Vector3>(
             "Vector", Gex::AttrValueType::Single,
             Gex::AttrType::Input
     );
@@ -1104,7 +1106,7 @@ void Math::Nodes::Vector3Multiply::InitAttributes()
             Gex::AttrType::Input
     );
 
-    CreateAttribute<Math::Types::Vector3>(
+    CreateAttribute<Math::Vector3>(
             "OutVector", Gex::AttrValueType::Single,
             Gex::AttrType::Output
     );
@@ -1116,12 +1118,12 @@ bool Math::Nodes::Vector3Multiply::Evaluate(
         Gex::NodeProfiler& profiler
 )
 {
-    auto vec = ctx.GetAttribute("Vector").GetValue<Math::Types::Vector3>();
-    auto mult = ctx.GetAttribute("Mult").GetValue<double>();
+    auto vec = ctx.GetAttribute("Vector").Get<Math::Vector3>();
+    auto mult = ctx.GetAttribute("Mult").Get<double>();
 
     vec.Multiply(mult);
 
-    return ctx.GetAttribute("OutVector").SetValue(vec);
+    return ctx.GetAttribute("OutVector").Set(vec);
 }
 
 
@@ -1132,17 +1134,17 @@ std::string Math::Nodes::Vector3CrossProduct::Description() const
 
 void Math::Nodes::Vector3CrossProduct::InitAttributes()
 {
-    CreateAttribute<Math::Types::Vector3>(
+    CreateAttribute<Math::Vector3>(
             "Vector1", Gex::AttrValueType::Single,
             Gex::AttrType::Input
     );
 
-    CreateAttribute<Math::Types::Vector3>(
+    CreateAttribute<Math::Vector3>(
             "Vector2", Gex::AttrValueType::Single,
             Gex::AttrType::Input
     );
 
-    CreateAttribute<Math::Types::Vector3>(
+    CreateAttribute<Math::Vector3>(
             "CrossProduct", Gex::AttrValueType::Single,
             Gex::AttrType::Output
     );
@@ -1154,12 +1156,12 @@ bool Math::Nodes::Vector3CrossProduct::Evaluate(
         Gex::NodeProfiler& profiler
 )
 {
-    auto vec1 = ctx.GetAttribute("Vector1").GetValue<Math::Types::Vector3>();
-    auto vec2 = ctx.GetAttribute("Vector2").GetValue<Math::Types::Vector3>();
+    auto vec1 = ctx.GetAttribute("Vector1").Get<Math::Vector3>();
+    auto vec2 = ctx.GetAttribute("Vector2").Get<Math::Vector3>();
 
-    Math::Types::Vector3 res = vec1.CrossProduct(vec2);
+    Math::Vector3 res = vec1.CrossProduct(vec2);
 
-    return ctx.GetAttribute("CrossProduct").SetValue(res);
+    return ctx.GetAttribute("CrossProduct").Set(res);
 }
 
 
@@ -1170,7 +1172,7 @@ std::string Math::Nodes::Vector3Magnitude::Description() const
 
 void Math::Nodes::Vector3Magnitude::InitAttributes()
 {
-    CreateAttribute<Math::Types::Vector3>(
+    CreateAttribute<Math::Vector3>(
             "Vector", Gex::AttrValueType::Single,
             Gex::AttrType::Input
     );
@@ -1187,9 +1189,9 @@ bool Math::Nodes::Vector3Magnitude::Evaluate(
         Gex::NodeProfiler& profiler
 )
 {
-    return ctx.GetAttribute("Magnitude").SetValue(
+    return ctx.GetAttribute("Magnitude").Set(
             ctx.GetAttribute("Vector")
-                    .GetValue<Math::Types::Vector3>().Magnitude()
+                    .Get<Math::Vector3>().Magnitude()
     );
 }
 
@@ -1201,12 +1203,12 @@ std::string Math::Nodes::NormalizeVector3::Description() const
 
 void Math::Nodes::NormalizeVector3::InitAttributes()
 {
-    CreateAttribute<Math::Types::Vector3>(
+    CreateAttribute<Math::Vector3>(
             "Vector", Gex::AttrValueType::Single,
             Gex::AttrType::Input
     );
 
-    CreateAttribute<Math::Types::Vector3>(
+    CreateAttribute<Math::Vector3>(
             "Normalized", Gex::AttrValueType::Single,
             Gex::AttrType::Output
     );
@@ -1218,11 +1220,11 @@ bool Math::Nodes::NormalizeVector3::Evaluate(
         Gex::NodeProfiler& profiler
 )
 {
-    auto vec = ctx.GetAttribute("Vector").GetValue<Math::Types::Vector3>();
+    auto vec = ctx.GetAttribute("Vector").Get<Math::Vector3>();
 
     vec.Normalize();
 
-    return ctx.GetAttribute("Normalized").SetValue(vec);
+    return ctx.GetAttribute("Normalized").Set(vec);
 }
 
 
@@ -1233,12 +1235,12 @@ std::string Math::Nodes::AngleVector3::Description() const
 
 void Math::Nodes::AngleVector3::InitAttributes()
 {
-    CreateAttribute<Math::Types::Vector3>(
+    CreateAttribute<Math::Vector3>(
             "Vector1", Gex::AttrValueType::Single,
             Gex::AttrType::Input
     );
 
-    CreateAttribute<Math::Types::Vector3>(
+    CreateAttribute<Math::Vector3>(
             "Vector2", Gex::AttrValueType::Single,
             Gex::AttrType::Input
     );
@@ -1255,10 +1257,10 @@ bool Math::Nodes::AngleVector3::Evaluate(
         Gex::NodeProfiler& profiler
 )
 {
-    return ctx.GetAttribute("Angle").SetValue(
-            Math::Types::Vector3::Angle(
-                    ctx.GetAttribute("Vector1").GetValue<Math::Types::Vector3>(),
-                    ctx.GetAttribute("Vector2").GetValue<Math::Types::Vector3>()
+    return ctx.GetAttribute("Angle").Set(
+            Math::Vector3::Angle(
+                    ctx.GetAttribute("Vector1").Get<Math::Vector3>(),
+                    ctx.GetAttribute("Vector2").Get<Math::Vector3>()
             )
     );
 }

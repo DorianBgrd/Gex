@@ -100,13 +100,13 @@ namespace Gex::Undo
     {
         NodePtr node;
         AttributePtr attr;
-        std::any value;
-        std::any previous;
+        TSys::TypedValuePtr value;
+        TSys::TypedValuePtr previous;
 
     public:
         SetAttr(const AttributePtr& at,
-                const std::any& v,
-                const std::any& p);
+                const TSys::TypedValuePtr& v,
+                const TSys::TypedValuePtr& p);
 
         std::string Name() const override;
 

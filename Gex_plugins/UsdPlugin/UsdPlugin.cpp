@@ -684,7 +684,7 @@ namespace UsdPlugin
             CreateAttribute<std::string>("VariantSet", Gex::AttrValueType::Single,
                                          Gex::AttrType::Static);
 
-            CreateAttribute<std::string>("Variants", Gex::AttrValueType::Multi,
+            CreateAttribute<std::string>("Variants", Gex::AttrValueType::Array,
                                          Gex::AttrType::Static);
         }
 

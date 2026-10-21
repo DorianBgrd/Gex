@@ -4,7 +4,7 @@
 
 TSys::TypeValueRegistry* TSys::GetRegistry()
 {
-    return TypeValueRegistry::Get(
+    return TypeValueRegistry::GetInstance(
             &TSys::RegisterDefaultTypes
     );
 }

@@ -40,7 +40,7 @@ Gex::Ui::MultiAttributeWidget::MultiAttributeWidget(
 //    newIndexButton->setFixedSize(QSize(25, 25));
     subLayout->addWidget(newIndexButton);
 
-    newIndexButton->setVisible(attr->IsMulti());
+    newIndexButton->setVisible(attr->IsArray());
 
     subAttributeWidget = new QWidget(this);
     mainLayout->addWidget(subAttributeWidget);
@@ -115,7 +115,7 @@ void Gex::Ui::MultiAttributeWidget::CreateAttributes()
     for (auto index : attr->ValidIndices())
     {
         auto indexAttr = attr->GetIndexAttribute(index);
-        if (indexAttr->IsMulti() || indexAttr->HasChildAttributes())
+        if (indexAttr->IsArray() || indexAttr->HasChildAttributes())
         {
             auto* multiWidget = new MultiAttributeWidget(indexAttr, graph, this);
             subAttributeLayout->addWidget(multiWidget);
@@ -128,14 +128,14 @@ void Gex::Ui::MultiAttributeWidget::CreateAttributes()
         }
     }
 
-    if (attribute->IsMulti() && attribute->IsHolder())
+    if (attribute->IsArray() && attribute->IsHolder())
     {
         return;
     }
 
     for (const auto& childAttribute : attr->GetChildAttributes())
     {
-        if (childAttribute->IsMulti())
+        if (childAttribute->IsArray())
         {
             auto* multiWidget = new MultiAttributeWidget(childAttribute, graph, this);
             subAttributeLayout->addWidget(multiWidget);
@@ -168,16 +168,20 @@ Gex::Ui::AttributeWidget::AttributeWidget(const Gex::AttributeWkPtr& attr,
     mainLayout->setContentsMargins(0, 0, 0, 0);
     setLayout(mainLayout);
 
-    UiTSys::TypedWidget* widget = UiTSys::UiTypeEngine::GetEngine()->CreateWidget(
-            attr->Type(), attr->Name());
-    mainLayout->addWidget(widget);
+    if (attr->Type() && attr->GetValue())
+    {
+        UiTSys::TypedWidget* widget = UiTSys::UiTypeEngine::GetEngine()->CreateWidget(
+                attr->Type()->GetName(), attr->Name());
+        mainLayout->addWidget(widget);
 
-    widget->SetValue(attr->GetAnyValue());
-    widget->ShowConnected(attr->HasSource());
-    widget->ShowDisabled(attr->IsOutput() && !attr->IsStatic());
+        widget->SetValue(attr->GetAnyValue());
+        widget->ShowConnected(attr->HasSource());
+        widget->ShowDisabled(attr->IsOutput() && !attr->IsStatic());
 
-    QObject::connect(widget, &UiTSys::TypedWidget::valueChanged,
-                     this, &AttributeWidget::OnValueChanged);
+        QObject::connect(widget, &UiTSys::TypedWidget::valueChanged,
+                         this, &AttributeWidget::OnValueChanged);
+    }
+
 }
 
 
@@ -186,7 +190,7 @@ void Gex::Ui::AttributeWidget::OnValueChanged(std::any value)
     if (!attribute)
         return;
 
-    attribute.lock()->SetAnyValue(value);
+    attribute.lock()->SetValue(TSys::GetRegistry()->WrapValue(value));
 }
 
 
@@ -195,7 +199,7 @@ void Gex::Ui::AttributeWidget::OnValueChanged(std::any value)
 Gex::Ui::ExtraAttributeDialog::ExtraAttributeDialog(
         const Gex::NodePtr& node, GraphWidget* _graphWidget,
         QWidget* parent, QWidget* _updateWidget):
-        QDialog(parent), typeIndex(typeid(TSys::None))
+        QDialog(parent)
 {
     graphWidget = _graphWidget;
     updateWidget = nullptr;
@@ -232,9 +236,9 @@ void Gex::Ui::ExtraAttributeDialog::Setup()
     layout->addLayout(vtypeLayout);
 
     auto* typecb = new QComboBox(this);
-    for (auto t : UiTSys::UiTypeEngine::GetEngine()->UiTypes())
+    for (const auto& t : TSys::GetRegistry()->GetTypeNames())
     {
-        typecb->addItem(UiTSys::UiTypeEngine::GetEngine()->UiName(t).c_str());
+        typecb->addItem(t.c_str());
     }
     vtypeLayout->addWidget(typecb);
 
@@ -260,7 +264,7 @@ void Gex::Ui::ExtraAttributeDialog::Setup()
     comboValue->addItem("Single", singleData);
 
     QVariant multiData;
-    multiData.setValue(Gex::AttrValueType::Multi);
+    multiData.setValue(Gex::AttrValueType::Array);
     comboValue->addItem("Multi", multiData);
 
     vtypeLayout->addWidget(comboValue);
@@ -306,11 +310,11 @@ void Gex::Ui::ExtraAttributeDialog::SetType(const QString& type)
     if (initWidget)
         initWidget->deleteLater();
 
-    typeIndex = UiTSys::UiTypeEngine::GetEngine()->UiTypeIndex(
-            type.toStdString()
-    );
+    valueType = TSys::GetRegistry()->GetType(type.toStdString());
 
-    initWidget = UiTSys::UiTypeEngine::GetEngine()->CreateInitWidget(typeIndex);
+    initWidget = UiTSys::UiTypeEngine::GetEngine()->CreateInitWidget(
+            valueType->GetName()
+    );
 
     initWidgetLayout->addWidget(initWidget);
 }
@@ -318,29 +322,25 @@ void Gex::Ui::ExtraAttributeDialog::SetType(const QString& type)
 
 void Gex::Ui::ExtraAttributeDialog::CreateAttribute()
 {
-    std::any value;
+    TSys::TypedValuePtr value;
     if (!initWidget)
     {
-        auto handler = TSys::TypeRegistry::GetRegistry()->GetTypeHandle(typeIndex);
-        if (!handler)
-            return;
-
-        value = handler->InitValue();
+        value = TSys::GetRegistry()->CreateValue(valueType);
     }
     else
     {
-        value = initWidget->CreateValue();
+        value = TSys::GetRegistry()->WrapValue(initWidget->CreateValue());
     }
 
     auto attrType = comboType->currentData().value<Gex::AttrType>();
-    auto valueType = comboValue->currentData().value<Gex::AttrValueType>();
+    auto attributeValueSpec = comboValue->currentData().value<Gex::AttrValueType>();
 
     if (targetNode->IsCompound())
     {
         auto compound = Gex::CompoundNode::FromNode(targetNode);
         auto at = compound->CreateAttributeFromValue(
                 attributeName->text().toStdString(),
-                value, valueType, attrType
+                value, attributeValueSpec, attrType
         );
 
     }
@@ -348,7 +348,7 @@ void Gex::Ui::ExtraAttributeDialog::CreateAttribute()
     {
         targetNode->CreateAttributeFromValue(
                 attributeName->text().toStdString(),
-                value, valueType, attrType
+                value, attributeValueSpec, attrType
         );
     }
 
@@ -518,7 +518,8 @@ void CreateTabWidget(const Gex::AttributePtr& attr,
                      Gex::Ui::AttributeTab* tab)
 {
     QWidget* widget = nullptr;
-    if (attr->IsMulti() || attr->HasChildAttributes())
+
+    if (attr->IsArray() || attr->HasChildAttributes())
     {
         widget = new Gex::Ui::MultiAttributeWidget(attr, graph, tab);
     }

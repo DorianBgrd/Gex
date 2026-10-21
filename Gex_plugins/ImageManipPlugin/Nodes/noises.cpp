@@ -30,16 +30,16 @@ bool ImageManip::Nodes::RandomNoise::Evaluate(
         Gex::GraphContext &graphContext,
         Gex::NodeProfiler &profiler)
 {
-     auto res = context.GetAttribute("Resolution").GetValue<ImageManip::Types::Resolution>();
-    int seed = context.GetAttribute("Seed").GetValue<int>();
-    bool bw = context.GetAttribute("BlackAndWhite").GetValue<bool>();
-    bool alpha = context.GetAttribute("Alpha").GetValue<bool>();
+     auto res = context.GetAttribute("Resolution").Get<ImageManip::Types::Resolution>();
+    int seed = context.GetAttribute("Seed").Get<int>();
+    bool bw = context.GetAttribute("BlackAndWhite").Get<bool>();
+    bool alpha = context.GetAttribute("Alpha").Get<bool>();
 
     QImage noise = ImageManip::Manip::RandomNoise(
             res.at(0), res.at(1),
             seed, bw, alpha);
 
-    return context.GetAttribute("Image").SetValue<QImage>(noise);
+    return context.GetAttribute("Image").Set<QImage>(noise);
 }
 
 
@@ -75,12 +75,12 @@ bool ImageManip::Nodes::PerlinNoise::Evaluate(
         Gex::GraphContext &graphContext,
         Gex::NodeProfiler &profiler)
 {
-    auto res = context.GetAttribute("Resolution").GetValue<ImageManip::Types::Resolution>();
-    int seed = context.GetAttribute("Seed").GetValue<int>();
-    int frequency = context.GetAttribute("Frequency").GetValue<int>();
-    int octave = context.GetAttribute("Octave").GetValue<int>();
-    double lacunarity = context.GetAttribute("Lacunarity").GetValue<int>();
-    double octavePersistence = context.GetAttribute("Persistence").GetValue<double>();
+    auto res = context.GetAttribute("Resolution").Get<ImageManip::Types::Resolution>();
+    int seed = context.GetAttribute("Seed").Get<int>();
+    int frequency = context.GetAttribute("Frequency").Get<int>();
+    int octave = context.GetAttribute("Octave").Get<int>();
+    double lacunarity = context.GetAttribute("Lacunarity").Get<int>();
+    double octavePersistence = context.GetAttribute("Persistence").Get<double>();
 
     QImage noise = ImageManip::Manip::FractalPerlinNoise(
             res.at(0), res.at(1), octave,
@@ -88,7 +88,7 @@ bool ImageManip::Nodes::PerlinNoise::Evaluate(
             octavePersistence,seed
     );
 
-    return context.GetAttribute("Image").SetValue<QImage>(noise);
+    return context.GetAttribute("Image").Set<QImage>(noise);
 }
 
 
@@ -127,13 +127,13 @@ bool ImageManip::Nodes::CloudNoise::Evaluate(
         Gex::GraphContext &graphContext,
         Gex::NodeProfiler &profiler)
 {
-    auto res = context.GetAttribute("Resolution").GetValue<ImageManip::Types::Resolution>();
-    double smoothLevel = context.GetAttribute("SmoothLevel").GetValue<double>();
-    int seed = context.GetAttribute("Seed").GetValue<int>();
-    int frequency = context.GetAttribute("Frequency").GetValue<int>();
-    int octave = context.GetAttribute("Octave").GetValue<int>();
-    double octaveFrequencyFactor = context.GetAttribute("Lacunarity").GetValue<double>();
-    double octavePersistence = context.GetAttribute("Persistence").GetValue<double>();
+    auto res = context.GetAttribute("Resolution").Get<ImageManip::Types::Resolution>();
+    double smoothLevel = context.GetAttribute("SmoothLevel").Get<double>();
+    int seed = context.GetAttribute("Seed").Get<int>();
+    int frequency = context.GetAttribute("Frequency").Get<int>();
+    int octave = context.GetAttribute("Octave").Get<int>();
+    double octaveFrequencyFactor = context.GetAttribute("Lacunarity").Get<double>();
+    double octavePersistence = context.GetAttribute("Persistence").Get<double>();
 
     QImage noise = ImageManip::Manip::FractalCloudNoise(
             res.at(0), res.at(1), octave,
@@ -141,7 +141,7 @@ bool ImageManip::Nodes::CloudNoise::Evaluate(
             smoothLevel, octavePersistence, seed
     );
 
-    return context.GetAttribute("Image").SetValue<QImage>(noise);
+    return context.GetAttribute("Image").Set<QImage>(noise);
 }
 
 
@@ -175,18 +175,18 @@ bool ImageManip::Nodes::DelaunayNoise::Evaluate(
         Gex::GraphContext &graphContext,
         Gex::NodeProfiler &profiler)
 {
-    auto res = context.GetAttribute("Resolution").GetValue<ImageManip::Types::Resolution>();
-    int seed = context.GetAttribute("Seed").GetValue<int>();
-//    bool bw = context.GetAttribute("BlackAndWhite").GetValue<bool>();
-//    bool alpha = context.GetAttribute("Alpha").GetValue<bool>();
-    int frequency = context.GetAttribute("Frequency").GetValue<int>();
-    bool colored = context.GetAttribute("Colored").GetValue<bool>();
+    auto res = context.GetAttribute("Resolution").Get<ImageManip::Types::Resolution>();
+    int seed = context.GetAttribute("Seed").Get<int>();
+//    bool bw = context.GetAttribute("BlackAndWhite").Get<bool>();
+//    bool alpha = context.GetAttribute("Alpha").Get<bool>();
+    int frequency = context.GetAttribute("Frequency").Get<int>();
+    bool colored = context.GetAttribute("Colored").Get<bool>();
 
     QImage noise = ImageManip::Manip::DelaunayNoise(
             res.at(0), res.at(1),
             frequency, seed, colored, true);
 
-    return context.GetAttribute("Image").SetValue<QImage>(noise);
+    return context.GetAttribute("Image").Set<QImage>(noise);
 }
 
 
@@ -222,19 +222,19 @@ bool ImageManip::Nodes::DirtNoise::Evaluate(
         Gex::GraphContext &graphContext,
         Gex::NodeProfiler &profiler)
 {
-    auto res = context.GetAttribute("Resolution").GetValue<ImageManip::Types::Resolution>();
-    int seed = context.GetAttribute("Seed").GetValue<int>();
-    int size = context.GetAttribute("Size").GetValue<int>();
-    int randomSize = context.GetAttribute("RandomSize").GetValue<int>();
-    int density = context.GetAttribute("Density").GetValue<int>();
-    int randomDensity = context.GetAttribute("RandomDensity").GetValue<int>();
+    auto res = context.GetAttribute("Resolution").Get<ImageManip::Types::Resolution>();
+    int seed = context.GetAttribute("Seed").Get<int>();
+    int size = context.GetAttribute("Size").Get<int>();
+    int randomSize = context.GetAttribute("RandomSize").Get<int>();
+    int density = context.GetAttribute("Density").Get<int>();
+    int randomDensity = context.GetAttribute("RandomDensity").Get<int>();
 
     QImage noise = ImageManip::Manip::DirtNoise(
         res.at(0), res.at(1), size,
         randomSize, density,
         randomDensity, seed);
 
-    return context.GetAttribute("Image").SetValue<QImage>(noise);
+    return context.GetAttribute("Image").Set<QImage>(noise);
 }
 
 
@@ -270,18 +270,18 @@ bool ImageManip::Nodes::VoronoiCellNoise::Evaluate(
         Gex::GraphContext &graphContext,
         Gex::NodeProfiler &profiler)
 {
-    auto res = context.GetAttribute("Resolution").GetValue<ImageManip::Types::Resolution>();
-    int seed = context.GetAttribute("Seed").GetValue<int>();
-    int frequency = context.GetAttribute("Frequency").GetValue<int>();
-    bool colored = context.GetAttribute("Colored").GetValue<bool>();
-    bool filled = context.GetAttribute("Filled").GetValue<bool>();
-    int lineWidth = context.GetAttribute("LineWidth").GetValue<int>();
+    auto res = context.GetAttribute("Resolution").Get<ImageManip::Types::Resolution>();
+    int seed = context.GetAttribute("Seed").Get<int>();
+    int frequency = context.GetAttribute("Frequency").Get<int>();
+    bool colored = context.GetAttribute("Colored").Get<bool>();
+    bool filled = context.GetAttribute("Filled").Get<bool>();
+    int lineWidth = context.GetAttribute("LineWidth").Get<int>();
 
     QImage noise = ImageManip::Manip::VoronoiNoise(
             res.at(0), res.at(1), frequency,
             seed, lineWidth, filled, colored, true);
 
-    return context.GetAttribute("Image").SetValue<QImage>(noise);
+    return context.GetAttribute("Image").Set<QImage>(noise);
 }
 
 
@@ -305,13 +305,13 @@ bool ImageManip::Nodes::TriangleCircle::Evaluate(
         Gex::GraphContext &graphContext,
         Gex::NodeProfiler &profiler)
 {
-    auto res = context.GetAttribute("Resolution").GetValue<ImageManip::Types::Resolution>();
-    int seed = context.GetAttribute("Seed").GetValue<int>();
+    auto res = context.GetAttribute("Resolution").Get<ImageManip::Types::Resolution>();
+    int seed = context.GetAttribute("Seed").Get<int>();
 
     QImage noise = ImageManip::Manip::TriangleCirconscrit(
             res.at(0), res.at(1), seed);
 
-    return context.GetAttribute("Image").SetValue<QImage>(noise);
+    return context.GetAttribute("Image").Set<QImage>(noise);
 }
 
 
@@ -344,16 +344,16 @@ bool ImageManip::Nodes::GridVis::Evaluate(
         Gex::GraphContext &graphContext,
         Gex::NodeProfiler &profiler)
 {
-    auto res = context.GetAttribute("Resolution").GetValue<ImageManip::Types::Resolution>();
-    int seed = context.GetAttribute("Seed").GetValue<int>();
-    int width = context.GetAttribute("GridWidth").GetValue<int>();
-    int height = context.GetAttribute("GridHeight").GetValue<int>();
-    bool tileable = context.GetAttribute("Tileable").GetValue<bool>();
+    auto res = context.GetAttribute("Resolution").Get<ImageManip::Types::Resolution>();
+    int seed = context.GetAttribute("Seed").Get<int>();
+    int width = context.GetAttribute("GridWidth").Get<int>();
+    int height = context.GetAttribute("GridHeight").Get<int>();
+    bool tileable = context.GetAttribute("Tileable").Get<bool>();
 
     QImage grid = ImageManip::Manip::GridViz(res.at(0), res.at(1),
                                              width, height, seed, tileable);
 
-    return context.GetAttribute("Image").SetValue<QImage>(grid);
+    return context.GetAttribute("Image").Set<QImage>(grid);
 }
 
 
@@ -386,13 +386,13 @@ bool ImageManip::Nodes::CircleOrdered::Evaluate(
         Gex::GraphContext &graphContext,
         Gex::NodeProfiler &profiler)
 {
-    auto res = context.GetAttribute("Resolution").GetValue<ImageManip::Types::Resolution>();
-    int seed = context.GetAttribute("Seed").GetValue<int>();
-    int freq = context.GetAttribute("Frequency").GetValue<int>();
+    auto res = context.GetAttribute("Resolution").Get<ImageManip::Types::Resolution>();
+    int seed = context.GetAttribute("Seed").Get<int>();
+    int freq = context.GetAttribute("Frequency").Get<int>();
 
     QImage image = ImageManip::Manip::CircallyOrdered(
             res.at(0), res.at(1),
             freq, seed);
 
-    return context.GetAttribute("Image").SetValue<QImage>(image);
+    return context.GetAttribute("Image").Set<QImage>(image);
 }

@@ -60,10 +60,10 @@ namespace FileNodes
                       Gex::GraphContext &,
                       Gex::NodeProfiler& profiler) override
         {
-            auto directory = ctx.GetAttribute("Directory").GetValue<std::string>();
-            auto filename = ctx.GetAttribute("Filename").GetValue<std::string>();
-            auto content = ctx.GetAttribute("Content").GetValue<std::string>();
-            bool temp = ctx.GetAttribute("UseTemporaryFilename").GetValue<bool>();
+            auto directory = ctx.GetAttribute("Directory").Get<std::string>();
+            auto filename = ctx.GetAttribute("Filename").Get<std::string>();
+            auto content = ctx.GetAttribute("Content").Get<std::string>();
+            bool temp = ctx.GetAttribute("UseTemporaryFilename").Get<bool>();
 
             if (temp)
             {
@@ -101,7 +101,7 @@ namespace FileNodes
 
             file.close();
 
-            return ctx.GetAttribute("OutputFilepath").SetValue(result.string());
+            return ctx.GetAttribute("OutputFilepath").Set(result.string());
         }
     };
 
@@ -132,8 +132,8 @@ namespace FileNodes
                       Gex::GraphContext &,
                       Gex::NodeProfiler& profiler) override
         {
-            auto cpath = ctx.GetAttribute("Path").GetValue<std::string>();
-            auto force = ctx.GetAttribute("Force").GetValue<bool>();
+            auto cpath = ctx.GetAttribute("Path").Get<std::string>();
+            auto force = ctx.GetAttribute("Force").Get<bool>();
 
             if (std::filesystem::exists(cpath) && !force)
             {

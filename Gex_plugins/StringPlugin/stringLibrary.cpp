@@ -42,7 +42,7 @@ namespace StringNodes
 
         void InitAttributes() override
         {
-            CreateAttribute<std::string>("Strings", Gex::AttrValueType::Multi,
+            CreateAttribute<std::string>("Strings", Gex::AttrValueType::Array,
                                          Gex::AttrType::Input);
             CreateAttribute<std::string>("delimiter", Gex::AttrValueType::Single,
                                          Gex::AttrType::Input);
@@ -54,14 +54,14 @@ namespace StringNodes
                       Gex::GraphContext &,
                       Gex::NodeProfiler& profiler) override
         {
-            std::string delimiter = ctx.GetAttribute("delimiter").GetValue<std::string>();
+            std::string delimiter = ctx.GetAttribute("delimiter").Get<std::string>();
             std::vector<std::string> strings = ctx.GetAttribute("Strings").GetArrayValues<std::string>();
 
             std::string result;
 
             if (strings.empty())
             {
-                return ctx.GetAttribute("ResultString").SetValue<std::string>("");
+                return ctx.GetAttribute("ResultString").Set<std::string>("");
             }
 
             unsigned int lastIndex = strings.size() - 1;
@@ -72,7 +72,7 @@ namespace StringNodes
                     result += delimiter;
             }
 
-            return ctx.GetAttribute("ResultString").SetValue<std::string>(result);
+            return ctx.GetAttribute("ResultString").Set<std::string>(result);
         }
     };
 
@@ -96,7 +96,7 @@ namespace StringNodes
                                          Gex::AttrType::Input);
             CreateAttribute<std::string>("Delimiter", Gex::AttrValueType::Single,
                                          Gex::AttrType::Input);
-            CreateAttribute<std::string>("ResultStrings", Gex::AttrValueType::Multi,
+            CreateAttribute<std::string>("ResultStrings", Gex::AttrValueType::Array,
                                          Gex::AttrType::Output);
         }
 
@@ -104,8 +104,8 @@ namespace StringNodes
                       Gex::GraphContext &,
                       Gex::NodeProfiler& profiler) override
         {
-            std::string str = ctx.GetAttribute("String").GetValue<std::string>();
-            std::string delimiter = ctx.GetAttribute("Delimiter").GetValue<std::string>();
+            auto str = ctx.GetAttribute("String").Get<std::string>();
+            auto delimiter = ctx.GetAttribute("Delimiter").Get<std::string>();
 
             int index = 0;
             std::vector<std::string> substrings;
@@ -188,9 +188,9 @@ namespace StringNodes
                       Gex::GraphContext &,
                       Gex::NodeProfiler& profiler) override
         {
-            std::string str = ctx.GetAttribute("String").GetValue<std::string>();
+            auto str = ctx.GetAttribute("String").Get<std::string>();
 
-            ctx.GetAttribute("IsEmpty").SetValue(str.empty());
+            ctx.GetAttribute("IsEmpty").Set(str.empty());
             return true;
         }
     };

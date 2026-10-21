@@ -20,10 +20,10 @@ bool ImageManip::Nodes::LoadImage::Evaluate(
         Gex::NodeProfiler &profiler)
 {
     auto path = context.GetAttribute("Filepath")
-            .GetValue<std::string>();
+            .Get<std::string>();
 
     return context.GetAttribute("Image")
-            .SetValue(QImage(path.c_str()));
+            .Set(QImage(path.c_str()));
 }
 
 
@@ -49,16 +49,16 @@ bool ImageManip::Nodes::CreateImage::Evaluate(
         Gex::NodeProfiler &profiler)
 {
     auto resolution = context.GetAttribute("Resolution")
-            .GetValue<ImageManip::Types::Resolution>();
+            .Get<ImageManip::Types::Resolution>();
 
-    auto color = context.GetAttribute("Color").GetValue<QColor>();
+    auto color = context.GetAttribute("Color").Get<QColor>();
 
     QImage image(resolution.at(0),
                  resolution.at(1),
                  QImage::Format_RGBA64);
     image.fill(color);
 
-    return context.GetAttribute("Image").SetValue(image);
+    return context.GetAttribute("Image").Set(image);
 }
 
 
@@ -77,9 +77,9 @@ bool ImageManip::Nodes::SaveImage::Evaluate(
         Gex::NodeProfiler &profiler)
 {
     auto filepath = context.GetAttribute("Filepath")
-            .GetValue<std::string>();
+            .Get<std::string>();
     auto image = context.GetAttribute("Image")
-            .GetValue<QImage>();
+            .Get<QImage>();
 
     return image.save(filepath.c_str());
 }

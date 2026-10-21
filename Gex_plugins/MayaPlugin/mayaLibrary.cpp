@@ -42,8 +42,8 @@ namespace MayaNodes
         bool Evaluate(Gex::NodeAttributeData &ctx,
                       Gex::GraphContext &,
                       Gex::NodeProfiler& profiler) override {
-            auto mayapath = ctx.GetAttribute("MayaFilePath").GetValue<std::string>();
-            ctx.GetAttribute("Command").SetValue<std::string>("cmds.file(r\"" + mayapath + "\", open=True)");
+            auto mayapath = ctx.GetAttribute("MayaFilePath").Get<std::string>();
+            ctx.GetAttribute("Command").Set<std::string>("cmds.file(r\"" + mayapath + "\", open=True)");
             return true;
         }
     };
@@ -72,10 +72,10 @@ namespace MayaNodes
                       Gex::GraphContext &,
                       Gex::NodeProfiler& profiler) override
         {
-            std::string path = ctx.GetAttribute("Filepath").GetValue<std::string>();
+            std::string path = ctx.GetAttribute("Filepath").Get<std::string>();
 
             std::string cmd = "cmds.file(rename=r\"" + path + "\")";
-            ctx.GetAttribute("Command").SetValue(cmd);
+            ctx.GetAttribute("Command").Set(cmd);
             return true;
         }
     };
@@ -100,7 +100,7 @@ namespace MayaNodes
         bool Evaluate(Gex::NodeAttributeData &ctx,
                       Gex::GraphContext &,
                       Gex::NodeProfiler& profiler) override {
-            auto mayapath = ctx.GetAttribute("MayaFilePath").GetValue<std::string>();
+            auto mayapath = ctx.GetAttribute("MayaFilePath").Get<std::string>();
             std::string cmd = ("import os\n"
                                "path = r\"" + mayapath + "\"\n" +
                                "if not os.path.exists(os.path.dirname(path)):\n"
@@ -108,7 +108,7 @@ namespace MayaNodes
                                "if not path.endswith(\".ma\") and not path.endswith(\".mb\"):\n"
                                "    path += \".ma\"\n"
                                "cmds.file(save=True, type=\"mayaAscii\")");
-            ctx.GetAttribute("Command").SetValue<std::string>(cmd);
+            ctx.GetAttribute("Command").Set<std::string>(cmd);
             return true;
         }
     };
@@ -134,14 +134,14 @@ namespace MayaNodes
         bool Evaluate(Gex::NodeAttributeData &ctx,
                       Gex::GraphContext &,
                       Gex::NodeProfiler& profiler) override {
-            auto nodetype = ctx.GetAttribute("NodeType").GetValue<std::string>();
-            auto nodename = ctx.GetAttribute("NodeName").GetValue<std::string>();
+            auto nodetype = ctx.GetAttribute("NodeType").Get<std::string>();
+            auto nodename = ctx.GetAttribute("NodeName").Get<std::string>();
             std::string cmd = "cmds.createNode(\"" + nodetype + "\"";
             if (!nodename.empty()) {
                 cmd += ", name=\"" + nodename + "\"";
             }
             cmd += ")";
-            ctx.GetAttribute("Command").SetValue<std::string>(cmd);
+            ctx.GetAttribute("Command").Set<std::string>(cmd);
             return true;
         }
     };
@@ -167,10 +167,10 @@ namespace MayaNodes
         bool Evaluate(Gex::NodeAttributeData &ctx,
                       Gex::GraphContext &,
                       Gex::NodeProfiler& profiler) override {
-            auto filepath = ctx.GetAttribute("Filepath").GetValue<std::string>();
-            auto namespace_ = ctx.GetAttribute("Namespace").GetValue<std::string>();
+            auto filepath = ctx.GetAttribute("Filepath").Get<std::string>();
+            auto namespace_ = ctx.GetAttribute("Namespace").Get<std::string>();
             std::string cmd = "cmds.file(r\"" + filepath + "\", reference=True, namespace=\"" + namespace_ + "\")";
-            ctx.GetAttribute("Command").SetValue<std::string>(cmd);
+            ctx.GetAttribute("Command").Set<std::string>(cmd);
             return true;
         }
     };
@@ -197,10 +197,10 @@ namespace MayaNodes
         bool Evaluate(Gex::NodeAttributeData &ctx,
                       Gex::GraphContext &,
                       Gex::NodeProfiler& profiler) override {
-            auto filepath = ctx.GetAttribute("Filepath").GetValue<std::string>();
-            auto namespace_ = ctx.GetAttribute("Namespace").GetValue<std::string>();
+            auto filepath = ctx.GetAttribute("Filepath").Get<std::string>();
+            auto namespace_ = ctx.GetAttribute("Namespace").Get<std::string>();
             std::string cmd = "cmds.file(\"" + filepath + "\", i=True, namespace=\"" + namespace_ + "\")";
-            ctx.GetAttribute("Command").SetValue<std::string>(cmd);
+            ctx.GetAttribute("Command").Set<std::string>(cmd);
             return true;
         }
     };
@@ -218,7 +218,7 @@ namespace MayaNodes
 
         void InitAttributes() override
         {
-            CreateAttribute<std::string>("Commands", Gex::AttrValueType::Multi,
+            CreateAttribute<std::string>("Commands", Gex::AttrValueType::Array,
                                          Gex::AttrType::Input);
             CreateAttribute<std::string>("ResultCommand", Gex::AttrValueType::Single,
                                          Gex::AttrType::Output);
@@ -240,7 +240,7 @@ namespace MayaNodes
                 }
             }
 
-            ctx.GetAttribute("ResultCommand").SetValue(command);
+            ctx.GetAttribute("ResultCommand").Set(command);
             return true;
         }
     };
@@ -267,7 +267,7 @@ namespace MayaNodes
                       Gex::GraphContext &,
                       Gex::NodeProfiler& profiler) override
         {
-            std::string command = ctx.GetAttribute("Command").GetValue<std::string>();
+            std::string command = ctx.GetAttribute("Command").Get<std::string>();
 
             std::string mayapyCmd = "mayapy.exe -c \"" + command + "\"";
             std::system(mayapyCmd.c_str());
@@ -296,7 +296,7 @@ namespace MayaNodes
                       Gex::GraphContext &,
                       Gex::NodeProfiler& profiler) override
         {
-            std::string module = ctx.GetAttribute("PythonFile").GetValue<std::string>();
+            std::string module = ctx.GetAttribute("PythonFile").Get<std::string>();
             std::string mayapyCmd = "mayapy.exe \"" + module + "\"";
 
             std::system(mayapyCmd.c_str());
@@ -329,11 +329,11 @@ namespace MayaNodes
                       Gex::GraphContext &,
                       Gex::NodeProfiler& profiler) override
         {
-            auto identifier = ctx.GetAttribute("Identifier").GetValue<std::string>();
-            auto file = ctx.GetAttribute("File").GetValue<std::string>();
+            auto identifier = ctx.GetAttribute("Identifier").Get<std::string>();
+            auto file = ctx.GetAttribute("File").Get<std::string>();
 
             std::string uri = "pli:" + identifier + "?file=" + file;
-            ctx.GetAttribute("URI").SetValue(uri);
+            ctx.GetAttribute("URI").Set(uri);
             return true;
         }
     };
@@ -363,15 +363,15 @@ namespace MayaNodes
                       Gex::GraphContext &,
                       Gex::NodeProfiler& profiler) override
         {
-            auto plugin = ctx.GetAttribute("Plugin").GetValue<std::string>();
-            auto quiet = ctx.GetAttribute("Quiet").GetValue<bool>();
+            auto plugin = ctx.GetAttribute("Plugin").Get<std::string>();
+            auto quiet = ctx.GetAttribute("Quiet").Get<bool>();
 
             std::string strquiet = "False";
             if (quiet)
                 strquiet = "True";
 
             std::string command = "cmds.loadPlugin(r\"" + plugin + "\", quiet=" + strquiet + ")";
-            ctx.GetAttribute("Command").SetValue(command);
+            ctx.GetAttribute("Command").Set(command);
             return true;
         }
     };

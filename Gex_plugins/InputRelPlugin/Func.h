@@ -193,14 +193,6 @@ namespace Gex::InputRel
     typedef std::shared_ptr<LinearFunc> LinearFuncPtr;
 
 
-    struct LinearFuncHandler: public FuncWrapper<LinearFunc>
-    {
-        virtual std::string ApiName() const override
-        {
-            return "LinearFunc";
-        }
-    };
-
 }
 
 #endif //GEX_FUNC_H

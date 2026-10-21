@@ -5,7 +5,7 @@
 
 namespace Gex::Condition
 {
-    class ConditionNode: public Gex::Node
+    class ConditionNode: public Gex::GenericNode
     {
         void InitAttributes() override;
 

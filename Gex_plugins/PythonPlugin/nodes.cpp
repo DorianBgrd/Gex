@@ -76,7 +76,7 @@ void StoreInputs(PyObject* inputs, std::vector<Gex::AttributeWkPtr> attrs)
 
         PyDict_SetItem(
                 inputs, PyUnicode_FromString(name.c_str()),
-                attr->TypeHandle()->ToPython(attr->GetAnyValue()).ptr()
+                attr->Get().ptr()
        );
     }
 }
@@ -99,7 +99,7 @@ void SaveOutputs(PyObject* outputs, Gex::NodeWkPtr node,
 
         if (auto attr = node->GetAttribute(variableName))
         {
-            data.GetAttribute(variableName).SetValue(
+            data.GetAttribute(variableName).Set(
                     pybind11::reinterpret_borrow<pybind11::object>(
                             PyList_GetItem(values, i)
                     )
@@ -125,7 +125,7 @@ bool GexPython::Nodes::Expression::Evaluate(
 //
 //    );
 
-    auto code = context.GetAttribute("code").GetValue<std::string>();
+    auto code = context.GetAttribute("code").Get<std::string>();
 
     Gex::Python::Interpreter::Initialize();
 
@@ -158,7 +158,7 @@ bool GexPython::Nodes::Expression::Evaluate(
 
     SaveOutputs(pylocals, shared_from_this(), context);
 
-    context.GetAttribute("exception").SetValue(traceback);
+    context.GetAttribute("exception").Set(traceback);
 
     return success;
 }
@@ -173,11 +173,11 @@ void GexPython::Nodes::InlineExpression::InitAttributes()
             Gex::AttrType::Input
     );
 
-    CreateAttribute<TSys::AnyValue>("Inputs", Gex::AttrValueType::Multi,
-                                    Gex::AttrType::Input);
+    CreateGenericAttribute("Inputs", Gex::AttrType::Input,
+                           Gex::AttrValueType::Array);
 
-    CreateAttribute<TSys::AnyValue>("Output", Gex::AttrValueType::Single,
-                                    Gex::AttrType::Output);
+    CreateGenericAttribute("Output", Gex::AttrType::Output,
+                           Gex::AttrValueType::Single);
 
     CreateAttribute<std::string>(
             "exception",
@@ -202,7 +202,7 @@ bool GexPython::Nodes::InlineExpression::Evaluate(
 //
 //    );
 
-    auto expr = context.GetAttribute("expression").GetValue<std::string>();
+    auto expr = context.GetAttribute("expression").Get<std::string>();
 
     Gex::Python::Interpreter::Initialize();
 
@@ -225,8 +225,8 @@ bool GexPython::Nodes::InlineExpression::Evaluate(
     for (unsigned int index : indices)
     {
         pybind11::object val = inputContext
-                .GetIndexValue<TSys::AnyValue>(index)
-                .GetPython();
+                .GetIndex(index)
+                .GetAttributeValue()->Get();
 
         PyList_SetItem(pythonValues, index, val.ptr());
     }
@@ -271,13 +271,11 @@ bool GexPython::Nodes::InlineExpression::Evaluate(
         }
     }
 
+    context.GetAttribute("Output").GetAttributeValue()->Set(
+            pybind11::reinterpret_steal<pybind11::object>(output)
+    );
 
-    TSys::AnyValue out;
-    if (output)
-        out.Set(pybind11::reinterpret_steal<pybind11::object>(output));
-    context.GetAttribute("Output").SetValue(out);
-
-    context.GetAttribute("exception").SetValue(traceback);
+    context.GetAttribute("exception").Set(traceback);
 
     return success;
 }

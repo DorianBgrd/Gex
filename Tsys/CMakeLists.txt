@@ -106,3 +106,8 @@ install(
         DESTINATION
         include
 )
+
+
+add_subdirectory(
+        test
+)

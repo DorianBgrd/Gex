@@ -8,81 +8,94 @@
 
 namespace Arrays
 {
-    class Plugin_API Create: public Gex::Node
+    class Plugin_API Create: public Gex::GenericNode
     {
     public:
         void InitAttributes() override
         {
-            CreateAttribute<TSys::AnyValue>("Array", Gex::AttrValueType::Multi,
-                                                   Gex::AttrType::Output);
+            auto valueAttribute = CreateGenericAttribute(
+                    "Value", Gex::AttrType::Input,
+                    Gex::AttrValueType::Array
+            );
+
+            auto arrayAttribute = CreateGenericAttribute(
+                    "OutputArray", Gex::AttrType::Output,
+                    Gex::AttrValueType::Single
+            );
+
+            LinkAttributes(valueAttribute, arrayAttribute, Gex::ToArrayType);
+            LinkAttributes(arrayAttribute, valueAttribute, Gex::ToSingleType);
         }
 
-        bool Evaluate(Gex::EvaluationContext& ctx,
-                      const Gex::GraphContext&,
-                      Gex::NodeProfiler& profiler)
+        bool Evaluate(Gex::NodeAttributeData& ctx,
+                      Gex::GraphContext&,
+                      Gex::NodeProfiler& profiler) override
         {
+            auto values = ctx.GetAttribute("Value").GetAttributeArrayValues();
+
+            auto array = ctx.GetAttribute("OutputArray");
+
+            TSys::TypedValuePtr arrayValue;
+            if (!values.empty())
+            {
+                auto arrayType = array.GetAttributeType();
+
+                if (arrayType)
+                {
+                    arrayValue = TSys::GetRegistry()->CreateValue(arrayType);
+
+                    for (const auto& value : values)
+                    {
+                        arrayValue->Append(value);
+                    }
+                }
+            }
+
+            array.SetAttributeValue(arrayValue);
+
             return true;
         }
     };
 
     GENERATE_DEFAULT_BUILDER(CreateBuilder, Create)
 
-    class Plugin_API Append: public Gex::Node
+    class Plugin_API Append: public Gex::GenericNode
     {
     public:
         void InitAttributes() override
         {
-            CreateAttribute<TSys::AnyValue>("InputArray", Gex::AttrValueType::Multi,
-                                                   Gex::AttrType::Input);
-            CreateAttribute<bool>("ConsolidateIndices", Gex::AttrValueType::Single,
-                                  Gex::AttrType::Input);
-            CreateAttribute<TSys::AnyValue>("Value", Gex::AttrValueType::Single,
-                                                   Gex::AttrType::Input);
-            CreateAttribute<TSys::AnyValue>("Result", Gex::AttrValueType::Multi,
-                                                   Gex::AttrType::Output);
+            auto inputArray = CreateGenericAttribute(
+                    "InputArray", Gex::AttrType::Input,
+                    Gex::AttrValueType::Array
+            );
+
+            auto inputValue = CreateGenericAttribute(
+                    "InputValue", Gex::AttrType::Input,
+                    Gex::AttrValueType::Single
+            );
+
+            auto outputArray = CreateGenericAttribute(
+                    "OutputArray", Gex::AttrType::Output,
+                    Gex::AttrValueType::Array
+            );
+
+            LinkAttributes(inputValue, inputArray, Gex::ToArrayType);
+            LinkAttributes(inputValue, outputArray, Gex::ToArrayType);
+
+            LinkAttributes(inputArray, inputValue, Gex::ToSingleType);
+            LinkAttributes(inputArray, outputArray, Gex::ToSameType);
         }
 
         bool Evaluate(Gex::NodeAttributeData &ctx,
                       Gex::GraphContext &,
                       Gex::NodeProfiler& profiler) override
         {
-            ctx.GetAttribute("Result").ClearMultiIndices();
+            auto inputArray = ctx.GetAttribute("InputArray").GetAttributeValue();
+            auto inputValue = ctx.GetAttribute("InputValue").GetAttributeValue();
 
-            auto inputCtx = ctx.GetAttribute("InputArray");
-            auto resultCtx = ctx.GetAttribute("Result");
-            bool consolidate = ctx.GetAttribute("ConsolidateIndices").GetValue<bool>();
-            auto value = ctx.GetAttribute("Value").GetValue<TSys::AnyValue>();
+            inputArray->Append(inputValue);
 
-            std::vector<unsigned int> indices = inputCtx.GetIndices();
-
-            resultCtx.ClearMultiIndices();
-            if (!consolidate)
-            {
-                if(!indices.empty())
-                {
-                    unsigned int max = *std::max_element(indices.begin(), indices.end());
-                    for (unsigned int idx : indices)
-                    {
-                        resultCtx.CreateIndex(idx, inputCtx.GetIndexValue<TSys::AnyValue>(idx));
-                    }
-
-                    resultCtx.CreateIndex(max + 1, value);
-                }
-                else
-                {
-                    resultCtx.CreateIndex(0, value);
-                }
-
-            }
-            else
-            {
-                for (unsigned int i = 0; i < indices.size(); i++)
-                {
-                    resultCtx.CreateIndex(i, inputCtx.GetIndexValue<TSys::AnyValue>(indices.at(i)));
-                }
-                resultCtx.CreateIndex(indices.size(), value);
-            }
-
+            ctx.GetAttribute("OutputArray").SetAttributeValue(inputArray);
             return true;
         }
     };
@@ -91,169 +104,141 @@ namespace Arrays
     GENERATE_DEFAULT_BUILDER(AppendBuilder, Append)
 
 
-    class Plugin_API Remove: public Gex::Node
+    class Plugin_API Remove: public Gex::GenericNode
     {
     public:
 
         void InitAttributes() override
         {
-            CreateAttribute<TSys::AnyValue>("InputArray", Gex::AttrValueType::Multi,
-                                                   Gex::AttrType::Input);
+            auto inputArray = CreateGenericAttribute("InputArray", Gex::AttrType::Input);
+
             CreateAttribute<int>("Index", Gex::AttrValueType::Single,
                                  Gex::AttrType::Input);
-            CreateAttribute<bool>("ConsolidateIndices", Gex::AttrValueType::Single,
-                                 Gex::AttrType::Input);
-            CreateAttribute<TSys::AnyValue>("Result", Gex::AttrValueType::Multi,
-                                                   Gex::AttrType::Output);
 
+            auto outputArray = CreateGenericAttribute("OutputArray", Gex::AttrType::Output);
+
+            LinkAttributes(inputArray, outputArray);
         }
 
         bool Evaluate(Gex::NodeAttributeData &ctx,
                       Gex::GraphContext &,
                       Gex::NodeProfiler& profiler) override
         {
-            ctx.GetAttribute("Result").ClearMultiIndices();
+            auto inputArray = ctx.GetAttribute("InputArray").GetAttributeValue();
 
-            auto inputCtx = ctx.GetAttribute("InputArray");
-            auto resultCtx = ctx.GetAttribute("Result");
-            bool consolidate = ctx.GetAttribute("ConsolidateIndices").GetValue<bool>();
-            auto index = ctx.GetAttribute("Index").GetValue<int>();
+            int index = ctx.GetAttribute("Index").Get<int>();
 
-            std::vector<unsigned int> indices = inputCtx.GetIndices();
+            inputArray->Remove(index);
 
-            if (!consolidate)
-            {
-                for (unsigned int idx : indices)
-                {
-                    if (idx == index)
-                        continue;
 
-                    resultCtx.SetIndexValue(idx, inputCtx.GetIndexValue<TSys::AnyValue>(idx));
-                }
-            }
-            else
-            {
-                std::vector<TSys::AnyValue> values;
-                for (unsigned int idx : indices)
-                {
-                    if (idx == index)
-                        continue;
-
-                    values.push_back(inputCtx.GetIndexValue<TSys::AnyValue>(idx));
-                }
-
-                for (unsigned int i = 0; i < values.size(); i++)
-                {
-                    resultCtx.SetIndexValue(i, values.at(i));
-                }
-            }
-
+            ctx.GetAttribute("OutputArray").SetAttributeValue(inputArray);
             return true;
         }
     };
 
     GENERATE_DEFAULT_BUILDER(RemoveBuilder, Remove)
 
-    class Plugin_API Insert: public Gex::Node
+    class Plugin_API Insert: public Gex::GenericNode
     {
     public:
         void InitAttributes() override
         {
-            CreateAttribute<TSys::AnyValue>("InputArray", Gex::AttrValueType::Multi,
-                                                   Gex::AttrType::Input);
-            CreateAttribute<int>("Index", Gex::AttrValueType::Single,
-                                 Gex::AttrType::Input);
-            CreateAttribute<TSys::AnyValue>("value", Gex::AttrValueType::Single,
-                                                   Gex::AttrType::Input);
-            CreateAttribute<TSys::AnyValue>("Result", Gex::AttrValueType::Multi,
-                                                   Gex::AttrType::Output);
+            auto inputArray = CreateGenericAttribute(
+                    "InputArray", Gex::AttrType::Input
+            );
+
+            CreateAttribute<int>(
+                    "Index", Gex::AttrValueType::Single,
+                    Gex::AttrType::Input
+            );
+
+            auto inputValue = CreateGenericAttribute(
+                    "Value", Gex::AttrType::Input
+            );
+
+            auto outputArray = CreateGenericAttribute(
+                    "OutputArray", Gex::AttrType::Output
+            );
         }
 
         bool Evaluate(Gex::NodeAttributeData &ctx,
                       Gex::GraphContext &,
                       Gex::NodeProfiler& profiler) override
         {
-            ctx.GetAttribute("Result").ClearMultiIndices();
+            auto outputArray = ctx.GetAttribute("OutputArray").GetAttributeValue();
 
-            auto inputCtx = ctx.GetAttribute("InputArray");
-            auto resultCtx = ctx.GetAttribute("Result");
-            int index = ctx.GetAttribute("Index").GetValue<int>();
+            auto inputValue = ctx.GetAttribute("Value").GetAttributeValue();
 
-            resultCtx.ClearMultiIndices();
+            int index = ctx.GetAttribute("Index").Get<int>();
 
-            std::vector<unsigned int> indices = inputCtx.GetIndices();
-            for (unsigned int idx : indices)
-            {
-                if (idx == index)
-                {
-                    auto insertValue = ctx.GetAttribute("value").GetValue<TSys::AnyValue>();
-                    resultCtx.CreateIndex(idx, insertValue);
-                }
-
-                unsigned int applyIndex = idx;
-                if(idx >= index)
-                {
-                    applyIndex = idx + 1;
-                }
-
-                auto value = inputCtx.GetIndexValue<TSys::AnyValue>(idx);
-                resultCtx.CreateIndex(applyIndex, value);
-            }
-
-            return true;
+            return outputArray->Insert(index, inputValue);
         }
     };
 
     GENERATE_DEFAULT_BUILDER(InsertBuilder, Insert)
 
-    class Plugin_API Length: public Gex::Node
+    class Plugin_API Length: public Gex::GenericNode
     {
     public:
         void InitAttributes() override
         {
-            CreateAttribute<TSys::AnyValue>("InputArray", Gex::AttrValueType::Multi,
-                                                   Gex::AttrType::Input);
-            CreateAttribute<TSys::AnyValue>("Length", Gex::AttrValueType::Single,
-                                                   Gex::AttrType::Output);
+            CreateGenericAttribute(
+                    "InputArray", Gex::AttrType::Input
+            );
+
+            CreateAttribute<int>(
+                    "Length", Gex::AttrValueType::Single,
+                    Gex::AttrType::Output
+            );
         }
 
         bool Evaluate(Gex::NodeAttributeData &ctx,
                       Gex::GraphContext &,
                       Gex::NodeProfiler& profiler) override
         {
-            ctx.GetAttribute("Length").SetValue<int>((int)ctx.GetAttribute("InputArray").GetIndices().size());
+            ctx.GetAttribute("Length").Set(
+                    (int)ctx.GetAttribute("InputArray")
+                    .GetAttributeValue()->Count()
+            );
             return true;
         }
     };
 
     GENERATE_DEFAULT_BUILDER(LengthBuilder, Length)
 
-    class Plugin_API IndexValue: public Gex::Node
+    class Plugin_API IndexValue: public Gex::GenericNode
     {
     public:
         void InitAttributes() override
         {
-            CreateAttribute<TSys::AnyValue>("InputArray", Gex::AttrValueType::Multi,
-                                                   Gex::AttrType::Input);
-            CreateAttribute<int>("Index", Gex::AttrValueType::Single,
-                                 Gex::AttrType::Input);
-            CreateAttribute<TSys::AnyValue>("Value", Gex::AttrValueType::Single,
-                                                   Gex::AttrType::Output);
+            auto inputArray = CreateGenericAttribute(
+                    "InputArray", Gex::AttrType::Input
+            );
+
+            CreateAttribute<int>(
+                    "Index", Gex::AttrValueType::Single,
+                    Gex::AttrType::Input
+            );
+
+            auto outputValue = CreateGenericAttribute(
+                    "Value", Gex::AttrType::Output
+            );
+
+            LinkAttributes(inputArray, outputValue);
         }
 
         bool Evaluate(Gex::NodeAttributeData &ctx,
                       Gex::GraphContext &,
                       Gex::NodeProfiler& profiler) override
         {
-            auto index = ctx.GetAttribute("Index").GetValue<int>();
+            auto index = ctx.GetAttribute("Index").Get<int>();
 
             Gex::Feedback status;
-            Gex::NodeAttributeData inarray = ctx.GetAttribute("InputArray");
+            Gex::NodeAttributeData inputArray = ctx.GetAttribute("InputArray");
 
-            TSys::AnyValue result = inarray.GetIndexValue<TSys::AnyValue>(
-                    index, &status);
+            auto result = inputArray.GetAttributeValue()->At(index);
 
-            ctx.GetAttribute("Value").SetValue(result);
+            ctx.GetAttribute("Value").SetAttributeValue(result);
             return true;
         }
     };
@@ -261,15 +246,20 @@ namespace Arrays
     GENERATE_DEFAULT_BUILDER(IndexValueBuilder, IndexValue)
 
 
-    class Plugin_API FirstItem: public Gex::Node
+    class Plugin_API FirstItem: public Gex::GenericNode
     {
     public:
         void InitAttributes() override
         {
-            CreateAttribute<TSys::AnyValue>("InputArray", Gex::AttrValueType::Multi,
-                                                       Gex::AttrType::Input);
-            CreateAttribute<TSys::AnyValue>("Value", Gex::AttrValueType::Single,
-                                                       Gex::AttrType::Output);
+            auto inputArray = CreateGenericAttribute(
+                    "InputArray", Gex::AttrType::Input
+            );
+
+            auto outputValue = CreateGenericAttribute(
+                    "Value", Gex::AttrType::Output
+            );
+
+            LinkAttributes(inputArray, outputValue, Gex::ToSingleType);
         }
 
         bool Evaluate(Gex::NodeAttributeData &ctx,
@@ -280,15 +270,15 @@ namespace Arrays
             Gex::Feedback status;
             Gex::NodeAttributeData inarray = ctx.GetAttribute("InputArray");
 
-            auto indices = inarray.Indices();
-            if (indices.empty())
-            {
+            auto value = inarray.GetAttributeValue();
+
+            if (!value->Count())
                 return false;
-            }
 
-            auto first = std::min(indices.begin(), indices.end());
+            auto first = value->At(0);
 
-            ctx.GetAttribute("Value").SetValue(inarray.GetIndexValue<TSys::AnyValue>(*first));
+            ctx.GetAttribute("Value").SetAttributeValue(first);
+
             return true;
         }
     };
@@ -296,17 +286,19 @@ namespace Arrays
     GENERATE_DEFAULT_BUILDER(FirstItemBuilder, FirstItem)
 
 
-    class Plugin_API LastItem: public Gex::Node
+    class Plugin_API LastItem: public Gex::GenericNode
     {
     public:
         void InitAttributes() override
         {
-            CreateAttribute<TSys::AnyValue>("InputArray", Gex::AttrValueType::Multi,
-                                                       Gex::AttrType::Input);
+            auto inputArray = CreateGenericAttribute("InputArray", Gex::AttrType::Input);
+
             CreateAttribute<int>("Index", Gex::AttrValueType::Single,
                                   Gex::AttrType::Output);
-            CreateAttribute<TSys::AnyValue>("Value", Gex::AttrValueType::Single,
-                                                       Gex::AttrType::Output);
+
+            auto outputValue = CreateGenericAttribute("Value", Gex::AttrType::Output);
+
+            LinkAttributes(inputArray, outputValue, Gex::ToSingleType);
         }
 
         bool Evaluate(Gex::NodeAttributeData &ctx,
@@ -317,21 +309,13 @@ namespace Arrays
             Gex::Feedback status;
             Gex::NodeAttributeData inarray = ctx.GetAttribute("InputArray");
 
-            auto indices = inarray.Indices();
-            if (indices.empty())
-            {
-                return false;
-            }
+            auto last = inarray.GetAttributeValue()->Count() - 1;
 
-            unsigned int last = 0;
-            for (auto idx : indices)
-            {
-                if (idx > last)
-                    last = idx;
-            }
+            ctx.GetAttribute("Value").SetAttributeValue(
+                    inarray.GetAttributeValue()->At(last)
+            );
 
-            ctx.GetAttribute("Value").SetValue(inarray.GetIndexValue<TSys::AnyValue>(last));
-            ctx.GetAttribute("Index").SetValue((int)last);
+            ctx.GetAttribute("Index").Set((int)last);
             return true;
         }
     };
@@ -339,7 +323,7 @@ namespace Arrays
     GENERATE_DEFAULT_BUILDER(LastItemBuilder, LastItem)
 
 
-    class Plugin_API SliceArray: public Gex::Node
+    class Plugin_API SliceArray: public Gex::GenericNode
     {
     public:
         std::string Description() const override
@@ -349,41 +333,41 @@ namespace Arrays
 
         void InitAttributes() override
         {
-            CreateAttribute<TSys::AnyValue>("InputArray", Gex::AttrValueType::Multi,
-                                                       Gex::AttrType::Input);
+            CreateGenericAttribute("InputArray", Gex::AttrType::Input);
+
             CreateAttribute<int>("Start", Gex::AttrValueType::Single,
                                  Gex::AttrType::Input);
+
             CreateAttribute<int>("End", Gex::AttrValueType::Single,
                                  Gex::AttrType::Input);
-            CreateAttribute<TSys::AnyValue>("OutputArray", Gex::AttrValueType::Multi,
-                                                       Gex::AttrType::Output);
+
+            CreateGenericAttribute("OutputArray", Gex::AttrType::Output);
         }
 
         bool Evaluate(Gex::NodeAttributeData &ctx,
                       Gex::GraphContext &,
                       Gex::NodeProfiler& profiler) override
         {
-            auto list = ctx.GetAttribute("InputArray").GetArrayValues<TSys::AnyValue>();
+            auto inputArray = ctx.GetAttribute("InputArray").GetAttributeValue();
+            auto outputArray = ctx.GetAttribute("InputArray").GetAttributeValue();
 
-            int start = ctx.GetAttribute("Start").GetValue<int>();
-            int end = ctx.GetAttribute("End").GetValue<int>();
+            auto count = (int)inputArray->Count();
 
-            if (start < 0)
-                start = list.size() - (start  - 1);
+            outputArray->Clear();
 
-            if (end < 0)
-                end = list.size() - (end - 1);
+            int start = ctx.GetAttribute("Start").Get<int>();
+            int end = ctx.GetAttribute("End").Get<int>();
 
-            ctx.GetAttribute("OutputArray").ClearMultiIndices();
-            if (start > end)
-                return true;
+            int last = count - 1;
 
-            int index = 0;
-            for (int i = start; i < end; i++)
+            if (start > last || start > end)
             {
-                ctx.GetAttribute("OutputArray").CreateIndex(
-                        index, list.at(i));
-                index++;
+                return true;
+            }
+
+            for (int iter = start; iter <= end; iter++)
+            {
+                outputArray->Append(inputArray->At(iter));
             }
 
             return true;
@@ -396,6 +380,7 @@ namespace Arrays
 
 extern EXPORT RegisterPlugin(Gex::PluginLoader* loader)
 {
+
     // Arrays :
     loader->RegisterNode<Arrays::CreateBuilder>("Arrays/Create");
 
@@ -414,6 +399,7 @@ extern EXPORT RegisterPlugin(Gex::PluginLoader* loader)
     loader->RegisterNode<Arrays::FirstItemBuilder>("Arrays/FirstItem");
 
     loader->RegisterNode<Arrays::LastItemBuilder>("Arrays/LastItem");
+
 }
 
 

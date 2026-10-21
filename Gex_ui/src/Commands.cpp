@@ -1,7 +1,9 @@
 #include "Gex_ui/include/Gex_ui/Commands.h"
 
 
-unsigned int Gex::Ui::NextMultiAttributeIndex(Gex::AttributeWkPtr attribute)
+unsigned int Gex::Ui::NextMultiAttributeIndex(
+        const Gex::AttributeWkPtr& attribute
+)
 {
     int checkIndex = -1;
     int nextIndex = 0;

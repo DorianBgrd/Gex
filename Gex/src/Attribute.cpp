@@ -15,6 +15,7 @@
 
 #define CHECK_EDITABLE_SKIP() if(!IsEditable()){return;}
 #define CHECK_EDITABLE_BOOL() if(!IsEditable()){return false;}
+#define CHECK_EDITABLE_DEFAULT() if(!IsEditable()){return {};}
 
 
 Gex::Attribute::Attribute():
@@ -23,6 +24,7 @@ Gex::Attribute::Attribute():
     attributeValueType = AttrValueType::Holder;
     attributeType = AttrType::Input;
 	attributeIsUserDefined = false;
+    isGeneric = false;
 }
 
 
@@ -41,10 +43,12 @@ Gex::AttrType Gex::Attribute::GetAttrType() const
 Gex::Attribute::Attribute(const std::string& name, const TSys::TypedValuePtr& v, const AttrValueType& vt,
 			              const AttrType& type, bool userDefined, const NodePtr& node,
                           const AttributeWkPtr& parent):
-        valueType(TSys::GetRegistry()->GetType(v)),
-        attributeValue(TSys::GetRegistry()->WrapValue(v)),
-        defaultValue(TSys::GetRegistry()->WrapValue(v))
+        attributeValue(v),
+        defaultValue(v)
 {
+    if (v)
+        valueType = v->GetType();
+
     attributeName = name;
     if (!parent)
         attributeLongname = name;
@@ -57,6 +61,17 @@ Gex::Attribute::Attribute(const std::string& name, const TSys::TypedValuePtr& v,
     attributeIsUserDefined = userDefined;
     attributeValueType = vt;
     attributeType = type;
+    isGeneric = ((!valueType) && (attributeValueType != AttrValueType::Holder));
+}
+
+
+Gex::Attribute::Attribute(const std::string& name, const AttrValueType& valueType,
+                          const AttrType& type, bool userDefined, const NodePtr& node,
+                          const AttributeWkPtr& parent):
+          Attribute(name, std::make_shared<TSys::TypedValue>(),
+                    valueType, type, userDefined, node, parent)
+{
+
 }
 
 
@@ -81,7 +96,8 @@ Gex::Attribute::Attribute(const std::string& name, const std::string& apiType,
 }
 
 
-Gex::Attribute::Attribute(const std::string& name, const AttrType& type, bool multi,
+Gex::Attribute::Attribute(const std::string& name, const AttrType& type,
+                          const AttrValueType& valueType,
                           bool userDefined, const NodePtr& node,
                           const AttributeWkPtr& parent):
         defaultValue(attributeValue)
@@ -92,21 +108,20 @@ Gex::Attribute::Attribute(const std::string& name, const AttrType& type, bool mu
         attributeLongname = name;
     else
         attributeLongname = parent->Longname() + Config::GetConfig().attributeSeparator + name;
+
     parentAttribute = parent;
 
     attributeIsUserDefined = userDefined;
-    if (multi)
-        attributeValueType = AttrValueType::MultiHolder;
-    else
-        attributeValueType = AttrValueType::Holder;
-
+    attributeValueType = valueType;
     attributeType = type;
+
+    isGeneric = (attributeValueType != AttrValueType::Holder);
 }
 
 
 Gex::Attribute::~Attribute()
 {
-	if (IsMulti())
+	if (IsArray())
 	{
 		multiValues.clear();
 	}
@@ -163,6 +178,38 @@ TSys::TypedValuePtr Gex::Attribute::GetResolvedValue() const
 }
 
 
+std::vector<TSys::TypedValuePtr> Gex::Attribute::GetResolvedArrayValues() const
+{
+    if (HasSource())
+    {
+        return Source()->GetResolvedArrayValues();
+    }
+
+    std::vector<TSys::TypedValuePtr> values;
+    for (const auto& index : ValidIndices())
+    {
+        values.push_back(GetIndexAttribute(index)->GetResolvedValue());
+    }
+
+    return values;
+}
+
+
+bool Gex::Attribute::SetValue(const TSys::TypedValuePtr& value)
+{
+    return _SetValue(value);
+}
+
+
+void Gex::Attribute::SetIndexValue(
+        unsigned int index,
+        const TSys::TypedValuePtr& value
+)
+{
+    GetIndexAttribute(index)->SetValue(value);
+}
+
+
 Gex::NodeWkPtr Gex::Attribute::Node() const
 {
 	return attributeNode;
@@ -202,13 +249,38 @@ std::string Gex::Attribute::TypeName() const
 
 TSys::TypePtr Gex::Attribute::Type() const
 {
+    if (isGeneric && source)
+        return source->Type();
+
     return valueType;
 }
 
 
-std::any Gex::Attribute::DefaultValue() const
+bool Gex::Attribute::HasType() const
 {
-    return defaultValue;
+    return (bool)valueType;
+}
+
+
+void Gex::Attribute::SwitchType(const TSys::TypePtr& type)
+{
+    valueType = type;
+
+    if (auto currentSource = Source())
+    {
+        if (currentSource->Type()->IsConvertibleTo(valueType))
+        {
+            DisconnectSource(currentSource);
+        }
+    }
+
+    else
+    {
+        if (attributeValue && (!attributeValue->GetType()->IsConvertibleTo(valueType)))
+        {
+            attributeValue.reset();
+        }
+    }
 }
 
 
@@ -257,7 +329,7 @@ void Gex::Attribute::FactoryReset()
 {
     _Reset();
 
-    if (IsMulti())
+    if (IsArray())
     {
         for (unsigned int index : ValidIndices())
         {
@@ -297,17 +369,23 @@ bool Gex::Attribute::IsStatic() const
 }
 
 
-bool Gex::Attribute::IsMulti() const
+bool Gex::Attribute::IsArray() const
 {
-	return(attributeValueType == AttrValueType::Multi ||
-           attributeValueType == AttrValueType::MultiHolder);
+	return(attributeValueType == AttrValueType::Array ||
+           attributeValueType == AttrValueType::ArrayHolder);
 }
 
 
 bool Gex::Attribute::IsHolder() const
 {
     return(attributeValueType == AttrValueType::Holder ||
-           attributeValueType == AttrValueType::MultiHolder);
+           attributeValueType == AttrValueType::ArrayHolder);
+}
+
+
+bool Gex::Attribute::IsGeneric() const
+{
+    return isGeneric;
 }
 
 
@@ -326,7 +404,7 @@ size_t Gex::Attribute::ValueHash(bool followCnx)
 {
     size_t res = 0;
 
-    if (IsMulti())
+    if (IsArray())
     {
         for (unsigned int i : ValidIndices())
         {
@@ -414,7 +492,7 @@ Gex::AttributeWkPtr Gex::Attribute::GetAttribute(std::string name) const
 
 		attribute = subAttributes.at(shortname);
 	}
-	else if (IsMulti())
+	else if (IsArray())
 	{
 		if (results.empty())
 		{
@@ -532,7 +610,7 @@ bool Gex::Attribute::HasSources() const
         return true;
     }
 
-    if(IsMulti())
+    if(IsArray())
     {
         for (auto attr : multiValues)
         {
@@ -609,6 +687,16 @@ bool Gex::Attribute::CreateIndex(unsigned int index)
 }
 
 
+Gex::AttributeWkPtr Gex::Attribute::GetOrCreateIndex(unsigned int index)
+{
+    CHECK_EDITABLE_DEFAULT()
+
+    CreateIndex(index);
+
+    return multiValues.find(index)->second;
+}
+
+
 bool Gex::Attribute::_CreateIndex(unsigned int index)
 {
     if (HasIndex(index))
@@ -616,10 +704,10 @@ bool Gex::Attribute::_CreateIndex(unsigned int index)
 		return false;
 	}
 
-	AttrValueType indexType = AttrValueType::Single;
+	AttrValueType indexType = AttrValueType::ArrayIndex;
 	if (IsHolder())
 	{
-		indexType = AttrValueType::Holder;
+		indexType = AttrValueType::ArrayIndexHolder;
 	}
 
 	std::string indexName = Name() + "[" + std::to_string(index) + "]";
@@ -675,7 +763,7 @@ bool Gex::Attribute::ClearIndices()
 
 bool Gex::Attribute::_ClearIndices()
 {
-    if (!IsMulti())
+    if (!IsArray())
         return false;
 
     for (unsigned int index : ValidIndices())
@@ -741,11 +829,17 @@ bool  Gex::Attribute::_CanConnectSource(const AttributePtr& source)
         return false;
     }
 
-    if (source->Type() != Type())
+    // Check current type, templated attribute type can
+    // have no type set, and should therefore accept any
+    // type of connection.
+    if (!isGeneric)
     {
-        if (!source->Type()->IsConvertibleTo(Type()))
+        if (source->Type() != Type())
         {
-            return false;
+            if (!source->Type()->IsConvertibleTo(Type()))
+            {
+                return false;
+            }
         }
     }
 
@@ -766,7 +860,7 @@ bool Gex::Attribute::CanConnectSource(const AttributePtr& source)
 {
     CHECK_EDITABLE_BOOL()
 
-    if (IsMulti() && !source->IsMulti())
+    if (IsArray() && !source->IsArray())
     {
         return false;
     }
@@ -796,7 +890,7 @@ bool Gex::Attribute::ConnectSource(unsigned int index, const AttributePtr& attri
 {
 	CHECK_EDITABLE_BOOL()
 
-	if (!IsMulti())
+	if (!IsArray())
 	{
 		return false;
 	}
@@ -899,7 +993,7 @@ bool Gex::Attribute::ConnectDest(unsigned int index, const AttributePtr& attribu
 {
     CHECK_EDITABLE_BOOL()
 
-	if (!attribute->IsMulti())
+	if (!attribute->IsArray())
 	{
 		return false;
 	}
@@ -1094,7 +1188,7 @@ std::vector<Gex::AttributeWkPtr> Gex::Attribute::Sources() const
         srcs.push_back(source);
     }
 
-	if (IsMulti())
+	if (IsArray())
     {
         for (const auto& attr : multiValues)
         {
@@ -1160,7 +1254,7 @@ std::vector<Gex::AttributeWkPtr> Gex::Attribute::GetArray() const
 
 Gex::AttributeWkPtr Gex::Attribute::GetIndexAttribute(unsigned int index) const
 {
-    if (!IsMulti())
+    if (!IsArray())
     {
         return {};
     }
@@ -1180,9 +1274,20 @@ std::any Gex::Attribute::GetAnyValue() const
 }
 
 
-bool Gex::Attribute::_SetAnyValue(const std::any& value)
+TSys::TypedValuePtr Gex::Attribute::GetValue() const
 {
-    if (!attributeValue->SetAny(value))
+    return attributeValue;
+}
+
+
+bool Gex::Attribute::_SetValue(const TSys::TypedValuePtr& value)
+{
+    if (isGeneric)
+    {
+        attributeValue = value;
+    }
+
+    else if (!attributeValue->Set(value))
     {
         return false;
     }
@@ -1194,7 +1299,7 @@ bool Gex::Attribute::_SetAnyValue(const std::any& value)
 }
 
 
-bool Gex::Attribute::SetAnyValue(const std::any& value)
+bool Gex::Attribute::IsValueEditable() const
 {
     if (attributeType == AttrType::Output)
     {
@@ -1205,24 +1310,6 @@ bool Gex::Attribute::SetAnyValue(const std::any& value)
     {
         return false;
     }
-
-    std::any previous = GetAnyValue();
-
-    if (!_SetAnyValue(value))
-    {
-        return false;
-    }
-
-    SignalChange(AttributeChange::ValueChanged);
-
-    if (!Undo::UndoStack::IsDoing())
-        Undo::UndoStack::AddUndo(
-            Undo::CreateUndo<Undo::SetAttr>(
-                shared_from_this(),
-                GetAnyValue(),
-                previous
-            )
-        );
 
     return true;
 }
@@ -1351,7 +1438,7 @@ void Gex::Attribute::Serialize(rapidjson::Value& value, rapidjson::Document& doc
      * If current attribute node is not dynamic, serialize current value,
      * and store it to document.
      */
-    if (!IsMulti())
+    if (!IsArray())
     {
         /*
          * Only serialize attribute that are not on default.
@@ -1449,7 +1536,7 @@ void Gex::Attribute::Deserialize(rapidjson::Value& value, rapidjson::Document& d
         attributeValue = defaultValue;
     }
 
-	if (value.HasMember(Config::GetConfig().attributeMultiValueKey.c_str()) && IsMulti())
+	if (value.HasMember(Config::GetConfig().attributeMultiValueKey.c_str()) && IsArray())
 	{
 		rapidjson::Value& multiValue = value[Config::GetConfig().attributeMultiValueKey.c_str()].GetObject();
 		for (rapidjson::Value::ConstMemberIterator itr = multiValue.MemberBegin();
@@ -1497,9 +1584,9 @@ bool Gex::Attribute::PullSource()
 
     if (AttributeWkPtr source_ = Source())
     {
-        if (!IsMulti())
+        if (!IsArray())
         {
-            return _SetAnyValue(source_->GetAnyValue());
+            return _SetValue(source_->GetValue());
         }
         else
         {
@@ -1511,7 +1598,7 @@ bool Gex::Attribute::PullSource()
 
                 AttributeWkPtr sourceIndexAttr = source_->GetIndexAttribute(index);
                 AttributeWkPtr indexAttr = GetIndexAttribute(index);
-                indexAttr->_SetAnyValue(sourceIndexAttr->GetAnyValue());
+                indexAttr->_SetValue(sourceIndexAttr->GetValue());
             }
 
             for (unsigned int index : ValidIndices())
@@ -1539,7 +1626,7 @@ bool Gex::Attribute::Pull()
 {
     PullSource();
 
-    if (IsMulti())
+    if (IsArray())
     {
         for (const auto& attr : multiValues)
         {

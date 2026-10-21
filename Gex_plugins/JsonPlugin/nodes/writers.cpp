@@ -14,7 +14,7 @@ void JsonPlugin::Writers::JsonDict::InitAttributes()
     auto holder = CreateAttribute(
             "Members",
             Gex::AttrType::Input,
-            true
+            Gex::AttrValueType::ArrayHolder
     );
 
     CreateAttribute<std::string>(
@@ -52,13 +52,13 @@ bool JsonPlugin::Writers::JsonDict::Evaluate(
         auto keyAttribute = indexAttribute.GetAttribute("Key");
         auto valueAttribute = indexAttribute.GetAttribute("Value");
 
-        auto key = keyAttribute.GetValue<std::string>();
-        auto value = valueAttribute.GetValue<EditorPtr>();
+        auto key = keyAttribute.Get<std::string>();
+        auto value = valueAttribute.Get<EditorPtr>();
 
         outDictEditor->AddEditor(key, value);
     }
 
-    return context.GetAttribute("Dict").SetValue(outDict);
+    return context.GetAttribute("Dict").Set(outDict);
 }
 
 
@@ -74,7 +74,7 @@ void JsonPlugin::Writers::JsonList::InitAttributes()
 {
     {
         CreateAttribute<EditorPtr>(
-                "Values", Gex::AttrValueType::Multi,
+                "Values", Gex::AttrValueType::Array,
                 Gex::AttrType::Input
         );
 
@@ -100,11 +100,11 @@ bool JsonPlugin::Writers::JsonList::Evaluate(
     for (unsigned int i : attribute.GetIndices())
     {
         outListEditor->AddEditor(
-                attribute.GetIndex(i).GetValue<EditorPtr>()
+                attribute.GetIndex(i).Get<EditorPtr>()
         );
     }
 
-    return context.GetAttribute("List").SetValue(outList);
+    return context.GetAttribute("List").Set(outList);
 }
 
 
@@ -141,8 +141,8 @@ bool JsonPlugin::Writers::JsonWriteToString::Evaluate(
         Gex::NodeProfiler &profiler
 )
 {
-    auto inValue = context.GetAttribute("Value").GetValue<EditorPtr>();
-    auto prettyWriter = context.GetAttribute("Indent").GetValue<bool>();
+    auto inValue = context.GetAttribute("Value").Get<EditorPtr>();
+    auto prettyWriter = context.GetAttribute("Indent").Get<bool>();
 
     rapidjson::Document doc;
 
@@ -165,5 +165,5 @@ bool JsonPlugin::Writers::JsonWriteToString::Evaluate(
 
     std::string outString = buffer.GetString();
 
-    return context.GetAttribute("String").SetValue(outString);
+    return context.GetAttribute("String").Set(outString);
 }

@@ -31,10 +31,10 @@ bool Geometry::Nodes::Index::Evaluate(
 )
 {
     auto i = context.GetAttribute("Int")
-            .GetValue<int>();
+            .Get<int>();
 
     return context.GetAttribute("Index")
-        .SetValue((Geometry::Types::Index)i);
+        .Set((Geometry::Types::Index)i);
 }
 
 
@@ -47,7 +47,7 @@ std::string Geometry::Nodes::Face::Description() const
 void Geometry::Nodes::Face::InitAttributes()
 {
     CreateAttribute<Geometry::Types::Index>(
-            "Indices", Gex::AttrValueType::Multi,
+            "Indices", Gex::AttrValueType::Array,
             Gex::AttrType::Input
     );
     CreateAttribute<Geometry::Types::Face>(
@@ -68,7 +68,7 @@ bool Geometry::Nodes::Face::Evaluate(
 
     Geometry::Types::Face face(indices.begin(), indices.end());
 
-    return context.GetAttribute("Face").SetValue(face);
+    return context.GetAttribute("Face").Set(face);
 }
 
 
@@ -79,13 +79,13 @@ std::string Geometry::Nodes::CreateMesh::Description() const
 
 void Geometry::Nodes::CreateMesh::InitAttributes()
 {
-    CreateAttribute<Math::Types::Point3>(
-            "Points", Gex::AttrValueType::Multi,
+    CreateAttribute<Geometry::Types::Point3>(
+            "Points", Gex::AttrValueType::Array,
             Gex::AttrType::Input
     );
 
     CreateAttribute<Geometry::Types::Face>(
-            "Faces", Gex::AttrValueType::Multi,
+            "Faces", Gex::AttrValueType::Array,
             Gex::AttrType::Input
     );
 
@@ -102,14 +102,14 @@ bool Geometry::Nodes::CreateMesh::Evaluate(
 )
 {
     auto points = context.GetAttribute("Points")
-            .GetArrayValues<Math::Types::Point3>();
+            .GetArrayValues<Geometry::Types::Point3>();
 
     auto faces = context.GetAttribute("Faces")
             .GetArrayValues<Geometry::Types::Face>();
 
     Geometry::Types::Mesh mesh(points, faces);
 
-    return context.GetAttribute("Mesh").SetValue(mesh);
+    return context.GetAttribute("Mesh").Set(mesh);
 }
 
 
@@ -143,14 +143,14 @@ bool Geometry::Nodes::MeshPoint::Evaluate(
 )
 {
     auto mesh = context.GetAttribute("Mesh")
-            .GetValue<Geometry::Types::Mesh>();
+            .Get<Geometry::Types::Mesh>();
 
     auto index = context.GetAttribute("Index")
-            .GetValue<Geometry::Types::Index>();
+            .Get<Geometry::Types::Index>();
 
     auto point = Geometry::Types::Point3(mesh.GetPoint(index));
 
-    return context.GetAttribute("Point").SetValue(point);
+    return context.GetAttribute("Point").Set(point);
 }
 
 
@@ -189,19 +189,19 @@ bool Geometry::Nodes::EditMeshPoint::Evaluate(
 )
 {
     auto mesh = context.GetAttribute("Mesh")
-            .GetValue<Geometry::Types::Mesh>();
+            .Get<Geometry::Types::Mesh>();
 
     auto index = context.GetAttribute("Index")
-            .GetValue<Geometry::Types::Index>();
+            .Get<Geometry::Types::Index>();
 
     auto point = context.GetAttribute("Point")
-            .GetValue<Geometry::Types::Point3>();
+            .Get<Geometry::Types::Point3>();
 
     mesh.GetPoint(index).x = point.x;
     mesh.GetPoint(index).y = point.y;
     mesh.GetPoint(index).z = point.z;
 
-    return context.GetAttribute("OutMesh").SetValue(mesh);
+    return context.GetAttribute("OutMesh").Set(mesh);
 }
 
 
@@ -235,12 +235,12 @@ bool Geometry::Nodes::MeshPointNormal::Evaluate(
 )
 {
     auto mesh = context.GetAttribute("Mesh")
-            .GetValue<Geometry::Types::Mesh>();
+            .Get<Geometry::Types::Mesh>();
 
     auto index = context.GetAttribute("Index")
-            .GetValue<Geometry::Types::Index>();
+            .Get<Geometry::Types::Index>();
 
-    return context.GetAttribute("Normal").SetValue(
+    return context.GetAttribute("Normal").Set(
             mesh.GetPointNormal(index)
     );
 }
@@ -326,7 +326,7 @@ bool Geometry::Nodes::IterMeshPoint::PreEvaluate(
 {
     Schedule();
 
-    return inputCtx.GetAttribute("InputPoint").SetValue(mesh.GetPoint(index));
+    return inputCtx.GetAttribute("InputPoint").Set(mesh.GetPoint(index));
 }
 
 bool Geometry::Nodes::IterMeshPoint::Evaluate(
@@ -353,11 +353,11 @@ bool Geometry::Nodes::IterMeshPoint::PostEvaluate(
         Gex::NodeProfiler &profiler
 )
 {
-    auto point = outputCtx.GetAttribute("OutputPoint").GetValue<Types::Point3>();
+    auto point = outputCtx.GetAttribute("OutputPoint").Get<Types::Point3>();
 
     mesh.GetPoint(index).Swap(point);
 
-    return ctx.GetAttribute("OutMesh").SetValue<Types::Mesh>(mesh);
+    return ctx.GetAttribute("OutMesh").Set<Types::Mesh>(mesh);
 }
 
 
