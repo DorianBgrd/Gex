@@ -57,6 +57,9 @@ add_subdirectory(cli)
 add_subdirectory(test)
 
 
+add_subdirectory(testSuite)
+
+
 add_dependencies(
         Gex
         Tsys
@@ -145,4 +148,20 @@ add_dependencies(
 add_dependencies(
         Test-deploy
         Test
+)
+
+
+add_dependencies(
+        TS
+
+        Tsys
+        Gex
+        ArraysPlugin
+        DebugPlugin
+        FilesPlugin
+#        InputRel
+        IterPlugin
+        MathPlugin
+        PathsPlugin
+        StringPlugin
 )

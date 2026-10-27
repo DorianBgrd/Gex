@@ -15,7 +15,8 @@ namespace Arrays
         {
             auto valueAttribute = CreateGenericAttribute(
                     "Value", Gex::AttrType::Input,
-                    Gex::AttrValueType::Array
+                    Gex::AttrValueType::Array,
+                    {Gex::HasArrayTypeGuard}
             );
 
             auto arrayAttribute = CreateGenericAttribute(
@@ -24,7 +25,7 @@ namespace Arrays
             );
 
             LinkAttributes(valueAttribute, arrayAttribute, Gex::ToArrayType);
-            LinkAttributes(arrayAttribute, valueAttribute, Gex::ToSingleType);
+//            LinkAttributes(arrayAttribute, valueAttribute, Gex::ToSingleType);
         }
 
         bool Evaluate(Gex::NodeAttributeData& ctx,
@@ -36,18 +37,19 @@ namespace Arrays
             auto array = ctx.GetAttribute("OutputArray");
 
             TSys::TypedValuePtr arrayValue;
-            if (!values.empty())
+
+            if (values.empty())
+                return false;
+
+            auto arrayType = array.GetAttributeType();
+
+            if (arrayType)
             {
-                auto arrayType = array.GetAttributeType();
+                arrayValue = TSys::GetRegistry()->CreateValue(arrayType);
 
-                if (arrayType)
+                for (const auto& value : values)
                 {
-                    arrayValue = TSys::GetRegistry()->CreateValue(arrayType);
-
-                    for (const auto& value : values)
-                    {
-                        arrayValue->Append(value);
-                    }
+                    arrayValue->Append(value);
                 }
             }
 
@@ -66,12 +68,14 @@ namespace Arrays
         {
             auto inputArray = CreateGenericAttribute(
                     "InputArray", Gex::AttrType::Input,
-                    Gex::AttrValueType::Array
+                    Gex::AttrValueType::Array,
+                    {Gex::IsArrayTypeGuard, Gex::HasSingleTypeGuard}
             );
 
             auto inputValue = CreateGenericAttribute(
                     "InputValue", Gex::AttrType::Input,
-                    Gex::AttrValueType::Single
+                    Gex::AttrValueType::Single,
+                    {Gex::IsSingleTypeGuard, Gex::HasArrayTypeGuard}
             );
 
             auto outputArray = CreateGenericAttribute(
@@ -159,19 +163,24 @@ namespace Arrays
             auto outputArray = CreateGenericAttribute(
                     "OutputArray", Gex::AttrType::Output
             );
+
+            LinkAttributes(inputArray, outputArray);
         }
 
         bool Evaluate(Gex::NodeAttributeData &ctx,
                       Gex::GraphContext &,
                       Gex::NodeProfiler& profiler) override
         {
-            auto outputArray = ctx.GetAttribute("OutputArray").GetAttributeValue();
+            auto inputArray = ctx.GetAttribute("InputArray").GetAttributeValue();
+            auto outputArray = ctx.GetAttribute("OutputArray");
 
             auto inputValue = ctx.GetAttribute("Value").GetAttributeValue();
 
             int index = ctx.GetAttribute("Index").Get<int>();
 
-            return outputArray->Insert(index, inputValue);
+            inputValue->Insert(index, inputValue);
+
+            return outputArray.SetAttributeValue(inputValue);
         }
     };
 
@@ -349,11 +358,11 @@ namespace Arrays
                       Gex::NodeProfiler& profiler) override
         {
             auto inputArray = ctx.GetAttribute("InputArray").GetAttributeValue();
-            auto outputArray = ctx.GetAttribute("InputArray").GetAttributeValue();
+//            auto outputArray = ctx.GetAttribute("InputArray").GetAttributeValue();
 
             auto count = (int)inputArray->Count();
 
-            outputArray->Clear();
+//            outputArray->Clear();
 
             int start = ctx.GetAttribute("Start").Get<int>();
             int end = ctx.GetAttribute("End").Get<int>();
@@ -365,9 +374,13 @@ namespace Arrays
                 return true;
             }
 
+            auto newArray = TSys::GetRegistry()->CreateValue(
+                    ctx.GetAttribute("InputArray").GetAttributeType()
+            );
+
             for (int iter = start; iter <= end; iter++)
             {
-                outputArray->Append(inputArray->At(iter));
+                newArray->Append(inputArray->At(iter));
             }
 
             return true;
