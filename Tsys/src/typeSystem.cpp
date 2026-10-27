@@ -25,6 +25,7 @@ TSys::Type::Type(
         TypeValueRegistry* registry,
         const std::string& name,
         const std::type_index& index,
+        bool array,
         const ValueCreator& creator,
         const Serializer& serializer,
         const Deserializer& deserializer,
@@ -46,7 +47,7 @@ TSys::Type::Type(
         const InitDefault& initDefault,
         const TSys::FromPython& fromPython,
         const TSys::ToPython& toPython
-): _name(name), _index(index), _creator(creator),
+): _name(name), _index(index), _isArray(array), _creator(creator),
    _serializer(serializer), _deserializer(deserializer),
    _compare(compare), _add(add), _substract(substract),
    _multiply(multiply), _divide(divide),
@@ -58,6 +59,12 @@ TSys::Type::Type(
    _toPython(toPython)
 {
     _registry = registry;
+}
+
+
+bool TSys::Type::IsArray() const
+{
+    return _isArray;
 }
 
 
@@ -380,6 +387,14 @@ TSys::TypedValue& TSys::TypedValue::operator=(const TypedValue& other)
 }
 
 
+bool TSys::TypedValue::operator!=(const TypedValuePtr& other) const
+{
+    return !GetType()->CompareValues(
+            GetAny(), other->GetAny()
+    );
+}
+
+
 bool TSys::TypedValue::operator==(const TypedValuePtr& other) const
 {
     return GetType()->CompareValues(
@@ -591,7 +606,7 @@ TSys::TypedValuePtr TSys::operator - (
 )
 {
     bool value1Valid = value1->IsValid();
-    bool value2Valid = value1->IsValid();
+    bool value2Valid = value2->IsValid();
 
     if (value1Valid && value2Valid)
     {
@@ -614,7 +629,7 @@ TSys::TypedValuePtr TSys::operator * (
 
 {
     bool value1Valid = value1->IsValid();
-    bool value2Valid = value1->IsValid();
+    bool value2Valid = value2->IsValid();
 
     if (value1Valid && value2Valid)
     {
@@ -636,7 +651,7 @@ TSys::TypedValuePtr TSys::operator / (
 )
 {
     bool value1Valid = value1->IsValid();
-    bool value2Valid = value1->IsValid();
+    bool value2Valid = value2->IsValid();
 
     if (value1Valid && value2Valid)
     {
@@ -653,14 +668,49 @@ TSys::TypedValuePtr TSys::operator / (
 }
 
 
+bool TSys::operator == (
+        const TSys::TypedValuePtr &value1,
+        const TSys::TypedValuePtr &value2
+)
+{
+    bool value1Valid = value1->IsValid();
+    bool value2Valid = value2->IsValid();
+
+    if (value1Valid && value2Valid)
+    {
+        return *value1.get() == value2;
+    }
+
+    return false;
+}
+
+
+bool TSys::operator != (
+        const TSys::TypedValuePtr &value1,
+        const TSys::TypedValuePtr &value2
+)
+{
+    bool value1Valid = value1->IsValid();
+    bool value2Valid = value2->IsValid();
+
+    if (value1Valid && value2Valid)
+    {
+        return *value1.get() != value2;
+    }
+
+    return false;
+}
+
+
 
 TSys::TypeValueRegistry* TSys::TypeValueRegistry::instance;
 
 
 
-void TSys::TypeValueRegistry::RegisterType(
+TSys::TypePtr TSys::TypeValueRegistry::RegisterType(
         const std::type_index& typeIndex,
         const std::string& name,
+        bool array,
         const ValueCreator& creator,
         const Serializer& serializer,
         const Deserializer& deserializer,
@@ -681,8 +731,10 @@ void TSys::TypeValueRegistry::RegisterType(
         const Clear& clear
 ) noexcept
 {
-    types[typeIndex] = std::make_shared<Type>(
-            this, name, typeIndex, creator,
+    auto type = std::make_shared<Type>(
+            this, name,
+            typeIndex, array,
+            creator,
             serializer, deserializer,
             compare,
             add, substract,
@@ -695,7 +747,11 @@ void TSys::TypeValueRegistry::RegisterType(
             toPython
     );
 
+    types[typeIndex] = type;
+
     typeNames.emplace(name, typeIndex);
+
+    return type;
 }
 
 
@@ -745,6 +801,18 @@ TSys::TypePtr TSys::TypeValueRegistry::GetSingleType(
     }
 
     return {};
+}
+
+
+bool TSys::TypeValueRegistry::HasArrayType(const TypePtr& type) const
+{
+    return typeToArray.find(type->GetIndex()) != typeToArray.end();
+}
+
+
+bool TSys::TypeValueRegistry::HasSingleType(const TypePtr& type) const
+{
+    return static_cast<bool>(GetSingleType(type));
 }
 
 

@@ -232,12 +232,14 @@ namespace TSys
         FromPython _fromPython;
         ToPython _toPython;
 
+        bool _isArray = false;
+
         std::unordered_map<std::type_index, Converter> converters;
 
     public:
         Type(TypeValueRegistry* registry,
              const std::string& name, const std::type_index& index,
-             const ValueCreator& creator, const Serializer& serializer,
+             bool array, const ValueCreator& creator, const Serializer& serializer,
              const Deserializer& deserializer, const Compare& compare,
              const Add& add, const Substract& substract,
              const Multiply& multiply, const Divide& divide,
@@ -246,6 +248,8 @@ namespace TSys
              const Get& get, const Count& count, const Clear& clear,
              const InitDefault& initDefault, const FromPython& fromPython,
              const ToPython& toPython);
+
+        bool IsArray() const;
 
         bool operator==(const std::any& other) const;
 
@@ -490,6 +494,8 @@ namespace TSys
 
         TypedValue& operator=(const TypedValue& other);
 
+        bool operator!=(const TypedValuePtr& other) const;
+
         bool operator==(const TypedValuePtr& other) const;
 
     protected:
@@ -590,6 +596,18 @@ namespace TSys
             const TSys::TypedValuePtr &other
     );
 
+    TSYS_API
+    bool operator==(
+            const TSys::TypedValuePtr &v,
+            const TSys::TypedValuePtr &other
+    );
+
+    TSYS_API
+    bool operator!=(
+            const TSys::TypedValuePtr &v,
+            const TSys::TypedValuePtr &other
+    );
+
     template<class T>
     TypedValuePtr CreateNew(const TypePtr type)
     {
@@ -609,9 +627,10 @@ namespace TSys
         std::unordered_map<std::type_index, std::type_index> typeToArray;
 
     public:
-        void RegisterType(
+        TSys::TypePtr RegisterType(
                 const std::type_index& typeIndex,
                 const std::string& name,
+                bool array,
                 const ValueCreator& creator,
                 const Serializer& serializer,
                 const Deserializer& deserializer,
@@ -633,7 +652,7 @@ namespace TSys
         ) noexcept;
 
         template<class T>
-        void RegisterType(
+        TSys::TypePtr RegisterType(
                 const std::string& name,
                 const ValueCreator& creator,
                 const Serializer& serializer,
@@ -650,7 +669,7 @@ namespace TSys
         {
             return RegisterType(
                     std::type_index(typeid(T)),
-                    name, creator,
+                    name, false, creator,
                     serializer, deserializer,
                     fromPython, toPython,
                     initDefault, compare,
@@ -679,7 +698,7 @@ namespace TSys
 
     public:
         template<class T>
-        void RegisterArrayType(
+        TSys::TypePtr RegisterArrayType(
                 const std::string& name,
                 const ValueCreator& creator,
                 const Serializer& serializer,
@@ -698,8 +717,9 @@ namespace TSys
         )
         {
             auto arrayTypeIndex = std::type_index(typeid(std::vector<T>));
-            RegisterType(
-                    arrayTypeIndex, name, creator,
+            auto type = RegisterType(
+                    arrayTypeIndex, name,
+                    true, creator,
                     serializer, deserializer,
                     fromPython, toPython,
                     initDefault, compare,
@@ -711,6 +731,8 @@ namespace TSys
             );
 
             RegisterSingleToArrayTypes<T, std::vector<T>>();
+
+            return type;
         }
 
 
@@ -718,6 +740,12 @@ namespace TSys
 
 
         TypePtr GetSingleType(const TypePtr& arrayType) const;
+
+
+        bool HasArrayType(const TypePtr& type) const;
+
+
+        bool HasSingleType(const TypePtr& type) const;
 
 
         template<class Source, class Dest>
