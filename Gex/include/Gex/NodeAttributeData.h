@@ -41,9 +41,9 @@ namespace Gex
 
         std::vector<TSys::TypedValuePtr> GetAttributeArrayValues() const;
 
-        void SetAttributeValue(const TSys::TypedValuePtr& value) const;
+        bool SetAttributeValue(const TSys::TypedValuePtr& value) const;
 
-        void SetAttributeIndexValue(unsigned int index, const TSys::TypedValuePtr& value) const;
+        bool SetAttributeIndexValue(unsigned int index, const TSys::TypedValuePtr& value) const;
 
         bool CreateIndexValue(unsigned int index, const TSys::TypedValuePtr& value) const;
 

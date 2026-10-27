@@ -61,17 +61,17 @@ std::vector<TSys::TypedValuePtr> Gex::NodeAttributeData::GetAttributeArrayValues
 }
 
 
-void Gex::NodeAttributeData::SetAttributeValue(const TSys::TypedValuePtr& value) const
+bool Gex::NodeAttributeData::SetAttributeValue(const TSys::TypedValuePtr& value) const
 {
-    attribute->SetValue(value);
+    return attribute->SetValue(value);
 }
 
 
-void Gex::NodeAttributeData::SetAttributeIndexValue(
+bool Gex::NodeAttributeData::SetAttributeIndexValue(
         unsigned int index, const TSys::TypedValuePtr& value
 ) const
 {
-    attribute->SetIndexValue(index, value);
+    return attribute->SetIndexValue(index, value);
 }
 
 
