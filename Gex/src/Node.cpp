@@ -203,10 +203,11 @@ Gex::AttributeWkPtr Gex::Node::CreateAttributeFromTypeName(
 Gex::AttributeWkPtr Gex::Node::CreateAttribute(
         const std::string& name, const AttrType& type,
         const AttrValueType& valueType,
+        const std::vector<TypeGuard>& guards,
         const AttributeWkPtr& parent)
 {
     AttributePtr attribute = std::make_shared<Attribute>(
-            name, type, valueType, !IsInitializing(),
+            name, type, valueType, guards, !IsInitializing(),
             shared_from_this(), parent);
     bool success = false;
     if (!parent)
@@ -1049,6 +1050,30 @@ TSys::TypePtr Gex::ToSameType(const TSys::TypePtr& sourceType)
 }
 
 
+bool Gex::IsSingleTypeGuard(const TSys::TypePtr& sourceType)
+{
+    return !sourceType->IsArray();
+}
+
+
+bool Gex::IsArrayTypeGuard(const TSys::TypePtr& sourceType)
+{
+    return sourceType->IsArray();
+}
+
+
+bool Gex::HasSingleTypeGuard(const TSys::TypePtr& sourceType)
+{
+    return TSys::GetRegistry()->HasSingleType(sourceType);
+}
+
+
+bool Gex::HasArrayTypeGuard(const TSys::TypePtr& sourceType)
+{
+    return TSys::GetRegistry()->HasArrayType(sourceType);
+}
+
+
 void Gex::GenericNode::LinkAttributes(
         const AttributeWkPtr& sourceAttribute,
         const AttributeWkPtr& destinationAttribute,
@@ -1057,10 +1082,10 @@ void Gex::GenericNode::LinkAttributes(
 {
     if (!IsAttributeLinked(sourceAttribute))
     {
-        attributeTypeChangedCallbacks[sourceAttribute] = TypeCallbackCallers();
+        attributeTypeChangedCallbacks[sourceAttribute->Longname()] = TypeCallbackCallers();
     }
 
-    attributeTypeChangedCallbacks[sourceAttribute].emplace_back(
+    attributeTypeChangedCallbacks[sourceAttribute->Longname()].emplace_back(
             destinationAttribute, callback
     );
 }
@@ -1068,7 +1093,7 @@ void Gex::GenericNode::LinkAttributes(
 
 bool Gex::GenericNode::IsAttributeLinked(const AttributeWkPtr& attribute) const
 {
-    return attributeTypeChangedCallbacks.find(attribute) != attributeTypeChangedCallbacks.end();
+    return attributeTypeChangedCallbacks.find(attribute->Longname()) != attributeTypeChangedCallbacks.end();
 }
 
 
@@ -1076,14 +1101,11 @@ Gex::AttributeWkPtr Gex::GenericNode::CreateGenericAttribute(
         const std::string& name,
         const AttrType& type,
         const AttrValueType& valueType,
+        const std::vector<TypeGuard>& guards,
         const AttributeWkPtr& parent
 )
 {
-    auto attribute = CreateAttribute(
-            name, type, valueType, parent
-    );
-
-    return attribute;
+    return CreateAttribute(name, type, valueType, guards, parent);
 }
 
 void Gex::GenericNode::BeginSwitchingLinkedType()
@@ -1131,11 +1153,12 @@ void Gex::GenericNode::AttributeChanged(
 {
     if (!IsSwitchingLinkedType())
     {
-        if (change == AttributeChange::Connected)
+        if (change == AttributeChange::Connected ||
+            change == AttributeChange::ValueChanged)
         {
             auto context = SwitchLinkContext();
 
-            auto callbackIter = attributeTypeChangedCallbacks.find(attribute);
+            auto callbackIter = attributeTypeChangedCallbacks.find(attribute->Longname());
 
             if (callbackIter != attributeTypeChangedCallbacks.end())
             {
@@ -2202,8 +2225,10 @@ Gex::NodePtr Duplicate(std::map<Gex::NodePtr, Gex::NodePtr>& res,
             {
                 auto vt = destAttribute->GetAttrValueType();
 
-                destAttribute = new_->CreateAttribute(attribute->Name(), attribute->GetAttrType(),
-                                                      vt, newParent_);
+                destAttribute = new_->CreateAttribute(
+                        attribute->Name(), attribute->GetAttrType(),
+                        vt, attribute->GetTypeGuards(), newParent_
+                );
             }
             else
             {

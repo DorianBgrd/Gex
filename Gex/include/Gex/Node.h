@@ -384,6 +384,7 @@ namespace Gex
         AttributeWkPtr CreateAttribute(const std::string& name,
                                        const AttrType& type = AttrType::Static,
                                        const AttrValueType& valueType=AttrValueType::Single,
+                                       const std::vector<TypeGuard>& guards={},
                                        const AttributeWkPtr& parent = AttributeWkPtr());
 
 		/**
@@ -607,6 +608,17 @@ namespace Gex
     GEX_API
     TSys::TypePtr ToSameType(const TSys::TypePtr& sourceType);
 
+    GEX_API
+    bool IsSingleTypeGuard(const TSys::TypePtr& sourceType);
+
+    GEX_API
+    bool IsArrayTypeGuard(const TSys::TypePtr& sourceType);
+
+    GEX_API
+    bool HasSingleTypeGuard(const TSys::TypePtr& sourceType);
+
+    GEX_API
+    bool HasArrayTypeGuard(const TSys::TypePtr& sourceType);
 
     class GenericNode;
 
@@ -644,7 +656,7 @@ namespace Gex
 
         typedef std::vector<TypeCallbackCaller> TypeCallbackCallers;
 
-        std::map<Gex::AttributeWkPtr, TypeCallbackCallers> attributeTypeChangedCallbacks;
+        std::map<std::string, TypeCallbackCallers> attributeTypeChangedCallbacks;
 
     public:
         void LinkAttributes(const AttributeWkPtr& sourceAttribute,
@@ -658,6 +670,7 @@ namespace Gex
                 const std::string& name,
                 const AttrType& type = AttrType::Static,
                 const AttrValueType& valueType = AttrValueType::Single,
+                const std::vector<TypeGuard>& typeGuards={},
                 const AttributeWkPtr& parent=AttributeWkPtr()
         );
 

@@ -62,6 +62,8 @@ namespace Gex
 
     class Attribute;
 
+    typedef std::function<bool(const TSys::TypePtr& type)> TypeGuard;
+
 	class GEX_API Attribute: public std::enable_shared_from_this<Attribute>
 	{
 		friend Node;
@@ -79,6 +81,7 @@ namespace Gex
         TSys::TypedValuePtr defaultValue;
         TSys::TypePtr valueType;
         bool isGeneric = false;
+        std::vector<TypeGuard> typeGuards;
 
 		NodeWkPtr attributeNode;
 
@@ -191,9 +194,18 @@ namespace Gex
         explicit Attribute(const std::string& name,
                            const AttrType& type = AttrType::Static,
                            const AttrValueType& valueType = AttrValueType::Single,
+                           const std::vector<TypeGuard> typeGuards={},
                            bool userDefined = false, const NodePtr& node = nullptr,
                            const AttributeWkPtr& parent = AttributeWkPtr());
 
+        bool AddTypeGuard(const TypeGuard& guard);
+
+        std::vector<TypeGuard> GetTypeGuards() const;
+
+    protected:
+        bool ValidateGuard(const TSys::TypePtr& type);
+
+    public:
         /**
          * Sets current attribute default value.
          * @param T default value.
@@ -225,7 +237,7 @@ namespace Gex
 
         std::vector<TSys::TypedValuePtr> GetResolvedArrayValues() const;
 
-        void SetIndexValue(unsigned int index, const TSys::TypedValuePtr& value);
+        bool SetIndexValue(unsigned int index, const TSys::TypedValuePtr& value);
 
 	public:
         /**

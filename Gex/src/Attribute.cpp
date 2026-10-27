@@ -98,7 +98,9 @@ Gex::Attribute::Attribute(const std::string& name, const std::string& apiType,
 
 Gex::Attribute::Attribute(const std::string& name, const AttrType& type,
                           const AttrValueType& valueType,
-                          bool userDefined, const NodePtr& node,
+                          const std::vector<TypeGuard> typeGrds,
+                          bool userDefined,
+                          const NodePtr& node,
                           const AttributeWkPtr& parent):
         defaultValue(attributeValue)
 {
@@ -116,6 +118,41 @@ Gex::Attribute::Attribute(const std::string& name, const AttrType& type,
     attributeType = type;
 
     isGeneric = (attributeValueType != AttrValueType::Holder);
+    typeGuards = typeGrds;
+}
+
+
+bool Gex::Attribute::AddTypeGuard(const TypeGuard& guard)
+{
+    if (!isGeneric)
+    {
+        return false;
+    }
+
+    typeGuards.push_back(guard);
+    return true;
+}
+
+
+std::vector<Gex::TypeGuard> Gex::Attribute::GetTypeGuards() const
+{
+    return typeGuards;
+}
+
+
+bool Gex::Attribute::ValidateGuard(const TSys::TypePtr& type)
+{
+    bool result = true;
+
+    for (const auto& guard : typeGuards)
+    {
+        if (!guard(type))
+        {
+            result = false;
+        }
+    }
+
+    return result;
 }
 
 
@@ -201,12 +238,12 @@ bool Gex::Attribute::SetValue(const TSys::TypedValuePtr& value)
 }
 
 
-void Gex::Attribute::SetIndexValue(
+bool Gex::Attribute::SetIndexValue(
         unsigned int index,
         const TSys::TypedValuePtr& value
 )
 {
-    GetIndexAttribute(index)->SetValue(value);
+    return GetIndexAttribute(index)->SetValue(value);
 }
 
 
@@ -278,8 +315,13 @@ void Gex::Attribute::SwitchType(const TSys::TypePtr& type)
     {
         if (attributeValue && (!attributeValue->GetType()->IsConvertibleTo(valueType)))
         {
-            attributeValue.reset();
+            attributeValue = TSys::GetRegistry()->CreateValue(valueType);
         }
+    }
+
+    for (const auto& attr : GetAllAttributes())
+    {
+        attr->SwitchType(type);
     }
 }
 
@@ -811,6 +853,11 @@ bool  Gex::Attribute::_CanConnectSource(const AttributePtr& source)
 
     // If current attribute is from a compound AND is internal, check
     // if source node is an internal node.
+    if (isGeneric && !ValidateGuard(source->Type()))
+    {
+        return false;
+    }
+
     if (CompoundNodePtr compound = CompoundNode::FromNode(Node()))
     {
         if (compound->HasNode(source->Node()))
@@ -1282,8 +1329,19 @@ TSys::TypedValuePtr Gex::Attribute::GetValue() const
 
 bool Gex::Attribute::_SetValue(const TSys::TypedValuePtr& value)
 {
+    if(!value || !value->GetType())
+    {
+        return false;
+    }
+
     if (isGeneric)
     {
+        if (!ValidateGuard(value->GetType()))
+        {
+            return false;
+        }
+
+        SwitchType(value->GetType());
         attributeValue = value;
     }
 
@@ -1294,6 +1352,8 @@ bool Gex::Attribute::_SetValue(const TSys::TypedValuePtr& value)
 
     if (attributeNode)
         attributeNode->SetModified();
+
+    SignalChange(AttributeChange::ValueChanged);
 
     return true;
 }
