@@ -8,6 +8,7 @@
 #include <QLineEdit>
 #include <QComboBox>
 #include <QHBoxLayout>
+#include <QColor>
 
 #include <any>
 #include <typeinfo>
@@ -112,6 +113,7 @@ namespace UiTSys
     struct UI_TSYS_API UiType
     {
         std::string uiName;
+        QColor color;
         TypedInitCreatorPtr initCreator;
         TypedCreatorPtr widgetCreator;
 
@@ -149,6 +151,7 @@ namespace UiTSys
                                  const TypedCreatorPtr& widgetCreator);
 
         bool RegisterType(const std::string& typeName,
+                          const QColor& color,
                           const TypedInitCreatorPtr& initCreator,
                           const TypedCreatorPtr& widgetCreator,
                           bool force=false);
@@ -158,10 +161,13 @@ namespace UiTSys
                           bool force=false);
 
         template<class InitCreatorType, class CreatorType>
-        bool RegisterType(const std::string& typeName, bool force=false)
+        bool RegisterType(const std::string& typeName,
+                          const QColor& color,
+                          bool force=false)
         {
             return RegisterType(
                     typeName,
+                    color,
                 MakeUiPtr(InitCreatorType),
                 MakeUiPtr(CreatorType),
                 force
@@ -169,10 +175,13 @@ namespace UiTSys
         }
 
         template<class CreatorType>
-        bool RegisterType(const std::string& typeName, bool force=false)
+        bool RegisterType(const std::string& typeName,
+                          const QColor& color,
+                          bool force=false)
         {
             return RegisterType(
                     typeName,
+                    color,
                     nullptr,
                     MakeUiPtr(CreatorType),
                     force

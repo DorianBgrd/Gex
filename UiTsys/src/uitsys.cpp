@@ -168,6 +168,7 @@ UiTSys::UiTypeEngine*  UiTSys::UiTypeEngine::GetEngine()
 
 bool UiTSys::UiTypeEngine::RegisterType(
         const std::string& typeName,
+        const QColor& typeColor,
         const TypedInitCreatorPtr& initCreator,
         const TypedCreatorPtr& widgetCreator,
         bool force
@@ -175,6 +176,7 @@ bool UiTSys::UiTypeEngine::RegisterType(
 {
     auto type = MakeUiPtr(UiType);
     type->uiName = typeName;
+    type->color = typeColor;
     type->initCreator = initCreator;
     type->widgetCreator = widgetCreator;
 
