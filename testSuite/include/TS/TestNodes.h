@@ -4,8 +4,11 @@
 #include <iostream>
 #include <vector>
 
+#include "Core.h"
+
 #include "Tsys/typeSystem.h"
 #include "Gex/NodeFactory.h"
+#include "Gex/PluginLoader.h"
 #include "Gex/Profiler.h"
 
 namespace TS
@@ -54,14 +57,7 @@ namespace TS
     };
 
 
-    struct TestResult
-    {
-        bool success;
-        std::string message;
-    };
-
-
-    class NodeTest
+    class NodeTest: public TestCase
     {
         std::string nodeType;
 
@@ -78,7 +74,7 @@ namespace TS
             expectedOutputs = expectedOut;
         }
 
-        std::string Type() const
+        std::string Name() const override
         {
             return nodeType;
         }
@@ -103,7 +99,7 @@ namespace TS
             );
         }
 
-        TestResult Test()
+        TestResult Test() override
         {
             auto node = Gex::NodeFactory::GetFactory()->CreateNode(
                     nodeType, nodeType
@@ -169,55 +165,23 @@ namespace TS
     };
 
 
-    auto& Stream(bool err)
+    class NodesTest: public TestGroup
     {
-        return err ? std::cout : std::cerr;
-    }
+        std::vector<std::string> _plugins;
 
-    void PrintLine(char c, int n, bool err=false)
-    {
-        std::string s;
-        for (int i =0 ; i < n; i++)
+    public:
+        NodesTest(const std::vector<std::string>& plugins)
         {
-            s += c;
+            _plugins = plugins;
         }
 
-        Stream(err) << s << std::endl;
-        Stream(err).flush();
-    }
-
-    void Print(const std::string& str, bool err=false)
-    {
-        Stream(err) << str << std::endl;
-        Stream(err).flush();
-    }
-
-    void PrintRet(bool err=false)
-    {
-        Stream(err) << std::endl;
-    }
-
-    void TestNodes(const std::vector<NodeTest>& testNodes)
-    {
-        for (auto testNode : testNodes)
-        {
-
-            auto result = testNode.Test();
-
-            std::string fmsg = result.success ? "Succeeded" : "FAILED";
-
-//            PrintLine('-', 100);
-//            Print("Testing node " + testNode.Type());
-//            PrintLine('-', 100);
-
-            PrintLine('-', 100, result.success);
-            Print("Testing node " + testNode.Type(), result.success);
-            Print("Test " + fmsg + " !", result.success);
-            Print("Feedback : " + result.message, result.success);
-            PrintLine('-', 100, result.success);
-            PrintRet(result.success);
+        void Prepare() {
+            for (const auto& plugin : _plugins)
+            {
+                Gex::PluginLoader::LoadPlugin(plugin);
+            }
         }
-    }
+    };
 }
 
 #endif //TS_TESTNODES_H

@@ -1,6 +1,8 @@
 #ifndef GEX_ARRAYNODES_H
 #define GEX_ARRAYNODES_H
 
+#include <memory>
+
 #include "TS/TestNodes.h"
 
 #include "Gex/PluginLoader.h"
@@ -18,13 +20,14 @@ namespace TestSuite::Array
             // print error.
         }
 
-        auto createArray = TS::NodeTest(
+
+        auto createArray = std::make_shared<TS::NodeTest>(
                 "Arrays/Create",
-                {
+                std::vector<TS::AttrField>{
                     TS::AttrField{"Value", 0, 0},
                     TS::AttrField{"Value", 1, 1},
                 },
-                {
+                std::vector<TS::AttrField>{
                     TS::AttrField{
                             "OutputArray",
                             std::vector<int>{0, 1}
@@ -32,95 +35,95 @@ namespace TestSuite::Array
                 }
         );
 
-        auto appendArray = TS::NodeTest(
+        auto appendArray = std::make_shared<TS::NodeTest>(
                 "Arrays/Append",
-                {
+                std::vector<TS::AttrField>{
                     TS::AttrField{"InputArray", std::vector<int>{0}},
                     TS::AttrField{"InputValue", 1}
                 },
-                {
+                std::vector<TS::AttrField>{
                     TS::AttrField("OutputArray", std::vector<int>{0, 1})
                 }
         );
 
-        auto removeArray = TS::NodeTest(
+        auto removeArray = std::make_shared<TS::NodeTest>(
                 "Arrays/Remove",
-                {
+                std::vector<TS::AttrField>{
                     TS::AttrField("InputArray", std::vector<int>{0, 1, 2}),
                     TS::AttrField("Index", 1)
                 },
-                {
+                std::vector<TS::AttrField>{
                     TS::AttrField("OutputArray", std::vector<int>{0, 2})
                 }
         );
 
-        auto insertArray = TS::NodeTest(
+        auto insertArray = std::make_shared<TS::NodeTest>(
                 "Arrays/Insert",
-                {
+                std::vector<TS::AttrField>{
                     TS::AttrField("InputArray", std::vector<int>{0, 2, 3}),
                     TS::AttrField("Index", 1),
                     TS::AttrField("Value", 1)
                 },
-                {
+                std::vector<TS::AttrField>{
                     TS::AttrField("OutputArray", std::vector<int>{0, 1, 2, 3})
                 }
         );
 
-        auto arrayLength = TS::NodeTest(
+        auto arrayLength = std::make_shared<TS::NodeTest>(
                 "Arrays/Length",
-                {
+                std::vector<TS::AttrField>{
                     TS::AttrField("InputArray", std::vector<int>{0, 1, 2, 3})
                 },
-                {
+                std::vector<TS::AttrField>{
                     TS::AttrField("Length", 4)
                 }
         );
 
-        auto arrayIndex = TS::NodeTest(
+        auto arrayIndex = std::make_shared<TS::NodeTest>(
                 "Arrays/IndexValue",
-                {
+                std::vector<TS::AttrField>{
                     TS::AttrField("InputArray", std::vector<int>{0, 1, 2, 3}),
                     TS::AttrField("Index", 1)
                 },
-                {
+                std::vector<TS::AttrField>{
                     TS::AttrField("Value", 1)
                 }
         );
 
-        auto arrayFirstItem = TS::NodeTest(
+        auto arrayFirstItem = std::make_shared<TS::NodeTest>(
                 "Arrays/FirstItem",
-                {
+                std::vector<TS::AttrField>{
                         TS::AttrField("InputArray", std::vector<int>{0, 1, 2, 3})
                 },
-                {
+                std::vector<TS::AttrField>{
                         TS::AttrField("Value", 0)
                 }
         );
 
-        auto arrayLastItem = TS::NodeTest(
+        auto arrayLastItem = std::make_shared<TS::NodeTest>(
                 "Arrays/LastItem",
-                {
+                std::vector<TS::AttrField>{
                         TS::AttrField("InputArray", std::vector<int>{0, 1, 2, 3})
                 },
-                {
+                std::vector<TS::AttrField>{
                         TS::AttrField("Index", 3),
                         TS::AttrField("Value", 3)
                 }
         );
 
-        auto arraySlice = TS::NodeTest(
+        auto arraySlice = std::make_shared<TS::NodeTest>(
                 "Arrays/Slice",
-                {
+                std::vector<TS::AttrField>{
                     TS::AttrField("InputArray", std::vector<int>{0, 1, 2, 3}),
                     TS::AttrField("Start", 1),
                     TS::AttrField("End", 2)
                 },
-                {
+                std::vector<TS::AttrField>{
                     TS::AttrField("OutputArray", std::vector<int>{1, 2})
                 }
         );
 
-        TS::TestNodes(
+        TS::RunTestCases(
             {
                     createArray,
                     appendArray,
