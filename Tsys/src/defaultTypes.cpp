@@ -164,6 +164,26 @@ bool TSys::Enum::operator==(const Enum& other) const
 
 void TSys::RegisterDefaultTypes(TSys::TypeValueRegistry* registry)
 {
+    auto boolSerializer = [](
+            const TSys::TypedValuePtr& value, rapidjson::Value& obj,
+            rapidjson::Document& json
+    ) {obj.SetInt(value->Get<bool>());};
+
+    auto boolDeserializer = [](
+            TSys::TypedValuePtr& value, rapidjson::Value& obj,
+            rapidjson::Document& json
+    ) {value->Set<bool>(obj.GetInt());};
+
+    registry->RegisterType<bool>(
+            "bool",
+            DefaultCreator,
+            boolSerializer,
+            boolDeserializer,
+            DefaultPyBindToAnyCast<bool>,
+            DefaultAnyToPyBindCast<bool>
+    );
+
+
     auto intSerializer = [](
             const TSys::TypedValuePtr& value, rapidjson::Value& obj,
             rapidjson::Document& json
@@ -262,7 +282,7 @@ void TSys::RegisterDefaultTypes(TSys::TypeValueRegistry* registry)
     ) {value->Get<Enum>().Set(obj.GetString());};
 
 
-    registry->RegisterType<std::string>(
+    registry->RegisterType<TSys::Enum>(
             "enum",
             DefaultCreator,
             enumSerializer,
@@ -277,6 +297,14 @@ void TSys::RegisterDefaultTypes(TSys::TypeValueRegistry* registry)
             nullptr
     );
 
+
+    registry->RegisterArrayType<bool>(
+            "boolArray", DefaultCreator,
+            TSys::ArraySerializer<bool>(registry),
+            TSys::ArrayDeserializer<bool>(registry),
+            DefaultPyBindToAnyCast<std::vector<bool>>,
+            DefaultAnyToPyBindCast<std::vector<bool>>
+    );
 
 
     registry->RegisterArrayType<int>(
@@ -317,13 +345,19 @@ void TSys::RegisterDefaultTypes(TSys::TypeValueRegistry* registry)
             DefaultAnyToPyBindCast<std::vector<std::string>>
     );
 
+    registry->RegisterDefaultCtorConverter<bool, int>();
+    registry->RegisterDefaultCtorConverter<bool, float>();
+    registry->RegisterDefaultCtorConverter<bool, double>();
 
+    registry->RegisterDefaultCtorConverter<int, bool>();
     registry->RegisterDefaultCtorConverter<int, float>();
     registry->RegisterDefaultCtorConverter<int, double>();
 
+    registry->RegisterDefaultCtorConverter<float, bool>();
     registry->RegisterDefaultCtorConverter<float, int>();
     registry->RegisterDefaultCtorConverter<float, double>();
 
+    registry->RegisterDefaultCtorConverter<double, bool>();
     registry->RegisterDefaultCtorConverter<double, int>();
     registry->RegisterDefaultCtorConverter<double, float>();
 

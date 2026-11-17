@@ -196,6 +196,11 @@ bool TSys::Type::CompareValues(
         const std::any& value2
 ) const
 {
+    if (!_compare)
+    {
+        return false;
+    }
+
     return _compare(
             CastFrom(value1, value1),
             CastFrom(value2, value2)
