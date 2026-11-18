@@ -77,23 +77,26 @@ std::string Gex::Ui::UiPluginLoader::PluginPath() const
 }
 
 
-bool Gex::Ui::UiPluginLoader::RegisterTypeWidget(
-        const std::type_index& t, const std::string& name,
+bool Gex::Ui::UiPluginLoader::RegisterType(
+        const std::type_index& hash,
+        const std::string& uiName,
+        const QColor& color,
         const UiTSys::TypedInitCreatorPtr& initCreator,
         const UiTSys::TypedCreatorPtr& creator,
         bool force
 )
 {
-    return engine->RegisterType(name, initCreator, creator, force);
+    return engine->RegisterType(uiName, color, initCreator, creator, force);
 }
 
 
-void Gex::Ui::UiPluginLoader::RegisterNodeIcon(
+void Gex::Ui::UiPluginLoader::RegisterNodeResource(
         const std::string& type,
-        const QIcon& icon
+        const QIcon& icon,
+        const QColor& color
 )
 {
-    nodeUiRegistry->RegisterNodeIcon(type, icon);
+    nodeUiRegistry->RegisterNodeResource(type, icon, color);
 }
 
 

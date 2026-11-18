@@ -6,6 +6,9 @@
 #include "Tsys/tsys.h"
 #include "Tsys/defaultTypes.h"
 
+#include "UiRes/uires.h"
+#include "Gex_ui/include/Gex_ui/PluginLoader.h"
+
 namespace Arrays
 {
     class Plugin_API Create: public Gex::GenericNode
@@ -413,6 +416,31 @@ extern EXPORT RegisterPlugin(Gex::PluginLoader* loader)
 
     loader->RegisterNode<Arrays::LastItemBuilder>("Arrays/LastItem");
 
+}
+
+
+extern EXPORT RegisterUiPlugin(Gex::Ui::UiPluginLoader* loader)
+{
+    std::vector<std::string> nodeTypes = {
+            "Arrays/Create",
+            "Arrays/Remove",
+            "Arrays/Append",
+            "Arrays/Insert",
+            "Arrays/Slice",
+            "Arrays/Length",
+            "Arrays/IndexValue",
+            "Arrays/FirstItem",
+            "Arrays/LastItem"
+    };
+
+    for (const auto& nodeType : nodeTypes)
+    {
+        loader->RegisterNodeResource(
+                nodeType, Res::UiRes::GetRes()->GetQtAwesome()
+                ->icon(fa::fa_solid, fa::fa_list),
+                QColor(174, 141, 224)
+        );
+    }
 }
 
 

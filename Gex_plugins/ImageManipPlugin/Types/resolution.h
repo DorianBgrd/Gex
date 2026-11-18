@@ -13,6 +13,9 @@ namespace ImageManip::Types
     typedef std::array<int, 2> Resolution;
 
 
+    bool CompareResolution(const std::any& value1,
+                           const std::any& value2);
+
     void SerializeResolution(const TSys::TypedValuePtr & v,
                              rapidjson::Value& value,
                              rapidjson::Document& document);

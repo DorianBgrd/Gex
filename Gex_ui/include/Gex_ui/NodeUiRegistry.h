@@ -13,21 +13,33 @@ namespace Gex::Ui
         struct NodeResource
         {
             QIcon icon;
+            QColor color;
         };
 
         std::unordered_map<std::string, NodeResource> resources;
 
         static NodeUiRegistry* registry;
 
+        QColor defaultColor;
+
     public:
         NodeUiRegistry();
 
-        void RegisterNodeIcon(
+        void RegisterNodeResource(
                 const std::string& nodeType,
-                const QIcon& icon
+                const QIcon& icon,
+                const QColor& color
         );
 
         QIcon GetNodeIcon(
+                const std::string& nodeType
+        );
+
+        QColor GetNodeColor(
+                const std::string& nodeType
+        );
+
+        NodeResource GetNodeResource(
                 const std::string& nodeType
         );
 

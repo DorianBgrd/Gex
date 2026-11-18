@@ -154,47 +154,107 @@ extern EXPORT RegisterPlugin(Gex::PluginLoader* loader)
 }
 
 
-extern EXPORT  RegisterUiPlugin(Gex::Ui::UiPluginLoader* loader)
+extern EXPORT RegisterUiPlugin(Gex::Ui::UiPluginLoader* loader)
 {
-    loader->RegisterNodeIcon(
+    loader->RegisterNodeResource(
             "Math/Constants/Int",
             Res::UiRes::GetRes()->GetQtAwesome()
-            ->icon(fa::fa_solid, fa::fa_1)
+            ->icon(fa::fa_solid, fa::fa_hashtag),
+            QColor(106, 212, 174)
     );
 
-    loader->RegisterNodeIcon(
+    loader->RegisterNodeResource(
             "Math/Constants/Float",
             Res::UiRes::GetRes()->GetQtAwesome()
-            ->icon(fa::fa_solid, fa::fa_1)
+            ->icon(fa::fa_solid, fa::fa_hashtag),
+            QColor(106, 212, 174)
     );
 
-    loader->RegisterNodeIcon(
+    loader->RegisterNodeResource(
             "Math/Constants/Double",
             Res::UiRes::GetRes()->GetQtAwesome()
-            ->icon(fa::fa_solid, fa::fa_1)
+            ->icon(fa::fa_solid, fa::fa_hashtag),
+            QColor(106, 212, 174)
     );
 
-    loader->RegisterNodeIcon(
+    loader->RegisterNodeResource(
             "Math/Operators/Add",
             Res::UiRes::GetRes()->GetQtAwesome()
-            ->icon(fa::fa_solid, fa::fa_plus)
+            ->icon(fa::fa_solid, fa::fa_plus),
+            QColor(106, 212, 174)
     );
 
-    loader->RegisterNodeIcon(
+    loader->RegisterNodeResource(
             "Math/Operators/Subtract",
             Res::UiRes::GetRes()->GetQtAwesome()
-            ->icon(fa::fa_solid, fa::fa_minus)
+            ->icon(fa::fa_solid, fa::fa_minus),
+            QColor(106, 212, 174)
     );
 
-    loader->RegisterNodeIcon(
+    loader->RegisterNodeResource(
             "Math/Operators/Multiply",
             Res::UiRes::GetRes()->GetQtAwesome()
-            ->icon(fa::fa_solid, fa::fa_times)
+            ->icon(fa::fa_solid, fa::fa_times),
+            QColor(106, 212, 174)
     );
 
-    loader->RegisterNodeIcon(
+    loader->RegisterNodeResource(
             "Math/Operators/Divide",
             Res::UiRes::GetRes()->GetQtAwesome()
-            ->icon(fa::fa_solid, fa::fa_divide)
+            ->icon(fa::fa_solid, fa::fa_divide),
+            QColor(106, 212, 174)
     );
+
+    loader->RegisterNodeResource(
+            "Math/Operators/Divide",
+            Res::UiRes::GetRes()->GetQtAwesome()
+                    ->icon(fa::fa_solid, fa::fa_divide),
+            QColor(106, 212, 174)
+    );
+
+    std::vector<std::string> operatorNodeTypes = {
+            "Math/Operators/Cos",
+            "Math/Operators/Acos",
+            "Math/Operators/DegreeToRadian",
+            "Math/Operators/RadianToDegree",
+            "Math/Point2/Compose",
+            "Math/Point2/Decompose",
+            "Math/Point2/Distance",
+            "Math/Vector2/Compose",
+            "Math/Vector2/Decompose",
+            "Math/Vector2/Constant",
+            "Math/Vector2/Magnitude",
+            "Math/Vector2/Normalize",
+            "Math/Vector2/DotProduct",
+            "Math/Vector2/Angle",
+            "Math/Vector2/Add",
+            "Math/Vector2/Subtract",
+            "Math/Vector2/Divide",
+            "Math/Vector2/Multiply",
+            "Math/Point3/Compose",
+            "Math/Point3/Decompose",
+            "Math/Point3/Distance",
+            "Math/Vector3/Compose",
+            "Math/Vector3/Decompose",
+            "Math/Vector3/Constant",
+            "Math/Vector3/DotProduct",
+            "Math/Vector3/Add",
+            "Math/Vector3/Subtract",
+            "Math/Vector3/Divide",
+            "Math/Vector3/Multiply",
+            "Math/Vector3/CrossProduct",
+            "Math/Vector3/Magnitude",
+            "Math/Vector3/Angle",
+            "Math/Vector3/Normalize"
+    };
+
+    for (const std::string& type : operatorNodeTypes)
+    {
+        loader->RegisterNodeResource(
+                type,
+                Res::UiRes::GetRes()->GetQtAwesome()
+                        ->icon(fa::fa_solid, fa::fa_subscript),
+                QColor(106, 212, 174)
+        );
+    }
 }

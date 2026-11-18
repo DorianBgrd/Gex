@@ -59,6 +59,12 @@ bool Gex::Ui::PlugItem::IsOutputAnchor() const
 }
 
 
+QColor Gex::Ui::PlugItem::GetColor() const
+{
+    return pen().color();
+}
+
+
 Gex::Ui::MultiAttributeItem::MultiAttributeItem(AttributeItem* attribute): QGraphicsItem(attribute)
 {
     attributeItem = attribute;
@@ -311,19 +317,24 @@ void Gex::Ui::AttributeItem::Initialize(Gex::AttributeWkPtr attr,
                   defaultHeight));
     setPen(Qt::NoPen);
 
+    plugColor = (
+            UiTSys::UiTypeEngine::GetEngine()
+            ->GetTypeColor(attr->TypeName())
+    );
+
     collapsed = true;
     attribute = attr;
     parentNode = node;
     parentAttribute = parent;
     input = new PlugItem(this, true);
-    input->setBrush(QBrush("#E58C02"));
-    input->setPen(Qt::NoPen);
+    input->setBrush(QBrush(QColor(0, 0, 0)));
+    input->setPen(QPen(plugColor, 1));
     input->setRect(plugRect);
     input->setVisible(attribute->IsInput());
 
     output = new PlugItem(this, false);
-    output->setBrush(QBrush("#E58C02"));
-    output->setPen(Qt::NoPen);
+    output->setBrush(QBrush(QColor(0, 0, 0)));
+    output->setPen(QPen(plugColor, 1));
     output->setRect(plugRect);
     output->setVisible(attribute->IsOutput());
 
@@ -362,8 +373,8 @@ void Gex::Ui::AttributeItem::Initialize(Gex::AttributeWkPtr attr,
     }
 
     qreal plugY = (defaultHeight - plugRect.height())/2;
-    input->setPos(-plugRect.width(), plugY);
-    output->setPos(rect().width(), plugY);
+    input->setPos(-plugRect.width() - 2, plugY);
+    output->setPos(rect().width() + 2, plugY);
 
     qreal indent = 14;
     if (attribute->IsArray() || attribute->IsHolder())
@@ -639,6 +650,12 @@ Gex::Ui::PlugItem* Gex::Ui::AttributeItem::InputAnchor() const
 Gex::Ui::PlugItem* Gex::Ui::AttributeItem::OutputAnchor() const
 {
     return output;
+}
+
+
+QColor Gex::Ui::AttributeItem::GetColor() const
+{
+    return plugColor;
 }
 
 
@@ -967,12 +984,13 @@ Gex::Ui::NodeItem::NodeItem(Gex::NodePtr node_,
 {
     node = node_;
     graphScene = sc;
+    defaultBorderColor = NodeUiRegistry::GetRegistry()->GetNodeColor(node->Type());
 
     auto icon = NodeUiRegistry::GetRegistry()->GetNodeIcon(node->Type());
 
     iconItem = new NodeIconItem(icon, this);
-    iconItem->setPen(Qt::NoPen);
-    iconItem->setBrush(QBrush(QColor("#383838")));
+    iconItem->setPen(QPen(defaultBorderColor, 1));
+    iconItem->setBrush(QBrush(QColor(0, 0, 0)));
     iconItem->setRect(0, 0, 25, 25);
     iconItem->setPos(-30, 15);
     iconItem->setVisible(!icon.isNull());
@@ -980,16 +998,16 @@ Gex::Ui::NodeItem::NodeItem(Gex::NodePtr node_,
     sourcePlug = new NodePlugItem(this, true);
     sourcePlug->setRect(PLUG_RECT);
     sourcePlug->setPos(-PLUG_RECT.width(), 0);
-    sourcePlug->setBrush(QBrush(QColor("#408CCB")));
-    sourcePlug->setPen(Qt::NoPen);
+    sourcePlug->setBrush(QBrush(QColor(0, 0, 0)));
+    sourcePlug->setPen(QPen(defaultBorderColor, 1));
     sourcePlug->setZValue(10);
 //    sourcePlug->setBrush(QBrush(QColor("#E58C02")));
 
     destPlug = new NodePlugItem(this, false);
     destPlug->setRect(PLUG_RECT);
     destPlug->setPos(DefaultWidth(), 0);
-    destPlug->setBrush(QBrush(QColor("#408CCB")));
-    destPlug->setPen(Qt::NoPen);
+    destPlug->setBrush(QBrush(QColor(0, 0, 0)));
+    destPlug->setPen(QPen(defaultBorderColor, 1));
     destPlug->setZValue(10);
 //    destPlug->setBrush(QBrush(QColor("#E58C02")));
 
@@ -1558,12 +1576,12 @@ QVariant Gex::Ui::NodeItem::itemChange(GraphicsItemChange change, const QVariant
 
 QColor Gex::Ui::NodeItem::DefaultBorderColor() const
 {
-    return QColor("#E58C02");
+    return defaultBorderColor;
 }
 
 QColor Gex::Ui::NodeItem::DefaultSelectedBorderColor() const
 {
-    return QColor("#E58C02");
+    return defaultBorderColor;
 }
 
 void Gex::Ui::NodeItem::SetCustomBorderColor(QColor color)
@@ -1605,31 +1623,24 @@ void Gex::Ui::NodeItem::paint(QPainter *painter,
 
     painter->setPen(Qt::NoPen);
 
-    if (!isSelected() && !HasCustomBorderColor())
-    {
-        painter->setBrush(QBrush(QColor("#383838")));
-        painter->drawRoundedRect(rect, 5, 5);
-    }
-    else
-    {
-        QColor border = DefaultBorderColor();
-        if (HasCustomBorderColor())
-            border = CustomBorderColor();
+    QColor border = DefaultBorderColor();
+    if (HasCustomBorderColor())
+        border = CustomBorderColor();
 
-        if (isSelected())
-            border = border.lighter(150);
+    painter->setBrush(QBrush(border));
+    painter->drawRoundedRect(rect, 5, 5);
 
-        painter->setBrush(QBrush(border));
-        painter->drawRoundedRect(rect, 5, 5);
+    qreal inSetWidth = 1;
+    if (isSelected())
+        inSetWidth = 2;
 
-        QRectF inSet(rect.x() + 2, rect.y() + 2,
-                     rect.width() - 4,
-                     rect.height() - 4
-                     );
+    QRectF inSet(rect.x() + inSetWidth, rect.y() + inSetWidth,
+                 rect.width() - (inSetWidth * 2),
+                 rect.height() - (inSetWidth * 2)
+                 );
 
-        painter->setBrush(QBrush(QColor("#383838")));
-        painter->drawRoundedRect(inSet, 5, 5);
-    }
+    painter->setBrush(QBrush(QColor(0, 0, 0)));
+    painter->drawRoundedRect(inSet, 5, 5);
 
     painter->restore();
 }
@@ -1693,9 +1704,9 @@ Gex::Ui::LinkItem::LinkItem(AttributeItem *source, AttributeItem *dest): QGraphi
         }
     }
 
-    QPen pen(QColor("#E58C02"));
-    pen.setWidth(2);
-    setPen(pen);
+//    QPen pen(QColor("#E58C02"));
+//    pen.setWidth(2);
+//    setPen(pen);
 
     setZValue(-10);
 }
@@ -1727,15 +1738,30 @@ Gex::Ui::AttributeItem* Gex::Ui::LinkItem::Dest() const
 }
 
 
-void Gex::Ui::LinkItem::Update()
+QPointF Gex::Ui::LinkItem::GetSourcePos() const
 {
     QPointF srcPos = src->SceneOutputPosition();
     if (sourceInternal)
         srcPos = src->SceneInputPosition();
 
+    return srcPos;
+}
+
+
+QPointF Gex::Ui::LinkItem::GetDestPos() const
+{
     QPointF dstPos = dst->SceneInputPosition();
     if (destInternal)
         dstPos = dst->SceneOutputPosition();
+
+    return dstPos;
+}
+
+
+void Gex::Ui::LinkItem::Update()
+{
+    auto srcPos = GetSourcePos();
+    auto dstPos = GetDestPos();
 
     QPainterPath path;
     path.moveTo(srcPos);
@@ -1745,7 +1771,13 @@ void Gex::Ui::LinkItem::Update()
     QPoint cp2(dstPos.x() - middle / 2, dstPos.y());
     path.cubicTo(cp1, cp2, dstPos);
 
+    QLinearGradient gradient(srcPos, dstPos);
+    gradient.setColorAt(0, src->GetColor());
+    gradient.setColorAt(1, dst->GetColor());
+    gradient.setCoordinateMode(QLinearGradient::CoordinateMode::LogicalMode);
+
     setPath(path);
+    setPen(makePen(srcPos, dstPos));
 }
 
 
@@ -1759,23 +1791,45 @@ void Gex::Ui::LinkItem::paint(QPainter *painter, const QStyleOptionGraphicsItem 
 }
 
 
+QPen Gex::Ui::LinkItem::makePen(QPointF source, QPointF dest) const
+{
+    QLinearGradient gradient(source, dest);
+    gradient.setCoordinateMode(QLinearGradient::CoordinateMode::LogicalMode);
+
+    QColor sourceColor = src->GetColor();
+    QColor destColor = dst->GetColor();
+    qreal width = 1;
+
+    if (isSelected())
+    {
+        sourceColor = sourceColor.lighter(125);
+        destColor = destColor.lighter(125);
+        width = 2;
+    }
+
+    gradient.setColorAt(0, sourceColor);
+    gradient.setColorAt(1, destColor);
+
+    return {QBrush(gradient), width};
+}
+
+
+void Gex::Ui::LinkItem::UpdatePen()
+{
+    setPen(
+            makePen(
+                    GetSourcePos(),
+                    GetDestPos()
+            )
+    );
+}
+
+
 QVariant Gex::Ui::LinkItem::itemChange(QGraphicsItem::GraphicsItemChange change, const QVariant &value)
 {
-    QPen pen;
-    if (change == QGraphicsItem::ItemSelectedChange)
+    if (change == QGraphicsItem::ItemSelectedHasChanged)
     {
-        if (isSelected())
-        {
-            pen = QPen(QColor("#E58C02"));
-            pen.setWidth(2);
-        }
-        else
-        {
-            pen = QPen(QColor("#F5DB1E"));
-            pen.setWidth(2);
-        }
-
-        setPen(pen);
+        UpdatePen();
     }
 
     return value;
@@ -3590,9 +3644,18 @@ void Gex::Ui::NodeGraphScene::SelectNodes(const Gex::NodeWkList& sel,
 {
     blockSignals(true);
 
-    clearSelection();
+    std::vector<QGraphicsItem*> otherItems;
 
-    QList<NodeItem*> items;
+    for (auto* item : selectedItems())
+    {
+        if (!dynamic_cast<NodeItem*>(item))
+        {
+            continue;
+        }
+
+        item->setSelected(false);
+    }
+
     for (const auto& node : sel)
     {
         auto* item = ItemFromNode(node);
@@ -3607,8 +3670,7 @@ void Gex::Ui::NodeGraphScene::SelectNodes(const Gex::NodeWkList& sel,
 
     Q_EMIT selectionChanged();
 
-    if (!notify)
-        blockSignals(false);
+    blockSignals(false);
 }
 
 
@@ -3714,8 +3776,8 @@ void Gex::Ui::NodeGraphScene::DeleteLink(LinkItem* item)
         return;
     }
 
-    removeItem(item);
-    delete item;
+//    removeItem(item);
+//    delete item;
 }
 
 
@@ -4258,6 +4320,8 @@ void Gex::Ui::GraphWidget::Initialize()
 
 void Gex::Ui::GraphWidget::OnNodeSelected()
 {
+    isChangingSelection = true;
+
     QList<QGraphicsItem*> items = scene->selectedItems();
 
     std::vector<Gex::NodeWkPtr> nodes;
@@ -4273,6 +4337,8 @@ void Gex::Ui::GraphWidget::OnNodeSelected()
     editor->SetNodes(nodes);
 
     Q_EMIT SelectedNodeChanged(nodes);
+
+    isChangingSelection = false;
 }
 
 
@@ -4556,5 +4622,8 @@ Gex::NodeWkList Gex::Ui::GraphWidget::CurrentSelection() const
 void Gex::Ui::GraphWidget::Select(const Gex::NodeWkList& nodes,
                                   bool notify)
 {
+    if (isChangingSelection)
+        return;
+
     scene->SelectNodes(nodes, notify);
 }

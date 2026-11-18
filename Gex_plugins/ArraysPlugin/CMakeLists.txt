@@ -11,7 +11,8 @@ set(CMAKE_CXX_FLAGS "/EHsc")
 add_library(
         ArraysPlugin
         SHARED
-        arraysLibrary.cpp)
+        arraysLibrary.cpp
+)
 
 
 target_include_directories(
@@ -22,6 +23,8 @@ target_include_directories(
         ${PipelineLibrary_INCLUDE_DIRS}
         ${Python_INCLUDE_DIRS}
         ${ThirdParties_INCLUDE_DIRS}
+
+        $ENV{UI_RES_DIR}
 )
 
 
@@ -38,6 +41,8 @@ target_link_libraries(
         ArraysPlugin
         PUBLIC
         Gex
+        Gex_ui
+        UiRes
         ${Python_LINK_LIBRARIES}
 )
 

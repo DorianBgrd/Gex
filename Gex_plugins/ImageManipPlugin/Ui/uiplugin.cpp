@@ -12,33 +12,33 @@
 extern "C" Plugin_API
 void RegisterUiPlugin(Gex::Ui::UiPluginLoader* loader)
 {
-    loader->RegisterTypeWidget<QImage>(
-            "Image", nullptr,
+    loader->RegisterType<QImage>(
+            "ImageManip::Image", QColor(222, 145, 67), nullptr,
             MakeUiPtr(ImageManip::Ui::Types::ImageWidgetBuilder)
     );
 
-    loader->RegisterTypeWidget<QColor>(
-            "Color", nullptr,
+    loader->RegisterType<QColor>(
+            "ImageManip::Color", QColor(222, 145, 67), nullptr,
             MakeUiPtr(ImageManip::Ui::Types::ColorWidgetBuilder)
     );
 
-    loader->RegisterTypeWidget<ImageManip::Types::Resolution>(
-            "Resolution", nullptr,
+    loader->RegisterType<ImageManip::Types::Resolution>(
+            "ImageManip::Resolution", QColor(106, 212, 174), nullptr,
             MakeUiPtr(ImageManip::Ui::Types::ResolutionWidgetBuilder)
     );
 
-    loader->RegisterTypeWidget<ImageManip::Types::LinearGradient>(
-            "LinearGradient", nullptr,
+    loader->RegisterType<ImageManip::Types::LinearGradient>(
+            "ImageManip::LinearGradient", QColor(222, 145, 67), nullptr,
             MakeUiPtr(ImageManip::Ui::Types::LinearGradientWidgetBuilder)
     );
 
-    loader->RegisterTypeWidget<ImageManip::Types::LevelMap>(
-            "LevelMap", nullptr,
+    loader->RegisterType<ImageManip::Types::LevelMap>(
+            "ImageManip::LevelMap", QColor(222, 145, 67), nullptr,
             MakeUiPtr(ImageManip::Ui::Types::LevelWidgetBuilder)
     );
 
-    loader->RegisterTypeWidget<ImageManip::Types::Point>(
-            "ImageManip::Point", nullptr,
+    loader->RegisterType<ImageManip::Types::Point>(
+            "ImageManip::Point", QColor(106, 212, 174), nullptr,
             MakeUiPtr(ImageManip::Ui::Types::PointWidgetBuilder)
     );
 
@@ -68,4 +68,38 @@ void RegisterUiPlugin(Gex::Ui::UiPluginLoader* loader)
 
     loader->RegisterNodeViewer<ImageManip::Viewers::PolygonNodeEditorBuilder>("Image/Shapes/Polygon");
 
+    std::vector<std::string> nodeTypes = {
+            "Image/IO/Create",
+            "Image/IO/Load",
+            "Image/IO/Save",
+            "Image/Modifiers/Blend",
+            "Image/Modifiers/LayerBlend",
+            "Image/Modifiers/RGBMask",
+            "Image/Modifiers/AlphaMask",
+            "Image/Modifiers/Blur/BoxBlur",
+            "Image/Noises/PerlinNoise",
+            "Image/Noises/CloudNoise",
+            "Image/Noises/RandomNoise",
+            "Image/Noises/VoronoiCells",
+            "Image/Noises/DelaunayNoise",
+            "Image/Noises/TriangleCircle",
+            "Image/Noises/CircleOrdered",
+            "Image/Noises/Grid",
+            "Image/Modifiers/ColorMap",
+            "Image/Modifiers/ColorMap",
+            "Image/Modifiers/Level",
+            "Image/Modifiers/Tile",
+            "Image/Shapes/Rectangle",
+            "Image/Shapes/Ellipse",
+            "Image/Shapes/Polygon"
+    };
+
+    for (const auto& nodeType : nodeTypes)
+    {
+        loader->RegisterNodeResource(
+                nodeType, Res::UiRes::GetRes()->GetQtAwesome()->icon(
+                    fa::fa_solid, fa::fa_image
+                ), QColor(222, 145, 67)
+        );
+    }
 }

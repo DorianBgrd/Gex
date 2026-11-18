@@ -14,30 +14,34 @@ Gex::Ui::NodeUiRegistry* Gex::Ui::NodeUiRegistry::GetRegistry()
 }
 
 
-Gex::Ui::NodeUiRegistry::NodeUiRegistry()
+Gex::Ui::NodeUiRegistry::NodeUiRegistry():
+    defaultColor(158, 158, 158)
 {
-    RegisterNodeIcon(
+    RegisterNodeResource(
             "CompoundInputs",
             Res::UiRes::GetRes()->GetQtAwesome()->icon(
                     fa::fa_solid, fa::fa_arrow_right_to_bracket
-            )
+            ),
+            QColor(247, 216, 106)
     );
 
-    RegisterNodeIcon(
+    RegisterNodeResource(
             "CompoundOutputs",
             Res::UiRes::GetRes()->GetQtAwesome()->icon(
                     fa::fa_solid, fa::fa_arrow_right_from_bracket
-            )
+            ),
+            QColor(247, 216, 106)
     );
 }
 
 
-void Gex::Ui::NodeUiRegistry::RegisterNodeIcon(
+void Gex::Ui::NodeUiRegistry::RegisterNodeResource(
         const std::string& nodeType,
-        const QIcon& icon
+        const QIcon& icon,
+        const QColor& color
 )
 {
-    resources[nodeType] = {icon};
+    resources[nodeType] = {icon, color};
 }
 
 
@@ -50,4 +54,28 @@ QIcon Gex::Ui::NodeUiRegistry::GetNodeIcon(
         return {};
 
     return iter->second.icon;
+}
+
+
+QColor Gex::Ui::NodeUiRegistry::GetNodeColor(
+        const std::string& nodeType
+)
+{
+    auto iter = resources.find(nodeType);
+    if (iter == resources.end())
+        return defaultColor;
+
+    return iter->second.color;
+}
+
+
+Gex::Ui::NodeUiRegistry::NodeResource Gex::Ui::NodeUiRegistry::GetNodeResource(
+        const std::string& nodeType
+)
+{
+    auto iter = resources.find(nodeType);
+    if (iter == resources.end())
+        return {};
+
+    return iter->second;
 }

@@ -193,6 +193,8 @@ namespace UiTSys
 
         TypedInitWidget* CreateInitWidget(const std::string& t);
 
+        QColor GetTypeColor(const std::string& t);
+
         std::vector<std::string> UiTypeNames() const;
     };
 }

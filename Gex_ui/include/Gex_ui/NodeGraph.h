@@ -66,6 +66,8 @@ namespace Gex
             bool IsInputAnchor() const;
 
             bool IsOutputAnchor() const;
+
+            QColor GetColor() const;
         };
 
 
@@ -155,6 +157,7 @@ namespace Gex
             friend NodeGraphScene;
 
             Gex::AttributeWkPtr attribute;
+            QColor plugColor;
             PlugItem* input;
             PlugItem* output;
             QGraphicsTextItem* text;
@@ -209,6 +212,8 @@ namespace Gex
             PlugItem* InputAnchor() const;
 
             PlugItem* OutputAnchor() const;
+
+            QColor GetColor() const;
 
             NodeItem* ParentNode() const;
 
@@ -308,6 +313,7 @@ namespace Gex
             QGraphicsTextItem* internalTitle;
             NodeGraphScene* graphScene;
             bool showInternal = false;
+            QColor defaultBorderColor;
             QColor customBorderColor;
             bool userCustomBorderColor = false;
             qreal titleHeight;
@@ -468,6 +474,14 @@ namespace Gex
             AttributeItem* Dest() const;
 
             void Update();
+
+            virtual QPointF GetSourcePos() const;
+
+            virtual QPointF GetDestPos() const;
+
+            virtual QPen makePen(QPointF source, QPointF dest) const;
+
+            void UpdatePen();
 
             void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget = nullptr) override;
 
@@ -948,6 +962,7 @@ namespace Gex
         {
             Q_OBJECT
 
+            bool isChangingSelection = false;
             Gex::CompoundNodePtr graph;
             Gex::Profiler profiler;
             NodeGraphScene* scene = nullptr;

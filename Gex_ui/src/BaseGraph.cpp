@@ -389,6 +389,8 @@ Gex::Ui::BaseGraphView::BaseGraphView(QGraphicsScene* scene, QWidget* parent,
     message->setSizePolicy(policy);
     messageTimer = new QTimer(this);
 
+    message->setVisible(false);
+
     QObject::connect(messageTimer, &QTimer::timeout,
                      this, &BaseGraphView::HideMessage);
 

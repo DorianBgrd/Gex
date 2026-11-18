@@ -6,6 +6,9 @@
 
 #include "Gex/include/Gex/Gex.h"
 
+#include "Gex_ui/include/Gex_ui/ui.h"
+#include "Gex_ui/include/Gex_ui/PluginLoader.h"
+
 #include <filesystem>
 #include <fstream>
 
@@ -207,4 +210,23 @@ extern EXPORT RegisterPlugin(Gex::PluginLoader* loader)
     loader->RegisterNode<FileNodes::CreateFileBuilder>("Files/CreateFile");
 
     loader->RegisterNode<FileNodes::SaveToFileBuilder>("Files/SaveToFile");
+}
+
+
+extern EXPORT RegisterUiPlugin(Gex::Ui::UiPluginLoader* loader)
+{
+    std::vector<std::string> nodeTypes = {
+            "Files/SaveToPython",
+            "Files/CreateFile",
+            "Files/SaveToFile"
+    };
+
+    for (const auto& nodeType : nodeTypes)
+    {
+        loader->RegisterNodeResource(
+                nodeType, Res::UiRes::GetRes()->GetQtAwesome()->icon(
+                    fa::fa_solid, fa::fa_file
+                ), QColor(191, 255, 148)
+        );
+    }
 }

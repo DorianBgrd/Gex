@@ -167,18 +167,36 @@ QTabBar::tab:!selected:hover {
 
 
 QTabBar#GraphViewTab {
+    border: 1px solid red;
+    border-style: inset;
+}
+
+
+QTabBar#GraphViewTabBar {
     color: #FFFFFF;
     background-color: #161616;
+    border: 1px solid red;
 }
-QTabBar#GraphViewTab::tab:selected {
+QTabBar#GraphViewTabBar::tab:selected {
     color: #FFFFFF;
     background-color: #000000;
+    padding: 5px;
+    border-bottom-left-radius: 5px;
+    border-bottom-right-radius: 5px;
+    border-top-style: outset;
+    border-top: 1px solid black;
+    border-left-style: inset;
+    border-left: 1px solid red;
+    border-right-style: inset;
+    border-right: 1px solid red;
+    border-bottom-style: inset;
+    border-bottom: 1px solid red;
 }
-QTabBar#GraphViewTab::tab:!selected {
+QTabBar#GraphViewTabBar::tab:!selected {
     color: #FFFFFF;
     background-color: #27292C;
 }
-QTabBar#GraphViewTab::tab:!selected:hover {
+QTabBar#GraphViewTabBar::tab:!selected:hover {
     color: #FFFFFF;
     background-color: #585C63;
 }
@@ -270,7 +288,7 @@ QTreeView{
 }
 QHeaderView::section
 {
-    background-color: darkgray;
+    background-color: black;
 }
 
 

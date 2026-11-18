@@ -23,6 +23,10 @@ target_include_directories(
         ${Boost_INCLUDE_DIRS}
         ${Python_INCLUDE_DIRS}
         ${ThirdParties_INCLUDE_DIRS}
+
+        $ENV{TSYS_DIR}
+
+        $ENV{UI_RES_DIR}
 )
 
 
@@ -43,6 +47,7 @@ target_link_libraries(
         ${Boost_LIBRARIES}
         Python::Python
         Python::Module
+        Gex_ui
 )
 
 

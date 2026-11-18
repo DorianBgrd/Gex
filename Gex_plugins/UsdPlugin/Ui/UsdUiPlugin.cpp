@@ -598,87 +598,129 @@ std::any Gex::Usd::Matrix4dInitWidget::CreateValue()
 
 void RegisterUiPlugin(Gex::Ui::UiPluginLoader* loader)
 {
-    loader->RegisterTypeWidget<pxr::GfHalf,
+    loader->RegisterType<pxr::GfHalf,
             Gex::Usd::GfHalfInitWidgetBuilder,
-            Gex::Usd::GfHalfWidgetBuilder>("Half");
+            Gex::Usd::GfHalfWidgetBuilder>(
+                    "Half", QColor(106, 212, 174)
+    );
 
-    loader->RegisterTypeWidget<pxr::SdfTimeCode,
+    loader->RegisterType<pxr::SdfTimeCode,
             Gex::Usd::SdfTimeCodeInitWidgetBuilder,
-            Gex::Usd::SdfTimeCodeWidgetBuilder>("TimeCode");
+            Gex::Usd::SdfTimeCodeWidgetBuilder>(
+                    "TimeCode", QColor(106, 212, 174)
+    );
 
-    loader->RegisterTypeWidget<pxr::TfToken,
+    loader->RegisterType<pxr::TfToken,
             Gex::Usd::TfTokenInitWidgetBuilder,
-            Gex::Usd::TfTokenWidgetBuilder>("Token");
+            Gex::Usd::TfTokenWidgetBuilder>(
+                    "Token", QColor(106, 212, 125)
+    );
 
-    loader->RegisterTypeWidget<pxr::GfMatrix2d,
+    loader->RegisterType<pxr::GfMatrix2d,
             Gex::Usd::Matrix2dInitWidgetBuilder,
-            Gex::Usd::Matrix2dWidgetBuilder>("Matrix2d");
+            Gex::Usd::Matrix2dWidgetBuilder>(
+                    "Matrix2d", QColor(106, 212, 174)
+    );
 
-    loader->RegisterTypeWidget<pxr::GfMatrix3d,
+    loader->RegisterType<pxr::GfMatrix3d,
             Gex::Usd::Matrix3dInitWidgetBuilder,
-            Gex::Usd::Matrix3dWidgetBuilder>("Matrix3d");
+            Gex::Usd::Matrix3dWidgetBuilder>(
+                    "Matrix3d", QColor(106, 212, 174)
+    );
 
-    loader->RegisterTypeWidget<pxr::GfMatrix4d,
+    loader->RegisterType<pxr::GfMatrix4d,
             Gex::Usd::Matrix4dInitWidgetBuilder,
-            Gex::Usd::Matrix4dWidgetBuilder>("Matrix4d");
+            Gex::Usd::Matrix4dWidgetBuilder>(
+                    "Matrix4d", QColor(106, 212, 174)
+    );
 
-    loader->RegisterTypeWidget<pxr::GfQuatd,
+    loader->RegisterType<pxr::GfQuatd,
             Gex::Usd::QuatdInitWidgetBuilder,
-            Gex::Usd::QuatdWidgetBuilder>("Quatd");
+            Gex::Usd::QuatdWidgetBuilder>(
+                    "Quatd", QColor(106, 212, 174)
+    );
 
-    loader->RegisterTypeWidget<pxr::GfQuatf,
+    loader->RegisterType<pxr::GfQuatf,
             Gex::Usd::QuatfInitWidgetBuilder,
-            Gex::Usd::QuatfWidgetBuilder>("Quatf");
+            Gex::Usd::QuatfWidgetBuilder>(
+                    "Quatf", QColor(106, 212, 174)
+    );
 
-    loader->RegisterTypeWidget<pxr::GfQuath,
+    loader->RegisterType<pxr::GfQuath,
             Gex::Usd::QuathInitWidgetBuilder,
-            Gex::Usd::QuathWidgetBuilder>("Quath");
+            Gex::Usd::QuathWidgetBuilder>(
+                    "Quath", QColor(106, 212, 174)
+    );
 
-    loader->RegisterTypeWidget<pxr::GfVec2d,
+    loader->RegisterType<pxr::GfVec2d,
             Gex::Usd::Vec2dInitWidgetBuilder,
-            Gex::Usd::Vec2dWidgetBuilder>("Vec2d");
+            Gex::Usd::Vec2dWidgetBuilder>(
+                    "Vec2d", QColor(106, 212, 174)
+    );
 
-    loader->RegisterTypeWidget<pxr::GfVec2f,
+    loader->RegisterType<pxr::GfVec2f,
             Gex::Usd::QuatfInitWidgetBuilder,
-            Gex::Usd::QuatfWidgetBuilder>("Vec2f");
+            Gex::Usd::QuatfWidgetBuilder>(
+                    "Vec2f", QColor(106, 212, 174)
+    );
 
-    loader->RegisterTypeWidget<pxr::GfVec2h,
+    loader->RegisterType<pxr::GfVec2h,
             Gex::Usd::Vec2hInitWidgetBuilder,
-            Gex::Usd::Vec2hWidgetBuilder>("Vec2h");
+            Gex::Usd::Vec2hWidgetBuilder>(
+                    "Vec2h", QColor(106, 212, 174)
+    );
 
-    loader->RegisterTypeWidget<pxr::GfVec2i,
+    loader->RegisterType<pxr::GfVec2i,
             Gex::Usd::Vec2iInitWidgetBuilder,
-            Gex::Usd::Vec2iWidgetBuilder>("Vec2i");
+            Gex::Usd::Vec2iWidgetBuilder>(
+                    "Vec2i", QColor(106, 212, 174)
+    );
 
-    loader->RegisterTypeWidget<pxr::GfVec3d,
+    loader->RegisterType<pxr::GfVec3d,
             Gex::Usd::Vec3dInitWidgetBuilder,
-            Gex::Usd::Vec3dWidgetBuilder>("Vec3d");
+            Gex::Usd::Vec3dWidgetBuilder>(
+                    "Vec3d", QColor(106, 212, 174)
+    );
 
-    loader->RegisterTypeWidget<pxr::GfVec3f,
+    loader->RegisterType<pxr::GfVec3f,
             Gex::Usd::Vec3fInitWidgetBuilder,
-            Gex::Usd::Vec3fWidgetBuilder>("Vec3f");
+            Gex::Usd::Vec3fWidgetBuilder>(
+                    "Vec3f", QColor(106, 212, 174)
+    );
 
-    loader->RegisterTypeWidget<pxr::GfVec3h,
+    loader->RegisterType<pxr::GfVec3h,
             Gex::Usd::Vec3hInitWidgetBuilder,
-            Gex::Usd::Vec3hWidgetBuilder>("Vec3h");
+            Gex::Usd::Vec3hWidgetBuilder>(
+                    "Vec3h", QColor(106, 212, 174)
+    );
 
-    loader->RegisterTypeWidget<pxr::GfVec3i,
+    loader->RegisterType<pxr::GfVec3i,
             Gex::Usd::Vec3iInitWidgetBuilder,
-            Gex::Usd::Vec3iWidgetBuilder>("Vec3i");
+            Gex::Usd::Vec3iWidgetBuilder>(
+                    "Vec3i", QColor(106, 212, 174)
+    );
 
-    loader->RegisterTypeWidget<pxr::GfVec4d,
+    loader->RegisterType<pxr::GfVec4d,
             Gex::Usd::Vec4dInitWidgetBuilder,
-            Gex::Usd::Vec4dWidgetBuilder>("Vec4d");
+            Gex::Usd::Vec4dWidgetBuilder>(
+                    "Vec4d", QColor(106, 212, 174)
+    );
 
-    loader->RegisterTypeWidget<pxr::GfVec4f,
+    loader->RegisterType<pxr::GfVec4f,
             Gex::Usd::Vec4fInitWidgetBuilder,
-            Gex::Usd::Vec4fWidgetBuilder>("Vec4f");
+            Gex::Usd::Vec4fWidgetBuilder>(
+                    "Vec4f", QColor(106, 212, 174)
+    );
 
-    loader->RegisterTypeWidget<pxr::GfVec4h,
+    loader->RegisterType<pxr::GfVec4h,
             Gex::Usd::Vec4hInitWidgetBuilder,
-            Gex::Usd::Vec4hWidgetBuilder>("Vec4h");
+            Gex::Usd::Vec4hWidgetBuilder>(
+                    "Vec4h", QColor(106, 212, 174)
+    );
 
-    loader->RegisterTypeWidget<pxr::GfVec4i,
+    loader->RegisterType<pxr::GfVec4i,
             Gex::Usd::Vec4iInitWidgetBuilder,
-            Gex::Usd::Vec4iWidgetBuilder>("Vec4i");
+            Gex::Usd::Vec4iWidgetBuilder>(
+                    "Vec4i", QColor(106, 212, 174)
+    );
 }

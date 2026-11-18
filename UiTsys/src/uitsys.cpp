@@ -124,32 +124,32 @@ UiTSys::UiTypeEngine::UiTypeEngine()
 
 
     RegisterType(
-        "bool",
+        "bool", QColor(106, 212, 174),
         MakeUiPtr(BoolInitWidgetCreator),
         MakeUiPtr(BoolWidgetCreator)
     );
 
 
     RegisterType(
-        "int",
+        "int", QColor(106, 212, 174),
         MakeUiPtr(IntInitWidgetCreator),
         MakeUiPtr(IntWidgetCreator)
     );
 
     RegisterType(
-        "float",
+        "float", QColor(106, 212, 174),
         MakeUiPtr(FloatInitWidgetCreator),
         MakeUiPtr(FloatWidgetCreator)
     );
 
     RegisterType(
-        "double",
+        "double", QColor(106, 212, 174),
         MakeUiPtr(DoubleInitWidgetCreator),
         MakeUiPtr(DoubleWidgetCreator)
     );
 
     RegisterType(
-        "string",
+        "string", QColor(106, 212, 125),
         MakeUiPtr(StringInitWidgetCreator),
         MakeUiPtr(StringWidgetCreator)
     );
@@ -207,6 +207,7 @@ void UiTSys::UiTypeEngine::RegisterDefaultType(
 {
     auto type = MakeUiPtr(UiType);
     type->uiName = "";
+    type->color = QColor(158, 158, 158);
     type->initCreator = initCreator;
     type->widgetCreator = widgetCreator;
 
@@ -258,6 +259,23 @@ UiTSys::TypedInitWidget* UiTSys::UiTypeEngine::CreateInitWidget(
 
     auto type = uiTypes.at(t);
     return type->initCreator->NewWidget();
+}
+
+
+QColor UiTSys::UiTypeEngine::GetTypeColor(const std::string& t)
+{
+    auto iter = uiTypes.find(t);
+    if (iter == uiTypes.end())
+    {
+        if (defaultType->IsValid())
+        {
+            return defaultType->color;
+        }
+
+        return {};
+    }
+
+    return iter->second->color;
 }
 
 

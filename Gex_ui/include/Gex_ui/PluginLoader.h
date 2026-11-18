@@ -37,29 +37,31 @@ namespace Gex::Ui
 
         std::string PluginPath() const;
 
-        bool RegisterTypeWidget(const std::type_index& hash, const std::string& uiName,
-                                const UiTSys::TypedInitCreatorPtr& initCreator=nullptr,
-                                const UiTSys::TypedCreatorPtr& creator=nullptr,
-                                bool force=false);
+        bool RegisterType(const std::type_index& hash,
+                          const std::string& uiName,
+                          const QColor& color,
+                          const UiTSys::TypedInitCreatorPtr& initCreator= nullptr,
+                          const UiTSys::TypedCreatorPtr& creator= nullptr,
+                          bool force= false);
 
         template<typename T>
-        bool RegisterTypeWidget(const std::string& uiName,
-                                const UiTSys::TypedInitCreatorPtr& initCreator=nullptr,
-                                const UiTSys::TypedCreatorPtr& creator=nullptr,
-                                bool force=false)
+        bool RegisterType(const std::string& uiName, const QColor& color,
+                          const UiTSys::TypedInitCreatorPtr& initCreator=nullptr,
+                          const UiTSys::TypedCreatorPtr& creator=nullptr,
+                          bool force=false)
         {
-            return RegisterTypeWidget(typeid(T), uiName,
-                                      initCreator, creator, force);
+            return RegisterType(typeid(T), uiName, color,
+                                initCreator, creator, force);
         }
 
         template<typename T, typename InitCreatorType, typename WidgetCreatorType>
-        bool RegisterTypeWidget(const std::string& uiName, bool force=false)
+        bool RegisterType(const std::string& uiName, const QColor& color, bool force=false)
         {
-            return RegisterTypeWidget(
-                typeid(T), uiName,
-                MakeUiPtr(InitCreatorType),
-                MakeUiPtr(WidgetCreatorType),
-                force
+            return RegisterType(
+                    typeid(T), uiName, color,
+                    MakeUiPtr(InitCreatorType),
+                    MakeUiPtr(WidgetCreatorType),
+                    force
             );
         }
 
@@ -72,8 +74,9 @@ namespace Gex::Ui
             RegisterNodeViewer(type, new C());
         }
 
-        void RegisterNodeIcon(const std::string& type,
-                              const QIcon& icon);
+        void RegisterNodeResource(const std::string& type,
+                                  const QIcon& icon,
+                                  const QColor& color);
 
         QIcon GetNodeIcon(const std::string& type);
 
