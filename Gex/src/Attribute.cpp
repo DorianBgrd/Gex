@@ -280,6 +280,9 @@ void Gex::Attribute::SetName(std::string name)
 
 std::string Gex::Attribute::TypeName() const
 {
+    if (!valueType)
+        return {};
+
 	return valueType->GetName();
 }
 
@@ -383,6 +386,11 @@ void Gex::Attribute::FactoryReset()
 
 bool Gex::Attribute::IsDefault() const
 {
+    if (!attributeValue)
+    {
+        return bool(defaultValue);
+    }
+
     return attributeValue == defaultValue;
 }
 
